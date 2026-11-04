@@ -1,0 +1,747 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Archive.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-39 Архив",
+      "w": 390,
+      "x": 1615,
+      "y": 8600
+    },
+    "Clarify.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-07 Вопросы и замены",
+      "w": 390,
+      "x": 1880,
+      "y": 2600
+    },
+    "ClientAgreed.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "WEB-2 Клиент согласовал",
+      "w": 390,
+      "x": 940,
+      "y": 5000
+    },
+    "ClientCard.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-33 Карточка клиента",
+      "w": 390,
+      "x": 470,
+      "y": 7400
+    },
+    "ClientPage.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "WEB Страница клиента",
+      "w": 390,
+      "x": 470,
+      "y": 5000
+    },
+    "Clients.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-17 Клиенты",
+      "w": 390,
+      "x": 0,
+      "y": 7400
+    },
+    "Code.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-01b Код",
+      "w": 390,
+      "x": 1410,
+      "y": 1400
+    },
+    "Cutting.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-11 Раскрой",
+      "w": 390,
+      "x": 470,
+      "y": 3800
+    },
+    "Editor.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-08 3D + чат",
+      "w": 390,
+      "x": 2350,
+      "y": 2600
+    },
+    "Element.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-25 Выбран элемент",
+      "w": 390,
+      "x": 3760,
+      "y": 2600
+    },
+    "EmptyProjects.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-03a Первый вход: пусто + пример",
+      "w": 390,
+      "x": 2350,
+      "y": 1400
+    },
+    "Errors.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-28 Ошибки и офлайн",
+      "w": 390,
+      "x": 5640,
+      "y": 2600
+    },
+    "Estimate.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-10 Смета",
+      "w": 390,
+      "x": 0,
+      "y": 3800
+    },
+    "FileViewer.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-36 Просмотр файла и «Поделиться»",
+      "w": 390,
+      "x": 1880,
+      "y": 3800
+    },
+    "Files.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-21 Пакет файлов",
+      "w": 390,
+      "x": 940,
+      "y": 3800
+    },
+    "Hardware.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-26 Фурнитура и замены",
+      "w": 390,
+      "x": 4230,
+      "y": 2600
+    },
+    "KitchenEditor.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-37 Редактор кухни",
+      "w": 390,
+      "x": 0,
+      "y": 8600
+    },
+    "Login.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-01 Вход",
+      "w": 390,
+      "x": 940,
+      "y": 1400
+    },
+    "Main.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "Карта экранов и переходов",
+      "w": 1840,
+      "x": 0,
+      "y": 0
+    },
+    "Materials.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-09 Материалы",
+      "w": 390,
+      "x": 4700,
+      "y": 2600
+    },
+    "Measure.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-13 Замер",
+      "w": 390,
+      "x": 1410,
+      "y": 5000
+    },
+    "Misc.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-43 Подтверждения, уведомления, оферта, нет AR",
+      "w": 390,
+      "x": 3495,
+      "y": 8600
+    },
+    "NewProject.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-04 Новый проект",
+      "w": 390,
+      "x": 470,
+      "y": 2600
+    },
+    "Nonstandard.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-19 Нестандарт",
+      "w": 390,
+      "x": 2820,
+      "y": 7400
+    },
+    "NonstandardStatus.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-34 Заявка нестандарт",
+      "w": 390,
+      "x": 3290,
+      "y": 7400
+    },
+    "Notifications.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-24 Уведомления",
+      "w": 390,
+      "x": 2350,
+      "y": 7400
+    },
+    "OnboardingHints.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-41 Подсказки первого запуска",
+      "w": 390,
+      "x": 2555,
+      "y": 8600
+    },
+    "Order.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-14 Заказ по исполнителям",
+      "w": 390,
+      "x": 0,
+      "y": 6200
+    },
+    "OrderCancel.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-40 Отмена и возврат заказа",
+      "w": 390,
+      "x": 2085,
+      "y": 8600
+    },
+    "OrderCard.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-16 Карточка заказа",
+      "w": 390,
+      "x": 1880,
+      "y": 6200
+    },
+    "Orders.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-15 Заказы",
+      "w": 390,
+      "x": 1410,
+      "y": 6200
+    },
+    "PayHistory.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-42 Платежи и чеки",
+      "w": 390,
+      "x": 3025,
+      "y": 8600
+    },
+    "Payment.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-31 Оплата заказа EMAN",
+      "w": 390,
+      "x": 940,
+      "y": 6200
+    },
+    "Paywall.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-22 Оплата",
+      "w": 390,
+      "x": 1410,
+      "y": 3800
+    },
+    "Profile.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-18 Профиль и тариф",
+      "w": 390,
+      "x": 940,
+      "y": 7400
+    },
+    "ProjectCard.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-27 Карточка проекта",
+      "w": 390,
+      "x": 2820,
+      "y": 1400
+    },
+    "Projects.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-03 Проекты",
+      "w": 390,
+      "x": 0,
+      "y": 2600
+    },
+    "ProposalPDF.dc.html": {
+      "h": 842,
+      "is_interactive": true,
+      "title": "PDF Коммерческое предложение",
+      "w": 595,
+      "x": 470,
+      "y": 8600
+    },
+    "QuoteAccept.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-30 Цена под запрос",
+      "w": 390,
+      "x": 470,
+      "y": 6200
+    },
+    "Recognition.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-05 Разбор фото",
+      "w": 390,
+      "x": 940,
+      "y": 2600
+    },
+    "Send.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-12 Отправка клиенту",
+      "w": 390,
+      "x": 0,
+      "y": 5000
+    },
+    "Settings.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-32 Цены и смета цеха",
+      "w": 390,
+      "x": 1410,
+      "y": 7400
+    },
+    "ShopProfile.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-02 Профиль цеха",
+      "w": 390,
+      "x": 1880,
+      "y": 1400
+    },
+    "StaffView.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-38 Вид сотрудника",
+      "w": 390,
+      "x": 1145,
+      "y": 8600
+    },
+    "Team.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-23 Сотрудники",
+      "w": 390,
+      "x": 1880,
+      "y": 7400
+    },
+    "TextParse.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-29 Разобрал описание",
+      "w": 390,
+      "x": 5170,
+      "y": 2600
+    },
+    "TypeChoice.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-06 Тип изделия",
+      "w": 390,
+      "x": 1410,
+      "y": 2600
+    },
+    "Versions.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "SCR-35 Версии модели",
+      "w": 390,
+      "x": 6110,
+      "y": 2600
+    },
+    "ConceptYa.dc.html": {
+      "h": 1320,
+      "w": 1900,
+      "x": 0,
+      "y": -1560,
+      "title": "Концепт v3 — язык Яндекса, зелёный акцент"
+    },
+    "EditorMin.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 2820,
+      "y": 2600,
+      "is_interactive": true,
+      "title": "SCR-08b 3D на весь экран (шторка свёрнута)"
+    },
+    "EditorChat.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 3290,
+      "y": 2600,
+      "is_interactive": true,
+      "title": "SCR-08c Чат на весь экран"
+    },
+    "Motion.dc.html": {
+      "h": 1320,
+      "w": 1900,
+      "x": 1980,
+      "y": -1560,
+      "is_interactive": true,
+      "title": "Анимации и переходы — спецификация и живые примеры"
+    },
+    "Logo.dc.html": {
+      "h": 1140,
+      "w": 1900,
+      "x": 3960,
+      "y": -1560,
+      "title": "Логотип — три направления"
+    },
+    "DeleteAccount.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 0,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-44 Удаление аккаунта"
+    },
+    "StaffInvite.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 470,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-38a Приглашение сотрудника"
+    },
+    "PhotoTips.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 940,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-04a Как сфотографировать"
+    },
+    "RecognitionMulti.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 1410,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-05b Несколько предметов на фото"
+    },
+    "KitchenCorner.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 1880,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-37b Угловая кухня"
+    },
+    "MeasureKitchen.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 2350,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-13b Замер кухни"
+    },
+    "AILimit.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 2820,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-08d Закончились ИИ-правки"
+    },
+    "ClientExpired.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 3290,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "WEB-3 Ссылка недоступна"
+    },
+    "SystemStates.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 3760,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-45 Обновление и техработы"
+    },
+    "NotifPrime.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 4230,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-46 Перед запросом уведомлений"
+    },
+    "ARClient.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 4700,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "WEB-4 AR у клиента: перед, загрузка, в AR, после"
+    },
+    "ARMaster.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 5170,
+      "y": 9800,
+      "is_interactive": true,
+      "title": "SCR-47 AR у мастера"
+    },
+    "Splash.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 0,
+      "y": 1400,
+      "is_interactive": true,
+      "title": "SCR-00 Заставка Eskiz AI"
+    },
+    "Onboarding.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 470,
+      "y": 1400,
+      "is_interactive": true,
+      "title": "SCR-00a Знакомство (3 слайда)"
+    },
+    "FacadeStyle.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 0,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-48 Стиль фасада"
+    },
+    "Lighting.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 470,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-49 Подсветка"
+    },
+    "EditorNight.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 940,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-08e Редактор: вечер и подсветка"
+    },
+    "NicheFit.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 1410,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-50 Встройка в нишу"
+    },
+    "KitchenFit.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 1880,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-50b Встройка кухни"
+    },
+    "RoomColor.dc.html": {
+      "h": 844,
+      "w": 390,
+      "x": 2350,
+      "y": 11000,
+      "is_interactive": true,
+      "title": "SCR-51 Стены и цвет комнаты"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-02T12:55:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "r1": {
+      "kind": "title1",
+      "maxW": 3210,
+      "text": "1. Вход, первый запуск, карточка проекта",
+      "w": 240,
+      "x": 0,
+      "y": 1150
+    },
+    "r2": {
+      "kind": "title1",
+      "maxW": 6500,
+      "text": "2. Проект: разбор, вопросы, 3D + чат, элементы, фурнитура, ошибки, версии",
+      "w": 240,
+      "x": 0,
+      "y": 2350
+    },
+    "r3": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "3. Смета, раскрой и файлы",
+      "w": 240,
+      "x": 0,
+      "y": 3550
+    },
+    "r4": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "4. Клиент: ссылка, согласие, замер",
+      "w": 240,
+      "x": 0,
+      "y": 4750
+    },
+    "r5": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "5. Заказ: EMAN, партнёры, цены под запрос, оплата",
+      "w": 240,
+      "x": 0,
+      "y": 5950
+    },
+    "r6": {
+      "kind": "title1",
+      "maxW": 3680,
+      "text": "6. Клиенты, профиль, цены цеха, команда, нестандарт",
+      "w": 240,
+      "x": 0,
+      "y": 7150
+    },
+    "r7": {
+      "kind": "title1",
+      "maxW": 3885,
+      "text": "7. Кухня, КП в PDF, сотрудник, архив, отмены, подсказки, платежи, мелочи",
+      "w": 240,
+      "x": 0,
+      "y": 8350
+    },
+    "r8": {
+      "kind": "title1",
+      "maxW": 5560,
+      "text": "8. Добавлено: удаление аккаунта, сотрудник, фото, угловая кухня и замер, лимит ИИ, служебные состояния",
+      "w": 240,
+      "x": 0,
+      "y": 9550
+    },
+    "r9": {
+      "kind": "title1",
+      "maxW": 2740,
+      "text": "9. Дизайн и встройка: стиль фасада, подсветка, вечер, ниша, кухня, стены",
+      "w": 240,
+      "x": 0,
+      "y": 10750
+    }
+  },
+  "order": [
+    "ConceptYa.dc.html",
+    "Motion.dc.html",
+    "Logo.dc.html",
+    "Main.dc.html",
+    "Splash.dc.html",
+    "Onboarding.dc.html",
+    "Login.dc.html",
+    "Code.dc.html",
+    "ShopProfile.dc.html",
+    "EmptyProjects.dc.html",
+    "ProjectCard.dc.html",
+    "Projects.dc.html",
+    "NewProject.dc.html",
+    "Recognition.dc.html",
+    "TypeChoice.dc.html",
+    "Clarify.dc.html",
+    "Editor.dc.html",
+    "EditorMin.dc.html",
+    "EditorChat.dc.html",
+    "Element.dc.html",
+    "Hardware.dc.html",
+    "Materials.dc.html",
+    "TextParse.dc.html",
+    "Errors.dc.html",
+    "Versions.dc.html",
+    "Estimate.dc.html",
+    "Cutting.dc.html",
+    "Files.dc.html",
+    "Paywall.dc.html",
+    "FileViewer.dc.html",
+    "Send.dc.html",
+    "ClientPage.dc.html",
+    "ClientAgreed.dc.html",
+    "Measure.dc.html",
+    "Order.dc.html",
+    "QuoteAccept.dc.html",
+    "Payment.dc.html",
+    "Orders.dc.html",
+    "OrderCard.dc.html",
+    "Clients.dc.html",
+    "ClientCard.dc.html",
+    "Profile.dc.html",
+    "Settings.dc.html",
+    "Team.dc.html",
+    "Notifications.dc.html",
+    "Nonstandard.dc.html",
+    "NonstandardStatus.dc.html",
+    "KitchenEditor.dc.html",
+    "ProposalPDF.dc.html",
+    "StaffView.dc.html",
+    "Archive.dc.html",
+    "OrderCancel.dc.html",
+    "OnboardingHints.dc.html",
+    "PayHistory.dc.html",
+    "Misc.dc.html",
+    "DeleteAccount.dc.html",
+    "StaffInvite.dc.html",
+    "PhotoTips.dc.html",
+    "RecognitionMulti.dc.html",
+    "KitchenCorner.dc.html",
+    "MeasureKitchen.dc.html",
+    "AILimit.dc.html",
+    "ClientExpired.dc.html",
+    "SystemStates.dc.html",
+    "NotifPrime.dc.html",
+    "ARClient.dc.html",
+    "ARMaster.dc.html",
+    "FacadeStyle.dc.html",
+    "Lighting.dc.html",
+    "EditorNight.dc.html",
+    "NicheFit.dc.html",
+    "KitchenFit.dc.html",
+    "RoomColor.dc.html"
+  ],
+  "pages": [],
+  "title": "Мебель АИ — UI/UX приложения"
+}

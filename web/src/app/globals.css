@@ -1,0 +1,763 @@
+/*
+ * Страница клиента /p/[token] — дизайн V3 (docs/design: ClientPage, ClientAgreed,
+ * ClientExpired, ARClient, Misc). Всё внутри .ek — админка (.adm) не затрагивается.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #f2f1ee;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+
+.ek {
+  --bg: #f2f1ee;
+  --text: #21201f;
+  --muted: #6e6b66;
+  --muted-2: #55524d;
+  --line: #f0efec;
+  --green: #387d50;
+  --green-dark: #2f6b44;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  font-family: Onest, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.ek a {
+  color: var(--green-dark);
+  text-decoration: none;
+}
+
+.ek button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  letter-spacing: inherit;
+}
+
+.ek h1,
+.ek h2,
+.ek p {
+  margin: 0;
+}
+
+.ek .mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ---------- Типографика ---------- */
+
+.ek .title {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ek .sub {
+  font-size: 16px;
+  line-height: 22px;
+  color: var(--muted);
+}
+
+.ek .cap {
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.ek .rt {
+  font-size: 16px;
+  line-height: 21px;
+  font-weight: 500;
+}
+
+.ek .rs {
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.ek .ell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Каркас ---------- */
+
+.ek .body {
+  flex: 1 0 auto;
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ek .foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px max(30px, calc(env(safe-area-inset-bottom) + 12px));
+}
+
+.ek .fr {
+  display: flex;
+  gap: 8px;
+}
+
+.ek .sheet {
+  background: #fff;
+  border-radius: 28px;
+  overflow: hidden;
+  flex: none;
+}
+
+.ek .row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 10px 20px;
+  color: var(--text);
+}
+
+.ek .row .tx {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Кнопки ---------- */
+
+.ek .cta,
+.ek .soft,
+.ek .ar,
+.ek .vw,
+.ek .lang button {
+  transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), filter 0.12s, background-color 0.2s, color 0.2s;
+}
+
+.ek .cta {
+  height: 56px;
+  border-radius: 16px;
+  background: var(--green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 20px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.ek a.cta {
+  color: #fff;
+}
+
+.ek .cta:hover {
+  background: var(--green-dark);
+}
+
+.ek .cta:disabled {
+  background: #e6e5e1;
+  color: #8e8b85;
+  cursor: default;
+}
+
+.ek .cta.sm {
+  height: 44px;
+  border-radius: 14px;
+  font-size: 15px;
+  padding: 0 16px;
+  width: auto;
+  flex: none;
+}
+
+.ek .soft {
+  height: 56px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ek a.soft {
+  color: var(--text);
+}
+
+.ek .fr > .soft,
+.ek .fr > .cta {
+  flex: 1;
+}
+
+/* Внутри белых контейнеров кнопки серые */
+.ek .bs .soft {
+  background: var(--bg);
+}
+
+.ek .txt {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--green-dark);
+}
+
+.ek a.txt {
+  color: var(--green-dark);
+}
+
+.ek .cta:active,
+.ek .soft:active,
+.ek .ar:active,
+.ek .vw:active {
+  transform: scale(0.97);
+  filter: brightness(0.94);
+}
+
+.ek .txt:active {
+  opacity: 0.6;
+}
+
+/* ---------- Баннеры, метки ---------- */
+
+.ek .ban {
+  border-radius: 20px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex: none;
+}
+
+.ek .ban .bd {
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.ek .ban.info {
+  background: #e6eeff;
+  color: #1a3f99;
+}
+
+.ek .ban.est {
+  background: #fff0d4;
+  color: #6e3c00;
+}
+
+.ek .ban.ok {
+  background: #e6f1ea;
+  color: #1f4a2f;
+}
+
+.ek .ban .ba {
+  font-size: 15px;
+  font-weight: 600;
+  color: inherit;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.ek .tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: #fff0d4;
+  color: #8a4b00;
+}
+
+/* ---------- WEB-1: шапка ---------- */
+
+.ek .top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 20px;
+}
+
+.ek .logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex: none;
+  overflow: hidden;
+}
+
+.ek .logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ek .lang {
+  display: flex;
+  background: #fff;
+  border-radius: 22px;
+  padding: 3px;
+  gap: 2px;
+  flex: none;
+}
+
+.ek .lang button {
+  height: 38px;
+  min-width: 48px;
+  border-radius: 19px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.ek .lang button[aria-pressed='true'] {
+  background: var(--text);
+  color: #fff;
+}
+
+/* ---------- WEB-1: 3D ---------- */
+
+.ek .stage {
+  height: 270px;
+  flex: none;
+  margin: 0 12px;
+  border-radius: 28px;
+  background: #f4ebdd;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.ek .stage-tools {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.ek .vw {
+  height: 40px;
+  border-radius: 20px;
+  background: #fff;
+  padding: 0 16px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.ek .vw[aria-pressed='true'] {
+  background: var(--text);
+  color: #fff;
+}
+
+.ek .stage-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px 24px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 19px;
+  color: var(--muted);
+}
+
+/* ---------- WEB-1: смета ---------- */
+
+.ek .ttl-main {
+  padding: 0 8px;
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.ek .est {
+  padding: 14px 20px 16px;
+}
+
+.ek .pl {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 16px;
+  line-height: 21px;
+}
+
+.ek .pl > :first-child {
+  min-width: 0;
+}
+
+.ek .pl .mono {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ek .pl.tot {
+  padding-top: 12px;
+  margin-top: 6px;
+  box-shadow: inset 0 1px 0 var(--line);
+  font-weight: 600;
+  align-items: center;
+}
+
+.ek .pl.tot.only {
+  padding-top: 5px;
+  margin-top: 0;
+  box-shadow: none;
+}
+
+.ek .pl.tot .mono {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ek .unit {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.ek .pl-sub {
+  padding: 10px 0 2px;
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ek .ar {
+  height: 52px;
+  border-radius: 16px;
+  background: var(--text);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  flex: none;
+  width: 100%;
+}
+
+.ek .done-bar {
+  height: 56px;
+  border-radius: 16px;
+  background: #e6f1ea;
+  color: #275c3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ek .err {
+  font-size: 14px;
+  line-height: 19px;
+  color: #a1221a;
+  text-align: center;
+}
+
+/* ---------- WEB-4: шторка AR ---------- */
+
+.ek .scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 32, 31, 0.42);
+  z-index: 20;
+  animation: ek-fin 0.2s ease-out both;
+}
+
+.ek .bs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  margin: 0 auto;
+  max-width: 560px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 28px 28px 0 0;
+  padding: 0 16px max(30px, calc(env(safe-area-inset-bottom) + 12px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 -4px 24px rgba(33, 32, 31, 0.1);
+  animation: ek-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.ek .hdl {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.ek .hdl i {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: #d6d4cf;
+  display: block;
+}
+
+.ek .bs .cap.lead {
+  margin-top: -4px;
+}
+
+.ek .step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.ek .sn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e6f1ea;
+  color: #275c3a;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.ek .bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #edece9;
+  overflow: hidden;
+}
+
+.ek .bar i {
+  display: block;
+  height: 8px;
+  background: var(--green);
+  border-radius: 4px;
+  transition: width 0.2s linear;
+}
+
+.ek .ok-ic {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e6f1ea;
+  color: #275c3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* model-viewer: невидимая «парковка», нужен только для запуска AR */
+.ek .ar-park {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.ek .ar-park model-viewer {
+  width: 10px;
+  height: 10px;
+}
+
+/* ---------- WEB-2: согласовано ---------- */
+
+.ek .ok-big {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.ek .h-big {
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ek .pl.ag {
+  padding: 6px 0;
+}
+
+.ek .pl.ag + .pl.ag {
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.ek .ag-total .mono {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+/* ---------- WEB-3: ссылка недоступна ---------- */
+
+.ek .ill {
+  width: 120px;
+  height: 120px;
+  border-radius: 36px;
+  background: #f4ebdd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: none;
+}
+
+.ek .ill .badge {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(33, 32, 31, 0.12);
+}
+
+.ek .h-st {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* Мини-шкаф (иконки WEB-3) */
+.ek .carc {
+  border: 3px solid var(--text);
+  background: var(--text);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+}
+
+.ek .wood {
+  display: block;
+  background: repeating-linear-gradient(90deg, #e6d3b1 0 7px, #dcc59f 7px 9px);
+}
+
+/* ---------- Анимации ---------- */
+
+@keyframes ek-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes ek-fin {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek .bs {
+    animation-name: ek-fin;
+  }
+  .ek .cta:active,
+  .ek .soft:active,
+  .ek .ar:active,
+  .ek .vw:active {
+    transform: none;
+  }
+}
+
+/* Служебная страница-список демо-ссылок */
+.demo-list {
+  line-height: 2;
+}

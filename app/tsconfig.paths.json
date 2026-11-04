@@ -1,0 +1,29 @@
+{
+  "//": "Пути типов вынесены сюда: jest-expo и Metro читают paths из tsconfig.json и превратили бы их в алиасы модулей. Здесь они нужны только tsc — чтобы .d.ts из ../viewer брали three/react/R3F из app/node_modules. Пути относительные (./), без baseUrl: в TypeScript 6 baseUrl устарел.",
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "paths": {
+      "@mebel/viewer": [
+        "./node_modules/@mebel/viewer/dist/index.d.ts"
+      ],
+      "@mebel/viewer/react": [
+        "./node_modules/@mebel/viewer/dist/react/ProductObject.d.ts"
+      ],
+      "three": [
+        "./node_modules/@types/three"
+      ],
+      "three/*": [
+        "./node_modules/@types/three/*"
+      ],
+      "react": [
+        "./node_modules/@types/react"
+      ],
+      "react/*": [
+        "./node_modules/@types/react/*"
+      ],
+      "@react-three/fiber": [
+        "./node_modules/@react-three/fiber"
+      ]
+    }
+  }
+}

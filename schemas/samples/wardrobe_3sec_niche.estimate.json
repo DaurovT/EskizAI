@@ -1,0 +1,132 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 7350000,
+   "to": 7800000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus"
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 7350000,
+   "to": 7800000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus",
+  "materials": {
+   "from": 4900000,
+   "to": 5200000
+  },
+  "work": {
+   "from": 2460000,
+   "to": 2600000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 7350000,
+   "to": 7800000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus",
+  "materials": {
+   "from": 4900000,
+   "to": 5200000
+  },
+  "work": {
+   "from": 2460000,
+   "to": 2600000
+  },
+  "groups": [
+   {
+    "key": "sheets",
+    "name": "Листы ЛДСП и ХДФ",
+    "name_uz": "LDSP va XDF listlari",
+    "from": 4166000,
+    "to": 4423000
+   },
+   {
+    "key": "cutting",
+    "name": "Распил и кромкование",
+    "name_uz": "Kesish va kromkalash",
+    "from": 391000,
+    "to": 415000
+   },
+   {
+    "key": "hardware",
+    "name": "Фурнитура",
+    "name_uz": "Furnitura",
+    "from": 34000,
+    "to": 36000
+   }
+  ],
+  "requests": [
+   {
+    "name": "ХДФ 3 Белый",
+    "note": "уточняется"
+   }
+  ],
+  "nonstandard": []
+ }
+}

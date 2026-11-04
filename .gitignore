@@ -1,0 +1,36 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+out/
+.DS_Store
+
+# Текстуры декоров EMAN (собираются api/scripts/build_eman_decors.py)
+api/static/
+
+# Зависимости и сборки
+node_modules/
+.expo/
+.next/
+.next-*/
+dist-*/
+app/ios/build*/
+app/ios/Pods/
+*.tsbuildinfo
+
+# Локальные базы, ключи, окружение
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.mobileprovision
+
+# Кэши инструментов
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/

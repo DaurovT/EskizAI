@@ -1,0 +1,120 @@
+{
+  "width": 1800,
+  "height": 2400,
+  "depth": 600,
+  "body": {
+    "material": "ldsp_16_white",
+    "plinth": {
+      "height": 80
+    }
+  },
+  "fronts": {
+    "material": "mdf_19_paint",
+    "handles": {
+      "kind": "knob",
+      "finish": "brass"
+    },
+    "style": {
+      "milling": {
+        "pattern": "shaker",
+        "inset": 70,
+        "width": 8,
+        "depth": 3,
+        "radius": 0
+      },
+      "inlay": {
+        "kind": "frame",
+        "finish": "brass",
+        "width": 6,
+        "inset": 110
+      },
+      "paint": {
+        "color": "#E9E5DA",
+        "code": "RAL 9001",
+        "system": "RAL",
+        "gloss": "matte"
+      },
+      "corners": {
+        "radius": 4
+      }
+    }
+  },
+  "sections": [
+    {
+      "width": 560,
+      "fill": [
+        {
+          "kind": "drawers",
+          "count": 3,
+          "external": true,
+          "height": 600,
+          "style": {
+            "inlay": {
+              "kind": "none"
+            }
+          }
+        },
+        {
+          "kind": "rod"
+        }
+      ],
+      "doors": {
+        "count": 1,
+        "hinge": "left"
+      }
+    },
+    {
+      "width": 768,
+      "fill": [
+        {
+          "kind": "shelves",
+          "count": 1,
+          "height": 760,
+          "doors": {
+            "count": 2,
+            "style": {
+              "milling": {
+                "pattern": "arcs",
+                "inset": 70
+              }
+            }
+          }
+        },
+        {
+          "kind": "shelves",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "fill": [
+        {
+          "kind": "rod",
+          "height": 1400
+        },
+        {
+          "kind": "shelves",
+          "count": 2
+        }
+      ],
+      "doors": {
+        "count": 1,
+        "hinge": "right"
+      }
+    }
+  ],
+  "lighting": [
+    {
+      "zone": "niche",
+      "target": "sections[1]",
+      "temp": 3000,
+      "sensor": "motion"
+    },
+    {
+      "zone": "wardrobe_rod",
+      "target": "all",
+      "temp": 4000,
+      "sensor": "door"
+    }
+  ]
+}

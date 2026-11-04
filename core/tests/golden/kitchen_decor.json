@@ -1,0 +1,860 @@
+{
+  "ok": true,
+  "module_versions": {
+    "decor": "0.1.0",
+    "drawer": "0.3.0",
+    "kitchen": "0.3.0",
+    "shelf": "0.2.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1,
+        25,
+        33,
+        40
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 557.0,
+      "cut_length": 720.0,
+      "cut_width": 555.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": "вырезы под Gola"
+    },
+    {
+      "numbers": [
+        2,
+        26,
+        34,
+        41
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 557.0,
+      "cut_length": 720.0,
+      "cut_width": 555.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": "вырезы под Gola"
+    },
+    {
+      "numbers": [
+        3,
+        27
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 557.0,
+      "cut_length": 568.0,
+      "cut_width": 555.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4,
+        28
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 100.0,
+      "cut_length": 568.0,
+      "cut_width": 99.6,
+      "qty": 2,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5,
+        29
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 100.0,
+      "cut_length": 568.0,
+      "cut_width": 100.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6,
+        30,
+        54
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 596.0,
+      "width": 716.0,
+      "cut_length": 596.0,
+      "cut_width": 716.0,
+      "qty": 3,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7,
+        8,
+        12,
+        13,
+        17,
+        18
+      ],
+      "name": "Боковина ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 500.0,
+      "width": 189.3,
+      "cut_length": 500.0,
+      "cut_width": 188.9,
+      "qty": 6,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        9,
+        10,
+        14,
+        15,
+        19,
+        20
+      ],
+      "name": "Стенка ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 510.0,
+      "width": 189.3,
+      "cut_length": 510.0,
+      "cut_width": 188.9,
+      "qty": 6,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        11,
+        16,
+        21
+      ],
+      "name": "Дно ящика",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 542.0,
+      "width": 500.0,
+      "cut_length": 542.0,
+      "cut_width": 500.0,
+      "qty": 3,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        22,
+        23,
+        24
+      ],
+      "name": "Фасад ящика",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 598.0,
+      "width": 208.0,
+      "cut_length": 598.0,
+      "cut_width": 208.0,
+      "qty": 3,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Рифление вертикальное» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        31
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 566.0,
+      "width": 537.0,
+      "cut_length": 566.0,
+      "cut_width": 535.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        32
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 688.0,
+      "width": 598.0,
+      "cut_length": 688.0,
+      "cut_width": 598.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        35
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 557.0,
+      "cut_length": 768.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        36
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 100.0,
+      "cut_length": 768.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        37
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 100.0,
+      "cut_length": 768.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        38,
+        39
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 688.0,
+      "width": 398.0,
+      "cut_length": 688.0,
+      "cut_width": 398.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        42
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 557.0,
+      "cut_length": 418.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        43
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 100.0,
+      "cut_length": 418.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        44
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 100.0,
+      "cut_length": 418.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        45,
+        75
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 446.0,
+      "width": 716.0,
+      "cut_length": 446.0,
+      "cut_width": 716.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        46
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 416.0,
+      "width": 537.0,
+      "cut_length": 416.0,
+      "cut_width": 535.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        47
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 688.0,
+      "width": 448.0,
+      "cut_length": 688.0,
+      "cut_width": 448.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        48
+      ],
+      "name": "Цоколь кухни",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2450.0,
+      "width": 100.0,
+      "cut_length": 2450.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        50,
+        63,
+        71
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 297.0,
+      "cut_length": 719.2,
+      "cut_width": 295.0,
+      "qty": 3,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        51,
+        64,
+        72
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 297.0,
+      "cut_length": 719.2,
+      "cut_width": 295.0,
+      "qty": 3,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        52
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 297.0,
+      "cut_length": 568.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": "паз LED 17×7"
+    },
+    {
+      "numbers": [
+        53,
+        60
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 297.0,
+      "cut_length": 568.0,
+      "cut_width": 295.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        55
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 566.0,
+      "width": 277.0,
+      "cut_length": 566.0,
+      "cut_width": 275.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        56
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 718.0,
+      "width": 598.0,
+      "cut_length": 718.0,
+      "cut_width": 598.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        57
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 360.0,
+      "width": 297.0,
+      "cut_length": 359.2,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        58
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 360.0,
+      "width": 297.0,
+      "cut_length": 359.2,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        59
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 297.0,
+      "cut_length": 568.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        61
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 596.0,
+      "width": 356.0,
+      "cut_length": 596.0,
+      "cut_width": 356.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        62
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 358.0,
+      "width": 598.0,
+      "cut_length": 358.0,
+      "cut_width": 598.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        65
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 297.0,
+      "cut_length": 768.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": "паз LED 17×7"
+    },
+    {
+      "numbers": [
+        66
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 297.0,
+      "cut_length": 768.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        67
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 796.0,
+      "width": 716.0,
+      "cut_length": 796.0,
+      "cut_width": 716.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        68
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 766.0,
+      "width": 277.0,
+      "cut_length": 766.0,
+      "cut_width": 275.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        69,
+        70
+      ],
+      "name": "Дверь",
+      "material": "МДФ 19 под покраску",
+      "thickness": 19.0,
+      "length": 718.0,
+      "width": 398.0,
+      "cut_length": 718.0,
+      "cut_width": 398.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": "фрезеровка «Арка» фреза 8 глуб. 3; вставка золото: кант по краю; покраска RAL 6009 полуматовая, 2 стороны"
+    },
+    {
+      "numbers": [
+        73
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 297.0,
+      "cut_length": 418.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": "паз LED 17×7"
+    },
+    {
+      "numbers": [
+        74
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 297.0,
+      "cut_length": 418.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        76,
+        77
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 416.0,
+      "width": 277.0,
+      "cut_length": 416.0,
+      "cut_width": 275.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 120
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 120
+    },
+    {
+      "name": "Направляющие шариковые 500 мм (пара, стандарт)",
+      "qty": 3
+    },
+    {
+      "name": "Саморез 4×16 (крепление фасада)",
+      "qty": 12
+    },
+    {
+      "name": "Ножка кухонная регулируемая",
+      "qty": 16
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 24
+    },
+    {
+      "name": "Петля накладная 110° с доводчиком (стандарт)",
+      "qty": 16
+    },
+    {
+      "name": "Клипса цоколя",
+      "qty": 10
+    },
+    {
+      "name": "Навес мебельный регулируемый",
+      "qty": 8
+    },
+    {
+      "name": "Шина монтажная 2450 мм",
+      "qty": 1
+    },
+    {
+      "name": "Профиль Gola",
+      "qty": 9
+    },
+    {
+      "name": "Заглушки и крепёж Gola",
+      "qty": 11
+    },
+    {
+      "name": "Профиль LED с рассеивателем",
+      "qty": 1
+    },
+    {
+      "name": "Лента LED 3000 K, 9.6 Вт/м",
+      "qty": 1
+    },
+    {
+      "name": "Сенсорный выключатель",
+      "qty": 1
+    },
+    {
+      "name": "Блок питания 60 Вт",
+      "qty": 1
+    }
+  ],
+  "issues": [
+    {
+      "level": "warning",
+      "code": "door_hits_niche_wall",
+      "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+      "path": "base[3].doors",
+      "fixes": []
+    },
+    {
+      "level": "warning",
+      "code": "door_hits_niche_wall",
+      "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+      "path": "wall[0].doors",
+      "fixes": []
+    }
+  ]
+}

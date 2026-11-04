@@ -1,0 +1,34 @@
+# Caddy: HTTPS (Let's Encrypt) и обратный прокси к контейнерам.
+# Домены и почта берутся из переменных окружения сервиса caddy (deploy/.env).
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	log {
+		output stdout
+		format json
+	}
+}
+
+# API (приложение мастера и web на сервере). Фото до 10 МБ × 5 — запас по размеру тела.
+{$API_DOMAIN} {
+	import common
+	request_body {
+		max_size 60MB
+	}
+	reverse_proxy api:8000
+}
+
+# Ссылка клиента /p/{token} и админка (открывается и во встроенном браузере Telegram).
+{$WEB_DOMAIN} {
+	import common
+	reverse_proxy web:3000
+}

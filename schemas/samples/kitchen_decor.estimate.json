@@ -1,0 +1,265 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 14500000,
+   "to": 17000000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "services",
+    "name": "услуги",
+    "name_uz": "xizmatlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar"
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 14500000,
+   "to": 17000000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "services",
+    "name": "услуги",
+    "name_uz": "xizmatlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar",
+  "materials": {
+   "from": 9750000,
+   "to": 11500000
+  },
+  "work": {
+   "from": 4800000,
+   "to": 5700000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 14500000,
+   "to": 17000000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "services",
+    "name": "услуги",
+    "name_uz": "xizmatlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar",
+  "materials": {
+   "from": 9750000,
+   "to": 11500000
+  },
+  "work": {
+   "from": 4800000,
+   "to": 5700000
+  },
+  "groups": [
+   {
+    "key": "sheets",
+    "name": "Листы ЛДСП и ХДФ",
+    "name_uz": "LDSP va XDF listlari",
+    "from": 2099000,
+    "to": 2464000
+   },
+   {
+    "key": "countertop",
+    "name": "Столешница",
+    "name_uz": "Stol usti",
+    "from": 810000,
+    "to": 950000
+   },
+   {
+    "key": "cutting",
+    "name": "Распил и кромкование",
+    "name_uz": "Kesish va kromkalash",
+    "from": 375000,
+    "to": 440000
+   },
+   {
+    "key": "hardware",
+    "name": "Фурнитура",
+    "name_uz": "Furnitura",
+    "from": 1898000,
+    "to": 2228000
+   },
+   {
+    "key": "decor:paint:satin:RAL 6009:face",
+    "name": "Покраска фасадов RAL 6009, полуматовая",
+    "name_uz": "Покраска фасадов RAL 6009, полуматовая",
+    "from": 684000,
+    "to": 803000
+   },
+   {
+    "key": "decor:paint:satin:RAL 6009:back",
+    "name": "Покраска фасадов RAL 6009, обратная сторона",
+    "name_uz": "Покраска фасадов RAL 6009, обратная сторона",
+    "from": 342000,
+    "to": 402000
+   },
+   {
+    "key": "decor:milling:arcs",
+    "name": "Фрезеровка «Арка», 8 фасадов",
+    "name_uz": "Фрезеровка «Арка», 8 фасадов",
+    "from": 957000,
+    "to": 1123000
+   },
+   {
+    "key": "decor:milling:grooves_v",
+    "name": "Фрезеровка «Рифление вертикальное», 3 фасада",
+    "name_uz": "Фрезеровка «Рифление вертикальное», 3 фасада",
+    "from": 49000,
+    "to": 57000
+   },
+   {
+    "key": "decor:inlay:edge:gold",
+    "name": "Золотой кант по краю, 11 фасадов, 22,9 м",
+    "name_uz": "Золотой кант по краю, 11 фасадов, 22,9 м",
+    "from": 1791000,
+    "to": 2102000
+   },
+   {
+    "key": "decor:inlay_labour:edge:gold",
+    "name": "Установка: золотой кант по краю, 11 фасадов",
+    "name_uz": "Установка: золотой кант по краю, 11 фасадов",
+    "from": 202000,
+    "to": 238000
+   },
+   {
+    "key": "decor:power",
+    "name": "Блок питания подсветки",
+    "name_uz": "Блок питания подсветки",
+    "from": 129000,
+    "to": 151000
+   },
+   {
+    "key": "decor:led:lighting[0]",
+    "name": "Подсветка под навесными, 1,7 м, 3000 K",
+    "name_uz": "Подсветка под навесными, 1,7 м, 3000 K",
+    "from": 156000,
+    "to": 184000
+   },
+   {
+    "key": "decor:sensor:lighting[0]",
+    "name": "Сенсорный выключатель для подсветки",
+    "name_uz": "Сенсорный выключатель для подсветки",
+    "from": 55000,
+    "to": 65000
+   }
+  ],
+  "requests": [
+   {
+    "name": "ХДФ 3 Белый",
+    "note": "уточняется"
+   }
+  ],
+  "nonstandard": []
+ }
+}

@@ -1,0 +1,197 @@
+{
+  "ok": true,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "fronts": "0.5.0",
+    "partition": "0.2.0",
+    "plinth": "0.2.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2400.0,
+      "width": 597.0,
+      "cut_length": 2399.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2400.0,
+      "width": 597.0,
+      "cut_length": 2399.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 597.0,
+      "cut_length": 1168.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 597.0,
+      "cut_length": 1168.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 70.0,
+      "cut_length": 1168.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 70.0,
+      "cut_length": 1168.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7
+      ],
+      "name": "Перегородка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2298.0,
+      "width": 597.0,
+      "cut_length": 2298.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 574.0,
+      "width": 577.0,
+      "cut_length": 574.0,
+      "cut_width": 575.0,
+      "qty": 9,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        17
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 1196.0,
+      "width": 2326.0,
+      "cut_length": 1196.0,
+      "cut_width": 2326.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 32
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 36
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 47
+    }
+  ],
+  "issues": []
+}

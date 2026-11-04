@@ -1,0 +1,30 @@
+{
+  "type": "kitchen",
+  "installation": "niche",
+  "body": {"material": "ldsp_16_white"},
+  "fronts": {
+    "material": "mdf_19_paint",
+    "handles": {"kind": "gola", "finish": "gold"},
+    "style": {
+      "milling": {"pattern": "arcs", "inset": 60, "width": 8, "depth": 3},
+      "inlay": {"kind": "edge", "finish": "gold", "width": 4},
+      "paint": {"color": "#2F4A3F", "code": "RAL 6009", "system": "RAL", "gloss": "satin"}
+    }
+  },
+  "countertop": {"material": "countertop_38_stone"},
+  "base": [
+    {"kind": "drawers", "width": 600, "drawers": 3, "style": {"milling": {"pattern": "grooves_v", "inset": 40, "pitch": 30}}},
+    {"kind": "doors", "width": 600, "hinge": "right"},
+    {"kind": "sink", "width": 800},
+    {"kind": "doors", "width": 450, "hinge": "right"}
+  ],
+  "wall": [
+    {"kind": "doors", "width": 600},
+    {"kind": "hood", "width": 600},
+    {"kind": "doors", "width": 800},
+    {"kind": "open", "width": 450, "shelves": 2}
+  ],
+  "lighting": [
+    {"zone": "under_wall", "target": "all", "temp": 3000, "sensor": "touch"}
+  ]
+}

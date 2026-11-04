@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Фурнитура и замены</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+/*V3*/
+body{margin:0}
+a{color:#2F6B44;text-decoration:none}a:hover{color:#275C3A}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.app{width:390px;height:844px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;flex-direction:column;position:relative;overflow:hidden;font-size:16px;line-height:22px;font-weight:400;letter-spacing:-.005em}
+.mono,.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.hdr{flex:none;display:flex;align-items:center;gap:10px;padding:12px 12px 4px;min-height:56px}
+.ht{flex:1;min-width:0;font-size:18px;line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:44px;height:44px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#21201F;position:relative}
+.ib.flat{background:transparent}
+.ib .badge{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#E5352B;box-shadow:0 0 0 2px #fff}
+.big{flex:none;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:4px 16px 0}
+.title{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:16px;line-height:22px;color:#6E6B66}
+.cap{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.lbl{font-size:15px;line-height:20px;font-weight:600;color:#6E6B66;letter-spacing:0;text-transform:none}
+.body{flex:1;min-height:0;overflow:hidden;padding:8px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.grow{flex:1}
+.sheet{background:#fff;border-radius:28px;overflow:hidden;flex:none}
+.pad{padding:20px}
+.row{display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 20px;box-sizing:border-box;color:#21201F;position:relative}
+.row+.row{box-shadow:inset 0 1px 0 #F0EFEC}
+.row .tx{flex:1;min-width:0}
+.rt{font-size:16px;line-height:21px;font-weight:500}
+.rs{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.rv{font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;color:#21201F;font-variant-numeric:tabular-nums}
+.chev{flex:none;color:#B4B1AB}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.st{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9px;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap;background:#F2F1EE;color:#55524D}
+.st .dot{display:none}
+.st.c-green{background:#E6F1EA}.st.c-amber{background:#FFF0D4}.st.c-blue{background:#E6EEFF}.st.c-red{background:#FFE7E4}.st.c-gray{background:#F2F1EE}
+.d-green{background:#387D50}.d-amber{background:#E08A00}.d-blue{background:#1F4FBF}.d-red{background:#E5352B}.d-gray{background:#A3A09A}
+.c-green{color:#275C3A}.c-amber{color:#8A4B00}.c-blue{color:#1F4FBF}.c-red{color:#A1221A}.c-gray{color:#55524D}
+.foot{flex:none;display:flex;flex-direction:column;gap:8px;padding:10px 12px 30px}
+.foot.bar{background:#fff;border-radius:28px 28px 0 0;padding:16px 16px 30px}
+.fr{display:flex;gap:8px}
+.cta{height:56px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 20px;font-size:17px;line-height:22px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.fr>.cta,.fr>.soft{flex:1}
+.cta:hover{color:#fff;background:#2F6B44}
+.cta.val{justify-content:space-between;padding:0 8px 0 20px}
+.cta .v{height:40px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.cta.off{background:#E6E5E1;color:#8E8B85}
+.soft{height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;font-size:17px;line-height:22px;font-weight:500;box-sizing:border-box;white-space:nowrap}
+.soft:hover{color:#21201F;background:#F7F7F5}
+.soft.sm,.cta.sm{height:44px;border-radius:14px;font-size:15px;padding:0 14px;flex:none}
+.soft.w{background:#fff}
+.txt{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:500;color:#2F6B44}
+.txt.red{color:#C62A20}
+.seg{display:flex;background:#E6E5E1;border-radius:14px;padding:3px;gap:2px;flex:none}
+.sg{flex:1;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:20px;font-weight:500;color:#21201F;white-space:nowrap;padding:0 8px}
+.sg.on{background:#fff;color:#21201F;box-shadow:0 1px 3px rgba(33,32,31,.10)}
+.chips{display:flex;gap:8px;overflow:hidden;flex:none;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.chip{height:40px;border-radius:20px;background:#fff;color:#21201F;display:inline-flex;align-items:center;gap:6px;padding:0 16px;font-size:15px;font-weight:500;white-space:nowrap;flex:none}
+.chip.on{background:#21201F;color:#fff}
+.chip .n{color:#9C9993}.chip.on .n{color:#A9A6A0}
+.opt{min-height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;gap:12px;padding:10px 16px;box-sizing:border-box;font-size:16px;font-weight:500}
+.opt.on{background:#21201F;color:#fff}
+.opt.on .rs{color:#B4B1AB}
+.fld{background:#fff;border-radius:16px;min-height:60px;padding:9px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.fld .fl{font-size:13px;line-height:17px;font-weight:400;color:#6E6B66;letter-spacing:0;text-transform:none}
+.fld .fv{font-size:17px;line-height:23px;font-weight:500;color:#21201F}
+.fld .ph{font-size:17px;line-height:23px;font-weight:400;color:#8E8B85}
+.fld.focus{background:#fff;box-shadow:inset 0 0 0 2px #21201F}
+.fld.err{background:#FFF5F4;box-shadow:inset 0 0 0 2px #E5352B}
+.fld.est{background:#FFF9EE;box-shadow:inset 0 0 0 2px #F3CF8F}
+.numf{display:flex;align-items:center;gap:8px}
+.numf .nval{flex:1;font-size:28px;line-height:32px;font-weight:600;font-variant-numeric:tabular-nums}
+.numf .nu{font-size:14px;color:#6E6B66}
+.pm{width:40px;height:40px;border-radius:12px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#21201F;flex:none}
+.search{height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:10px;padding:0 16px;color:#8E8B85;font-size:16px;flex:none}
+.ban{border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex:none}
+.ban .bt{font-size:16px;line-height:21px;font-weight:600}
+.ban .bd{font-size:14px;line-height:19px;font-weight:400}
+.ban.ok{background:#E6F1EA;color:#1F4A2F}.ban.est{background:#FFF0D4;color:#6E3C00}.ban.info{background:#E6EEFF;color:#1A3F99}.ban.err{background:#FFE7E4;color:#8A1D16}.ban.n{background:#fff;color:#21201F}
+.ban .ba{margin-left:auto;align-self:center;font-size:15px;font-weight:600;color:inherit;min-height:44px;display:flex;align-items:center;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag.est{background:#FFF0D4;color:#8A4B00}.tag.info{background:#E6EEFF;color:#1F4FBF}.tag.ok{background:#E6F1EA;color:#275C3A}.tag.n{background:#F2F1EE;color:#55524D}.tag.err{background:#FFE7E4;color:#A1221A}
+.nav{flex:none;height:84px;background:#fff;border-radius:24px 24px 0 0;display:flex;align-items:flex-start;justify-content:space-around;padding:8px 4px 0;box-sizing:border-box}
+.nv{width:70px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;line-height:15px;font-weight:500;color:#8E8B85}
+.nv:hover{color:#21201F}
+.nv .ni{width:52px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.nv.on{color:#21201F}
+.nv.on .ni{background:#E6F1EA;color:#275C3A}
+.plus{width:52px;height:44px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.plus:hover{color:#fff;background:#2F6B44}
+.thumb{width:56px;height:56px;flex:none;border-radius:16px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.av{width:44px;height:44px;flex:none;border-radius:50%;background:#EDECE9;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#21201F}
+.tile{width:44px;height:44px;flex:none;border-radius:14px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;color:#21201F}
+.ic24{width:24px;height:24px;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(33,32,31,.42);z-index:5}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:6;background:#F2F1EE;border-radius:28px 28px 0 0;padding:0 12px 30px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 24px rgba(33,32,31,.10)}
+.bs.white{background:#fff}
+.hdl{height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.hdl i{width:40px;height:5px;border-radius:3px;background:#D6D4CF;display:block}
+.toast{position:absolute;left:12px;right:12px;z-index:7;min-height:56px;border-radius:18px;background:#21201F;color:#fff;display:flex;align-items:center;gap:12px;padding:0 8px 0 18px;box-sizing:border-box;font-size:15px;font-weight:400}
+.toast .ta{margin-left:auto;min-height:44px;padding:0 12px;display:flex;align-items:center;font-weight:600;color:#8FD3A6}
+.lift{box-shadow:0 4px 16px rgba(33,32,31,.12)}
+.tog{width:51px;height:31px;border-radius:16px;background:#E1DFDB;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.tog.on{background:#387D50}.tog.on::after{left:22px}
+.hair{height:1px;background:#F0EFEC;flex:none}
+.big-n{font-size:28px;line-height:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;box-sizing:border-box;flex:none}
+.wood{background:repeating-linear-gradient(90deg,#E6D3B1 0 7px,#DCC59F 7px 9px)}
+.carc{border:3px solid #21201F;box-sizing:border-box;background:#21201F}
+/* inside white containers controls go gray */
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.ban.n,.dlg) :is(.soft,.chip:not(.on),.opt:not(.on),.fld:not(.focus):not(.err):not(.est),.search,.ib:not(.keep)){background:#F2F1EE}
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.dlg) .seg{background:#EDECE9}
+/* motion v3: press + mount */
+.cta,.soft,.chip,.ib,.opt,.sg,.pm,.txt,.plus,.nv,.tile,a.row,button.row,a.sheet,.svc,.ans,.key,.qv,.tl,.vb,.dimb{transition:transform .12s cubic-bezier(.2,0,0,1),filter .12s,background-color .2s,color .2s,box-shadow .2s}
+.cta:active,.soft:active,.chip:active,.ib:active,.opt:active,.pm:active,.plus:active,.svc:active,.ans:active,.key:active,.qv:active,.tl:active,.vb:active,.dimb:active,a.sheet:active{transform:scale(.97);filter:brightness(.94)}
+a.row:active,button.row:active{background-color:#F7F7F5}
+.txt:active,.nv:active{opacity:.6}
+@keyframes v3up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes v3fin{from{opacity:0}to{opacity:1}}
+@keyframes v3tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3dlg{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3spin{to{transform:rotate(360deg)}}
+.scrim{animation:v3fin .2s ease-out both}
+.bs{animation:v3up .32s cubic-bezier(.32,.72,0,1) both}
+.toast{animation:v3tin .2s cubic-bezier(.2,0,0,1) both}
+.dlg{animation:v3dlg .2s cubic-bezier(.2,0,0,1) both}
+.spin{animation:v3spin .8s linear infinite}
+.chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*/V3*/
+
+.ttl{font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:0 8px;flex:none}
+.sh{font-size:19px;line-height:24px;font-weight:700;letter-spacing:-.015em;padding:4px 8px 0;flex:none;color:#21201F}
+.sum{font-weight:500;color:#6E6B66}
+.hg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hc{background:#fff;border-radius:20px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:stretch;gap:6px;text-align:left}
+.hc .pic{height:62px;border-radius:14px;background:#F4EBDD;position:relative;overflow:hidden;display:block}
+.hc .pic .door{position:absolute;left:14px;right:14px;top:8px;bottom:0;background:repeating-linear-gradient(90deg,#E6D3B1 0 7px,#DCC59F 7px 9px);border:2px solid #21201F;border-bottom:0;border-radius:3px 3px 0 0;box-sizing:border-box}
+.hc .pic .h{position:absolute;display:block;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.hc .nm{font-size:14px;line-height:18px;font-weight:600;color:#21201F;padding:0 2px;white-space:nowrap}
+.hc .dl{font-size:13px;line-height:16px;color:#6E6B66;padding:0 2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hc.on{background:#21201F}.hc.on .nm{color:#fff}.hc.on .dl{color:#B4B1AB}
+.fin{display:flex;gap:10px;background:#fff;border-radius:22px;padding:12px 12px 10px;justify-content:space-between}
+.fi{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
+.fi i{width:38px;height:38px;border-radius:50%;display:block;box-shadow:inset 0 -6px 10px rgba(0,0,0,.18),inset 0 4px 6px rgba(255,255,255,.45)}
+.fi.on i{box-shadow:0 0 0 3px #fff,0 0 0 5px #21201F,inset 0 -6px 10px rgba(0,0,0,.18)}
+.fi span{font-size:13px;line-height:16px;color:#6E6B66;white-space:nowrap}
+.fi.on span{color:#21201F;font-weight:600}
+.fi.off{opacity:.35}
+</style>
+</helmet>
+<div class="app">
+<div class="hdr"><a class="ib" href="Editor.dc.html" aria-label="Назад к модели"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a></div>
+<div class="body" style="gap:8px;padding-top:4px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding-right:8px"><div class="ttl">Фурнитура</div><div class="num" style="font-size:18px;line-height:24px;font-weight:700">{{total}} <span class="sum">сум</span></div></div>
+<div class="seg"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="2"><button class="sg {{t.on}}" onClick="{{t.pick}}">{{t.t}}</button></sc-for></div>
+
+<sc-if value="{{isH}}" hint-placeholder-val="{{ true }}">
+<div class="sh" style="padding-top:4px">Вид ручки</div>
+<div class="cap" style="padding:0 8px;margin-top:-4px">На все двери · только совместимые, DXF пересчитается</div>
+<div class="hg">
+<sc-for list="{{alts}}" as="a" hint-placeholder-count="6">
+<button class="hc {{a.on}}" onClick="{{a.pick}}" aria-label="{{a.name}}">
+<span class="pic" aria-hidden="true"><span class="door"></span><span class="h" style="{{a.hs}}"></span></span>
+<span class="nm">{{a.name}}</span><span class="dl">{{a.delta}}</span>
+</button>
+</sc-for>
+</div>
+<div class="sh" style="padding-top:4px">Отделка</div>
+<div class="fin"><sc-for list="{{fins}}" as="f" hint-placeholder-count="5"><button class="fi {{f.on}} {{f.off}}" onClick="{{f.pick}}" aria-label="{{f.t}}"><i style="background:{{f.hex}}"></i><span>{{f.t}}</span></button></sc-for></div>
+<sc-if value="{{warn}}" hint-placeholder-val="{{ false }}"><div class="ban est"><span style="flex:none;margin-top:1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg></span><div class="bd" style="font-size:15px;line-height:20px">Gola нужен паз 20 мм в боковинах. Добавлю сам.</div></div></sc-if>
+<sc-if value="{{noFin}}" hint-placeholder-val="{{ false }}"><div class="cap" style="padding:0 8px">Без ручек: открывание push-to-open, отделка не нужна</div></sc-if>
+</sc-if>
+
+<sc-if value="{{isK}}" hint-placeholder-val="{{ false }}">
+<div class="sheet">
+<div class="row" style="min-height:60px;padding:8px 20px"><span class="tx"><span class="rt" style="display:block">Петли 110°, доводчик</span><span class="rs">Blum · 12 шт</span></span><span class="rv">384 000</span></div>
+<div class="row" style="min-height:60px;padding:8px 20px"><span class="tx"><span class="rt" style="display:block">Направляющие 500</span><span class="rs">полное выдвижение, 2 пары</span></span><span class="rv">336 000</span></div>
+<div class="row" style="min-height:60px;padding:8px 20px"><span class="tx"><span class="rt" style="display:block">Штанга и держатели</span><span class="rs">хром, 2 шт</span></span><span class="rv">96 000</span></div>
+<div class="row" style="min-height:60px;padding:8px 20px"><span class="tx"><span class="rt" style="display:block">Ножки-рамы, металл</span><span class="rs">партнёр</span></span><span class="st c-blue">под запрос</span></div>
+</div>
+<div class="cap" style="padding:0 8px">Количество петель считается по высоте и весу фасада. Заменить можно на аналог того же класса.</div>
+</sc-if>
+</div>
+<div class="foot">
+<a class="cta {{ctaCls}}" href="Editor.dc.html">{{cta}}<sc-if value="{{hasDelta}}" hint-placeholder-val="{{ false }}"><span class="v">{{delta}}</span></sc-if></a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p){ super(p); this.state = { sel: 5, fin: 1, tab: 0 }; }
+renderVals() {
+const st = this.state, s = st.sel;
+const F = [['Сталь', 'linear-gradient(135deg,#D9DBDC,#9EA2A5)', 0], ['Чёрный', 'linear-gradient(135deg,#3A3B3D,#141516)', 0], ['Хром', 'linear-gradient(135deg,#F4F6F7,#AEB4B8 55%,#E3E6E8)', 12000], ['Латунь', 'linear-gradient(135deg,#E3C77D,#A8823A)', 38000], ['Золото', 'linear-gradient(135deg,#F2D77E,#C09232)', 54000]];
+const V = (w, h, x, y) => 'left:' + x + '%;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px;border-radius:3px';
+const xs = [
+{ name: 'Скоба 128', d: -96000, hs: V(5, 30, 68, 18) },
+{ name: 'Скоба 160', d: -72000, hs: V(5, 38, 68, 14) },
+{ name: 'Скоба 192', d: -48000, hs: V(5, 44, 68, 11) },
+{ name: 'Кнопка', d: 38000, hs: V(10, 10, 70, 30) + ';border-radius:50%' },
+{ name: 'Gola', d: 412000, hs: 'left:14px;right:14px;top:8px;height:6px;border-radius:0;background:#21201F' },
+{ name: 'Без ручек', d: 0, hs: 'display:none' }
+];
+const f = (n) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toLocaleString('ru-RU');
+const noFin = s === 5, fi = noFin ? 0 : st.fin;
+const delta = xs[s].d + (noFin ? 0 : F[fi][2] * 6);
+const alts = xs.map((x, i) => ({ name: x.name, hs: x.hs + (i === 4 ? '' : ';background:' + F[noFin ? 0 : st.fin][1]), on: i === s ? 'on' : '', delta: i === 5 ? 'сейчас · 0' : f(x.d), pick: () => this.setState({ sel: i }) }));
+const base = 2148000;
+const changed = s !== 5;
+return {
+total: (base + (changed ? delta : 0)).toLocaleString('ru-RU'),
+finHex: '#21201F',
+tabs: ['Ручки', 'Петли и направляющие'].map((t, i) => ({ t, on: i === st.tab ? 'on' : '', pick: () => this.setState({ tab: i }) })),
+isH: st.tab === 0, isK: st.tab === 1,
+alts, noFin,
+fins: F.map((x, i) => ({ t: x[0], hex: x[1], on: !noFin && i === st.fin ? 'on' : '', off: noFin ? 'off' : '', pick: () => this.setState({ fin: i }) })),
+curName: xs[s].name, warn: s === 4, hasDelta: changed, delta: f(delta), ctaCls: changed ? 'val' : '',
+cta: changed ? xs[s].name + ' · ' + (noFin ? '' : F[st.fin][0].toLowerCase()) : 'Готово'
+};
+}
+}
+</script>
+</body>
+</html>

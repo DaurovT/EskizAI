@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.paths.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2022",
+    "lib": ["es2022", "dom"],
+    "types": ["node"],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "outDir": "../.e2e-build",
+    "rootDir": ".."
+  },
+  "files": ["e2e.ts"]
+}

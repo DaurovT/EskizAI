@@ -1,0 +1,84 @@
+/* Стили админки. Всё внутри .adm — страница ссылки клиента не затрагивается. */
+.adm {
+  --a-bg: #f4f5f7;
+  --a-surface: #fff;
+  --a-line: #e1e4e8;
+  --a-text: #1d1f23;
+  --a-muted: #6a717d;
+  --a-accent: #1f6f5c;
+  --a-accent-soft: #e3f0ec;
+  --a-danger: #b42318;
+  --a-danger-soft: #fdecea;
+  --a-warn: #8a5a00;
+  --a-warn-soft: #fbf1dc;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  background: var(--a-bg);
+  color: var(--a-text);
+  font-size: 14px;
+}
+.adm a { color: var(--a-accent); text-decoration: none; }
+.adm a:hover { text-decoration: underline; }
+.adm-nav { background: #1d2a26; color: #e8efec; padding: 16px 0; position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
+.adm-nav .brand { font-weight: 700; padding: 0 18px 16px; font-size: 16px; }
+.adm-nav a { display: block; color: #cfdcd7; padding: 8px 18px; }
+.adm-nav a:hover { background: rgba(255,255,255,.06); text-decoration: none; }
+.adm-nav a.active { background: rgba(255,255,255,.12); color: #fff; font-weight: 600; }
+.adm-nav .sub { padding-left: 32px; font-size: 13px; }
+.adm-nav .logout { margin: 16px 18px 0; background: none; border: 1px solid #4b5c56; color: #cfdcd7; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.adm-main { padding: 20px 28px 48px; min-width: 0; }
+.adm h1 { font-size: 22px; margin: 0 0 16px; }
+.adm h2 { font-size: 16px; margin: 0 0 10px; }
+.adm h3 { font-size: 14px; margin: 12px 0 6px; }
+.adm .muted { color: var(--a-muted); }
+.adm .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.adm .grid2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+.adm .box { background: var(--a-surface); border: 1px solid var(--a-line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; min-width: 0; }
+.adm .kpi { font-size: 24px; font-weight: 700; }
+.adm .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+.adm .kv dt { color: var(--a-muted); }
+.adm .kv dd { margin: 0; }
+.adm table { width: 100%; border-collapse: collapse; background: var(--a-surface); }
+.adm th, .adm td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--a-line); vertical-align: top; }
+.adm th { font-weight: 600; color: var(--a-muted); font-size: 12px; white-space: nowrap; }
+.adm td.num, .adm th.num { text-align: right; white-space: nowrap; }
+.adm tr.clickable { cursor: pointer; }
+.adm tr.clickable:hover td { background: #f8faf9; }
+.adm .scroll { overflow-x: auto; }
+.adm .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.adm input, .adm select, .adm textarea { font: inherit; padding: 6px 8px; border: 1px solid var(--a-line); border-radius: 6px; background: #fff; color: inherit; }
+.adm input[type='checkbox'] { padding: 0; }
+.adm button.b { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--a-line); background: #fff; cursor: pointer; }
+.adm button.b:hover { background: #f3f5f4; }
+.adm button.b.primary { background: var(--a-accent); color: #fff; border-color: var(--a-accent); }
+.adm button.b.danger { color: var(--a-danger); border-color: #f0c2bd; }
+.adm button.b:disabled { opacity: .5; cursor: default; }
+.adm .msg { padding: 8px 12px; border-radius: 8px; margin: 8px 0; }
+.adm .msg.ok { background: var(--a-accent-soft); color: #134a3d; }
+.adm .msg.error { background: var(--a-danger-soft); color: var(--a-danger); }
+.adm .msg.warn { background: var(--a-warn-soft); color: var(--a-warn); }
+.adm .tag { display: inline-block; padding: 1px 8px; border-radius: 10px; background: #eef0f2; font-size: 12px; white-space: nowrap; }
+.adm .tag.green { background: var(--a-accent-soft); color: #134a3d; }
+.adm .tag.red { background: var(--a-danger-soft); color: var(--a-danger); }
+.adm .tag.yellow { background: var(--a-warn-soft); color: var(--a-warn); }
+.adm .viewer3d { position: relative; height: 420px; background: #eceae6; border-radius: 10px; overflow: hidden; }
+.adm .viewer3d .ctl { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 6px; }
+.adm pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: #f6f7f8; padding: 8px; border-radius: 6px; max-height: 320px; overflow: auto; }
+.adm .chat { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
+.adm .chat .m { padding: 6px 10px; border-radius: 8px; max-width: 85%; }
+.adm .chat .m.master { align-self: flex-end; background: var(--a-accent-soft); }
+.adm .chat .m.ai { align-self: flex-start; background: #f0f1f3; }
+.adm .chat .m.undone { opacity: .5; text-decoration: line-through; }
+.adm .pager { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.adm-login { min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: #f4f5f7; }
+.adm-login form { background: #fff; padding: 28px; border-radius: 12px; border: 1px solid #e1e4e8; width: 340px; display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 800px) {
+  .adm { grid-template-columns: 1fr; }
+  .adm-nav { position: static; height: auto; display: flex; flex-wrap: wrap; padding: 8px; }
+  .adm-nav .brand { width: 100%; padding: 4px 10px 8px; }
+  .adm-nav a { padding: 6px 10px; }
+  .adm-nav .sub { padding-left: 10px; }
+  .adm-main { padding: 16px; }
+  .adm .grid2 { grid-template-columns: 1fr; }
+}

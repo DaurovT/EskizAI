@@ -1,0 +1,962 @@
+{
+  "ok": true,
+  "module_versions": {
+    "drawer": "0.3.0",
+    "kitchen": "0.3.0",
+    "shelf": "0.2.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1,
+        25,
+        33,
+        40
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 557.0,
+      "cut_length": 720.0,
+      "cut_width": 555.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2,
+        26,
+        34,
+        41
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 557.0,
+      "cut_length": 720.0,
+      "cut_width": 555.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 368.0,
+      "width": 557.0,
+      "cut_length": 368.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 368.0,
+      "width": 100.0,
+      "cut_length": 368.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 368.0,
+      "width": 100.0,
+      "cut_length": 368.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6,
+        55
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 396.0,
+      "width": 716.0,
+      "cut_length": 396.0,
+      "cut_width": 716.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7,
+        8,
+        12,
+        13,
+        17,
+        18
+      ],
+      "name": "Боковина ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 500.0,
+      "width": 189.3,
+      "cut_length": 500.0,
+      "cut_width": 188.9,
+      "qty": 6,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        9,
+        10,
+        14,
+        15,
+        19,
+        20
+      ],
+      "name": "Стенка ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 310.0,
+      "width": 189.3,
+      "cut_length": 310.0,
+      "cut_width": 188.9,
+      "qty": 6,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        11,
+        16,
+        21
+      ],
+      "name": "Дно ящика",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 342.0,
+      "width": 500.0,
+      "cut_length": 342.0,
+      "cut_width": 500.0,
+      "qty": 3,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        22,
+        23,
+        24
+      ],
+      "name": "Фасад ящика",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 398.0,
+      "width": 238.0,
+      "cut_length": 394.0,
+      "cut_width": 234.0,
+      "qty": 3,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        27
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 557.0,
+      "cut_length": 568.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        28
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 100.0,
+      "cut_length": 568.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        29
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 100.0,
+      "cut_length": 568.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        30,
+        62
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 596.0,
+      "width": 716.0,
+      "cut_length": 596.0,
+      "cut_width": 716.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        31
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 566.0,
+      "width": 537.0,
+      "cut_length": 566.0,
+      "cut_width": 535.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        32,
+        64
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 718.0,
+      "width": 598.0,
+      "cut_length": 714.0,
+      "cut_width": 594.0,
+      "qty": 2,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        35
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 557.0,
+      "cut_length": 768.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        36
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 100.0,
+      "cut_length": 768.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        37
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 100.0,
+      "cut_length": 768.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        38,
+        39,
+        57,
+        77,
+        78
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 718.0,
+      "width": 398.0,
+      "cut_length": 714.0,
+      "cut_width": 394.0,
+      "qty": 5,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        42
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 557.0,
+      "cut_length": 418.0,
+      "cut_width": 555.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        43
+      ],
+      "name": "Царга передняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 100.0,
+      "cut_length": 418.0,
+      "cut_width": 99.6,
+      "qty": 1,
+      "edges": {
+        "Д1": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        44
+      ],
+      "name": "Царга задняя",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 100.0,
+      "cut_length": 418.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        45,
+        83
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 446.0,
+      "width": 716.0,
+      "cut_length": 446.0,
+      "cut_width": 716.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        46
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 416.0,
+      "width": 537.0,
+      "cut_length": 416.0,
+      "cut_width": 535.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        47
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 718.0,
+      "width": 448.0,
+      "cut_length": 714.0,
+      "cut_width": 444.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        48
+      ],
+      "name": "Цоколь кухни 1",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2400.0,
+      "width": 100.0,
+      "cut_length": 2400.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        49
+      ],
+      "name": "Цоколь кухни 2",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 450.0,
+      "width": 100.0,
+      "cut_length": 450.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        51,
+        58,
+        71,
+        79
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 297.0,
+      "cut_length": 719.2,
+      "cut_width": 295.0,
+      "qty": 4,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        52,
+        59,
+        72,
+        80
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 720.0,
+      "width": 297.0,
+      "cut_length": 719.2,
+      "cut_width": 295.0,
+      "qty": 4,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        53
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 368.0,
+      "width": 297.0,
+      "cut_length": 368.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        54
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 368.0,
+      "width": 297.0,
+      "cut_length": 368.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        56
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 366.0,
+      "width": 277.0,
+      "cut_length": 366.0,
+      "cut_width": 275.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        60,
+        67
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 297.0,
+      "cut_length": 568.0,
+      "cut_width": 295.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        61,
+        68
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 297.0,
+      "cut_length": 568.0,
+      "cut_width": 295.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        63
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 566.0,
+      "width": 277.0,
+      "cut_length": 566.0,
+      "cut_width": 275.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        65
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 360.0,
+      "width": 297.0,
+      "cut_length": 359.2,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        66
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 360.0,
+      "width": 297.0,
+      "cut_length": 359.2,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        69
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 596.0,
+      "width": 356.0,
+      "cut_length": 596.0,
+      "cut_width": 356.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        70
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 358.0,
+      "width": 598.0,
+      "cut_length": 354.0,
+      "cut_width": 594.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        73
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 297.0,
+      "cut_length": 768.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        74
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 768.0,
+      "width": 297.0,
+      "cut_length": 768.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        75
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 796.0,
+      "width": 716.0,
+      "cut_length": 796.0,
+      "cut_width": 716.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        76
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 766.0,
+      "width": 277.0,
+      "cut_length": 766.0,
+      "cut_width": 275.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        81
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 297.0,
+      "cut_length": 418.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        82
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 418.0,
+      "width": 297.0,
+      "cut_length": 418.0,
+      "cut_width": 295.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        84,
+        85
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 416.0,
+      "width": 277.0,
+      "cut_length": 416.0,
+      "cut_width": 275.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 128
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 132
+    },
+    {
+      "name": "Направляющие шариковые 500 мм (пара, стандарт)",
+      "qty": 3
+    },
+    {
+      "name": "Ручка-скоба 128 мм",
+      "qty": 12
+    },
+    {
+      "name": "Саморез 4×16 (крепление фасада)",
+      "qty": 12
+    },
+    {
+      "name": "Ножка кухонная регулируемая",
+      "qty": 16
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 28
+    },
+    {
+      "name": "Петля накладная 110° с доводчиком (стандарт)",
+      "qty": 18
+    },
+    {
+      "name": "Клипса цоколя",
+      "qty": 10
+    },
+    {
+      "name": "Навес мебельный регулируемый",
+      "qty": 10
+    },
+    {
+      "name": "Шина монтажная 2850 мм",
+      "qty": 1
+    }
+  ],
+  "issues": [
+    {
+      "level": "warning",
+      "code": "appliance_niche",
+      "message": "Модуль 3: ниша 600 мм под технику — проверьте размеры по инструкции техники",
+      "path": "base[2]",
+      "fixes": []
+    },
+    {
+      "level": "warning",
+      "code": "door_hits_niche_wall",
+      "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+      "path": "base[4].doors",
+      "fixes": []
+    },
+    {
+      "level": "warning",
+      "code": "door_hits_niche_wall",
+      "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+      "path": "wall[0].doors",
+      "fixes": []
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "ok": true,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "cornice": "0.1.0",
+    "end_unit": "0.1.0",
+    "fronts": "0.5.0",
+    "partition": "0.2.0",
+    "plinth": "0.2.0",
+    "rod": "0.1.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2300.0,
+      "width": 597.0,
+      "cut_length": 2299.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2300.0,
+      "width": 597.0,
+      "cut_length": 2299.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 597.0,
+      "cut_length": 1168.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 597.0,
+      "cut_length": 1168.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 70.0,
+      "cut_length": 1168.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 1168.0,
+      "width": 70.0,
+      "cut_length": 1168.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7
+      ],
+      "name": "Перегородка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2198.0,
+      "width": 597.0,
+      "cut_length": 2198.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 574.0,
+      "width": 577.0,
+      "cut_length": 574.0,
+      "cut_width": 575.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        13,
+        14
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2228.0,
+      "width": 598.0,
+      "cut_length": 2224.0,
+      "cut_width": 594.0,
+      "qty": 2,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        15
+      ],
+      "name": "Карниз",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 1200.0,
+      "width": 100.0,
+      "cut_length": 1196.0,
+      "cut_width": 96.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        16
+      ],
+      "name": "Стенка торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 2300.0,
+      "cut_length": 298.0,
+      "cut_width": 2299.6,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        17
+      ],
+      "name": "Дно торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        18,
+        19,
+        20,
+        21
+      ],
+      "name": "Полка торцевая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 4,
+      "edges": {
+        "Ш1": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        22
+      ],
+      "name": "Крыша торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        23
+      ],
+      "name": "Стенка торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 2300.0,
+      "cut_length": 298.0,
+      "cut_width": 2299.6,
+      "qty": 1,
+      "edges": {
+        "Ш2": "2",
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        24
+      ],
+      "name": "Дно торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        25,
+        26,
+        27,
+        28
+      ],
+      "name": "Полка торцевая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 4,
+      "edges": {
+        "Ш2": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        29
+      ],
+      "name": "Крыша торцевой секции",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 300.0,
+      "width": 581.0,
+      "cut_length": 298.0,
+      "cut_width": 579.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "2",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        30
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 1196.0,
+      "width": 2226.0,
+      "cut_length": 1196.0,
+      "cut_width": 2226.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 112
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 16
+    },
+    {
+      "name": "Штанга овальная 572 мм",
+      "qty": 1
+    },
+    {
+      "name": "Штангодержатель",
+      "qty": 2
+    },
+    {
+      "name": "Петля накладная 110° с доводчиком (стандарт)",
+      "qty": 10
+    },
+    {
+      "name": "Ручка-скоба 128 мм",
+      "qty": 2
+    },
+    {
+      "name": "Уголок мебельный (крепление карниза)",
+      "qty": 3
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 46
+    }
+  ],
+  "issues": []
+}

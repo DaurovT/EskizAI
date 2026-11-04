@@ -1,0 +1,120 @@
+{
+  "type": "kitchen",
+  "installation": "niche",
+  "body": {
+    "material": "ldsp_16_white"
+  },
+  "fronts": {
+    "material": "ldsp_18_oak"
+  },
+  "countertop": {
+    "material": "countertop_38_stone"
+  },
+  "legs_height": 100,
+  "plinth": {
+    "setback": 50,
+    "grilles": [
+      "sink",
+      "oven"
+    ],
+    "floor_allowance": 5
+  },
+  "side_panels": [
+    {
+      "side": "left",
+      "row": "both"
+    }
+  ],
+  "top_filler": {
+    "scribe": 15
+  },
+  "base": [
+    {
+      "kind": "sink",
+      "width": 800
+    },
+    {
+      "kind": "appliance",
+      "width": 600,
+      "dw": true
+    },
+    {
+      "kind": "drawers",
+      "width": 400,
+      "drawers": 3
+    },
+    {
+      "kind": "appliance",
+      "width": 600,
+      "hob": true
+    },
+    {
+      "kind": "doors",
+      "width": 450,
+      "hinge": "right"
+    },
+    {
+      "kind": "fridge",
+      "width": 650,
+      "fridge_height": 1850,
+      "top_panel": true
+    }
+  ],
+  "wall": [
+    {
+      "kind": "doors",
+      "width": 400,
+      "hinge": "right"
+    },
+    {
+      "kind": "doors",
+      "width": 600
+    },
+    {
+      "kind": "doors",
+      "width": 800
+    },
+    {
+      "kind": "hood",
+      "width": 600
+    },
+    {
+      "kind": "doors",
+      "width": 450
+    },
+    {
+      "kind": "gap",
+      "width": 650
+    }
+  ],
+  "wall_height": 900,
+  "site": {
+    "wall_a": 3518,
+    "ceiling": 2700,
+    "utilities": [
+      {
+        "kind": "water",
+        "wall": "a",
+        "from_corner": 420,
+        "height": 500
+      },
+      {
+        "kind": "sewer",
+        "wall": "a",
+        "from_corner": 500,
+        "height": 400
+      },
+      {
+        "kind": "socket",
+        "wall": "a",
+        "from_corner": 1500,
+        "height": 1100
+      }
+    ]
+  },
+  "room_colors": {
+    "wall": "#E9E4DA",
+    "floor": "#8E6F52",
+    "source": "manual"
+  }
+}

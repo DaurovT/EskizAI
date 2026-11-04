@@ -1,0 +1,452 @@
+{
+ "colors": [
+  {
+   "code": "RAL 9003",
+   "system": "RAL",
+   "name_ru": "Сигнальный белый",
+   "name_uz": "Signal oq",
+   "hex": "#F4F4F4"
+  },
+  {
+   "code": "RAL 9010",
+   "system": "RAL",
+   "name_ru": "Чисто-белый",
+   "name_uz": "Toza oq",
+   "hex": "#F1ECE1"
+  },
+  {
+   "code": "RAL 9016",
+   "system": "RAL",
+   "name_ru": "Транспортный белый",
+   "name_uz": "Transport oq",
+   "hex": "#F6F6F6"
+  },
+  {
+   "code": "RAL 9001",
+   "system": "RAL",
+   "name_ru": "Кремово-белый",
+   "name_uz": "Qaymoq oq",
+   "hex": "#E9E0D2"
+  },
+  {
+   "code": "RAL 9002",
+   "system": "RAL",
+   "name_ru": "Серо-белый",
+   "name_uz": "Kulrang oq",
+   "hex": "#D7D5CB"
+  },
+  {
+   "code": "RAL 1013",
+   "system": "RAL",
+   "name_ru": "Жемчужно-белый",
+   "name_uz": "Injuli oq",
+   "hex": "#E3D9C6"
+  },
+  {
+   "code": "RAL 1015",
+   "system": "RAL",
+   "name_ru": "Светлая слоновая кость",
+   "name_uz": "Och fil suyagi",
+   "hex": "#E6D2B5"
+  },
+  {
+   "code": "RAL 1001",
+   "system": "RAL",
+   "name_ru": "Бежевый",
+   "name_uz": "Bej",
+   "hex": "#CDA882"
+  },
+  {
+   "code": "RAL 1019",
+   "system": "RAL",
+   "name_ru": "Серо-бежевый",
+   "name_uz": "Kulrang bej",
+   "hex": "#A48F7A"
+  },
+  {
+   "code": "RAL 7047",
+   "system": "RAL",
+   "name_ru": "Телесерый 4",
+   "name_uz": "Telekulrang 4",
+   "hex": "#D0D0D0"
+  },
+  {
+   "code": "RAL 7035",
+   "system": "RAL",
+   "name_ru": "Светло-серый",
+   "name_uz": "Och kulrang",
+   "hex": "#CBD0CC"
+  },
+  {
+   "code": "RAL 7038",
+   "system": "RAL",
+   "name_ru": "Агатовый серый",
+   "name_uz": "Agat kulrang",
+   "hex": "#B0B4AC"
+  },
+  {
+   "code": "RAL 7040",
+   "system": "RAL",
+   "name_ru": "Серое окно",
+   "name_uz": "Deraza kulrang",
+   "hex": "#9DA3A6"
+  },
+  {
+   "code": "RAL 7037",
+   "system": "RAL",
+   "name_ru": "Пыльно-серый",
+   "name_uz": "Chang kulrang",
+   "hex": "#7D7F7D"
+  },
+  {
+   "code": "RAL 7036",
+   "system": "RAL",
+   "name_ru": "Платиново-серый",
+   "name_uz": "Platina kulrang",
+   "hex": "#7F7679"
+  },
+  {
+   "code": "RAL 7044",
+   "system": "RAL",
+   "name_ru": "Шёлково-серый",
+   "name_uz": "Ipak kulrang",
+   "hex": "#B7B3A8"
+  },
+  {
+   "code": "RAL 7016",
+   "system": "RAL",
+   "name_ru": "Антрацитово-серый",
+   "name_uz": "Antrasit kulrang",
+   "hex": "#383E42"
+  },
+  {
+   "code": "RAL 7021",
+   "system": "RAL",
+   "name_ru": "Чёрно-серый",
+   "name_uz": "Qora kulrang",
+   "hex": "#2F3234"
+  },
+  {
+   "code": "RAL 9005",
+   "system": "RAL",
+   "name_ru": "Янтарно-чёрный",
+   "name_uz": "Qop-qora",
+   "hex": "#0E0E10"
+  },
+  {
+   "code": "RAL 9011",
+   "system": "RAL",
+   "name_ru": "Графитово-чёрный",
+   "name_uz": "Grafit qora",
+   "hex": "#1C1C1C"
+  },
+  {
+   "code": "RAL 8017",
+   "system": "RAL",
+   "name_ru": "Шоколадно-коричневый",
+   "name_uz": "Shokolad jigarrang",
+   "hex": "#45322E"
+  },
+  {
+   "code": "RAL 8014",
+   "system": "RAL",
+   "name_ru": "Сепия коричневый",
+   "name_uz": "Sepiya jigarrang",
+   "hex": "#4A3B2A"
+  },
+  {
+   "code": "RAL 8025",
+   "system": "RAL",
+   "name_ru": "Бледно-коричневый",
+   "name_uz": "Och jigarrang",
+   "hex": "#755847"
+  },
+  {
+   "code": "RAL 8019",
+   "system": "RAL",
+   "name_ru": "Серо-коричневый",
+   "name_uz": "Kulrang jigarrang",
+   "hex": "#403A3A"
+  },
+  {
+   "code": "RAL 6005",
+   "system": "RAL",
+   "name_ru": "Зелёный мох",
+   "name_uz": "Moxli yashil",
+   "hex": "#2F4538"
+  },
+  {
+   "code": "RAL 6009",
+   "system": "RAL",
+   "name_ru": "Пихтово-зелёный",
+   "name_uz": "Qarag'ay yashil",
+   "hex": "#27352A"
+  },
+  {
+   "code": "RAL 6011",
+   "system": "RAL",
+   "name_ru": "Резедово-зелёный",
+   "name_uz": "Rezeda yashil",
+   "hex": "#6C7C59"
+  },
+  {
+   "code": "RAL 6021",
+   "system": "RAL",
+   "name_ru": "Бледно-зелёный",
+   "name_uz": "Och yashil",
+   "hex": "#89AC76"
+  },
+  {
+   "code": "RAL 6019",
+   "system": "RAL",
+   "name_ru": "Пастельно-зелёный",
+   "name_uz": "Pastel yashil",
+   "hex": "#B7D9B1"
+  },
+  {
+   "code": "RAL 5002",
+   "system": "RAL",
+   "name_ru": "Ультрамариново-синий",
+   "name_uz": "Ultramarin ko'k",
+   "hex": "#20214F"
+  },
+  {
+   "code": "RAL 5014",
+   "system": "RAL",
+   "name_ru": "Голубино-синий",
+   "name_uz": "Kaptar ko'k",
+   "hex": "#6C7C98"
+  },
+  {
+   "code": "RAL 5024",
+   "system": "RAL",
+   "name_ru": "Пастельно-синий",
+   "name_uz": "Pastel ko'k",
+   "hex": "#6093AC"
+  },
+  {
+   "code": "RAL 5023",
+   "system": "RAL",
+   "name_ru": "Дальний синий",
+   "name_uz": "Uzoq ko'k",
+   "hex": "#49678D"
+  },
+  {
+   "code": "RAL 3005",
+   "system": "RAL",
+   "name_ru": "Винно-красный",
+   "name_uz": "Vino qizil",
+   "hex": "#5E2129"
+  },
+  {
+   "code": "RAL 3009",
+   "system": "RAL",
+   "name_ru": "Оксид красный",
+   "name_uz": "Oksid qizil",
+   "hex": "#6D342D"
+  },
+  {
+   "code": "RAL 3012",
+   "system": "RAL",
+   "name_ru": "Бежево-красный",
+   "name_uz": "Bej qizil",
+   "hex": "#C1876B"
+  },
+  {
+   "code": "RAL 3014",
+   "system": "RAL",
+   "name_ru": "Старо-розовый",
+   "name_uz": "Eski pushti",
+   "hex": "#CB7375"
+  },
+  {
+   "code": "RAL 1021",
+   "system": "RAL",
+   "name_ru": "Рапсово-жёлтый",
+   "name_uz": "Sariq",
+   "hex": "#EEC900"
+  },
+  {
+   "code": "RAL 2004",
+   "system": "RAL",
+   "name_ru": "Чисто-оранжевый",
+   "name_uz": "Toza to'q sariq",
+   "hex": "#E75B12"
+  },
+  {
+   "code": "RAL 4009",
+   "system": "RAL",
+   "name_ru": "Пастельно-фиолетовый",
+   "name_uz": "Pastel binafsha",
+   "hex": "#A18594"
+  },
+  {
+   "code": "RAL 1014",
+   "system": "RAL",
+   "name_ru": "Слоновая кость",
+   "name_uz": "Fil suyagi",
+   "hex": "#DFCEA1"
+  },
+  {
+   "code": "NCS S 0500-N",
+   "system": "NCS",
+   "name_ru": "Белоснежный",
+   "name_uz": "Qordek oq",
+   "hex": "#F2F2F0"
+  },
+  {
+   "code": "NCS S 0502-Y",
+   "system": "NCS",
+   "name_ru": "Тёплый белый",
+   "name_uz": "Iliq oq",
+   "hex": "#EFEDE4"
+  },
+  {
+   "code": "NCS S 1000-N",
+   "system": "NCS",
+   "name_ru": "Светлый белый серый",
+   "name_uz": "Och oq-kulrang",
+   "hex": "#E3E3E1"
+  },
+  {
+   "code": "NCS S 1500-N",
+   "system": "NCS",
+   "name_ru": "Светло-серый",
+   "name_uz": "Och kulrang",
+   "hex": "#D3D3D1"
+  },
+  {
+   "code": "NCS S 2000-N",
+   "system": "NCS",
+   "name_ru": "Серый",
+   "name_uz": "Kulrang",
+   "hex": "#C2C2C0"
+  },
+  {
+   "code": "NCS S 3000-N",
+   "system": "NCS",
+   "name_ru": "Средне-серый",
+   "name_uz": "O'rta kulrang",
+   "hex": "#A9A9A8"
+  },
+  {
+   "code": "NCS S 4500-N",
+   "system": "NCS",
+   "name_ru": "Тёмно-серый",
+   "name_uz": "To'q kulrang",
+   "hex": "#7A7A79"
+  },
+  {
+   "code": "NCS S 7500-N",
+   "system": "NCS",
+   "name_ru": "Графит",
+   "name_uz": "Grafit",
+   "hex": "#434343"
+  },
+  {
+   "code": "NCS S 9000-N",
+   "system": "NCS",
+   "name_ru": "Почти чёрный",
+   "name_uz": "Deyarli qora",
+   "hex": "#1D1D1D"
+  },
+  {
+   "code": "NCS S 1002-Y",
+   "system": "NCS",
+   "name_ru": "Песочный светлый",
+   "name_uz": "Och qumli",
+   "hex": "#DDD6C4"
+  },
+  {
+   "code": "NCS S 2005-Y20R",
+   "system": "NCS",
+   "name_ru": "Бежевый",
+   "name_uz": "Bej",
+   "hex": "#C4B49C"
+  },
+  {
+   "code": "NCS S 3005-Y50R",
+   "system": "NCS",
+   "name_ru": "Капучино",
+   "name_uz": "Kapuchino",
+   "hex": "#A68F7D"
+  },
+  {
+   "code": "NCS S 1005-Y50R",
+   "system": "NCS",
+   "name_ru": "Пудровый",
+   "name_uz": "Upa rang",
+   "hex": "#E0CFC3"
+  },
+  {
+   "code": "NCS S 2010-Y90R",
+   "system": "NCS",
+   "name_ru": "Пыльная роза",
+   "name_uz": "Chang atirgul",
+   "hex": "#C8A598"
+  },
+  {
+   "code": "NCS S 4020-Y90R",
+   "system": "NCS",
+   "name_ru": "Терракота",
+   "name_uz": "Terrakota",
+   "hex": "#9D6551"
+  },
+  {
+   "code": "NCS S 2005-G80Y",
+   "system": "NCS",
+   "name_ru": "Шалфей светлый",
+   "name_uz": "Och shalfey",
+   "hex": "#BDC1AB"
+  },
+  {
+   "code": "NCS S 4010-G30Y",
+   "system": "NCS",
+   "name_ru": "Оливковый",
+   "name_uz": "Zaytun",
+   "hex": "#7B8061"
+  },
+  {
+   "code": "NCS S 6020-G10Y",
+   "system": "NCS",
+   "name_ru": "Тёмная зелень",
+   "name_uz": "To'q yashil",
+   "hex": "#3E5646"
+  },
+  {
+   "code": "NCS S 3020-B",
+   "system": "NCS",
+   "name_ru": "Серо-голубой",
+   "name_uz": "Kulrang ko'k",
+   "hex": "#6E8F9B"
+  },
+  {
+   "code": "NCS S 5020-R80B",
+   "system": "NCS",
+   "name_ru": "Тёмный синий",
+   "name_uz": "To'q ko'k",
+   "hex": "#4B5278"
+  }
+ ],
+ "gloss": [
+  {
+   "id": "matte",
+   "name_ru": "Матовая",
+   "name_uz": "Mat",
+   "price_item": "paint_matte"
+  },
+  {
+   "id": "satin",
+   "name_ru": "Полуматовая",
+   "name_uz": "Yarim mat",
+   "price_item": "paint_satin"
+  },
+  {
+   "id": "gloss",
+   "name_ru": "Глянцевая",
+   "name_uz": "Yaltiroq",
+   "price_item": "paint_gloss"
+  }
+ ],
+ "note": "HEX — экранное приближение, не эталон RAL/NCS"
+}

@@ -1,0 +1,69 @@
+{
+  "name": "@mebel/viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Общая 3D-сцена: модель деталей (viewer model) → three.js; открывание, «взрыв», выбор и подсветка детали, размеры, пресеты качества, текстуры по направлению волокон, превью, экспорт GLB",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./export": {
+      "types": "./dist/export/index.d.ts",
+      "import": "./dist/export/index.js"
+    },
+    "./thumbnail": {
+      "types": "./dist/thumbnail/index.d.ts",
+      "import": "./dist/thumbnail/index.js"
+    },
+    "./fixtures/*": "./fixtures/*"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "bench": "npm run build && node scripts/bench.mjs"
+  },
+  "peerDependencies": {
+    "@react-three/drei": ">=10.0.0 <11",
+    "@react-three/fiber": ">=9.0.0 <10",
+    "react": ">=19.0.0 <20",
+    "three": ">=0.160.0 <0.180.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/drei": {
+      "optional": true
+    },
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.2",
+    "@react-three/test-renderer": "9.1.1",
+    "@types/node": "20.17.6",
+    "@types/react": "19.3.0",
+    "@types/three": "0.169.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "0.169.0",
+    "typescript": "5.6.3",
+    "vitest": "2.1.9"
+  }
+}

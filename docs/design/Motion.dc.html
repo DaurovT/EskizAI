@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Анимации и переходы</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+/*V3*/
+body{margin:0}
+a{color:#2F6B44;text-decoration:none}a:hover{color:#275C3A}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.app{width:390px;height:844px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;flex-direction:column;position:relative;overflow:hidden;font-size:16px;line-height:22px;font-weight:400;letter-spacing:-.005em}
+.mono,.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.hdr{flex:none;display:flex;align-items:center;gap:10px;padding:12px 12px 4px;min-height:56px}
+.ht{flex:1;min-width:0;font-size:18px;line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:44px;height:44px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#21201F;position:relative}
+.ib.flat{background:transparent}
+.ib .badge{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#E5352B;box-shadow:0 0 0 2px #fff}
+.big{flex:none;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:4px 16px 0}
+.title{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:16px;line-height:22px;color:#6E6B66}
+.cap{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.lbl{font-size:15px;line-height:20px;font-weight:600;color:#6E6B66;letter-spacing:0;text-transform:none}
+.body{flex:1;min-height:0;overflow:hidden;padding:8px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.grow{flex:1}
+.sheet{background:#fff;border-radius:28px;overflow:hidden;flex:none}
+.pad{padding:20px}
+.row{display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 20px;box-sizing:border-box;color:#21201F;position:relative}
+.row+.row{box-shadow:inset 0 1px 0 #F0EFEC}
+.row .tx{flex:1;min-width:0}
+.rt{font-size:16px;line-height:21px;font-weight:500}
+.rs{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.rv{font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;color:#21201F;font-variant-numeric:tabular-nums}
+.chev{flex:none;color:#B4B1AB}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.st{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9px;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap;background:#F2F1EE;color:#55524D}
+.st .dot{display:none}
+.st.c-green{background:#E6F1EA}.st.c-amber{background:#FFF0D4}.st.c-blue{background:#E6EEFF}.st.c-red{background:#FFE7E4}.st.c-gray{background:#F2F1EE}
+.d-green{background:#387D50}.d-amber{background:#E08A00}.d-blue{background:#1F4FBF}.d-red{background:#E5352B}.d-gray{background:#A3A09A}
+.c-green{color:#275C3A}.c-amber{color:#8A4B00}.c-blue{color:#1F4FBF}.c-red{color:#A1221A}.c-gray{color:#55524D}
+.foot{flex:none;display:flex;flex-direction:column;gap:8px;padding:10px 12px 30px}
+.foot.bar{background:#fff;border-radius:28px 28px 0 0;padding:16px 16px 30px}
+.fr{display:flex;gap:8px}
+.cta{height:56px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 20px;font-size:17px;line-height:22px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.fr>.cta,.fr>.soft{flex:1}
+.cta:hover{color:#fff;background:#2F6B44}
+.cta.val{justify-content:space-between;padding:0 8px 0 20px}
+.cta .v{height:40px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.cta.off{background:#E6E5E1;color:#8E8B85}
+.soft{height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;font-size:17px;line-height:22px;font-weight:500;box-sizing:border-box;white-space:nowrap}
+.soft:hover{color:#21201F;background:#F7F7F5}
+.soft.sm,.cta.sm{height:44px;border-radius:14px;font-size:15px;padding:0 14px;flex:none}
+.soft.w{background:#fff}
+.txt{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:500;color:#2F6B44}
+.txt.red{color:#C62A20}
+.seg{display:flex;background:#E6E5E1;border-radius:14px;padding:3px;gap:2px;flex:none}
+.sg{flex:1;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:20px;font-weight:500;color:#21201F;white-space:nowrap;padding:0 8px}
+.sg.on{background:#fff;color:#21201F;box-shadow:0 1px 3px rgba(33,32,31,.10)}
+.chips{display:flex;gap:8px;overflow:hidden;flex:none;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.chip{height:40px;border-radius:20px;background:#fff;color:#21201F;display:inline-flex;align-items:center;gap:6px;padding:0 16px;font-size:15px;font-weight:500;white-space:nowrap;flex:none}
+.chip.on{background:#21201F;color:#fff}
+.chip .n{color:#9C9993}.chip.on .n{color:#A9A6A0}
+.opt{min-height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;gap:12px;padding:10px 16px;box-sizing:border-box;font-size:16px;font-weight:500}
+.opt.on{background:#21201F;color:#fff}
+.opt.on .rs{color:#B4B1AB}
+.fld{background:#fff;border-radius:16px;min-height:60px;padding:9px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.fld .fl{font-size:13px;line-height:17px;font-weight:400;color:#6E6B66;letter-spacing:0;text-transform:none}
+.fld .fv{font-size:17px;line-height:23px;font-weight:500;color:#21201F}
+.fld .ph{font-size:17px;line-height:23px;font-weight:400;color:#8E8B85}
+.fld.focus{background:#fff;box-shadow:inset 0 0 0 2px #21201F}
+.fld.err{background:#FFF5F4;box-shadow:inset 0 0 0 2px #E5352B}
+.fld.est{background:#FFF9EE;box-shadow:inset 0 0 0 2px #F3CF8F}
+.numf{display:flex;align-items:center;gap:8px}
+.numf .nval{flex:1;font-size:28px;line-height:32px;font-weight:600;font-variant-numeric:tabular-nums}
+.numf .nu{font-size:14px;color:#6E6B66}
+.pm{width:40px;height:40px;border-radius:12px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#21201F;flex:none}
+.search{height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:10px;padding:0 16px;color:#8E8B85;font-size:16px;flex:none}
+.ban{border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex:none}
+.ban .bt{font-size:16px;line-height:21px;font-weight:600}
+.ban .bd{font-size:14px;line-height:19px;font-weight:400}
+.ban.ok{background:#E6F1EA;color:#1F4A2F}.ban.est{background:#FFF0D4;color:#6E3C00}.ban.info{background:#E6EEFF;color:#1A3F99}.ban.err{background:#FFE7E4;color:#8A1D16}.ban.n{background:#fff;color:#21201F}
+.ban .ba{margin-left:auto;align-self:center;font-size:15px;font-weight:600;color:inherit;min-height:44px;display:flex;align-items:center;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag.est{background:#FFF0D4;color:#8A4B00}.tag.info{background:#E6EEFF;color:#1F4FBF}.tag.ok{background:#E6F1EA;color:#275C3A}.tag.n{background:#F2F1EE;color:#55524D}.tag.err{background:#FFE7E4;color:#A1221A}
+.nav{flex:none;height:84px;background:#fff;border-radius:24px 24px 0 0;display:flex;align-items:flex-start;justify-content:space-around;padding:8px 4px 0;box-sizing:border-box}
+.nv{width:70px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;line-height:15px;font-weight:500;color:#8E8B85}
+.nv:hover{color:#21201F}
+.nv .ni{width:52px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.nv.on{color:#21201F}
+.nv.on .ni{background:#E6F1EA;color:#275C3A}
+.plus{width:52px;height:44px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.plus:hover{color:#fff;background:#2F6B44}
+.thumb{width:56px;height:56px;flex:none;border-radius:16px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.av{width:44px;height:44px;flex:none;border-radius:50%;background:#EDECE9;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#21201F}
+.tile{width:44px;height:44px;flex:none;border-radius:14px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;color:#21201F}
+.ic24{width:24px;height:24px;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(33,32,31,.42);z-index:5}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:6;background:#F2F1EE;border-radius:28px 28px 0 0;padding:0 12px 30px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 24px rgba(33,32,31,.10)}
+.bs.white{background:#fff}
+.hdl{height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.hdl i{width:40px;height:5px;border-radius:3px;background:#D6D4CF;display:block}
+.toast{position:absolute;left:12px;right:12px;z-index:7;min-height:56px;border-radius:18px;background:#21201F;color:#fff;display:flex;align-items:center;gap:12px;padding:0 8px 0 18px;box-sizing:border-box;font-size:15px;font-weight:400}
+.toast .ta{margin-left:auto;min-height:44px;padding:0 12px;display:flex;align-items:center;font-weight:600;color:#8FD3A6}
+.lift{box-shadow:0 4px 16px rgba(33,32,31,.12)}
+.tog{width:51px;height:31px;border-radius:16px;background:#E1DFDB;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.tog.on{background:#387D50}.tog.on::after{left:22px}
+.hair{height:1px;background:#F0EFEC;flex:none}
+.big-n{font-size:28px;line-height:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;box-sizing:border-box;flex:none}
+.wood{background:repeating-linear-gradient(90deg,#E6D3B1 0 7px,#DCC59F 7px 9px)}
+.carc{border:3px solid #21201F;box-sizing:border-box;background:#21201F}
+/* inside white containers controls go gray */
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.ban.n,.dlg) :is(.soft,.chip:not(.on),.opt:not(.on),.fld:not(.focus):not(.err):not(.est),.search,.ib:not(.keep)){background:#F2F1EE}
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.dlg) .seg{background:#EDECE9}
+/* motion v3: press + mount */
+.cta,.soft,.chip,.ib,.opt,.sg,.pm,.txt,.plus,.nv,.tile,a.row,button.row,a.sheet,.svc,.ans,.key,.qv,.tl,.vb,.dimb{transition:transform .12s cubic-bezier(.2,0,0,1),filter .12s,background-color .2s,color .2s,box-shadow .2s}
+.cta:active,.soft:active,.chip:active,.ib:active,.opt:active,.pm:active,.plus:active,.svc:active,.ans:active,.key:active,.qv:active,.tl:active,.vb:active,.dimb:active,a.sheet:active{transform:scale(.97);filter:brightness(.94)}
+a.row:active,button.row:active{background-color:#F7F7F5}
+.txt:active,.nv:active{opacity:.6}
+@keyframes v3up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes v3fin{from{opacity:0}to{opacity:1}}
+@keyframes v3tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3dlg{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3spin{to{transform:rotate(360deg)}}
+.scrim{animation:v3fin .2s ease-out both}
+.bs{animation:v3up .32s cubic-bezier(.32,.72,0,1) both}
+.toast{animation:v3tin .2s cubic-bezier(.2,0,0,1) both}
+.dlg{animation:v3dlg .2s cubic-bezier(.2,0,0,1) both}
+.spin{animation:v3spin .8s linear infinite}
+.chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*/V3*/
+
+.board{width:1900px;height:1320px;box-sizing:border-box;background:#E9E8E4;font-family:Onest,system-ui,sans-serif;color:#21201F;padding:40px;display:flex;gap:36px}
+.spec{width:560px;flex:none;display:flex;flex-direction:column;gap:14px}
+.pan{background:#fff;border-radius:28px;padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.pt{font-size:18px;line-height:24px;font-weight:700;letter-spacing:-.015em}
+.tk{display:grid;grid-template-columns:118px 64px 1fr;gap:6px 12px;font-size:14px;line-height:19px;align-items:baseline}
+.tk b{font-weight:600}
+.tk .ms{font-variant-numeric:tabular-nums;font-weight:600;color:#275C3A}
+.tk .d{color:#55524D}
+.rl{font-size:14px;line-height:20px;color:#21201F;display:flex;gap:10px}
+.rl i{flex:none;width:6px;height:6px;border-radius:3px;background:#387D50;margin-top:7px;display:block}
+.wh{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px;line-height:18px}
+.wh b{font-weight:600;font-size:14px}
+.wh span{color:#55524D}
+.demos{flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;align-content:start}
+.dm{display:flex;flex-direction:column;gap:8px}
+.dl{font-size:14px;line-height:18px;font-weight:600}
+.dl span{display:block;font-weight:400;color:#6E6B66;font-size:13px}
+.ph{position:relative;height:560px;border-radius:32px;background:#F2F1EE;overflow:hidden;box-shadow:0 0 0 6px #21201F}
+.in{padding:16px;display:flex;flex-direction:column;gap:10px}
+.mt{font-size:20px;line-height:26px;font-weight:700;letter-spacing:-.02em}
+.wood2{background:repeating-linear-gradient(90deg,#E6D3B1 0 6px,#DCC59F 6px 8px)}
+/* press */
+.p{transition:transform .12s cubic-bezier(.2,0,0,1),filter .12s;cursor:pointer;user-select:none}
+.p:active{transform:scale(.97);filter:brightness(.94)}
+/* motion keyframes */
+ @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+ @keyframes down{from{transform:none}to{transform:translateY(100%)}}
+ @keyframes fin{from{opacity:0}to{opacity:1}}
+ @keyframes fout{from{opacity:1}to{opacity:0}}
+ @keyframes pin{from{transform:translateX(100%)}to{transform:none}}
+ @keyframes pout{from{transform:none}to{transform:translateX(100%)}}
+ @keyframes tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+ @keyframes tout{from{transform:none;opacity:1}to{transform:translateY(16px);opacity:0}}
+ @keyframes spin{to{transform:rotate(360deg)}}
+ @keyframes shim{0%{background-position:-240px 0}100%{background-position:240px 0}}
+ @keyframes draw{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
+ @keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:none}}
+ @keyframes shA{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+ @keyframes shB{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+ @keyframes glA{0%{background:#E6D3B1}25%{background:#DCE6FF;box-shadow:inset 0 0 0 3px #1F4FBF}100%{background:#E6D3B1;box-shadow:inset 0 0 0 0 #1F4FBF}}
+ @keyframes glB{0%{background:#E6D3B1}25%{background:#DCE6FF;box-shadow:inset 0 0 0 3px #1F4FBF}100%{background:#E6D3B1;box-shadow:inset 0 0 0 0 #1F4FBF}}
+.a-up{animation:up .32s cubic-bezier(.32,.72,0,1) both}
+.a-down{animation:down .24s cubic-bezier(.4,0,1,1) both}
+.a-fin{animation:fin .2s ease-out both}
+.a-fout{animation:fout .2s ease-in both}
+.a-pin{animation:pin .32s cubic-bezier(.32,.72,0,1) both}
+.a-pout{animation:pout .28s cubic-bezier(.4,0,1,1) both}
+.a-tin{animation:tin .2s cubic-bezier(.2,0,0,1) both}
+.a-tout{animation:tout .16s ease-in both}
+.sp{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;box-sizing:border-box;animation:spin .8s linear infinite;display:inline-block}
+.sk{border-radius:12px;background:linear-gradient(90deg,#ECEBE7 0,#F7F6F3 40%,#ECEBE7 80%);background-size:480px 100%;animation:shim 1.2s linear infinite}
+.shA{animation:shA .3s ease-in-out}.shB{animation:shB .3s ease-in-out}
+.glA{animation:glA .7s ease-out}.glB{animation:glB .7s ease-out}
+.sheetm{position:absolute;z-index:2;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -4px 24px rgba(33,32,31,.10);transition:height .35s cubic-bezier(.32,.72,0,1);overflow:hidden}
+.lay{position:absolute;inset:0;background:#F2F1EE}
+.listl{transition:transform .32s cubic-bezier(.32,.72,0,1),filter .32s}
+.mini-btn{height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:600}
+.g{background:#387D50;color:#fff}.w{background:#fff;color:#21201F}.gr{background:#EDECE9;color:#21201F}
+.rowm{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;background:#fff}
+.rowm+.rowm{box-shadow:inset 0 1px 0 #F0EFEC}
+.rowm:active{background:#F7F7F5}
+ @media (prefers-reduced-motion:reduce){.a-up,.a-pin,.a-tin{animation-name:fin}.a-down,.a-pout,.a-tout{animation-name:fout}.p:active{transform:none}}
+</style>
+</helmet>
+<div class="board">
+<div class="spec">
+<div><div class="cap" style="font-size:14px;font-weight:500">Мебель АИ · движение v3</div><div style="font-size:38px;line-height:44px;font-weight:700;letter-spacing:-.025em;margin-top:4px">Анимации и переходы</div><div class="cap" style="font-size:15px;line-height:21px;margin-top:6px">Правила для разработки. Справа живые примеры, их можно нажимать.</div></div>
+<div class="pan">
+<div class="pt">Длительности и кривые</div>
+<div class="tk">
+<b>Нажатие</b><span class="ms">120 мс</span><span class="d">scale 0.97 и затемнение 6%, отпускание 160 мс</span>
+<b>Элемент</b><span class="ms">200 мс</span><span class="d">появление, вкладки, тосты · ease-out (.2, 0, 0, 1)</span>
+<b>Экран</b><span class="ms">320 мс</span><span class="d">вперёд и назад · (.32, .72, 0, 1)</span>
+<b>Шторка</b><span class="ms">≈350 мс</span><span class="d">пружина: жёсткость 400, затухание 38; за пальцем 1:1</span>
+<b>Цена</b><span class="ms">400 мс</span><span class="d">докрутка к новому значению</span>
+<b>Пересборка</b><span class="ms">700 мс</span><span class="d">подсветка изменённой детали синим</span>
+<b>Уход</b><span class="ms">160–240 мс</span><span class="d">быстрее появления · ease-in (.4, 0, 1, 1)</span>
+</div>
+</div>
+<div class="pan">
+<div class="pt">Правила</div>
+<div class="rl"><i></i><span>Вперёд: новый экран въезжает справа, старый сдвигается на 30% и темнеет. Назад зеркально. Свайп от левого края = назад.</span></div>
+<div class="rl"><i></i><span>Шторка следует за пальцем. При отпускании едет к ближайшему положению, а при быстром свайпе (больше 0,5 px/мс) в сторону свайпа.</span></div>
+<div class="rl"><i></i><span>Меню снизу: фон темнеет до 42% за 200 мс, лист выезжает за 320 мс. Окно подтверждения: прозрачность и масштаб с 0,96 за 200 мс.</span></div>
+<div class="rl"><i></i><span>Ожидание больше 300 мс: скелетон с переливом. В кнопке спиннер вместо текста, ширина кнопки не меняется, повторный тап заблокирован.</span></div>
+<div class="rl"><i></i><span>Тост выезжает снизу за 200 мс и живёт 4 с, с «Отменить» 6 с.</span></div>
+<div class="rl"><i></i><span>Вибрация: лёгкая на переключателях и шагах шторки, «успех» на оплате и заказе, «ошибка» на неверном коде.</span></div>
+<div class="rl"><i></i><span>Не дольше 400 мс, кроме загрузки. При «уменьшить движение» в системе остаётся только смена прозрачности.</span></div>
+<div class="rl"><i></i><span>Не анимируем: цифры в поле при вводе, прокрутку списков, цвета статусов.</span></div>
+</div>
+<div class="pan">
+<div class="pt">Где применяется</div>
+<div class="wh">
+<b>Вперёд и назад</b><span>все переходы из списков: SCR-03 → 27 → 08, заказы, клиенты, настройки</span>
+<b>Шторка</b><span>SCR-08, 08b, 08c, SCR-25, SCR-37</span>
+<b>Меню и окна</b><span>меню SCR-27, «Поделиться» SCR-36, удаление SCR-43</span>
+<b>Загрузка</b><span>SCR-04 «Собрать модель», SCR-05, SCR-29, SCR-12</span>
+<b>Пересборка и цена</b><span>SCR-08, 09, 10, 25, 26, 37</span>
+<b>Тост «Отменить»</b><span>правки в SCR-08, возврат из архива SCR-39</span>
+<b>Успех и ошибка</b><span>SCR-31, 42, WEB-2 · неверный код SCR-01b</span>
+</div>
+</div>
+</div>
+
+<div class="demos">
+
+<div class="dm"><div class="dl">1. Нажатие и загрузка<span>Нажмите кнопку</span></div><div class="ph"><div class="in" style="padding-top:28px">
+<div class="mt">Новый проект</div>
+<div style="display:flex;gap:8px"><span class="p mini-btn w" style="flex:1">Снять фото</span><span class="p mini-btn w" style="flex:1">Галерея</span></div>
+<div style="display:flex;gap:8px"><span class="p chip" style="background:#fff">+ Размеры</span><span class="p chip" style="background:#fff">+ Клиент</span></div>
+<div class="cap">Кнопки сжимаются при нажатии. Главная показывает загрузку и не меняет ширину.</div>
+</div>
+<div style="position:absolute;left:16px;right:16px;bottom:24px"><button class="p mini-btn g" style="width:100%;height:52px;color:#fff" onClick="{{b1Go}}"><sc-if value="{{b1Idle}}" hint-placeholder-val="{{ true }}">Собрать модель</sc-if><sc-if value="{{b1Load}}" hint-placeholder-val="{{ false }}"><span class="sp"></span></sc-if><sc-if value="{{b1Done}}" hint-placeholder-val="{{ false }}"><span class="a-fin" style="display:flex;align-items:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Модель готова</span></sc-if></button></div>
+</div></div>
+
+<div class="dm"><div class="dl">2. Шторка: 3 положения<span>Нажимайте на полоску</span></div><div class="ph" style="background:#ECEBE7;background-image:radial-gradient(#D5D3CE 1px,transparent 1px);background-size:14px 14px">
+<div style="position:absolute;left:0;right:0;top:{{shTop}}px;display:flex;justify-content:center;transition:top .35s cubic-bezier(.32,.72,0,1)"><div class="carc" style="width:{{shW}}px;height:{{shH}}px;border-radius:0 30px 0 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;padding:3px;transition:width .35s cubic-bezier(.32,.72,0,1),height .35s cubic-bezier(.32,.72,0,1)"><i class="wood2"></i><i class="wood2"></i><i class="wood2" style="border-radius:0 26px 0 0"></i></div></div>
+<div class="sheetm" style="height:{{shPx}}px">
+<button class="hdl" style="width:100%;height:28px" onClick="{{shGo}}" aria-label="Положение шторки"><i></i></button>
+<div style="padding:0 14px;display:flex;flex-direction:column;gap:8px">
+<div style="font-size:14px;font-weight:600">{{shName}}</div>
+<div style="height:40px;border-radius:20px;background:#F2F1EE;display:flex;align-items:center;padding:0 14px;font-size:14px;color:#8E8B85">Скажите, что поменять</div>
+<div style="font-size:14px;line-height:19px;color:#6E6B66">Левая секция шире · +286 000</div>
+<div style="font-size:14px;line-height:19px;color:#6E6B66">Ручек нет. Как открываем?</div>
+<div style="font-size:14px;line-height:19px;color:#6E6B66">14:31 Собрано по фото</div>
+<div style="font-size:14px;line-height:19px;color:#6E6B66">14:33 Фасады «Дуб Сонома»</div>
+</div>
+</div>
+</div></div>
+
+<div class="dm"><div class="dl">3. Переход между экранами<span>Нажмите на проект, потом «назад»</span></div><div class="ph">
+<div class="lay listl" style="transform:{{lsT}};filter:{{lsF}}"><div class="in" style="padding-top:28px"><div class="mt">Проекты</div></div>
+<div style="margin:0 12px;border-radius:22px;overflow:hidden">
+<div class="rowm p" onClick="{{goDet}}" style="transition:background .12s"><span class="thumb" style="width:44px;height:44px;border-radius:12px"></span><div style="flex:1"><div class="rt">Шкаф-купе</div><div class="rs">Азиз Каримов</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+<div class="rowm p" onClick="{{goDet}}"><span class="thumb" style="width:44px;height:44px;border-radius:12px"></span><div style="flex:1"><div class="rt">Кухня 2,8 м</div><div class="rs">Дилноза Р.</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+</div></div>
+<sc-if value="{{detOn}}" hint-placeholder-val="{{ false }}"><div class="lay {{detCls}}" style="box-shadow:-8px 0 24px rgba(33,32,31,.12)"><div class="in" style="padding-top:20px">
+<button class="p ib" onClick="{{goBack}}" aria-label="Назад"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+<div class="mt">Шкаф для Азиза</div>
+<div class="sheet" style="height:130px;background:#F4EBDD;display:flex;align-items:center;justify-content:center"><div class="carc" style="width:64px;height:76px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;padding:2px;border-radius:0 22px 0 0"><i class="wood2"></i><i class="wood2"></i><i class="wood2" style="border-radius:0 19px 0 0"></i></div></div>
+<div style="font-size:20px;font-weight:700">9,2–10,5 млн <span style="font-weight:400;color:#6E6B66;font-size:16px">сум</span></div>
+</div></div></sc-if>
+</div></div>
+
+<div class="dm"><div class="dl">4. Меню снизу<span>Нажмите «Ещё», закройте по фону</span></div><div class="ph"><div class="in" style="padding-top:20px">
+<div style="display:flex;justify-content:flex-end"><button class="p ib" onClick="{{mnOpen}}" aria-label="Ещё"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg></button></div>
+<div class="mt">Проект</div><div class="sk" style="height:90px;animation:none;background:#fff;border-radius:20px"></div><div style="height:140px;background:#fff;border-radius:20px"></div>
+</div>
+<sc-if value="{{mnOn}}" hint-placeholder-val="{{ false }}">
+<div class="scrim {{mnScr}}" onClick="{{mnClose}}" style="position:absolute"></div>
+<div class="bs {{mnSh}}" style="position:absolute;padding:0 10px 20px">
+<div class="hdl"><i></i></div>
+<div class="sheet"><div class="rowm p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V6a1 1 0 0 1 1-1h9"/></svg>Дублировать</div><div class="rowm p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"/><path d="M5.5 9v9.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9M10 13h4"/></svg>В архив</div></div>
+<div class="sheet"><div class="rowm p" style="color:#C62A20"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg>Удалить</div></div>
+<button class="p soft" style="height:48px" onClick="{{mnClose}}">Закрыть</button>
+</div>
+</sc-if>
+</div></div>
+
+<div class="dm"><div class="dl">5. Пересборка и цена<span>Нажмите «+100 мм»</span></div><div class="ph" style="background:#ECEBE7;background-image:radial-gradient(#D5D3CE 1px,transparent 1px);background-size:14px 14px">
+<div style="position:absolute;left:0;right:0;top:70px;display:flex;justify-content:center"><div class="carc" style="width:{{rbW}}px;height:170px;border-radius:0 40px 0 0;display:grid;grid-template-columns:{{rbCols}};gap:3px;padding:3px;transition:width .4s cubic-bezier(.32,.72,0,1)"><i class="wood2 {{rbG}}"></i><i class="wood2"></i><i class="wood2" style="border-radius:0 36px 0 0"></i></div></div>
+<div style="position:absolute;left:0;right:0;top:30px;display:flex;justify-content:center"><span style="height:30px;padding:0 12px;border-radius:15px;background:#fff;color:#1F4FBF;font-size:14px;font-weight:600;display:flex;align-items:center;font-variant-numeric:tabular-nums">{{rbMm}} мм</span></div>
+<div class="sheetm" style="height:200px;padding:16px 14px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span class="cap">до замера</span><span style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em">{{rbPrice}} <span style="font-size:15px;font-weight:400;color:#6E6B66">сум</span></span></div>
+<div style="display:flex;gap:8px"><button class="p mini-btn gr" style="flex:1" onClick="{{rbMinus}}">−100 мм</button><button class="p mini-btn g" style="flex:1;color:#fff" onClick="{{rbPlus}}">+100 мм</button></div>
+<div class="cap" style="font-size:13px">Изменённая секция мигает синим, цена докручивается за 400 мс.</div>
+</div>
+</div></div>
+
+<div class="dm"><div class="dl">6. Тост «Отменить»<span>Удалите ящик и отмените</span></div><div class="ph"><div class="in" style="padding-top:28px">
+<div class="mt">Секция 2</div>
+<div style="background:#fff;border-radius:20px;overflow:hidden">
+<div class="rowm"><span class="tile" style="width:36px;height:36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg></span><span style="flex:1" class="rt">Полка</span></div>
+<sc-if value="{{tsHas}}" hint-placeholder-val="{{ true }}"><div class="rowm a-fin"><span class="tile" style="width:36px;height:36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="4" rx="1"/><path d="M5.5 9v9.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9M10 13h4"/></svg></span><span style="flex:1" class="rt">Ящик 150</span><button class="p" onClick="{{tsDel}}" style="color:#C62A20;font-size:14px;font-weight:600;min-height:40px">Удалить</button></div></sc-if>
+<div class="rowm"><span class="tile" style="width:36px;height:36px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/></svg></span><span style="flex:1" class="rt">Полка</span></div>
+</div>
+</div>
+<sc-if value="{{tsOn}}" hint-placeholder-val="{{ false }}"><div class="toast {{tsCls}}" style="bottom:24px;left:12px;right:12px;font-size:14px">Ящик удалён<button class="ta p" onClick="{{tsUndo}}">Отменить</button></div></sc-if>
+</div></div>
+
+<div class="dm"><div class="dl">7. Скелетон загрузки<span>Нажмите «Разобрать фото»</span></div><div class="ph"><div class="in" style="padding-top:28px">
+<div class="mt">Разбор фото</div>
+<sc-if value="{{skIdle}}" hint-placeholder-val="{{ true }}"><div style="height:160px;border-radius:20px;background:#E7DFD2"></div><button class="p mini-btn g" style="color:#fff" onClick="{{skGo}}">Разобрать фото</button></sc-if>
+<sc-if value="{{skLoad}}" hint-placeholder-val="{{ false }}"><div class="sk" style="height:160px;border-radius:20px"></div><div class="sk" style="height:18px;width:60%"></div><div class="sk" style="height:48px"></div><div class="sk" style="height:48px"></div><div class="sk" style="height:48px"></div></sc-if>
+<sc-if value="{{skDone}}" hint-placeholder-val="{{ false }}"><div class="a-fin" style="display:flex;flex-direction:column;gap:10px"><div style="height:160px;border-radius:20px;background:#E7DFD2;position:relative"><span class="st c-green" style="position:absolute;left:10px;top:10px">Корпус · 3 секции</span><span class="st c-amber" style="position:absolute;right:10px;bottom:10px">Ножки металл?</span></div><div style="font-size:16px;font-weight:600">Что я нашёл</div><div style="background:#fff;border-radius:18px;overflow:hidden"><div class="rowm"><span class="rt">Шкаф распашной</span></div><div class="rowm"><span class="rt">Скругление R300</span></div><div class="rowm"><span class="rt">Фасады МДФ</span></div></div><button class="p txt" onClick="{{skReset}}">Ещё раз</button></div></sc-if>
+</div></div></div>
+
+<div class="dm"><div class="dl">8. Успех и ошибка<span>Оплатите или введите неверный код</span></div><div class="ph"><div class="in" style="padding-top:28px">
+<div class="mt">Оплата</div>
+<div style="background:#fff;border-radius:20px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:150px;justify-content:center">
+<sc-if value="{{pyIdle}}" hint-placeholder-val="{{ true }}"><div style="font-size:26px;font-weight:700;font-variant-numeric:tabular-nums">125 000 <span style="font-size:16px;font-weight:400;color:#6E6B66">сум</span></div><div class="cap">Пакет 10 проектов</div></sc-if>
+<sc-if value="{{pyOk}}" hint-placeholder-val="{{ false }}"><div style="width:64px;height:64px;border-radius:50%;background:#387D50;display:flex;align-items:center;justify-content:center;animation:pop .4s cubic-bezier(.2,0,0,1) both"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" style="stroke-dasharray:30;animation:draw .4s .15s ease-out both"/></svg></div><div class="a-fin" style="font-size:17px;font-weight:600">Оплачено</div></sc-if>
+</div>
+<button class="p mini-btn g" style="color:#fff" onClick="{{pyGo}}"><sc-if value="{{pyLoad}}" hint-placeholder-val="{{ false }}"><span class="sp"></span></sc-if><sc-if value="{{pyBtn}}" hint-placeholder-val="{{ true }}">{{pyLabel}}</sc-if></button>
+<div style="font-size:16px;font-weight:600;margin-top:6px">Код из SMS</div>
+<div class="{{cdShake}}" style="display:flex;gap:6px">
+<sc-for list="{{cd}}" as="c" hint-placeholder-count="5"><span style="flex:1;height:50px;border-radius:14px;background:{{c.bg}};box-shadow:{{c.sh}};display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:{{c.col}}">{{c.t}}</span></sc-for>
+</div>
+<button class="p mini-btn gr" onClick="{{cdBad}}">Ввести неверный код</button>
+</div></div></div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1900,"height":1320}}'>
+class Component extends DCLogic {
+constructor(p){ super(p); this.state = { b1: 'idle', sh: 1, scr: 'list', mn: 0, rb: 1600, price: 9.2, rbK: 0, ts: 0, tsHas: true, sk: 'idle', py: 'idle', cdK: 0, cdErr: false }; this.tsId = 0; }
+anim(from, to) { const n = 10; for (let i = 1; i <= n; i++) setTimeout(() => { const t = i / n, e = 1 - Math.pow(1 - t, 3); this.setState({ price: from + (to - from) * e }); }, i * 40); }
+renderVals() {
+const s = this.state;
+const shPx = [130, 300, 520][s.sh];
+const fmt = (n) => n.toFixed(1).replace('.', ',') + '–' + (n + 1.3).toFixed(1).replace('.', ',') + ' млн';
+const tsOn = s.ts === 1 || s.ts === 2;
+return {
+b1Idle: s.b1 === 'idle', b1Load: s.b1 === 'load', b1Done: s.b1 === 'done',
+b1Go: () => { if (s.b1 === 'load') return; if (s.b1 === 'done') { this.setState({ b1: 'idle' }); return; } this.setState({ b1: 'load' }); setTimeout(() => this.setState({ b1: 'done' }), 1500); },
+shPx, shTop: [120, 70, 34][s.sh], shW: [170, 120, 70][s.sh], shH: [200, 140, 80][s.sh],
+shName: ['Свёрнуто: модель на весь экран', 'Половина: правка и вопрос', 'Весь экран: история чата'][s.sh],
+shGo: () => this.setState({ sh: (s.sh + 1) % 3 }),
+lsT: s.scr === 'det' ? 'translateX(-30%)' : 'none', lsF: s.scr === 'det' ? 'brightness(.92)' : 'none',
+detOn: s.scr !== 'list', detCls: s.scr === 'out' ? 'a-pout' : 'a-pin',
+goDet: () => this.setState({ scr: 'det' }),
+goBack: () => { this.setState({ scr: 'out' }); setTimeout(() => this.setState({ scr: 'list' }), 280); },
+mnOn: s.mn > 0, mnScr: s.mn === 2 ? 'a-fout' : 'a-fin', mnSh: s.mn === 2 ? 'a-down' : 'a-up',
+mnOpen: () => this.setState({ mn: 1 }),
+mnClose: () => { this.setState({ mn: 2 }); setTimeout(() => this.setState({ mn: 0 }), 240); },
+rbW: Math.round(s.rb / 1600 * 150), rbCols: (s.rb / 1600 * 1.2).toFixed(2) + 'fr 1fr 1fr', rbMm: s.rb, rbG: s.rbK % 2 ? 'glA' : 'glB', rbPrice: fmt(s.price),
+rbPlus: () => { if (s.rb >= 1900) return; const to = s.price + 0.3; this.setState({ rb: s.rb + 100, rbK: s.rbK + 1 }); this.anim(s.price, to); },
+rbMinus: () => { if (s.rb <= 1300) return; const to = s.price - 0.3; this.setState({ rb: s.rb - 100, rbK: s.rbK + 1 }); this.anim(s.price, to); },
+tsHas: s.tsHas, tsOn, tsCls: s.ts === 2 ? 'a-tout' : 'a-tin',
+tsDel: () => { const id = ++this.tsId; this.setState({ tsHas: false, ts: 1 }); setTimeout(() => { if (this.tsId !== id) return; this.setState({ ts: 2 }); setTimeout(() => { if (this.tsId === id) this.setState({ ts: 0 }); }, 170); }, 6000); },
+tsUndo: () => { this.tsId++; this.setState({ tsHas: true, ts: 2 }); setTimeout(() => this.setState({ ts: 0 }), 170); },
+skIdle: s.sk === 'idle', skLoad: s.sk === 'load', skDone: s.sk === 'done',
+skGo: () => { this.setState({ sk: 'load' }); setTimeout(() => this.setState({ sk: 'done' }), 1600); },
+skReset: () => this.setState({ sk: 'idle' }),
+pyIdle: s.py !== 'ok', pyOk: s.py === 'ok', pyLoad: s.py === 'load', pyBtn: s.py !== 'load', pyLabel: s.py === 'ok' ? 'Сбросить' : 'Оплатить · 125 000',
+pyGo: () => { if (s.py === 'load') return; if (s.py === 'ok') { this.setState({ py: 'idle' }); return; } this.setState({ py: 'load' }); setTimeout(() => this.setState({ py: 'ok' }), 1200); },
+cd: ['4', '8', '1', '7', '2'].map(t => ({ t, bg: s.cdErr ? '#FFF5F4' : '#fff', sh: s.cdErr ? 'inset 0 0 0 2px #E5352B' : 'inset 0 0 0 1px #E1DFDB', col: s.cdErr ? '#A1221A' : '#21201F' })),
+cdShake: s.cdK === 0 ? '' : (s.cdK % 2 ? 'shA' : 'shB'),
+cdBad: () => this.setState({ cdErr: true, cdK: s.cdK + 1 })
+};
+}
+}
+</script>
+</body>
+</html>

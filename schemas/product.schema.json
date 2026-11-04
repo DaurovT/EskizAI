@@ -1,0 +1,1758 @@
+{
+  "$defs": {
+    "Back": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "default": "nailed",
+          "description": "nailed — ХДФ на гвоздях сзади, none — без стенки",
+          "enum": [
+            "nailed",
+            "none"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "material": {
+          "default": "hdf_3_white",
+          "title": "Material",
+          "type": "string"
+        }
+      },
+      "title": "Back",
+      "type": "object"
+    },
+    "Body": {
+      "additionalProperties": false,
+      "properties": {
+        "material": {
+          "default": "ldsp_16_white",
+          "description": "Материал корпуса (id из каталога)",
+          "title": "Material",
+          "type": "string"
+        },
+        "top": {
+          "default": "between",
+          "description": "between — крыша между боковинами, over — крыша накладная, на боковины",
+          "enum": [
+            "between",
+            "over"
+          ],
+          "title": "Top",
+          "type": "string"
+        },
+        "plinth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Plinth"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Цоколь; null — боковины и дно на полу"
+        },
+        "back": {
+          "$ref": "#/$defs/Back"
+        },
+        "cornice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Cornice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Карниз сверху по фасаду"
+        }
+      },
+      "title": "Body",
+      "type": "object"
+    },
+    "Builtin": {
+      "additionalProperties": false,
+      "description": "Встроенный шкаф: корпус целиком (боковины, крыша, дно) стоит в нише, щели до стен и потолка закрыты\nдоборами. Ширина и высота изделия — размеры корпуса (без доборов).",
+      "properties": {
+        "niche": {
+          "$ref": "#/$defs/Niche",
+          "description": "Замер ниши; пусто — доборы номинальной ширины"
+        },
+        "fillers": {
+          "description": "Где доборы: left / right — у стен, top — до потолка. Без добора — монтажный зазор",
+          "items": {
+            "enum": [
+              "left",
+              "right",
+              "top"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Fillers",
+          "type": "array"
+        },
+        "filler_width": {
+          "default": 50,
+          "description": "Видимая ширина бокового добора в самом узком месте ниши, мм (по ней подгоняется корпус)",
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Filler Width",
+          "type": "number"
+        },
+        "top_filler_width": {
+          "default": 50,
+          "description": "Видимая высота верхнего добора, мм",
+          "maximum": 500,
+          "minimum": 0,
+          "title": "Top Filler Width",
+          "type": "number"
+        },
+        "allowance_side": {
+          "default": 10,
+          "description": "Монтажный зазор до стены там, где нет добора, мм",
+          "maximum": 50,
+          "minimum": 0,
+          "title": "Allowance Side",
+          "type": "number"
+        },
+        "allowance_top": {
+          "default": 20,
+          "description": "Монтажный зазор до потолка без добора, мм",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Allowance Top",
+          "type": "number"
+        },
+        "scribe": {
+          "default": 15,
+          "description": "Припуск добора на подрезку по стене, мм (мастер подрезает на месте)",
+          "maximum": 40,
+          "minimum": 0,
+          "title": "Scribe",
+          "type": "number"
+        },
+        "filler_material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Материал доборов (id); null — как фасады",
+          "title": "Filler Material"
+        },
+        "filler_position": {
+          "default": "flush",
+          "description": "flush — заподлицо с фасадами, setback — утоплен за плоскость фасадов",
+          "enum": [
+            "flush",
+            "setback"
+          ],
+          "title": "Filler Position",
+          "type": "string"
+        },
+        "filler_setback": {
+          "default": 20,
+          "description": "На сколько утоплен добор при setback, мм",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Filler Setback",
+          "type": "number"
+        },
+        "filler_mount": {
+          "default": "strip",
+          "description": "strip — на планке крепления (деталь из ЛДСП корпуса), screws — уголками и саморезами",
+          "enum": [
+            "strip",
+            "screws"
+          ],
+          "title": "Filler Mount",
+          "type": "string"
+        },
+        "wedge": {
+          "description": "Доборы клином: кромка к стене режется по замеру (трапеция по ширинам вверху/посередине/внизу, верхний — по высотам слева/справа), подрезать на месте почти не нужно",
+          "items": {
+            "enum": [
+              "left",
+              "right",
+              "top"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Wedge",
+          "type": "array"
+        }
+      },
+      "title": "Builtin",
+      "type": "object"
+    },
+    "Corners": {
+      "additionalProperties": false,
+      "properties": {
+        "radius": {
+          "default": 0,
+          "description": "Скругление углов фасада, мм",
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "title": "Corners",
+      "type": "object"
+    },
+    "Cornice": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "default": 80,
+          "description": "Высота карниза, мм (входит в общую высоту шкафа)",
+          "maximum": 250,
+          "minimum": 40,
+          "title": "Height",
+          "type": "number"
+        }
+      },
+      "title": "Cornice",
+      "type": "object"
+    },
+    "Cutout": {
+      "additionalProperties": false,
+      "description": "Сквозной прямоугольный вырез (ручка-вырез, розетка, труба).",
+      "properties": {
+        "op": {
+          "const": "cutout",
+          "default": "cutout",
+          "title": "Op",
+          "type": "string"
+        },
+        "part": {
+          "title": "Part",
+          "type": "string"
+        },
+        "x": {
+          "description": "Левый нижний угол выреза от угла детали, мм (чистовые координаты)",
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "width": {
+          "description": "Размер вдоль длины детали, мм",
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "description": "Размер вдоль ширины детали, мм",
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "radius": {
+          "default": 0,
+          "description": "Скругление углов выреза, мм",
+          "minimum": 0,
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "part",
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "Cutout",
+      "type": "object"
+    },
+    "Doors": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "default": 1,
+          "description": "Сколько распашных дверей на секцию",
+          "enum": [
+            1,
+            2
+          ],
+          "title": "Count",
+          "type": "integer"
+        },
+        "hinge": {
+          "default": "left",
+          "description": "Сторона петель для одной двери",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "title": "Hinge",
+          "type": "string"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FrontStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Стиль только этих дверей; null — как у фасадов изделия"
+        }
+      },
+      "title": "Doors",
+      "type": "object"
+    },
+    "DrawersFill": {
+      "additionalProperties": false,
+      "description": "Ящики на шариковых направляющих.",
+      "properties": {
+        "kind": {
+          "const": "drawers",
+          "default": "drawers",
+          "title": "Kind",
+          "type": "string"
+        },
+        "count": {
+          "description": "Сколько ящиков в зоне",
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "external": {
+          "default": false,
+          "description": "true — у ящиков свои фасады снаружи; false — внутренние ящики за дверью",
+          "title": "External",
+          "type": "boolean"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота зоны в свету, мм. Не задана — делится поровну из остатка высоты секции",
+          "title": "Height"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FrontStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Стиль фасадов этих ящиков; null — как у изделия"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "DrawersFill",
+      "type": "object"
+    },
+    "EmptyFill": {
+      "additionalProperties": false,
+      "description": "Пустая зона (открытая ниша или место под технику).",
+      "properties": {
+        "kind": {
+          "const": "empty",
+          "default": "empty",
+          "title": "Kind",
+          "type": "string"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота зоны в свету, мм. Не задана — делится поровну из остатка высоты секции",
+          "title": "Height"
+        },
+        "doors": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Doors"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Двери только на эту зону (например, тумба с дверцами внизу под открытыми полками); null — как у секции"
+        }
+      },
+      "title": "EmptyFill",
+      "type": "object"
+    },
+    "EndUnit": {
+      "additionalProperties": false,
+      "description": "Торцевая открытая секция со скруглёнными полками (угловой радиусный элемент).",
+      "properties": {
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "width": {
+          "default": 300,
+          "description": "Ширина секции, мм (к общей ширине корпуса прибавляется)",
+          "maximum": 450,
+          "minimum": 200,
+          "title": "Width",
+          "type": "number"
+        },
+        "shelves": {
+          "default": 3,
+          "description": "Полок между низом и верхом",
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Shelves",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "side"
+      ],
+      "title": "EndUnit",
+      "type": "object"
+    },
+    "FrontStyle": {
+      "additionalProperties": false,
+      "description": "Стиль фасадов. У изделия — для всех фасадов; у двери/ящика/модуля — переопределение\n(заданное поле заменяет поле изделия целиком; pattern/kind \"none\" — выключить).",
+      "properties": {
+        "milling": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Milling"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "overlay": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Overlay"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "inlay": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Inlay"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "paint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Paint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "corners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Corners"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "FrontStyle",
+      "type": "object"
+    },
+    "Fronts": {
+      "additionalProperties": false,
+      "properties": {
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Материал фасадов; null — как у корпуса",
+          "title": "Material"
+        },
+        "handles": {
+          "$ref": "#/$defs/Handles"
+        },
+        "style": {
+          "$ref": "#/$defs/FrontStyle",
+          "description": "Фрезеровка, накладной декор, вставки, покраска, скругление углов"
+        }
+      },
+      "title": "Fronts",
+      "type": "object"
+    },
+    "GrooveOp": {
+      "additionalProperties": false,
+      "description": "Паз или четверть по всей длине (или ширине) детали.",
+      "properties": {
+        "op": {
+          "const": "groove",
+          "default": "groove",
+          "title": "Op",
+          "type": "string"
+        },
+        "part": {
+          "title": "Part",
+          "type": "string"
+        },
+        "along": {
+          "default": "length",
+          "enum": [
+            "length",
+            "width"
+          ],
+          "title": "Along",
+          "type": "string"
+        },
+        "offset": {
+          "description": "Расстояние от края (y=0 или x=0) до паза, мм; 0 — четверть",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "number"
+        },
+        "width": {
+          "description": "Ширина паза, мм",
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "description": "Глубина паза, мм",
+          "exclusiveMinimum": 0,
+          "title": "Depth",
+          "type": "number"
+        },
+        "face": {
+          "default": "A",
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Face",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part",
+        "offset",
+        "width",
+        "depth"
+      ],
+      "title": "GrooveOp",
+      "type": "object"
+    },
+    "Handles": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "default": "bar",
+          "description": "none — без ручек (push), bar — скоба, knob — кнопка (грибок), gola — профиль Gola",
+          "enum": [
+            "none",
+            "bar",
+            "knob",
+            "gola"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "spacing": {
+          "default": 128,
+          "description": "Межосевое расстояние скобы, мм",
+          "enum": [
+            96,
+            128,
+            160,
+            192,
+            256,
+            320
+          ],
+          "title": "Spacing",
+          "type": "integer"
+        },
+        "finish": {
+          "default": "steel",
+          "description": "Отделка ручек",
+          "enum": [
+            "steel",
+            "black",
+            "chrome",
+            "brass",
+            "gold"
+          ],
+          "title": "Finish",
+          "type": "string"
+        }
+      },
+      "title": "Handles",
+      "type": "object"
+    },
+    "HardwareChoice": {
+      "additionalProperties": false,
+      "description": "Фурнитура изделия (FR-46): тип и класс. Конкретные позиции подбирает ядро по правилам.",
+      "properties": {
+        "hinge": {
+          "default": "soft_close",
+          "description": "Петли: standard — без доводчика, soft_close — с доводчиком, push — push-to-open",
+          "enum": [
+            "standard",
+            "soft_close",
+            "push"
+          ],
+          "title": "Hinge",
+          "type": "string"
+        },
+        "hinge_class": {
+          "default": "standard",
+          "enum": [
+            "econom",
+            "standard",
+            "premium"
+          ],
+          "title": "Hinge Class",
+          "type": "string"
+        },
+        "slides": {
+          "default": "ball",
+          "description": "Направляющие ящиков: ball — шариковые, hidden_full — скрытые полного выдвижения, hidden_soft — скрытые с доводчиком",
+          "enum": [
+            "ball",
+            "hidden_full",
+            "hidden_soft"
+          ],
+          "title": "Slides",
+          "type": "string"
+        },
+        "slides_class": {
+          "default": "standard",
+          "enum": [
+            "econom",
+            "standard",
+            "premium"
+          ],
+          "title": "Slides Class",
+          "type": "string"
+        }
+      },
+      "title": "HardwareChoice",
+      "type": "object"
+    },
+    "Inlay": {
+      "additionalProperties": false,
+      "description": "Металлическая вставка: латунная рамка, золотой кант по краю, полоса.",
+      "properties": {
+        "kind": {
+          "default": "none",
+          "description": "frame — рамка, line_h / line_v — полоса поперёк / вдоль, edge — кант по периметру фасада",
+          "enum": [
+            "none",
+            "frame",
+            "line_h",
+            "line_v",
+            "edge"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "finish": {
+          "default": "brass",
+          "enum": [
+            "brass",
+            "gold",
+            "black",
+            "chrome"
+          ],
+          "title": "Finish",
+          "type": "string"
+        },
+        "width": {
+          "default": 6,
+          "description": "Ширина профиля, мм",
+          "maximum": 20,
+          "minimum": 2,
+          "title": "Width",
+          "type": "number"
+        },
+        "inset": {
+          "default": 40,
+          "description": "Отступ от края, мм (для edge не используется)",
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Inset",
+          "type": "number"
+        }
+      },
+      "title": "Inlay",
+      "type": "object"
+    },
+    "Light": {
+      "additionalProperties": false,
+      "description": "Подсветка: светодиодная лента в алюминиевом профиле с рассеивателем.",
+      "properties": {
+        "zone": {
+          "description": "under_wall — под навесными шкафами кухни, niche — в открытой нише (под верхом ниши), shelf — под полками, wardrobe_rod — над штангой, plinth — по цоколю, inside_top — под крышей внутри секции",
+          "enum": [
+            "under_wall",
+            "niche",
+            "shelf",
+            "wardrobe_rod",
+            "plinth",
+            "inside_top"
+          ],
+          "title": "Zone",
+          "type": "string"
+        },
+        "target": {
+          "default": "all",
+          "description": "all, sections[i] (шкаф), wall[i] / wall2[i] / base[i] (кухня)",
+          "maxLength": 40,
+          "title": "Target",
+          "type": "string"
+        },
+        "temp": {
+          "default": 4000,
+          "description": "Цветовая температура, K: 3000 — тёплый, 4000 — нейтральный, 6000 — холодный",
+          "enum": [
+            3000,
+            4000,
+            6000
+          ],
+          "title": "Temp",
+          "type": "integer"
+        },
+        "sensor": {
+          "default": "none",
+          "enum": [
+            "none",
+            "door",
+            "motion",
+            "touch"
+          ],
+          "title": "Sensor",
+          "type": "string"
+        },
+        "mount": {
+          "default": "groove",
+          "description": "groove — профиль в паз, surface — накладной",
+          "enum": [
+            "groove",
+            "surface"
+          ],
+          "title": "Mount",
+          "type": "string"
+        },
+        "power": {
+          "default": 9.6,
+          "description": "Мощность ленты, Вт/м",
+          "maximum": 30,
+          "minimum": 2,
+          "title": "Power",
+          "type": "number"
+        }
+      },
+      "required": [
+        "zone"
+      ],
+      "title": "Light",
+      "type": "object"
+    },
+    "Mezzanine": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "description": "Высота антресоли в свету, мм",
+          "maximum": 800,
+          "minimum": 200,
+          "title": "Height",
+          "type": "number"
+        },
+        "doors": {
+          "default": true,
+          "description": "Двери на антресоли (по одной или две на секцию — по ширине)",
+          "title": "Doors",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "height"
+      ],
+      "title": "Mezzanine",
+      "type": "object"
+    },
+    "Milling": {
+      "additionalProperties": false,
+      "description": "Фрезеровка по лицевой стороне МДФ (путь фрезы строит ядро).",
+      "properties": {
+        "pattern": {
+          "default": "none",
+          "description": "shaker — рамка, classic — рамка с филёнкой, arcs — арка сверху, rhombus — ромб (на высоком фасаде — решётка), grooves_v / grooves_h — рифление, waves — волны",
+          "enum": [
+            "none",
+            "shaker",
+            "classic",
+            "arcs",
+            "rhombus",
+            "grooves_v",
+            "grooves_h",
+            "waves"
+          ],
+          "title": "Pattern",
+          "type": "string"
+        },
+        "inset": {
+          "default": 60,
+          "description": "Отступ рисунка от края фасада, мм (не меньше 40)",
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Inset",
+          "type": "number"
+        },
+        "width": {
+          "default": 8,
+          "description": "Ширина фрезы, мм",
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "default": 3,
+          "description": "Глубина фрезеровки, мм (не больше толщины − 6)",
+          "exclusiveMinimum": 0,
+          "maximum": 15,
+          "title": "Depth",
+          "type": "number"
+        },
+        "radius": {
+          "default": 0,
+          "description": "Скругление углов рамки, мм",
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Radius",
+          "type": "number"
+        },
+        "pitch": {
+          "default": 40,
+          "description": "Шаг линий рифления и волн, мм",
+          "maximum": 200,
+          "minimum": 10,
+          "title": "Pitch",
+          "type": "number"
+        }
+      },
+      "title": "Milling",
+      "type": "object"
+    },
+    "Niche": {
+      "additionalProperties": false,
+      "description": "Замер ниши. Ширина — в трёх точках (верх, середина, низ), высота — у левой и правой стены.\nКорпус делается по самому узкому месту, разница уходит в доборы.",
+      "properties": {
+        "width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 10000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ширина ниши, мм (если мерили в одной точке)",
+          "title": "Width"
+        },
+        "width_top": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 10000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ширина ниши вверху, мм",
+          "title": "Width Top"
+        },
+        "width_middle": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 10000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ширина ниши посередине, мм",
+          "title": "Width Middle"
+        },
+        "width_bottom": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 10000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ширина ниши внизу, мм",
+          "title": "Width Bottom"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 6000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота ниши (до потолка), мм",
+          "title": "Height"
+        },
+        "height_left": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 6000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота у левой стены, мм",
+          "title": "Height Left"
+        },
+        "height_right": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 6000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота у правой стены, мм",
+          "title": "Height Right"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 3000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Глубина ниши, мм",
+          "title": "Depth"
+        },
+        "lean": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "right"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Какая стена завалена (по уровню): left / right — весь перекос ширины уходит в добор этой стороны; null — неизвестно, делится поровну",
+          "title": "Lean"
+        }
+      },
+      "title": "Niche",
+      "type": "object"
+    },
+    "Overlay": {
+      "additionalProperties": false,
+      "description": "Накладной декор (молдинг), клеится на фасад.",
+      "properties": {
+        "pattern": {
+          "default": "none",
+          "enum": [
+            "none",
+            "frame",
+            "arch",
+            "rhombus",
+            "moulding"
+          ],
+          "title": "Pattern",
+          "type": "string"
+        },
+        "profile": {
+          "default": "flat_20",
+          "description": "flat_20 — плоский 20 мм, round_25 — полукруглый 25 мм",
+          "enum": [
+            "flat_20",
+            "round_25"
+          ],
+          "title": "Profile",
+          "type": "string"
+        },
+        "inset": {
+          "default": 50,
+          "description": "Отступ от края фасада, мм",
+          "maximum": 300,
+          "minimum": 0,
+          "title": "Inset",
+          "type": "number"
+        }
+      },
+      "title": "Overlay",
+      "type": "object"
+    },
+    "Paint": {
+      "additionalProperties": false,
+      "description": "Покраска фасадов МДФ.",
+      "properties": {
+        "color": {
+          "default": "#E8E4DC",
+          "description": "Цвет для 3D, #RRGGBB",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Color",
+          "type": "string"
+        },
+        "code": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Код цвета: «RAL 9001», «NCS S 0502-Y»",
+          "title": "Code"
+        },
+        "system": {
+          "default": "RAL",
+          "enum": [
+            "RAL",
+            "NCS",
+            "custom"
+          ],
+          "title": "System",
+          "type": "string"
+        },
+        "gloss": {
+          "default": "matte",
+          "description": "matte — мат, satin — полумат, gloss — глянец",
+          "enum": [
+            "matte",
+            "satin",
+            "gloss"
+          ],
+          "title": "Gloss",
+          "type": "string"
+        },
+        "both_sides": {
+          "default": true,
+          "description": "Красить и обратную сторону (дешевле лицевой)",
+          "title": "Both Sides",
+          "type": "boolean"
+        }
+      },
+      "title": "Paint",
+      "type": "object"
+    },
+    "Plinth": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "default": 70,
+          "description": "Высота цоколя, мм",
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "setback": {
+          "default": 0,
+          "description": "Отступ цокольной планки от переднего края, мм",
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Setback",
+          "type": "number"
+        },
+        "legs": {
+          "default": false,
+          "description": "На регулируемых ножках: боковины и дно над цоколем, планка цоколя на клипсах спереди и с открытых боков; false — боковины до пола",
+          "title": "Legs",
+          "type": "boolean"
+        },
+        "floor_allowance": {
+          "default": 5,
+          "description": "Зазор планки до пола на неровность пола, мм (только при legs)",
+          "maximum": 30,
+          "minimum": 0,
+          "title": "Floor Allowance",
+          "type": "number"
+        }
+      },
+      "title": "Plinth",
+      "type": "object"
+    },
+    "Pocket": {
+      "additionalProperties": false,
+      "description": "Выборка на глубину (утопленная ручка, ниша под накладку).",
+      "properties": {
+        "op": {
+          "const": "pocket",
+          "default": "pocket",
+          "title": "Op",
+          "type": "string"
+        },
+        "part": {
+          "title": "Part",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "title": "Width",
+          "type": "number"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "title": "Height",
+          "type": "number"
+        },
+        "depth": {
+          "exclusiveMinimum": 0,
+          "title": "Depth",
+          "type": "number"
+        },
+        "face": {
+          "default": "A",
+          "enum": [
+            "A",
+            "B"
+          ],
+          "title": "Face",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part",
+        "x",
+        "y",
+        "width",
+        "height",
+        "depth"
+      ],
+      "title": "Pocket",
+      "type": "object"
+    },
+    "RodFill": {
+      "additionalProperties": false,
+      "description": "Зона для одежды со штангой под верхом зоны.",
+      "properties": {
+        "kind": {
+          "const": "rod",
+          "default": "rod",
+          "title": "Kind",
+          "type": "string"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота зоны в свету, мм. Не задана — делится поровну из остатка высоты секции",
+          "title": "Height"
+        },
+        "doors": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Doors"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Двери только на эту зону (например, тумба с дверцами внизу под открытыми полками); null — как у секции"
+        }
+      },
+      "title": "RodFill",
+      "type": "object"
+    },
+    "RoomColors": {
+      "additionalProperties": false,
+      "description": "Стены и пол помещения — только для вида в 3D (фасады на фоне комнаты): на модель, смету и файлы не\nвлияет никогда. photo — цвет снят с фото, manual — мастер выбрал сам.",
+      "properties": {
+        "wall": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Цвет стен, #RRGGBB",
+          "title": "Wall"
+        },
+        "floor": {
+          "anyOf": [
+            {
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Цвет пола, #RRGGBB; null — цвет пресета floor_material",
+          "title": "Floor"
+        },
+        "floor_material": {
+          "anyOf": [
+            {
+              "enum": [
+                "oak_light",
+                "walnut",
+                "tile",
+                "concrete",
+                "carpet"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Пол: oak_light — дуб светлый, walnut — орех, tile — плитка, concrete — бетон, carpet — ковролин",
+          "title": "Floor Material"
+        },
+        "walls_visible": {
+          "default": true,
+          "description": "Показывать стены комнаты в 3D",
+          "title": "Walls Visible",
+          "type": "boolean"
+        },
+        "source": {
+          "default": "manual",
+          "enum": [
+            "photo",
+            "manual"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "title": "RoomColors",
+      "type": "object"
+    },
+    "RoundCorner": {
+      "additionalProperties": false,
+      "description": "Скругление угла детали (радиусный торец, скруглённая полка).",
+      "properties": {
+        "op": {
+          "const": "round_corner",
+          "default": "round_corner",
+          "title": "Op",
+          "type": "string"
+        },
+        "part": {
+          "description": "Ключ детали (key из модели деталей)",
+          "title": "Part",
+          "type": "string"
+        },
+        "corner": {
+          "description": "Угол в координатах детали: x — длина, y — ширина",
+          "enum": [
+            "x0y0",
+            "x1y0",
+            "x0y1",
+            "x1y1"
+          ],
+          "title": "Corner",
+          "type": "string"
+        },
+        "radius": {
+          "description": "Радиус, мм",
+          "exclusiveMinimum": 0,
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "part",
+        "corner",
+        "radius"
+      ],
+      "title": "RoundCorner",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ширина секции в свету, мм. Не задана — делится поровну из остатка",
+          "title": "Width"
+        },
+        "fill": {
+          "description": "Зоны снизу вверх; между зонами ставится неподвижная полка. Пусто — открытая ниша",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "drawers": "#/$defs/DrawersFill",
+                "empty": "#/$defs/EmptyFill",
+                "rod": "#/$defs/RodFill",
+                "shelves": "#/$defs/ShelvesFill"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ShelvesFill"
+              },
+              {
+                "$ref": "#/$defs/RodFill"
+              },
+              {
+                "$ref": "#/$defs/DrawersFill"
+              },
+              {
+                "$ref": "#/$defs/EmptyFill"
+              }
+            ]
+          },
+          "title": "Fill",
+          "type": "array"
+        },
+        "doors": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Doors"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Распашные двери; null — без дверей"
+        }
+      },
+      "title": "Section",
+      "type": "object"
+    },
+    "ShelvesFill": {
+      "additionalProperties": false,
+      "description": "Полки, равномерно по высоте зоны.",
+      "properties": {
+        "kind": {
+          "const": "shelves",
+          "default": "shelves",
+          "title": "Kind",
+          "type": "string"
+        },
+        "count": {
+          "description": "Сколько полок",
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "mount": {
+          "default": "pins",
+          "description": "pins — на полкодержателях (съёмные), fixed — на конфирматах",
+          "enum": [
+            "pins",
+            "fixed"
+          ],
+          "title": "Mount",
+          "type": "string"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Высота зоны в свету, мм. Не задана — делится поровну из остатка высоты секции",
+          "title": "Height"
+        },
+        "doors": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Doors"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Двери только на эту зону (например, тумба с дверцами внизу под открытыми полками); null — как у секции"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "ShelvesFill",
+      "type": "object"
+    },
+    "SidePanel": {
+      "additionalProperties": false,
+      "description": "Фальш-панель: декоративная боковина снаружи корпуса, закрывает торец и цоколь до пола.\nГлубина — корпус вместе с фасадами.",
+      "properties": {
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ],
+          "title": "Side",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Материал (толщина — по материалу); null — как фасады",
+          "title": "Material"
+        },
+        "to_floor": {
+          "default": true,
+          "description": "До пола, закрывает цоколь; false — от низа корпуса",
+          "title": "To Floor",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "side"
+      ],
+      "title": "SidePanel",
+      "type": "object"
+    },
+    "SlidingDoors": {
+      "additionalProperties": false,
+      "description": "Двери-купе на весь фасад. Наполнение корпуса отступает на глубину рельсов.",
+      "properties": {
+        "count": {
+          "description": "Сколько дверей-купе",
+          "maximum": 6,
+          "minimum": 2,
+          "title": "Count",
+          "type": "integer"
+        },
+        "fills": {
+          "description": "Заполнение каждой двери слева направо: panel — ЛДСП, mirror — зеркало. Пусто — все ЛДСП",
+          "items": {
+            "enum": [
+              "panel",
+              "mirror"
+            ],
+            "type": "string"
+          },
+          "title": "Fills",
+          "type": "array"
+        },
+        "panel_material": {
+          "default": "ldsp_10_white",
+          "description": "ЛДСП заполнения (обычно 10 мм)",
+          "title": "Panel Material",
+          "type": "string"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "SlidingDoors",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "0.2",
+      "default": "0.2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "type": {
+      "const": "wardrobe",
+      "default": "wardrobe",
+      "title": "Type",
+      "type": "string"
+    },
+    "width": {
+      "description": "Общая ширина, мм",
+      "exclusiveMinimum": 0,
+      "title": "Width",
+      "type": "number"
+    },
+    "height": {
+      "description": "Общая высота, мм",
+      "exclusiveMinimum": 0,
+      "title": "Height",
+      "type": "number"
+    },
+    "depth": {
+      "description": "Глубина корпуса вместе с задней стенкой, без фасадов, мм",
+      "exclusiveMinimum": 0,
+      "title": "Depth",
+      "type": "number"
+    },
+    "installation": {
+      "default": "freestanding",
+      "enum": [
+        "freestanding",
+        "niche"
+      ],
+      "title": "Installation",
+      "type": "string"
+    },
+    "body": {
+      "$ref": "#/$defs/Body"
+    },
+    "fronts": {
+      "$ref": "#/$defs/Fronts"
+    },
+    "hardware": {
+      "$ref": "#/$defs/HardwareChoice"
+    },
+    "mezzanine": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Mezzanine"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Антресоль над всеми секциями"
+    },
+    "end_units": {
+      "description": "Торцевые радиусные секции слева и/или справа; width изделия — без них",
+      "items": {
+        "$ref": "#/$defs/EndUnit"
+      },
+      "maxItems": 2,
+      "title": "End Units",
+      "type": "array"
+    },
+    "sliding_doors": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SlidingDoors"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Двери-купе на весь фасад; тогда у секций нет распашных дверей и ящиков с фасадами"
+    },
+    "builtin": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Builtin"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Встроенный в нишу: корпус меньше ниши, щели закрыты доборами (width/height — корпус)"
+    },
+    "side_panels": {
+      "description": "Фальш-панели снаружи боковин (до пола)",
+      "items": {
+        "$ref": "#/$defs/SidePanel"
+      },
+      "maxItems": 2,
+      "title": "Side Panels",
+      "type": "array"
+    },
+    "room_colors": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RoomColors"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Цвет стен и пола для 3D (заполняет приложение)"
+    },
+    "sections": {
+      "description": "Секции слева направо",
+      "items": {
+        "$ref": "#/$defs/Section"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    },
+    "operations": {
+      "description": "Операции формы над деталями: скругления, вырезы, пазы, выборки",
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "cutout": "#/$defs/Cutout",
+            "groove": "#/$defs/GrooveOp",
+            "pocket": "#/$defs/Pocket",
+            "round_corner": "#/$defs/RoundCorner"
+          },
+          "propertyName": "op"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/RoundCorner"
+          },
+          {
+            "$ref": "#/$defs/Cutout"
+          },
+          {
+            "$ref": "#/$defs/GrooveOp"
+          },
+          {
+            "$ref": "#/$defs/Pocket"
+          }
+        ]
+      },
+      "title": "Operations",
+      "type": "array"
+    },
+    "lighting": {
+      "description": "Подсветка",
+      "items": {
+        "$ref": "#/$defs/Light"
+      },
+      "maxItems": 12,
+      "title": "Lighting",
+      "type": "array"
+    }
+  },
+  "required": [
+    "width",
+    "height",
+    "depth",
+    "sections"
+  ],
+  "title": "Product",
+  "type": "object"
+}

@@ -1,0 +1,33 @@
+# Контекст сборки — корень репозитория (deploy/docker/*.Dockerfile).
+# Зависимости ставятся внутри образа, локальные окружения и сборки не копируем.
+.git
+.github
+**/.DS_Store
+
+# Python
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.db
+**/media
+**/.env
+**/.env.*
+!**/.env.example
+
+# Node
+**/node_modules
+**/.next
+**/dist
+**/dist-export
+**/*.tsbuildinfo
+**/.expo
+**/coverage
+
+# В образы не входят
+app
+out
+deploy/backups
+*.md

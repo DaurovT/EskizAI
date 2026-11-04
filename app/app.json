@@ -1,0 +1,88 @@
+{
+  "expo": {
+    "name": "Eskiz AI",
+    "slug": "mebel-master",
+    "scheme": "mebelmaster",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "uz.mebel.master",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Камера нужна, чтобы сфотографировать мебель или замер / Kamera mebel yoki o‘lchovni suratga olish uchun kerak",
+        "NSPhotoLibraryUsageDescription": "Галерея нужна, чтобы выбрать фото мебели / Galereya mebel suratini tanlash uchun kerak",
+        "NSLocalNetworkUsageDescription": "Нужно для связи с сервером Eskiz AI в вашей сети / Tarmoqdagi Eskiz AI serveriga ulanish uchun"
+      },
+      "appleTeamId": "XQ35SJRLQH"
+    },
+    "android": {
+      "package": "uz.mebel.master",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#387D50"
+      },
+      "permissions": [
+        "CAMERA",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Галерея нужна, чтобы выбрать фото мебели",
+          "cameraPermission": "Камера нужна, чтобы сфотографировать мебель или замер"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#1f6feb"
+        }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsImageWithMaxCount": 5,
+            "NSExtensionActivationSupportsText": true,
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1
+          },
+          "iosShareExtensionName": "Eskiz AI Share",
+          "androidIntentFilters": [
+            "text/*",
+            "image/*"
+          ],
+          "androidMultiIntentFilters": [
+            "image/*"
+          ],
+          "iosAppGroupIdentifier": "group.uz.mebel.master"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#387D50",
+          "imageWidth": 260
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "tsconfigPaths": false
+    },
+    "extra": {}
+  }
+}

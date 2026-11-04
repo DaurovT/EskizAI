@@ -1,0 +1,25 @@
+{
+  "type": "kitchen",
+  "layout": "corner",
+  "corner_side": "right",
+  "installation": "niche",
+  "fronts": {"material": "ldsp_18_oak"},
+  "countertop": {"material": "countertop_38_stone"},
+  "base": [
+    {"kind": "drawers", "width": 450, "drawers": 3},
+    {"kind": "sink", "width": 800},
+    {"kind": "corner", "width": 1100}
+  ],
+  "wall": [
+    {"kind": "doors", "width": 450},
+    {"kind": "doors", "width": 800}
+  ],
+  "base2": [
+    {"kind": "appliance", "width": 600},
+    {"kind": "doors", "width": 600, "hinge": "right"}
+  ],
+  "wall2": [
+    {"kind": "hood", "width": 600},
+    {"kind": "doors", "width": 600, "hinge": "right"}
+  ]
+}

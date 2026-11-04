@@ -1,0 +1,198 @@
+# Полный стек: Postgres 16, Redis 7, MinIO (S3), API, воркер (заготовка), web.
+#
+# Локально (из корня репозитория):
+#   cp deploy/.env.example deploy/.env      # необязательно — есть значения по умолчанию
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#   → API http://localhost:8000/docs, ссылка клиента http://localhost:3000/p/demo
+#
+# На сервере вместе с deploy/docker-compose.prod.yml (Caddy, HTTPS) — см. deploy/README.md.
+# Порты публикуются только на 127.0.0.1: снаружи доступен лишь Caddy.
+
+name: ${COMPOSE_PROJECT_NAME:-mebel}
+
+x-api-env: &api-env
+  ENV: ${ENV:-dev}
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mebel}:${POSTGRES_PASSWORD:-mebel}@postgres:5432/${POSTGRES_DB:-mebel}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+  ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-30}
+  REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
+  AUTH_CODE_PROVIDER: ${AUTH_CODE_PROVIDER:-dev}
+  AUTH_CODE_TTL_SECONDS: ${AUTH_CODE_TTL_SECONDS:-300}
+  AUTH_CODE_RESEND_SECONDS: ${AUTH_CODE_RESEND_SECONDS:-60}
+  ESKIZ_EMAIL: ${ESKIZ_EMAIL:-}
+  ESKIZ_PASSWORD: ${ESKIZ_PASSWORD:-}
+  ESKIZ_SENDER: ${ESKIZ_SENDER:-4546}
+  TELEGRAM_GATEWAY_TOKEN: ${TELEGRAM_GATEWAY_TOKEN:-}
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-dev-admin-token}
+  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+  MEDIA_DIR: ${MEDIA_DIR:-/data/media}
+  MEDIA_BASE_URL: ${MEDIA_BASE_URL:-/media}
+  S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+  S3_BUCKET: ${S3_BUCKET:-mebel}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-mebel-minio}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-mebel-minio-secret}
+  S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-http://localhost:9000/mebel}
+  FREE_PROJECTS_PER_MONTH: ${FREE_PROJECTS_PER_MONTH:-3}
+  LIMIT_TIMEZONE: ${LIMIT_TIMEZONE:-Asia/Tashkent}
+  SHARE_BASE_URL: ${SHARE_BASE_URL:-http://localhost:3000/p}
+  SHARE_DEFAULT_DAYS: ${SHARE_DEFAULT_DAYS:-30}
+  CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000"]}'
+  TASK_QUEUE_MODE: ${TASK_QUEUE_MODE:-thread}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  AI_BUDGET_USD: ${AI_BUDGET_USD:-0.30}
+  AI_WARN_RATIO: ${AI_WARN_RATIO:-0.8}
+  AI_PHOTO_LIMIT: ${AI_PHOTO_LIMIT:-5}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mebel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mebel}
+      POSTGRES_DB: ${POSTGRES_DB:-mebel}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # S3-совместимое хранилище для локальной разработки. Официальные образы minio/minio
+  # убраны из Docker Hub и Quay в 2025 году, поэтому закреплён последний образ Bitnami
+  # (bitnamilegacy, обновлений больше не будет). В проде вместо MinIO — объектное
+  # хранилище в ЕС (S3_ENDPOINT_URL на него), этот сервис там не запускается.
+  minio:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-mebel-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-mebel-minio-secret}
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/bitnami/minio/data
+    healthcheck:
+      # В образе нет curl — проверяем /minio/health/live через /dev/tcp bash.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /minio/health/live HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 &&
+          head -n1 <&3 | grep -q ' 200 '
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Разово создаёт бакет и закрывает анонимный доступ. Повторный запуск безопасен.
+  minio-init:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MC_HOST_local: http://${MINIO_ROOT_USER:-mebel-minio}:${MINIO_ROOT_PASSWORD:-mebel-minio-secret}@minio:9000
+      S3_BUCKET: ${S3_BUCKET:-mebel}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        mc --config-dir /tmp/.mc mb --ignore-existing "local/$${S3_BUCKET}"
+        mc --config-dir /tmp/.mc anonymous set none "local/$${S3_BUCKET}"
+        echo "bucket $${S3_BUCKET} ready"
+    restart: "no"
+
+  api:
+    image: ${API_IMAGE:-mebel-api:local}
+    build:
+      context: ..
+      dockerfile: deploy/docker/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      RUN_MIGRATIONS: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    volumes:
+      - media:/data/media
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 6
+
+  # Заготовка воркера (PLAN, раздел 3: очередь на Redis, arq или RQ).
+  # СЕЙЧАС API выполняет задачи сам, в фоновом потоке процесса (ThreadTaskQueue в
+  # api/src/mebel_api/services/tasks.py), отдельный воркер не нужен и ничего не делает.
+  # Когда появится воркер на Redis — заменить command (например, ["arq", "mebel_api.worker.WorkerSettings"])
+  # и убрать профиль. Запуск заготовки: docker compose --profile worker up -d worker
+  worker:
+    image: ${API_IMAGE:-mebel-api:local}
+    profiles: ["worker"]
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      RUN_MIGRATIONS: "0"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - media:/data/media
+    command: ["sh", "-c", "echo 'worker: заготовка, задачи пока выполняются в процессе API'; exec sleep infinity"]
+    healthcheck:
+      disable: true
+
+  web:
+    image: ${WEB_IMAGE:-mebel-web:local}
+    build:
+      context: ..
+      dockerfile: deploy/docker/web.Dockerfile
+    restart: unless-stopped
+    environment:
+      SHARE_API_URL: ${SHARE_API_URL:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  media:

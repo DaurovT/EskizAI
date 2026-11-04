@@ -1,0 +1,139 @@
+{
+  "ok": true,
+  "module_versions": {
+    "body": "0.2.0",
+    "fronts": "0.5.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "wall_fixing": "0.1.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Серый",
+      "thickness": 16.0,
+      "length": 1800.0,
+      "width": 400.0,
+      "cut_length": 1799.6,
+      "cut_width": 398.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Серый",
+      "thickness": 16.0,
+      "length": 1800.0,
+      "width": 400.0,
+      "cut_length": 1799.6,
+      "cut_width": 398.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Серый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 400.0,
+      "cut_length": 568.0,
+      "cut_width": 398.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Серый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 400.0,
+      "cut_length": 568.0,
+      "cut_width": 398.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Серый",
+      "thickness": 16.0,
+      "length": 568.0,
+      "width": 380.0,
+      "cut_length": 568.0,
+      "cut_width": 378.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 36
+    },
+    {
+      "name": "Дюбель-саморез 8×80 + уголок (крепление к стене)",
+      "qty": 4
+    }
+  ],
+  "issues": [
+    {
+      "level": "warning",
+      "code": "back_none_wall",
+      "message": "Без задней стенки корпус держит геометрию только креплением к стене: ставьте к ровной чистовой стене и крепите уголками с дюбелями (4 шт. в смете). Кривую стену будет видно",
+      "path": "body.back",
+      "fixes": [
+        {
+          "description": "Задняя стенка ХДФ",
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/body/back/kind",
+              "value": "nailed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

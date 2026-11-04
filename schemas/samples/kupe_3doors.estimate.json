@@ -1,0 +1,167 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 7400000,
+   "to": 8500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: fasadlar, o‘lchamlar, korpus"
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 7400000,
+   "to": 8500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: fasadlar, o‘lchamlar, korpus",
+  "materials": {
+   "from": 5000000,
+   "to": 5700000
+  },
+  "work": {
+   "from": 2500000,
+   "to": 2850000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 7400000,
+   "to": 8500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, размеры, корпус",
+  "uncertainty_text_uz": "taxminiy: fasadlar, o‘lchamlar, korpus",
+  "materials": {
+   "from": 5000000,
+   "to": 5700000
+  },
+  "work": {
+   "from": 2500000,
+   "to": 2850000
+  },
+  "groups": [
+   {
+    "key": "sheets",
+    "name": "Листы ЛДСП и ХДФ",
+    "name_uz": "LDSP va XDF listlari",
+    "from": 2486000,
+    "to": 2857000
+   },
+   {
+    "key": "cutting",
+    "name": "Распил и кромкование",
+    "name_uz": "Kesish va kromkalash",
+    "from": 428000,
+    "to": 492000
+   },
+   {
+    "key": "hardware",
+    "name": "Фурнитура",
+    "name_uz": "Furnitura",
+    "from": 151000,
+    "to": 174000
+   },
+   {
+    "key": "glass",
+    "name": "Зеркало и стекло",
+    "name_uz": "Ko‘zgu va shisha",
+    "from": 322000,
+    "to": 371000
+   },
+   {
+    "key": "sliding",
+    "name": "Система купе",
+    "name_uz": "Kupe tizimi",
+    "from": 1258000,
+    "to": 1446000
+   }
+  ],
+  "requests": [
+   {
+    "name": "ХДФ 3 Белый",
+    "note": "уточняется"
+   }
+  ],
+  "nonstandard": []
+ }
+}

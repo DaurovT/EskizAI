@@ -1,0 +1,13 @@
+{
+  "width": 2400,
+  "height": 2400,
+  "depth": 650,
+  "installation": "niche",
+  "body": {"material": "ldsp_16_white", "top": "between"},
+  "sliding_doors": {"count": 3, "fills": ["panel", "mirror", "panel"]},
+  "sections": [
+    {"width": 780, "fill": [{"kind": "shelves", "count": 5}]},
+    {"fill": [{"kind": "drawers", "count": 2, "height": 400}, {"kind": "rod"}]},
+    {"width": 780, "fill": [{"kind": "shelves", "count": 5}]}
+  ]
+}

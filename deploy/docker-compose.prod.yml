@@ -1,0 +1,44 @@
+# Прод на одном VPS в ЕС: поверх docker-compose.yml добавляет Caddy (HTTPS, Let's Encrypt)
+# и выключает локальный MinIO (в проде — объектное хранилище провайдера).
+#
+#   cd /opt/mebel
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+#
+# Нужны в deploy/.env: ENV=prod, JWT_SECRET, ADMIN_TOKEN, POSTGRES_PASSWORD, AUTH_CODE_PROVIDER≠dev,
+# API_DOMAIN, WEB_DOMAIN, ACME_EMAIL, CORS_ORIGINS, SHARE_BASE_URL, S3_* — см. deploy/README.md.
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?API_DOMAIN не задан}
+      WEB_DOMAIN: ${WEB_DOMAIN:?WEB_DOMAIN не задан}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL не задан}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  api:
+    environment:
+      ENV: prod
+
+  # Локальный MinIO в проде не запускается (профиль, который никто не включает).
+  minio:
+    profiles: ["local-s3"]
+  minio-init:
+    profiles: ["local-s3"]
+
+volumes:
+  caddy_data:
+  caddy_config:

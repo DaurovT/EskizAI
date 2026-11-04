@@ -1,0 +1,169 @@
+{
+  "ok": false,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "fronts": "0.5.0",
+    "plinth": "0.2.0",
+    "sections": "0.2.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 3000.0,
+      "width": 597.0,
+      "cut_length": 2999.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 3000.0,
+      "width": 597.0,
+      "cut_length": 2999.6,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 968.0,
+      "width": 597.0,
+      "cut_length": 968.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 968.0,
+      "width": 597.0,
+      "cut_length": 968.0,
+      "cut_width": 595.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 968.0,
+      "width": 70.0,
+      "cut_length": 968.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 968.0,
+      "width": 70.0,
+      "cut_length": 968.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 996.0,
+      "width": 2926.0,
+      "cut_length": 996.0,
+      "cut_width": 2926.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 24
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 53
+    }
+  ],
+  "issues": [
+    {
+      "level": "error",
+      "code": "part_exceeds_sheet",
+      "message": "Деталь «Боковина левая» 2999.6×595.0 мм не помещается на лист 2800.0×2070.0 мм",
+      "path": "body",
+      "fixes": []
+    },
+    {
+      "level": "error",
+      "code": "part_exceeds_sheet",
+      "message": "Деталь «Боковина правая» 2999.6×595.0 мм не помещается на лист 2800.0×2070.0 мм",
+      "path": "body",
+      "fixes": []
+    },
+    {
+      "level": "error",
+      "code": "part_exceeds_sheet",
+      "message": "Деталь «Задняя стенка» 996.0×2926.0 мм не помещается на лист 2800.0×2070.0 мм",
+      "path": "body.back",
+      "fixes": []
+    }
+  ]
+}

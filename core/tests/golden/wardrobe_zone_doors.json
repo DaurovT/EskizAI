@@ -1,0 +1,334 @@
+{
+  "ok": true,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "fronts": "0.5.0",
+    "partition": "0.2.0",
+    "plinth": "0.2.0",
+    "rod": "0.1.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 2200.0,
+      "width": 547.0,
+      "cut_length": 2199.6,
+      "cut_width": 545.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 2200.0,
+      "width": 547.0,
+      "cut_length": 2199.6,
+      "cut_width": 545.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 1368.0,
+      "width": 547.0,
+      "cut_length": 1368.0,
+      "cut_width": 545.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 1368.0,
+      "width": 547.0,
+      "cut_length": 1368.0,
+      "cut_width": 545.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 1368.0,
+      "width": 70.0,
+      "cut_length": 1368.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 1368.0,
+      "width": 70.0,
+      "cut_length": 1368.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7
+      ],
+      "name": "Перегородка",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 2098.0,
+      "width": 547.0,
+      "cut_length": 2098.0,
+      "cut_width": 545.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        9,
+        11,
+        12,
+        13
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 900.0,
+      "width": 527.0,
+      "cut_length": 900.0,
+      "cut_width": 525.0,
+      "qty": 4,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        10
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 902.0,
+      "width": 527.0,
+      "cut_length": 902.0,
+      "cut_width": 525.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        14
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 2128.0,
+      "width": 472.0,
+      "cut_length": 2124.0,
+      "cut_width": 468.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        15,
+        16
+      ],
+      "name": "Дверь",
+      "material": "ЛДСП 16 Дуб сонома",
+      "thickness": 16.0,
+      "length": 722.0,
+      "width": 461.0,
+      "cut_length": 718.0,
+      "cut_width": 457.0,
+      "qty": 2,
+      "edges": {
+        "Ш1": "2",
+        "Ш2": "2",
+        "Д1": "2",
+        "Д2": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        17
+      ],
+      "name": "Задняя стенка",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 1396.0,
+      "width": 2126.0,
+      "cut_length": 1396.0,
+      "cut_width": 2126.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 40
+    },
+    {
+      "name": "Штанга овальная 446 мм",
+      "qty": 1
+    },
+    {
+      "name": "Штангодержатель",
+      "qty": 2
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 16
+    },
+    {
+      "name": "Петля накладная 110° с доводчиком (стандарт)",
+      "qty": 7
+    },
+    {
+      "name": "Ручка-скоба 128 мм",
+      "qty": 3
+    },
+    {
+      "name": "Петля полунакладная 110° с доводчиком (стандарт)",
+      "qty": 2
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 47
+    }
+  ],
+  "issues": [
+    {
+      "level": "warning",
+      "code": "shelf_span",
+      "message": "Секция 2: полки 902.0 мм без опоры — больше 800.0 мм для ЛДСП 16 мм, полка прогнётся",
+      "path": "sections[1]",
+      "fixes": [
+        {
+          "description": "Разделить секцию 2 перегородкой на две",
+          "patch": [
+            {
+              "op": "replace",
+              "path": "/sections/1",
+              "value": {
+                "fill": [
+                  {
+                    "kind": "shelves",
+                    "count": 1,
+                    "mount": "pins",
+                    "height": 700.0,
+                    "doors": {
+                      "count": 2,
+                      "hinge": "left"
+                    }
+                  },
+                  {
+                    "kind": "shelves",
+                    "count": 3,
+                    "mount": "pins"
+                  }
+                ]
+              }
+            },
+            {
+              "op": "add",
+              "path": "/sections/2",
+              "value": {
+                "fill": [
+                  {
+                    "kind": "shelves",
+                    "count": 1,
+                    "mount": "pins",
+                    "height": 700.0,
+                    "doors": {
+                      "count": 2,
+                      "hinge": "left"
+                    }
+                  },
+                  {
+                    "kind": "shelves",
+                    "count": 3,
+                    "mount": "pins"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

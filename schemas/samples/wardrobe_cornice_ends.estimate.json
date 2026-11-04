@@ -1,0 +1,153 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 5300000,
+   "to": 5650000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус, фурнитура",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus, furnitura"
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 5300000,
+   "to": 5650000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус, фурнитура",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus, furnitura",
+  "materials": {
+   "from": 3540000,
+   "to": 3760000
+  },
+  "work": {
+   "from": 1770000,
+   "to": 1880000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 5300000,
+   "to": 5650000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: размеры, корпус, фурнитура",
+  "uncertainty_text_uz": "taxminiy: o‘lchamlar, korpus, furnitura",
+  "materials": {
+   "from": 3540000,
+   "to": 3760000
+  },
+  "work": {
+   "from": 1770000,
+   "to": 1880000
+  },
+  "groups": [
+   {
+    "key": "sheets",
+    "name": "Листы ЛДСП и ХДФ",
+    "name_uz": "LDSP va XDF listlari",
+    "from": 2568000,
+    "to": 2727000
+   },
+   {
+    "key": "cutting",
+    "name": "Распил и кромкование",
+    "name_uz": "Kesish va kromkalash",
+    "from": 478000,
+    "to": 508000
+   },
+   {
+    "key": "hardware",
+    "name": "Фурнитура",
+    "name_uz": "Furnitura",
+    "from": 332000,
+    "to": 353000
+   }
+  ],
+  "requests": [
+   {
+    "name": "ХДФ 3 Белый",
+    "note": "уточняется"
+   }
+  ],
+  "nonstandard": []
+ }
+}

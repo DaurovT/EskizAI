@@ -1,0 +1,4690 @@
+{
+ "format": "1",
+ "size": [
+  2850.0,
+  2120.0,
+  560.0
+ ],
+ "materials": {
+  "countertop_38_stone": {
+   "name": "Столешница 38 мм Камень серый",
+   "color": "#8f8f8b",
+   "hasGrain": false
+  },
+  "hdf_3_white": {
+   "name": "ХДФ 3 Белый",
+   "color": "#efebe3",
+   "hasGrain": false
+  },
+  "ldsp_16_white": {
+   "name": "ЛДСП 16 Белый",
+   "color": "#f2f0eb",
+   "hasGrain": false
+  },
+  "ldsp_18_oak": {
+   "name": "ЛДСП 18 Дуб сонома",
+   "color": "#c9a57b",
+   "hasGrain": true
+  }
+ },
+ "parts": [
+  {
+   "number": 1,
+   "key": "base[0].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 118.6,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 118.6,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 118.6,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.9,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.9,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.9,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 577.3,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 577.3,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 577.3,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 2,
+   "key": "base[0].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     384.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 118.6,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 118.6,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 118.6,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.9,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.9,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.9,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 577.3,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 577.3,
+     "y": 250.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 577.3,
+     "y": 463.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 3,
+   "key": "base[0].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 368.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     100.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 368.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 4,
+   "key": "base[0].rail.front",
+   "name": "Царга передняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 368.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 368.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 5,
+   "key": "base[0].rail.back",
+   "name": "Царга задняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 368.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     457.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 368.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 6,
+   "key": "base[0].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 396.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     557.0,
+     102.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 7,
+   "key": "base[0].fill[0].drawer[1].side.left",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     124.0
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 8,
+   "key": "base[0].fill[0].drawer[1].side.right",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     355.0,
+     0.0,
+     124.0
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 9,
+   "key": "base[0].fill[0].drawer[1].wall.front",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     0.0,
+     124.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 10,
+   "key": "base[0].fill[0].drawer[1].wall.back",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     484.0,
+     124.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 11,
+   "key": "base[0].fill[0].drawer[1].bottom",
+   "name": "Дно ящика",
+   "role": "drawer_bottom",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 342.0,
+   "width": 500.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     121.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 12,
+   "key": "base[0].fill[0].drawer[2].side.left",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     353.3
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 13,
+   "key": "base[0].fill[0].drawer[2].side.right",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     355.0,
+     0.0,
+     353.3
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 14,
+   "key": "base[0].fill[0].drawer[2].wall.front",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     0.0,
+     353.3
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 15,
+   "key": "base[0].fill[0].drawer[2].wall.back",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     484.0,
+     353.3
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 16,
+   "key": "base[0].fill[0].drawer[2].bottom",
+   "name": "Дно ящика",
+   "role": "drawer_bottom",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 342.0,
+   "width": 500.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     350.3
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 17,
+   "key": "base[0].fill[0].drawer[3].side.left",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     582.7
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 18,
+   "key": "base[0].fill[0].drawer[3].side.right",
+   "name": "Боковина ящика",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 500.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     355.0,
+     0.0,
+     582.7
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 19,
+   "key": "base[0].fill[0].drawer[3].wall.front",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     0.0,
+     582.7
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 20,
+   "key": "base[0].fill[0].drawer[3].wall.back",
+   "name": "Стенка ящика",
+   "role": "drawer_wall",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 310.0,
+   "width": 189.3,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     484.0,
+     582.7
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 21,
+   "key": "base[0].fill[0].drawer[3].bottom",
+   "name": "Дно ящика",
+   "role": "drawer_bottom",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 342.0,
+   "width": 500.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     0.0,
+     579.7
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 22,
+   "key": "base[0].fill[0].drawer[1].front",
+   "name": "Фасад ящика",
+   "role": "drawer_front",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 398.0,
+   "width": 238.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1.0,
+     -18.0,
+     101.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 135.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 263.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[1]"
+  },
+  {
+   "number": 23,
+   "key": "base[0].fill[0].drawer[2].front",
+   "name": "Фасад ящика",
+   "role": "drawer_front",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 398.0,
+   "width": 238.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1.0,
+     -18.0,
+     341.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 135.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 263.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[2]"
+  },
+  {
+   "number": 24,
+   "key": "base[0].fill[0].drawer[3].front",
+   "name": "Фасад ящика",
+   "role": "drawer_front",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 398.0,
+   "width": 238.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1.0,
+     -18.0,
+     581.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 135.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 263.0,
+     "y": 119.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[0].fill[0].drawer[3]"
+  },
+  {
+   "number": 25,
+   "key": "base[1].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     400.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 520.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 26,
+   "key": "base[1].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     984.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 520.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 27,
+   "key": "base[1].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     416.0,
+     0.0,
+     100.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 28,
+   "key": "base[1].rail.front",
+   "name": "Царга передняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     416.0,
+     0.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 29,
+   "key": "base[1].rail.back",
+   "name": "Царга задняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     416.0,
+     457.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 30,
+   "key": "base[1].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 596.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     402.0,
+     557.0,
+     102.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 31,
+   "key": "base[1].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 566.0,
+   "width": 537.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     417.0,
+     20.0,
+     452.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 32,
+   "key": "base[1].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 598.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     401.0,
+     -18.0,
+     101.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[1].doors.door[1]"
+  },
+  {
+   "number": 33,
+   "key": "base[3].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1600.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 34,
+   "key": "base[3].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2384.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 35,
+   "key": "base[3].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 768.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1616.0,
+     0.0,
+     100.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 768.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 36,
+   "key": "base[3].rail.front",
+   "name": "Царга передняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 768.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1616.0,
+     0.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 768.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 37,
+   "key": "base[3].rail.back",
+   "name": "Царга задняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 768.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1616.0,
+     457.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 768.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 38,
+   "key": "base[3].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 398.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1601.0,
+     -18.0,
+     101.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[3].doors.door[1]"
+  },
+  {
+   "number": 39,
+   "key": "base[3].doors.door[2]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 398.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2001.0,
+     -18.0,
+     101.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 375.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 375.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[3].doors.door[2]"
+  },
+  {
+   "number": 40,
+   "key": "base[4].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2400.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 520.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 41,
+   "key": "base[4].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2834.0,
+     0.0,
+     100.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 202.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 354.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 507.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 25.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 75.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 482.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 532.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 520.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 42,
+   "key": "base[4].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 418.0,
+   "width": 557.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2416.0,
+     0.0,
+     100.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 418.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 202.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 354.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 507.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 43,
+   "key": "base[4].rail.front",
+   "name": "Царга передняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 418.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2416.0,
+     0.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 418.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 44,
+   "key": "base[4].rail.back",
+   "name": "Царга задняя",
+   "role": "rail",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 418.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2416.0,
+     457.0,
+     804.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 418.0,
+     "y": 25.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 75.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 45,
+   "key": "base[4].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 446.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2402.0,
+     557.0,
+     102.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 46,
+   "key": "base[4].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 416.0,
+   "width": 537.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2417.0,
+     20.0,
+     452.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 47,
+   "key": "base[4].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 448.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2401.0,
+     -18.0,
+     101.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 425.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 425.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "base[4].doors.door[1]"
+  },
+  {
+   "number": 48,
+   "key": "kitchen.plinth[1]",
+   "name": "Цоколь кухни 1",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2400.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     50.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 49,
+   "key": "kitchen.plinth[2]",
+   "name": "Цоколь кухни 2",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 450.0,
+   "width": 100.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2400.0,
+     50.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 50,
+   "key": "countertop",
+   "name": "Столешница",
+   "role": "countertop",
+   "material": "countertop_38_stone",
+   "thickness": 38.0,
+   "length": 2850.0,
+   "width": 600.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     -40.0,
+     820.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 51,
+   "key": "wall[0].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 52,
+   "key": "wall[0].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     384.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 53,
+   "key": "wall[0].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 368.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 368.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 54,
+   "key": "wall[0].top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 368.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     2104.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 368.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 368.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 55,
+   "key": "wall[0].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 396.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     297.0,
+     1402.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 56,
+   "key": "wall[0].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 366.0,
+   "width": 277.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     17.0,
+     20.0,
+     1752.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 57,
+   "key": "wall[0].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 398.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1.0,
+     -18.0,
+     1401.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "wall[0].doors.door[1]"
+  },
+  {
+   "number": 58,
+   "key": "wall[1].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     400.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 59,
+   "key": "wall[1].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     984.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 60,
+   "key": "wall[1].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     416.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 61,
+   "key": "wall[1].top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     416.0,
+     0.0,
+     2104.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 62,
+   "key": "wall[1].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 596.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     402.0,
+     297.0,
+     1402.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 63,
+   "key": "wall[1].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 566.0,
+   "width": 277.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     417.0,
+     20.0,
+     1752.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 64,
+   "key": "wall[1].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 598.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     401.0,
+     -18.0,
+     1401.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "wall[1].doors.door[1]"
+  },
+  {
+   "number": 65,
+   "key": "wall[2].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 360.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1000.0,
+     0.0,
+     1760.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 352.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 352.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 259.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 259.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 66,
+   "key": "wall[2].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 360.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1584.0,
+     0.0,
+     1760.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 352.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 352.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 67,
+   "key": "wall[2].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1016.0,
+     0.0,
+     1760.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 68,
+   "key": "wall[2].top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1016.0,
+     0.0,
+     2104.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 568.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 568.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 69,
+   "key": "wall[2].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 596.0,
+   "width": 356.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1002.0,
+     297.0,
+     1762.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 70,
+   "key": "wall[2].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 358.0,
+   "width": 598.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1001.0,
+     -18.0,
+     1761.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 258.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 115.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 243.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "wall[2].doors.door[1]"
+  },
+  {
+   "number": 71,
+   "key": "wall[3].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1600.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 72,
+   "key": "wall[3].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2384.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 347.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 347.0,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 101.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 619.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 73,
+   "key": "wall[3].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 768.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1616.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 768.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 74,
+   "key": "wall[3].top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 768.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1616.0,
+     0.0,
+     2104.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 768.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 768.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 75,
+   "key": "wall[3].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 796.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1602.0,
+     297.0,
+     1402.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 76,
+   "key": "wall[3].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 766.0,
+   "width": 277.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1617.0,
+     20.0,
+     1752.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 77,
+   "key": "wall[3].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 398.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1601.0,
+     -18.0,
+     1401.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 348.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "wall[3].doors.door[1]"
+  },
+  {
+   "number": 78,
+   "key": "wall[3].doors.door[2]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 718.0,
+   "width": 398.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2001.0,
+     -18.0,
+     1401.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 375.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 618.0,
+     "y": 375.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 295.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 423.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "wall[3].doors.door[2]"
+  },
+  {
+   "number": 79,
+   "key": "wall[4].side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2400.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 229.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 229.7,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 464.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 464.3,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 80,
+   "key": "wall[4].side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 720.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2834.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 8.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 8.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 712.0,
+     "y": 247.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 229.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 229.7,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 464.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 464.3,
+     "y": 260.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 81,
+   "key": "wall[4].bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 418.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2416.0,
+     0.0,
+     1400.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 418.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 82,
+   "key": "wall[4].top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 418.0,
+   "width": 297.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2416.0,
+     0.0,
+     2104.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 418.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 418.0,
+     "y": 247.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 83,
+   "key": "wall[4].back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 446.0,
+   "width": 716.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2402.0,
+     297.0,
+     1402.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 84,
+   "key": "wall[4].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 416.0,
+   "width": 277.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2417.0,
+     20.0,
+     1634.7
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 85,
+   "key": "wall[4].fill[0].shelf[2]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 416.0,
+   "width": 277.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2417.0,
+     20.0,
+     1869.3
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  }
+ ],
+ "nodes": [
+  {
+   "id": "base[0].fill[0].drawer[1]",
+   "kind": "slide",
+   "origin": [
+    29.0,
+    0.0,
+    121.0
+   ],
+   "axis": "-Y",
+   "range": 500.0
+  },
+  {
+   "id": "base[0].fill[0].drawer[2]",
+   "kind": "slide",
+   "origin": [
+    29.0,
+    0.0,
+    350.3
+   ],
+   "axis": "-Y",
+   "range": 500.0
+  },
+  {
+   "id": "base[0].fill[0].drawer[3]",
+   "kind": "slide",
+   "origin": [
+    29.0,
+    0.0,
+    579.7
+   ],
+   "axis": "-Y",
+   "range": 500.0
+  },
+  {
+   "id": "base[1].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    999.0,
+    0.0,
+    101.0
+   ],
+   "axis": "+Z",
+   "range": 110.0
+  },
+  {
+   "id": "base[3].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    1601.0,
+    0.0,
+    101.0
+   ],
+   "axis": "-Z",
+   "range": 110.0
+  },
+  {
+   "id": "base[3].doors.door[2]",
+   "kind": "rotate",
+   "origin": [
+    2399.0,
+    0.0,
+    101.0
+   ],
+   "axis": "+Z",
+   "range": 110.0
+  },
+  {
+   "id": "base[4].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    2849.0,
+    0.0,
+    101.0
+   ],
+   "axis": "+Z",
+   "range": 110.0
+  },
+  {
+   "id": "wall[0].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    1.0,
+    0.0,
+    1401.0
+   ],
+   "axis": "-Z",
+   "range": 110.0
+  },
+  {
+   "id": "wall[1].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    401.0,
+    0.0,
+    1401.0
+   ],
+   "axis": "-Z",
+   "range": 110.0
+  },
+  {
+   "id": "wall[2].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    1001.0,
+    0.0,
+    1761.0
+   ],
+   "axis": "-Z",
+   "range": 110.0
+  },
+  {
+   "id": "wall[3].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    1601.0,
+    0.0,
+    1401.0
+   ],
+   "axis": "-Z",
+   "range": 110.0
+  },
+  {
+   "id": "wall[3].doors.door[2]",
+   "kind": "rotate",
+   "origin": [
+    2399.0,
+    0.0,
+    1401.0
+   ],
+   "axis": "+Z",
+   "range": 110.0
+  }
+ ],
+ "issues": [
+  {
+   "level": "warning",
+   "code": "appliance_niche",
+   "message": "Модуль 3: ниша 600 мм под технику — проверьте размеры по инструкции техники",
+   "path": "base[2]",
+   "fixes": []
+  },
+  {
+   "level": "warning",
+   "code": "door_hits_niche_wall",
+   "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+   "path": "base[4].doors",
+   "fixes": []
+  },
+  {
+   "level": "warning",
+   "code": "door_hits_niche_wall",
+   "message": "Дверь у стены ниши при открывании на 110° заденет стену; нужна фальш-планка 30–50 мм или петли с другой стороны",
+   "path": "wall[0].doors",
+   "fixes": []
+  }
+ ]
+}

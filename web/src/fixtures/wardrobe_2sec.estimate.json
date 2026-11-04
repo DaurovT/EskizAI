@@ -1,0 +1,65 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 3100000,
+   "to": 4400000
+  }
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 3100000,
+   "to": 4400000
+  },
+  "materials": {
+   "from": 2000000,
+   "to": 3000000
+  },
+  "work": {
+   "from": 1000000,
+   "to": 1500000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 3100000,
+   "to": 4400000
+  },
+  "materials": {
+   "from": 2000000,
+   "to": 3000000
+  },
+  "work": {
+   "from": 1000000,
+   "to": 1500000
+  },
+  "groups": [
+   {
+    "name": "Листы",
+    "from": 1725000,
+    "to": 2410000
+   },
+   {
+    "name": "Кромка",
+    "from": 69300,
+    "to": 76440
+   },
+   {
+    "name": "Распил и кромкование",
+    "from": 281250,
+    "to": 397200
+   },
+   {
+    "name": "Фурнитура",
+    "from": 23810,
+    "to": 23960
+   }
+  ],
+  "requests": []
+ }
+}

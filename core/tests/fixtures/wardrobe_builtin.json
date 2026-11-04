@@ -1,0 +1,106 @@
+{
+  "type": "wardrobe",
+  "width": 2276.0,
+  "height": 2642.0,
+  "depth": 600,
+  "installation": "niche",
+  "body": {
+    "material": "ldsp_16_white",
+    "plinth": {
+      "height": 100,
+      "setback": 0,
+      "legs": true,
+      "floor_allowance": 5
+    },
+    "back": {
+      "kind": "none"
+    }
+  },
+  "fronts": {
+    "material": "ldsp_18_oak",
+    "handles": {
+      "kind": "bar",
+      "spacing": 160,
+      "finish": "black"
+    }
+  },
+  "mezzanine": {
+    "height": 450
+  },
+  "builtin": {
+    "fillers": [
+      "left",
+      "right",
+      "top"
+    ],
+    "filler_width": 50,
+    "top_filler_width": 50,
+    "scribe": 15,
+    "filler_position": "flush",
+    "filler_mount": "strip",
+    "niche": {
+      "width_top": 2412,
+      "width_middle": 2400,
+      "width_bottom": 2394,
+      "height_left": 2700,
+      "height_right": 2692,
+      "depth": 650,
+      "lean": "right"
+    },
+    "wedge": [
+      "right"
+    ]
+  },
+  "side_panels": [
+    {
+      "side": "left",
+      "to_floor": true
+    }
+  ],
+  "sections": [
+    {
+      "fill": [
+        {
+          "kind": "drawers",
+          "count": 3,
+          "external": true,
+          "height": 600
+        },
+        {
+          "kind": "shelves",
+          "count": 3
+        }
+      ],
+      "doors": {
+        "count": 2
+      }
+    },
+    {
+      "fill": [
+        {
+          "kind": "rod"
+        }
+      ],
+      "doors": {
+        "count": 2
+      }
+    },
+    {
+      "fill": [
+        {
+          "kind": "shelves",
+          "count": 5
+        }
+      ],
+      "doors": {
+        "count": 2
+      }
+    }
+  ],
+  "room_colors": {
+    "wall": "#E6E1D8",
+    "floor_material": "oak_light",
+    "walls_visible": true,
+    "source": "manual"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "width": 1800,
+  "height": 2400,
+  "depth": 600,
+  "body": {"material": "ldsp_16_white"},
+  "fronts": {"material": "ldsp_18_oak", "handles": {"kind": "bar", "spacing": 128}},
+  "mezzanine": {"height": 400},
+  "sections": [
+    {"width": 570, "fill": [{"kind": "shelves", "count": 4}], "doors": {"count": 1, "hinge": "left"}},
+    {"fill": [{"kind": "drawers", "count": 3, "external": true, "height": 600}, {"kind": "rod"}], "doors": {"count": 2}},
+    {"width": 570, "fill": [{"kind": "drawers", "count": 2, "height": 400}, {"kind": "shelves", "count": 3}], "doors": {"count": 1, "hinge": "right"}}
+  ]
+}

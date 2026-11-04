@@ -1,0 +1,399 @@
+{
+ "format": "1",
+ "size": [
+  600.0,
+  900.0,
+  500.0
+ ],
+ "materials": {
+  "hdf_3_white": {
+   "name": "ХДФ 3 Белый",
+   "color": "#efebe3",
+   "hasGrain": false
+  },
+  "ldsp_16_white": {
+   "name": "ЛДСП 16 Белый",
+   "color": "#f2f0eb",
+   "hasGrain": false
+  },
+  "mdf_18_sage": {
+   "name": "МДФ 18 Шалфей (тест)",
+   "color": "#8fa38a",
+   "hasGrain": false
+  }
+ },
+ "parts": [
+  {
+   "number": 1,
+   "key": "body.side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 900.0,
+   "width": 497.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 2,
+   "key": "body.side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 900.0,
+   "width": 497.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     584.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 3,
+   "key": "body.top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 497.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     884.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 4,
+   "key": "body.bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 497.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 5,
+   "key": "body.divider",
+   "name": "Полка-перегородка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 497.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     684.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 6,
+   "key": "sections[0].shelf[1]",
+   "name": "Полка со скруглением",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 568.0,
+   "width": 477.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 468.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 568.0,
+      "y": 100.0,
+      "cx": 468.0,
+      "cy": 100.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 568.0,
+      "y": 477.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 477.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     16.0,
+     20.0,
+     340.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 7,
+   "key": "body.back",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 596.0,
+   "width": 896.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     497.0,
+     2.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "node": null
+  },
+  {
+   "number": 8,
+   "key": "door[0]",
+   "name": "Дверь",
+   "role": "facade",
+   "material": "mdf_18_sage",
+   "thickness": 18.0,
+   "length": 596.0,
+   "width": 678.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     -18.0,
+     2.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "node": "door[0]"
+  },
+  {
+   "number": 9,
+   "key": "drawer[0].front",
+   "name": "Фасад ящика",
+   "role": "facade",
+   "material": "mdf_18_sage",
+   "thickness": 18.0,
+   "length": 596.0,
+   "width": 196.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     -18.0,
+     688.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "node": "drawer[0]"
+  },
+  {
+   "number": 10,
+   "key": "drawer[0].side.left",
+   "name": "Ящик: бок левый",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 450.0,
+   "width": 120.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     10.0,
+     720.0
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "node": "drawer[0]"
+  },
+  {
+   "number": 11,
+   "key": "drawer[0].side.right",
+   "name": "Ящик: бок правый",
+   "role": "drawer_side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 450.0,
+   "width": 120.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     555.0,
+     10.0,
+     720.0
+    ],
+    "u": "+Y",
+    "v": "+Z",
+    "n": "+X"
+   },
+   "holes": [],
+   "node": "drawer[0]"
+  },
+  {
+   "number": 12,
+   "key": "drawer[0].back",
+   "name": "Ящик: задняя стенка",
+   "role": "drawer_back",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 510.0,
+   "width": 120.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     45.0,
+     444.0,
+     720.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "node": "drawer[0]"
+  },
+  {
+   "number": 13,
+   "key": "drawer[0].bottom",
+   "name": "Ящик: дно",
+   "role": "drawer_bottom",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 542.0,
+   "width": 450.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     29.0,
+     10.0,
+     717.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "node": "drawer[0]"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "door[0]",
+   "kind": "rotate",
+   "origin": [
+    2.0,
+    -18.0,
+    0.0
+   ],
+   "axis": "-Z",
+   "range": 100.0
+  },
+  {
+   "id": "drawer[0]",
+   "kind": "slide",
+   "origin": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": "-Y",
+   "range": 400.0
+  }
+ ],
+ "issues": []
+}

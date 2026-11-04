@@ -1,0 +1,13 @@
+{
+  "width": 1400,
+  "height": 2200,
+  "depth": 550,
+  "body": {"material": "ldsp_16_oak"},
+  "sections": [
+    {"width": 450, "fill": [{"kind": "rod"}], "doors": {"count": 1, "hinge": "left"}},
+    {"fill": [
+      {"kind": "shelves", "count": 1, "height": 700, "doors": {"count": 2}},
+      {"kind": "shelves", "count": 3}
+    ]}
+  ]
+}

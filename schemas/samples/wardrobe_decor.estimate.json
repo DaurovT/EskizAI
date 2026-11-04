@@ -1,0 +1,251 @@
+{
+ "total": {
+  "view": "total",
+  "exact": false,
+  "total": {
+   "from": 9750000,
+   "to": 11500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar"
+ },
+ "short": {
+  "view": "short",
+  "exact": false,
+  "total": {
+   "from": 9750000,
+   "to": 11500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar",
+  "materials": {
+   "from": 6500000,
+   "to": 7600000
+  },
+  "work": {
+   "from": 3250000,
+   "to": 3800000
+  }
+ },
+ "detailed": {
+  "view": "detailed",
+  "exact": false,
+  "total": {
+   "from": 9750000,
+   "to": 11500000
+  },
+  "has_requests": true,
+  "has_stale": false,
+  "uncertainty": [
+   {
+    "category": "fronts",
+    "name": "фасады",
+    "name_uz": "fasadlar",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "hardware",
+    "name": "фурнитура",
+    "name_uz": "furnitura",
+    "reason": "цена по аналогу",
+    "reason_uz": "analog narxi"
+   },
+   {
+    "category": "sizes",
+    "name": "размеры",
+    "name_uz": "o‘lchamlar",
+    "reason": "уточнятся на замере",
+    "reason_uz": "o‘lchovda aniqlanadi"
+   },
+   {
+    "category": "body",
+    "name": "корпус",
+    "name_uz": "korpus",
+    "reason": "цена уточняется, цена по аналогу",
+    "reason_uz": "narx aniqlanadi, analog narxi"
+   }
+  ],
+  "uncertainty_text": "оценка: фасады, фурнитура, размеры",
+  "uncertainty_text_uz": "taxminiy: fasadlar, furnitura, o‘lchamlar",
+  "materials": {
+   "from": 6500000,
+   "to": 7600000
+  },
+  "work": {
+   "from": 3250000,
+   "to": 3800000
+  },
+  "groups": [
+   {
+    "key": "sheets",
+    "name": "Листы ЛДСП и ХДФ",
+    "name_uz": "LDSP va XDF listlari",
+    "from": 2099000,
+    "to": 2464000
+   },
+   {
+    "key": "cutting",
+    "name": "Распил и кромкование",
+    "name_uz": "Kesish va kromkalash",
+    "from": 356000,
+    "to": 418000
+   },
+   {
+    "key": "hardware",
+    "name": "Фурнитура",
+    "name_uz": "Furnitura",
+    "from": 794000,
+    "to": 932000
+   },
+   {
+    "key": "decor:paint:matte:RAL 9001:face",
+    "name": "Покраска фасадов RAL 9001, матовая",
+    "name_uz": "Покраска фасадов RAL 9001, матовая",
+    "from": 599000,
+    "to": 703000
+   },
+   {
+    "key": "decor:paint:matte:RAL 9001:back",
+    "name": "Покраска фасадов RAL 9001, обратная сторона",
+    "name_uz": "Покраска фасадов RAL 9001, обратная сторона",
+    "from": 300000,
+    "to": 352000
+   },
+   {
+    "key": "decor:milling:arcs",
+    "name": "Фрезеровка «Арка», 2 фасада",
+    "name_uz": "Фрезеровка «Арка», 2 фасада",
+    "from": 239000,
+    "to": 281000
+   },
+   {
+    "key": "decor:milling:shaker",
+    "name": "Фрезеровка «Шейкер», 5 фасадов",
+    "name_uz": "Фрезеровка «Шейкер», 5 фасадов",
+    "from": 414000,
+    "to": 486000
+   },
+   {
+    "key": "decor:inlay:frame:brass",
+    "name": "Латунная рамка, 4 фасада, 11,3 м",
+    "name_uz": "Латунная рамка, 4 фасада, 11,3 м",
+    "from": 884000,
+    "to": 1037000
+   },
+   {
+    "key": "decor:inlay_labour:frame:brass",
+    "name": "Установка: латунная рамка, 4 фасада",
+    "name_uz": "Установка: латунная рамка, 4 фасада",
+    "from": 74000,
+    "to": 86000
+   },
+   {
+    "key": "decor:power",
+    "name": "Блок питания подсветки",
+    "name_uz": "Блок питания подсветки",
+    "from": 129000,
+    "to": 151000
+   },
+   {
+    "key": "decor:led:lighting[0]",
+    "name": "Подсветка в нише, 0,8 м, 3000 K",
+    "name_uz": "Подсветка в нише, 0,8 м, 3000 K",
+    "from": 74000,
+    "to": 86000
+   },
+   {
+    "key": "decor:sensor:lighting[0]",
+    "name": "Датчик движения для подсветки",
+    "name_uz": "Датчик движения для подсветки",
+    "from": 69000,
+    "to": 81000
+   },
+   {
+    "key": "decor:led:lighting[1]",
+    "name": "Подсветка над штангой, 1 м, 4000 K",
+    "name_uz": "Подсветка над штангой, 1 м, 4000 K",
+    "from": 92000,
+    "to": 108000
+   },
+   {
+    "key": "decor:sensor:lighting[1]",
+    "name": "Датчик открывания двери для подсветки",
+    "name_uz": "Датчик открывания двери для подсветки",
+    "from": 69000,
+    "to": 81000
+   }
+  ],
+  "requests": [
+   {
+    "name": "ХДФ 3 Белый",
+    "note": "уточняется"
+   }
+  ],
+  "nonstandard": []
+ }
+}

@@ -1,0 +1,4129 @@
+{
+ "format": "1",
+ "size": [
+  1800.0,
+  2400.0,
+  600.0
+ ],
+ "materials": {
+  "hdf_3_white": {
+   "name": "ХДФ 3 Белый",
+   "color": "#efebe3",
+   "hasGrain": false,
+   "type": "matte",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  },
+  "ldsp_16_white": {
+   "name": "ЛДСП 16 Белый",
+   "color": "#f2f0eb",
+   "hasGrain": false,
+   "type": "matte",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  },
+  "ldsp_18_oak": {
+   "name": "ЛДСП 18 Дуб сонома",
+   "color": "#c9a57b",
+   "hasGrain": true,
+   "type": "matte",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  },
+  "rod_oval_chrome": {
+   "name": "Штанга овальная хром",
+   "color": "#c3c7cc",
+   "hasGrain": false,
+   "type": "metal",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  }
+ },
+ "parts": [
+  {
+   "number": 1,
+   "key": "body.side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2300.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     300.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 2292.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 17.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 52.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 17.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 52.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 507.8,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 507.8,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 950.6,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 950.6,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1393.4,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1393.4,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1836.2,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1836.2,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 171.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 171.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 678.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 678.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1185.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1185.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1692.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1692.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 2199.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 2199.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 783.3,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1516.7,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2250.0,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 520.8,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 520.8,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 520.8,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 520.8,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 963.6,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 963.6,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 963.6,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 963.6,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1406.4,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1406.4,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1406.4,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1406.4,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1849.2,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1849.2,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1849.2,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 1849.2,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 2,
+   "key": "body.side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2300.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1484.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 2292.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2292.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 17.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 52.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 17.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 52.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 171.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 171.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 678.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 678.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1185.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1185.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1692.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1692.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 2199.0,
+     "y": 37.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 2199.0,
+     "y": 69.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 50.0,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 783.3,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1516.7,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2250.0,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 520.8,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 520.8,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 520.8,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 520.8,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 963.6,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 963.6,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 963.6,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 963.6,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1406.4,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1406.4,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1406.4,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1406.4,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1849.2,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1849.2,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1849.2,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 1849.2,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 210.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 370.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2292.0,
+     "y": 531.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 3,
+   "key": "body.top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     316.0,
+     0.0,
+     2284.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 584.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 4,
+   "key": "body.bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     316.0,
+     0.0,
+     70.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 584.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 5,
+   "key": "body.plinth.front",
+   "name": "Цоколь передний",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 70.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     316.0,
+     0.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 6,
+   "key": "body.plinth.back",
+   "name": "Цоколь задний",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 70.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     316.0,
+     581.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 7,
+   "key": "partition[0]",
+   "name": "Перегородка",
+   "role": "partition",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2198.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     892.0,
+     0.0,
+     86.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 2198.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2198.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2198.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2198.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 421.8,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 421.8,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 864.6,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 864.6,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1307.4,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1307.4,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1750.2,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1750.2,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 8,
+   "key": "sections[0].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     317.0,
+     20.0,
+     512.8
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 9,
+   "key": "sections[0].fill[0].shelf[2]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     317.0,
+     20.0,
+     955.6
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 10,
+   "key": "sections[0].fill[0].shelf[3]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     317.0,
+     20.0,
+     1398.4
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 11,
+   "key": "sections[0].fill[0].shelf[4]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     317.0,
+     20.0,
+     1841.2
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 12,
+   "key": "sections[1].fill[0].rod",
+   "name": "Штанга",
+   "role": "rod",
+   "material": "rod_oval_chrome",
+   "thickness": 15.0,
+   "length": 572.0,
+   "width": 30.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     910.0,
+     283.5,
+     2224.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 13,
+   "key": "sections[0].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 2228.0,
+   "width": 598.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     301.0,
+     -18.0,
+     71.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 607.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 1114.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 1621.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 2128.0,
+     "y": 22.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 865.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 993.0,
+     "y": 548.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "sections[0].doors.door[1]"
+  },
+  {
+   "number": 14,
+   "key": "sections[1].doors.door[1]",
+   "name": "Дверь",
+   "role": "door",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 2228.0,
+   "width": 598.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     901.0,
+     -18.0,
+     71.0
+    ],
+    "u": "+Z",
+    "v": "+X",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 100.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 607.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 1114.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 1621.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 2128.0,
+     "y": 575.5,
+     "diameter": 35.0,
+     "depth": 13.0,
+     "face": "A"
+    },
+    {
+     "x": 865.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 993.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": "sections[1].doors.door[1]"
+  },
+  {
+   "number": 15,
+   "key": "body.cornice",
+   "name": "Карниз",
+   "role": "cornice",
+   "material": "ldsp_18_oak",
+   "thickness": 18.0,
+   "length": 1200.0,
+   "width": 100.0,
+   "grain": "length",
+   "contour": null,
+   "placement": {
+    "origin": [
+     300.0,
+     -18.0,
+     2300.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 16,
+   "key": "end_unit.left.rear",
+   "name": "Стенка торцевой секции",
+   "role": "end_rear",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 2300.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     581.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 783.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 1516.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 2250.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 78.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 78.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 520.8,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 520.8,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 963.6,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 963.6,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 1406.4,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 1406.4,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 1849.2,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 1849.2,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 2292.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 2292.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 17,
+   "key": "end_unit.left.bottom",
+   "name": "Дно торцевой секции",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     70.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 18,
+   "key": "end_unit.left.shelf[1]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     512.8
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 19,
+   "key": "end_unit.left.shelf[2]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     955.6
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 20,
+   "key": "end_unit.left.shelf[3]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     1398.4
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 21,
+   "key": "end_unit.left.shelf[4]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     1841.2
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 22,
+   "key": "end_unit.left.top",
+   "name": "Крыша торцевой секции",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     295.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 0.0
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 295.0
+     },
+     {
+      "kind": "arc",
+      "x": 295.0,
+      "y": 0.0,
+      "cx": 295.0,
+      "cy": 295.0,
+      "clockwise": false
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     2284.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 300.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 300.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 23,
+   "key": "end_unit.right.rear",
+   "name": "Стенка торцевой секции",
+   "role": "end_rear",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 2300.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1500.0,
+     581.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 783.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 1516.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 2250.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 78.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 78.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 520.8,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 520.8,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 963.6,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 963.6,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 1406.4,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 1406.4,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 1849.2,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 1849.2,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 50.0,
+     "y": 2292.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 250.0,
+     "y": 2292.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 24,
+   "key": "end_unit.right.bottom",
+   "name": "Дно торцевой секции",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     70.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 25,
+   "key": "end_unit.right.shelf[1]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     512.8
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 26,
+   "key": "end_unit.right.shelf[2]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     955.6
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 27,
+   "key": "end_unit.right.shelf[3]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     1398.4
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 28,
+   "key": "end_unit.right.shelf[4]",
+   "name": "Полка торцевая",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     1841.2
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 29,
+   "key": "end_unit.right.top",
+   "name": "Крыша торцевой секции",
+   "role": "end_shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 300.0,
+   "width": 581.0,
+   "grain": "none",
+   "contour": {
+    "start": [
+     0.0,
+     0.0
+    ],
+    "segments": [
+     {
+      "kind": "line",
+      "x": 5.0,
+      "y": 0.0
+     },
+     {
+      "kind": "arc",
+      "x": 300.0,
+      "y": 295.0,
+      "cx": 5.0,
+      "cy": 295.0,
+      "clockwise": false
+     },
+     {
+      "kind": "line",
+      "x": 300.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 581.0
+     },
+     {
+      "kind": "line",
+      "x": 0.0,
+      "y": 0.0
+     }
+    ]
+   },
+   "placement": {
+    "origin": [
+     1500.0,
+     0.0,
+     2284.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 210.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 370.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 531.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 50.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    },
+    {
+     "x": 250.0,
+     "y": 581.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "y1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 30,
+   "key": "body.back[1]",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 1196.0,
+   "width": 2226.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     302.0,
+     597.0,
+     72.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  }
+ ],
+ "nodes": [
+  {
+   "id": "sections[0].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    301.0,
+    0.0,
+    71.0
+   ],
+   "axis": "-Z",
+   "range": 110.0,
+   "parent": null
+  },
+  {
+   "id": "sections[1].doors.door[1]",
+   "kind": "rotate",
+   "origin": [
+    1499.0,
+    0.0,
+    71.0
+   ],
+   "axis": "+Z",
+   "range": 110.0,
+   "parent": null
+  }
+ ],
+ "sections": [
+  {
+   "key": "sections[0]",
+   "x0": 316.0,
+   "x1": 892.0,
+   "zMin": 86.0,
+   "zMax": 2284.0
+  },
+  {
+   "key": "sections[1]",
+   "x0": 908.0,
+   "x1": 1484.0,
+   "zMin": 86.0,
+   "zMax": 2284.0
+  }
+ ],
+ "hardware": [
+  {
+   "id": "sections[1].fill[0].rod.holder.left",
+   "kind": "rod_holder",
+   "name": "Штангодержатель",
+   "node": null,
+   "part": "sections[1].fill[0].rod",
+   "finish": "chrome",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "X",
+     "center": [
+      909.5,
+      298.5,
+      2231.5
+     ],
+     "radius": 19.0,
+     "length": 3.0
+    },
+    {
+     "type": "box",
+     "min": [
+      908.0,
+      280.5,
+      2221.0
+     ],
+     "max": [
+      922.0,
+      316.5,
+      2242.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].fill[0].rod.holder.right",
+   "kind": "rod_holder",
+   "name": "Штангодержатель",
+   "node": null,
+   "part": "sections[1].fill[0].rod",
+   "finish": "chrome",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "X",
+     "center": [
+      1482.5,
+      298.5,
+      2231.5
+     ],
+     "radius": 19.0,
+     "length": 3.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1470.0,
+      280.5,
+      2221.0
+     ],
+     "max": [
+      1484.0,
+      316.5,
+      2242.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].handle[1]",
+   "kind": "handle",
+   "name": "Ручка-скоба 128 мм",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      849.0,
+      -33.0,
+      936.0
+     ],
+     "radius": 4.0,
+     "length": 30.0
+    },
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      849.0,
+      -33.0,
+      1064.0
+     ],
+     "radius": 4.0,
+     "length": 30.0
+    },
+    {
+     "type": "cylinder",
+     "axis": "Z",
+     "center": [
+      849.0,
+      -52.0,
+      1000.0
+     ],
+     "radius": 6.0,
+     "length": 164.0
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[1]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      323.5,
+      1.0,
+      171.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      316.5,
+      0.0,
+      163.0
+     ],
+     "max": [
+      330.5,
+      9.0,
+      179.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[1].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      317.5,
+      9.0,
+      164.0
+     ],
+     "max": [
+      329.5,
+      46.0,
+      178.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      316.0,
+      20.0,
+      151.0
+     ],
+     "max": [
+      317.5,
+      62.0,
+      191.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[2]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      323.5,
+      1.0,
+      678.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      316.5,
+      0.0,
+      670.0
+     ],
+     "max": [
+      330.5,
+      9.0,
+      686.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[2].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      317.5,
+      9.0,
+      671.0
+     ],
+     "max": [
+      329.5,
+      46.0,
+      685.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      316.0,
+      20.0,
+      658.0
+     ],
+     "max": [
+      317.5,
+      62.0,
+      698.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[3]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      323.5,
+      1.0,
+      1185.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      316.5,
+      0.0,
+      1177.0
+     ],
+     "max": [
+      330.5,
+      9.0,
+      1193.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[3].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      317.5,
+      9.0,
+      1178.0
+     ],
+     "max": [
+      329.5,
+      46.0,
+      1192.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      316.0,
+      20.0,
+      1165.0
+     ],
+     "max": [
+      317.5,
+      62.0,
+      1205.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[4]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      323.5,
+      1.0,
+      1692.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      316.5,
+      0.0,
+      1684.0
+     ],
+     "max": [
+      330.5,
+      9.0,
+      1700.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[4].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      317.5,
+      9.0,
+      1685.0
+     ],
+     "max": [
+      329.5,
+      46.0,
+      1699.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      316.0,
+      20.0,
+      1672.0
+     ],
+     "max": [
+      317.5,
+      62.0,
+      1712.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[5]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[0].doors.door[1]",
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      323.5,
+      1.0,
+      2199.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      316.5,
+      0.0,
+      2191.0
+     ],
+     "max": [
+      330.5,
+      9.0,
+      2207.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[0].doors.door[1].hinge[5].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[0].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      317.5,
+      9.0,
+      2192.0
+     ],
+     "max": [
+      329.5,
+      46.0,
+      2206.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      316.0,
+      20.0,
+      2179.0
+     ],
+     "max": [
+      317.5,
+      62.0,
+      2219.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].handle[1]",
+   "kind": "handle",
+   "name": "Ручка-скоба 128 мм",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      951.0,
+      -33.0,
+      936.0
+     ],
+     "radius": 4.0,
+     "length": 30.0
+    },
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      951.0,
+      -33.0,
+      1064.0
+     ],
+     "radius": 4.0,
+     "length": 30.0
+    },
+    {
+     "type": "cylinder",
+     "axis": "Z",
+     "center": [
+      951.0,
+      -52.0,
+      1000.0
+     ],
+     "radius": 6.0,
+     "length": 164.0
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[1]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      1476.5,
+      1.0,
+      171.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1469.5,
+      0.0,
+      163.0
+     ],
+     "max": [
+      1483.5,
+      9.0,
+      179.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[1].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      1470.5,
+      9.0,
+      164.0
+     ],
+     "max": [
+      1482.5,
+      46.0,
+      178.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      1482.5,
+      20.0,
+      151.0
+     ],
+     "max": [
+      1484.0,
+      62.0,
+      191.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[2]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      1476.5,
+      1.0,
+      678.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1469.5,
+      0.0,
+      670.0
+     ],
+     "max": [
+      1483.5,
+      9.0,
+      686.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[2].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      1470.5,
+      9.0,
+      671.0
+     ],
+     "max": [
+      1482.5,
+      46.0,
+      685.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      1482.5,
+      20.0,
+      658.0
+     ],
+     "max": [
+      1484.0,
+      62.0,
+      698.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[3]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      1476.5,
+      1.0,
+      1185.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1469.5,
+      0.0,
+      1177.0
+     ],
+     "max": [
+      1483.5,
+      9.0,
+      1193.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[3].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      1470.5,
+      9.0,
+      1178.0
+     ],
+     "max": [
+      1482.5,
+      46.0,
+      1192.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      1482.5,
+      20.0,
+      1165.0
+     ],
+     "max": [
+      1484.0,
+      62.0,
+      1205.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[4]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      1476.5,
+      1.0,
+      1692.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1469.5,
+      0.0,
+      1684.0
+     ],
+     "max": [
+      1483.5,
+      9.0,
+      1700.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[4].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      1470.5,
+      9.0,
+      1685.0
+     ],
+     "max": [
+      1482.5,
+      46.0,
+      1699.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      1482.5,
+      20.0,
+      1672.0
+     ],
+     "max": [
+      1484.0,
+      62.0,
+      1712.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[5]",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": "sections[1].doors.door[1]",
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "cylinder",
+     "axis": "Y",
+     "center": [
+      1476.5,
+      1.0,
+      2199.0
+     ],
+     "radius": 17.5,
+     "length": 2.0
+    },
+    {
+     "type": "box",
+     "min": [
+      1469.5,
+      0.0,
+      2191.0
+     ],
+     "max": [
+      1483.5,
+      9.0,
+      2207.0
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sections[1].doors.door[1].hinge[5].arm",
+   "kind": "hinge",
+   "name": "Петля накладная 110° с доводчиком (стандарт)",
+   "node": null,
+   "part": "sections[1].doors.door[1]",
+   "finish": "steel",
+   "shapes": [
+    {
+     "type": "box",
+     "min": [
+      1470.5,
+      9.0,
+      2192.0
+     ],
+     "max": [
+      1482.5,
+      46.0,
+      2206.0
+     ]
+    },
+    {
+     "type": "box",
+     "min": [
+      1482.5,
+      20.0,
+      2179.0
+     ],
+     "max": [
+      1484.0,
+      62.0,
+      2219.0
+     ]
+    }
+   ]
+  }
+ ],
+ "hardwareFinishes": {
+  "steel": {
+   "name": "Сталь шлифованная",
+   "color": "#b8bcc0",
+   "metal": true,
+   "roughness": 0.38
+  },
+  "chrome": {
+   "name": "Хром",
+   "color": "#d9dcdf",
+   "metal": true,
+   "roughness": 0.16
+  },
+  "nickel": {
+   "name": "Никель",
+   "color": "#c4c7ca",
+   "metal": true,
+   "roughness": 0.3
+  },
+  "zinc": {
+   "name": "Оцинковка",
+   "color": "#a9adb1",
+   "metal": true,
+   "roughness": 0.45
+  },
+  "alu": {
+   "name": "Алюминий",
+   "color": "#c6c9cc",
+   "metal": true,
+   "roughness": 0.34
+  },
+  "plastic_black": {
+   "name": "Пластик чёрный",
+   "color": "#2b2b2b",
+   "metal": false,
+   "roughness": 0.6
+  },
+  "plastic_light": {
+   "name": "Пластик светлый",
+   "color": "#deddd8",
+   "metal": false,
+   "roughness": 0.55
+  },
+  "brass": {
+   "name": "Латунь",
+   "color": "#c9a45c",
+   "metal": true,
+   "roughness": 0.3
+  },
+  "gold": {
+   "name": "Золото",
+   "color": "#d4af37",
+   "metal": true,
+   "roughness": 0.22
+  },
+  "black": {
+   "name": "Чёрный матовый",
+   "color": "#1f1f1f",
+   "metal": true,
+   "roughness": 0.55
+  }
+ },
+ "lights": [],
+ "issues": []
+}

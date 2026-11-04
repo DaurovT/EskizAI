@@ -1,0 +1,348 @@
+{
+  "ok": true,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "drawer": "0.3.0",
+    "fronts": "0.5.0",
+    "partition": "0.2.0",
+    "plinth": "0.2.0",
+    "rod": "0.1.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "sliding_doors": "0.1.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2400.0,
+      "width": 647.0,
+      "cut_length": 2399.6,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2400.0,
+      "width": 647.0,
+      "cut_length": 2399.6,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2368.0,
+      "width": 647.0,
+      "cut_length": 2368.0,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2368.0,
+      "width": 647.0,
+      "cut_length": 2368.0,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2368.0,
+      "width": 70.0,
+      "cut_length": 2368.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2368.0,
+      "width": 70.0,
+      "cut_length": 2368.0,
+      "cut_width": 70.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7,
+        8
+      ],
+      "name": "Перегородка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 2298.0,
+      "width": 547.0,
+      "cut_length": 2298.0,
+      "cut_width": 545.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        26,
+        27,
+        28,
+        29,
+        30
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 778.0,
+      "width": 527.0,
+      "cut_length": 778.0,
+      "cut_width": 525.0,
+      "qty": 10,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        14,
+        15,
+        19,
+        20
+      ],
+      "name": "Боковина ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 500.0,
+      "width": 160.0,
+      "cut_length": 500.0,
+      "cut_width": 159.6,
+      "qty": 4,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        16,
+        17,
+        21,
+        22
+      ],
+      "name": "Стенка ящика",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 718.0,
+      "width": 160.0,
+      "cut_length": 718.0,
+      "cut_width": 159.6,
+      "qty": 4,
+      "edges": {
+        "Д2": "0.4"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        18,
+        23
+      ],
+      "name": "Дно ящика",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 750.0,
+      "width": 500.0,
+      "cut_length": 750.0,
+      "cut_width": 500.0,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        24
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 16 Белый",
+      "thickness": 16.0,
+      "length": 776.0,
+      "width": 527.0,
+      "cut_length": 776.0,
+      "cut_width": 525.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        31,
+        33
+      ],
+      "name": "Заполнение двери-купе",
+      "material": "ЛДСП 10 Белый",
+      "thickness": 10.0,
+      "length": 2186.0,
+      "width": 754.6,
+      "cut_length": 2186.0,
+      "cut_width": 754.6,
+      "qty": 2,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        34
+      ],
+      "name": "Задняя стенка 1",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 1594.0,
+      "width": 2326.0,
+      "cut_length": 1594.0,
+      "cut_width": 2326.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        35
+      ],
+      "name": "Задняя стенка 2",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 802.0,
+      "width": 2326.0,
+      "cut_length": 802.0,
+      "cut_width": 2326.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 64
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 40
+    },
+    {
+      "name": "Направляющие шариковые 500 мм (пара, стандарт)",
+      "qty": 2
+    },
+    {
+      "name": "Штанга овальная 772 мм",
+      "qty": 1
+    },
+    {
+      "name": "Штангодержатель",
+      "qty": 2
+    },
+    {
+      "name": "Зеркало 4 мм 755×2186 мм",
+      "qty": 1
+    },
+    {
+      "name": "Профиль вертикальный 2258 мм",
+      "qty": 6
+    },
+    {
+      "name": "Профиль горизонтальный 755 мм",
+      "qty": 6
+    },
+    {
+      "name": "Рельс верхний 2368 мм",
+      "qty": 1
+    },
+    {
+      "name": "Рельс нижний 2368 мм",
+      "qty": 1
+    },
+    {
+      "name": "Ролики двери-купе (комплект на дверь)",
+      "qty": 3
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 95
+    }
+  ],
+  "issues": []
+}

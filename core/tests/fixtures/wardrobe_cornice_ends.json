@@ -1,0 +1,12 @@
+{
+  "width": 1200,
+  "height": 2400,
+  "depth": 600,
+  "body": {"material": "ldsp_16_white", "cornice": {"height": 100}},
+  "fronts": {"material": "ldsp_18_oak"},
+  "end_units": [{"side": "left", "width": 300, "shelves": 4}, {"side": "right", "width": 300, "shelves": 4}],
+  "sections": [
+    {"fill": [{"kind": "shelves", "count": 4}], "doors": {"count": 1, "hinge": "left"}},
+    {"fill": [{"kind": "rod"}], "doors": {"count": 1, "hinge": "right"}}
+  ]
+}

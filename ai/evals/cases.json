@@ -1,0 +1,12 @@
+[
+  {"id": "ru_kupe_3", "lang": "ru", "text": "шкаф-купе 2,4 метра, три двери, зеркало посередине",
+   "expect": {"type": "wardrobe", "sliding_doors": 3, "mirrors": 1, "width": 2400}},
+  {"id": "ru_hinged_2", "lang": "ru", "text": "распашной шкаф 1200 на 2400, две секции: полки и штанга, глубина 600",
+   "expect": {"type": "wardrobe", "sections": 2, "width": 1200, "height": 2400}},
+  {"id": "uz_latn_kupe", "lang": "uz", "text": "kupe shkaf 1,8 metr, ikki eshik, ko'zgu yo'q",
+   "expect": {"type": "wardrobe", "sliding_doors": 2, "width": 1800}},
+  {"id": "uz_cyrl_kitchen", "lang": "uz", "text": "тўғри ошхона 2,8 метр, мойка, газ плита, тепада шкафлар",
+   "expect": {"type": "kitchen", "base_run_min": 2600, "base_run_max": 3000}},
+  {"id": "ru_kitchen", "lang": "ru", "text": "кухня прямая 3 метра: ящики слева, мойка, посудомойка 60, верхние шкафы",
+   "expect": {"type": "kitchen", "has_appliance": true, "base_run_min": 2800, "base_run_max": 3200}}
+]

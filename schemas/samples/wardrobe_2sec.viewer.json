@@ -1,0 +1,1248 @@
+{
+ "format": "1",
+ "size": [
+  1200.0,
+  2400.0,
+  600.0
+ ],
+ "materials": {
+  "hdf_3_white": {
+   "name": "ХДФ 3 Белый",
+   "color": "#efebe3",
+   "hasGrain": false,
+   "type": "matte",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  },
+  "ldsp_16_white": {
+   "name": "ЛДСП 16 Белый",
+   "color": "#f2f0eb",
+   "hasGrain": false,
+   "type": "matte",
+   "texture": null,
+   "textureSizeMm": [
+    1000,
+    1000
+   ]
+  }
+ },
+ "parts": [
+  {
+   "number": 1,
+   "key": "body.side.left",
+   "name": "Боковина левая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2400.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 2392.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2392.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2392.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 2392.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 78.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 17.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 52.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 17.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 52.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 527.8,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 527.8,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 990.6,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 990.6,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1453.4,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1453.4,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1916.2,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1916.2,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 2,
+   "key": "body.side.right",
+   "name": "Боковина правая",
+   "role": "side",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2400.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     1184.0,
+     0.0,
+     0.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 2392.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2392.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2392.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 2392.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 78.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 17.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 52.5,
+     "y": 8.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 17.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 52.5,
+     "y": 589.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 450.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 450.7,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 836.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 836.3,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1222.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1222.0,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1607.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1607.7,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1993.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1993.3,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 3,
+   "key": "body.top",
+   "name": "Крыша",
+   "role": "top",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     2384.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 584.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    },
+    {
+     "x": 584.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 4,
+   "key": "body.bottom",
+   "name": "Дно",
+   "role": "bottom",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     70.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 584.0,
+     "y": 50.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 215.7,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 381.3,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    },
+    {
+     "x": 584.0,
+     "y": 547.0,
+     "diameter": 7.0,
+     "depth": 0.0,
+     "face": "B"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 5,
+   "key": "body.plinth.front",
+   "name": "Цоколь передний",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 70.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     0.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 6,
+   "key": "body.plinth.back",
+   "name": "Цоколь задний",
+   "role": "plinth",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 1168.0,
+   "width": 70.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     16.0,
+     581.0,
+     0.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 1168.0,
+     "y": 17.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 1168.0,
+     "y": 52.5,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 7,
+   "key": "partition[0]",
+   "name": "Перегородка",
+   "role": "partition",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 2298.0,
+   "width": 597.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     592.0,
+     0.0,
+     86.0
+    ],
+    "u": "+Z",
+    "v": "+Y",
+    "n": "+X"
+   },
+   "holes": [
+    {
+     "x": 0.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 0.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x0"
+    },
+    {
+     "x": 2298.0,
+     "y": 50.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2298.0,
+     "y": 215.7,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2298.0,
+     "y": 381.3,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 2298.0,
+     "y": 547.0,
+     "diameter": 5.0,
+     "depth": 50.0,
+     "face": "x1"
+    },
+    {
+     "x": 441.8,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 441.8,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 904.6,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 904.6,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1367.4,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1367.4,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1830.2,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 1830.2,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "B"
+    },
+    {
+     "x": 364.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 364.7,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 750.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 750.3,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1136.0,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1136.0,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1521.7,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1521.7,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1907.3,
+     "y": 57.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    },
+    {
+     "x": 1907.3,
+     "y": 560.0,
+     "diameter": 5.0,
+     "depth": 12.0,
+     "face": "A"
+    }
+   ],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 8,
+   "key": "sections[0].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     17.0,
+     20.0,
+     532.8
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 9,
+   "key": "sections[0].fill[0].shelf[2]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     17.0,
+     20.0,
+     995.6
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 10,
+   "key": "sections[0].fill[0].shelf[3]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     17.0,
+     20.0,
+     1458.4
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 11,
+   "key": "sections[0].fill[0].shelf[4]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     17.0,
+     20.0,
+     1921.2
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 12,
+   "key": "sections[1].fill[0].shelf[1]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     609.0,
+     20.0,
+     455.7
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 13,
+   "key": "sections[1].fill[0].shelf[2]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     609.0,
+     20.0,
+     841.3
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 14,
+   "key": "sections[1].fill[0].shelf[3]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     609.0,
+     20.0,
+     1227.0
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 15,
+   "key": "sections[1].fill[0].shelf[4]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     609.0,
+     20.0,
+     1612.7
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 16,
+   "key": "sections[1].fill[0].shelf[5]",
+   "name": "Полка",
+   "role": "shelf",
+   "material": "ldsp_16_white",
+   "thickness": 16.0,
+   "length": 574.0,
+   "width": 577.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     609.0,
+     20.0,
+     1998.3
+    ],
+    "u": "+X",
+    "v": "+Y",
+    "n": "+Z"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  },
+  {
+   "number": 17,
+   "key": "body.back[1]",
+   "name": "Задняя стенка",
+   "role": "back",
+   "material": "hdf_3_white",
+   "thickness": 3.0,
+   "length": 1196.0,
+   "width": 2326.0,
+   "grain": "none",
+   "contour": null,
+   "placement": {
+    "origin": [
+     2.0,
+     597.0,
+     72.0
+    ],
+    "u": "+X",
+    "v": "+Z",
+    "n": "+Y"
+   },
+   "holes": [],
+   "cutouts": [],
+   "node": null
+  }
+ ],
+ "nodes": [],
+ "sections": [
+  {
+   "key": "sections[0]",
+   "x0": 16.0,
+   "x1": 592.0,
+   "zMin": 86.0,
+   "zMax": 2384.0
+  },
+  {
+   "key": "sections[1]",
+   "x0": 608.0,
+   "x1": 1184.0,
+   "zMin": 86.0,
+   "zMax": 2384.0
+  }
+ ],
+ "hardware": [],
+ "hardwareFinishes": {
+  "steel": {
+   "name": "Сталь шлифованная",
+   "color": "#b8bcc0",
+   "metal": true,
+   "roughness": 0.38
+  },
+  "chrome": {
+   "name": "Хром",
+   "color": "#d9dcdf",
+   "metal": true,
+   "roughness": 0.16
+  },
+  "nickel": {
+   "name": "Никель",
+   "color": "#c4c7ca",
+   "metal": true,
+   "roughness": 0.3
+  },
+  "zinc": {
+   "name": "Оцинковка",
+   "color": "#a9adb1",
+   "metal": true,
+   "roughness": 0.45
+  },
+  "alu": {
+   "name": "Алюминий",
+   "color": "#c6c9cc",
+   "metal": true,
+   "roughness": 0.34
+  },
+  "plastic_black": {
+   "name": "Пластик чёрный",
+   "color": "#2b2b2b",
+   "metal": false,
+   "roughness": 0.6
+  },
+  "plastic_light": {
+   "name": "Пластик светлый",
+   "color": "#deddd8",
+   "metal": false,
+   "roughness": 0.55
+  },
+  "brass": {
+   "name": "Латунь",
+   "color": "#c9a45c",
+   "metal": true,
+   "roughness": 0.3
+  },
+  "gold": {
+   "name": "Золото",
+   "color": "#d4af37",
+   "metal": true,
+   "roughness": 0.22
+  },
+  "black": {
+   "name": "Чёрный матовый",
+   "color": "#1f1f1f",
+   "metal": true,
+   "roughness": 0.55
+  }
+ },
+ "lights": [],
+ "issues": []
+}

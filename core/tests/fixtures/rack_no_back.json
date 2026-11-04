@@ -1,0 +1,9 @@
+{
+  "width": 600,
+  "height": 1800,
+  "depth": 400,
+  "body": {"material": "ldsp_16_grey", "plinth": null, "back": {"kind": "none"}},
+  "sections": [
+    {"fill": [{"kind": "shelves", "count": 4, "mount": "fixed"}]}
+  ]
+}

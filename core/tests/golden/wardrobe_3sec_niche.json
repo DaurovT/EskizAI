@@ -1,0 +1,234 @@
+{
+  "ok": true,
+  "module_versions": {
+    "back": "0.2.0",
+    "body": "0.2.0",
+    "fronts": "0.5.0",
+    "partition": "0.2.0",
+    "plinth": "0.2.0",
+    "sections": "0.2.0",
+    "shelf": "0.2.0",
+    "zones": "0.1.0"
+  },
+  "rules_version": "2026.11-draft",
+  "spec": [
+    {
+      "numbers": [
+        1
+      ],
+      "name": "Боковина левая",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2582.0,
+      "width": 647.0,
+      "cut_length": 2582.0,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        2
+      ],
+      "name": "Боковина правая",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2582.0,
+      "width": 647.0,
+      "cut_length": 2582.0,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        3
+      ],
+      "name": "Крыша",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2400.0,
+      "width": 647.0,
+      "cut_length": 2399.2,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Ш1": "0.4",
+        "Ш2": "0.4",
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        4
+      ],
+      "name": "Дно",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2364.0,
+      "width": 647.0,
+      "cut_length": 2364.0,
+      "cut_width": 645.0,
+      "qty": 1,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        5
+      ],
+      "name": "Цоколь передний",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2364.0,
+      "width": 100.0,
+      "cut_length": 2364.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        6
+      ],
+      "name": "Цоколь задний",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2364.0,
+      "width": 100.0,
+      "cut_length": 2364.0,
+      "cut_width": 100.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        7,
+        8
+      ],
+      "name": "Перегородка",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 2464.0,
+      "width": 647.0,
+      "cut_length": 2464.0,
+      "cut_width": 645.0,
+      "qty": 2,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 798.0,
+      "width": 627.0,
+      "cut_length": 798.0,
+      "cut_width": 625.0,
+      "qty": 6,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "name": "Полка",
+      "material": "ЛДСП 18 Дуб сонома",
+      "thickness": 18.0,
+      "length": 800.0,
+      "width": 627.0,
+      "cut_length": 800.0,
+      "cut_width": 625.0,
+      "qty": 6,
+      "edges": {
+        "Д1": "2"
+      },
+      "grain": "вдоль длины",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        21
+      ],
+      "name": "Задняя стенка 1",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 1571.0,
+      "width": 2496.0,
+      "cut_length": 1571.0,
+      "cut_width": 2496.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    },
+    {
+      "numbers": [
+        22
+      ],
+      "name": "Задняя стенка 2",
+      "material": "ХДФ 3 Белый",
+      "thickness": 3.0,
+      "length": 825.0,
+      "width": 2496.0,
+      "cut_length": 825.0,
+      "cut_width": 2496.0,
+      "qty": 1,
+      "edges": {},
+      "grain": "—",
+      "ops": ""
+    }
+  ],
+  "hardware": [
+    {
+      "name": "Конфирмат 7×50",
+      "qty": 88
+    },
+    {
+      "name": "Полкодержатель",
+      "qty": 24
+    },
+    {
+      "name": "Гвоздь для ХДФ 1,6×25",
+      "qty": 100
+    }
+  ],
+  "issues": []
+}

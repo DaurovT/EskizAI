@@ -1,0 +1,273 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_PYTHON: "3.12"
+  NODE_VERSION: "22"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # Какие части затронуты. Зависимости: ai и api используют core (api — ещё и ai);
+  # web и app используют viewer; app читает schemas/samples. Ручной запуск — всё.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      core: ${{ steps.f.outputs.core }}
+      ai: ${{ steps.f.outputs.ai }}
+      api: ${{ steps.f.outputs.api }}
+      viewer: ${{ steps.f.outputs.viewer }}
+      web: ${{ steps.f.outputs.web }}
+      app: ${{ steps.f.outputs.app }}
+      deploy: ${{ steps.f.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            ci: &ci
+              - .github/workflows/ci.yml
+            core:
+              - *ci
+              - core/**
+            ai:
+              - *ci
+              - core/**
+              - ai/**
+            api:
+              - *ci
+              - core/**
+              - ai/**
+              - api/**
+            viewer:
+              - *ci
+              - viewer/**
+            web:
+              - *ci
+              - viewer/**
+              - web/**
+            app:
+              - *ci
+              - viewer/**
+              - schemas/**
+              - app/**
+            deploy:
+              - *ci
+              - deploy/**
+              - .dockerignore
+              - core/**
+              - ai/**
+              - api/**
+              - viewer/**
+              - web/**
+
+  core:
+    needs: changes
+    if: needs.changes.outputs.core == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: core/uv.lock
+      - run: uv sync --locked
+      - run: uv run pytest -q
+
+  ai:
+    needs: changes
+    if: needs.changes.outputs.ai == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ai/uv.lock
+      - run: uv sync --locked
+      # Тесты на подставном клиенте: ключ API не нужен и не передаётся.
+      - run: uv run pytest -q
+
+  api-sqlite:
+    needs: changes
+    if: needs.changes.outputs.api == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+      - run: uv sync --locked
+      - name: Миграции на SQLite
+        run: DATABASE_URL=sqlite:///./ci.db uv run alembic upgrade head
+      - run: uv run pytest -q
+
+  api-postgres:
+    needs: changes
+    if: needs.changes.outputs.api == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mebel
+          POSTGRES_PASSWORD: mebel
+          POSTGRES_DB: mebel
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mebel -d mebel"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      PGPASSWORD: mebel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+      - run: uv sync --locked
+      - name: alembic upgrade head (Postgres)
+        env:
+          DATABASE_URL: postgresql+psycopg://mebel:mebel@localhost:5432/mebel
+        run: uv run alembic upgrade head
+      - name: Отдельная база для тестов
+        run: psql -h localhost -U mebel -d mebel -c "CREATE DATABASE mebel_test"
+      - name: pytest (Postgres)
+        env:
+          TEST_DATABASE_URL: postgresql+psycopg://mebel:mebel@localhost:5432/mebel_test
+        run: uv run pytest -q
+
+  viewer:
+    needs: changes
+    if: needs.changes.outputs.viewer == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: viewer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            viewer/package-lock.json
+            web/package-lock.json
+      # web подключает viewer как file:../viewer; его prebuild собирает viewer (нужен tsc из viewer).
+      - run: npm ci --no-audit --no-fund
+        working-directory: viewer
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+
+  app:
+    needs: changes
+    if: needs.changes.outputs.app == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Есть ли app/
+        id: has
+        run: |
+          if [ -f app/package.json ] && [ -f app/package-lock.json ]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "app/ ещё не готов (нет package.json или package-lock.json) — пропускаю"
+            echo "app=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.has.outputs.app == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            viewer/package-lock.json
+            app/package-lock.json
+      # Типы @mebel/viewer берутся из viewer/dist — сначала собрать viewer.
+      - name: viewer (зависимость app)
+        if: steps.has.outputs.app == 'true'
+        working-directory: viewer
+        run: npm ci --no-audit --no-fund && npm run build
+      - run: npm ci --no-audit --no-fund
+        if: steps.has.outputs.app == 'true'
+        working-directory: app
+      - run: npx tsc --noEmit
+        if: steps.has.outputs.app == 'true'
+        working-directory: app
+      - name: jest (если тесты уже есть)
+        if: steps.has.outputs.app == 'true'
+        working-directory: app
+        run: |
+          if find src -path '*__tests__*' \( -name '*.test.ts' -o -name '*.test.tsx' \) 2>/dev/null | grep -q .; then
+            npx jest --ci
+          else
+            echo "Тестов в app/src/**/__tests__ пока нет — пропускаю jest"
+          fi
+
+  # Образы собираются (без публикации), чтобы Dockerfile не ломались незаметно.
+  docker:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/${{ matrix.image }}.Dockerfile
+          push: false
+          tags: mebel-${{ matrix.image }}:ci
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

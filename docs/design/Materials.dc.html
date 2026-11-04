@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Материалы</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+/*V3*/
+body{margin:0}
+a{color:#2F6B44;text-decoration:none}a:hover{color:#275C3A}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.app{width:390px;height:844px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;flex-direction:column;position:relative;overflow:hidden;font-size:16px;line-height:22px;font-weight:400;letter-spacing:-.005em}
+.mono,.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.hdr{flex:none;display:flex;align-items:center;gap:10px;padding:12px 12px 4px;min-height:56px}
+.ht{flex:1;min-width:0;font-size:18px;line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:44px;height:44px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#21201F;position:relative}
+.ib.flat{background:transparent}
+.ib .badge{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#E5352B;box-shadow:0 0 0 2px #fff}
+.big{flex:none;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:4px 16px 0}
+.title{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:16px;line-height:22px;color:#6E6B66}
+.cap{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.lbl{font-size:15px;line-height:20px;font-weight:600;color:#6E6B66;letter-spacing:0;text-transform:none}
+.body{flex:1;min-height:0;overflow:hidden;padding:8px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.grow{flex:1}
+.sheet{background:#fff;border-radius:28px;overflow:hidden;flex:none}
+.pad{padding:20px}
+.row{display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 20px;box-sizing:border-box;color:#21201F;position:relative}
+.row+.row{box-shadow:inset 0 1px 0 #F0EFEC}
+.row .tx{flex:1;min-width:0}
+.rt{font-size:16px;line-height:21px;font-weight:500}
+.rs{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.rv{font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;color:#21201F;font-variant-numeric:tabular-nums}
+.chev{flex:none;color:#B4B1AB}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.st{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9px;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap;background:#F2F1EE;color:#55524D}
+.st .dot{display:none}
+.st.c-green{background:#E6F1EA}.st.c-amber{background:#FFF0D4}.st.c-blue{background:#E6EEFF}.st.c-red{background:#FFE7E4}.st.c-gray{background:#F2F1EE}
+.d-green{background:#387D50}.d-amber{background:#E08A00}.d-blue{background:#1F4FBF}.d-red{background:#E5352B}.d-gray{background:#A3A09A}
+.c-green{color:#275C3A}.c-amber{color:#8A4B00}.c-blue{color:#1F4FBF}.c-red{color:#A1221A}.c-gray{color:#55524D}
+.foot{flex:none;display:flex;flex-direction:column;gap:8px;padding:10px 12px 30px}
+.foot.bar{background:#fff;border-radius:28px 28px 0 0;padding:16px 16px 30px}
+.fr{display:flex;gap:8px}
+.cta{height:56px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 20px;font-size:17px;line-height:22px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.fr>.cta,.fr>.soft{flex:1}
+.cta:hover{color:#fff;background:#2F6B44}
+.cta.val{justify-content:space-between;padding:0 8px 0 20px}
+.cta .v{height:40px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.cta.off{background:#E6E5E1;color:#8E8B85}
+.soft{height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;font-size:17px;line-height:22px;font-weight:500;box-sizing:border-box;white-space:nowrap}
+.soft:hover{color:#21201F;background:#F7F7F5}
+.soft.sm,.cta.sm{height:44px;border-radius:14px;font-size:15px;padding:0 14px;flex:none}
+.soft.w{background:#fff}
+.txt{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:500;color:#2F6B44}
+.txt.red{color:#C62A20}
+.seg{display:flex;background:#E6E5E1;border-radius:14px;padding:3px;gap:2px;flex:none}
+.sg{flex:1;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:20px;font-weight:500;color:#21201F;white-space:nowrap;padding:0 8px}
+.sg.on{background:#fff;color:#21201F;box-shadow:0 1px 3px rgba(33,32,31,.10)}
+.chips{display:flex;gap:8px;overflow:hidden;flex:none;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.chip{height:40px;border-radius:20px;background:#fff;color:#21201F;display:inline-flex;align-items:center;gap:6px;padding:0 16px;font-size:15px;font-weight:500;white-space:nowrap;flex:none}
+.chip.on{background:#21201F;color:#fff}
+.chip .n{color:#9C9993}.chip.on .n{color:#A9A6A0}
+.opt{min-height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;gap:12px;padding:10px 16px;box-sizing:border-box;font-size:16px;font-weight:500}
+.opt.on{background:#21201F;color:#fff}
+.opt.on .rs{color:#B4B1AB}
+.fld{background:#fff;border-radius:16px;min-height:60px;padding:9px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.fld .fl{font-size:13px;line-height:17px;font-weight:400;color:#6E6B66;letter-spacing:0;text-transform:none}
+.fld .fv{font-size:17px;line-height:23px;font-weight:500;color:#21201F}
+.fld .ph{font-size:17px;line-height:23px;font-weight:400;color:#8E8B85}
+.fld.focus{background:#fff;box-shadow:inset 0 0 0 2px #21201F}
+.fld.err{background:#FFF5F4;box-shadow:inset 0 0 0 2px #E5352B}
+.fld.est{background:#FFF9EE;box-shadow:inset 0 0 0 2px #F3CF8F}
+.numf{display:flex;align-items:center;gap:8px}
+.numf .nval{flex:1;font-size:28px;line-height:32px;font-weight:600;font-variant-numeric:tabular-nums}
+.numf .nu{font-size:14px;color:#6E6B66}
+.pm{width:40px;height:40px;border-radius:12px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#21201F;flex:none}
+.search{height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:10px;padding:0 16px;color:#8E8B85;font-size:16px;flex:none}
+.ban{border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex:none}
+.ban .bt{font-size:16px;line-height:21px;font-weight:600}
+.ban .bd{font-size:14px;line-height:19px;font-weight:400}
+.ban.ok{background:#E6F1EA;color:#1F4A2F}.ban.est{background:#FFF0D4;color:#6E3C00}.ban.info{background:#E6EEFF;color:#1A3F99}.ban.err{background:#FFE7E4;color:#8A1D16}.ban.n{background:#fff;color:#21201F}
+.ban .ba{margin-left:auto;align-self:center;font-size:15px;font-weight:600;color:inherit;min-height:44px;display:flex;align-items:center;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag.est{background:#FFF0D4;color:#8A4B00}.tag.info{background:#E6EEFF;color:#1F4FBF}.tag.ok{background:#E6F1EA;color:#275C3A}.tag.n{background:#F2F1EE;color:#55524D}.tag.err{background:#FFE7E4;color:#A1221A}
+.nav{flex:none;height:84px;background:#fff;border-radius:24px 24px 0 0;display:flex;align-items:flex-start;justify-content:space-around;padding:8px 4px 0;box-sizing:border-box}
+.nv{width:70px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;line-height:15px;font-weight:500;color:#8E8B85}
+.nv:hover{color:#21201F}
+.nv .ni{width:52px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.nv.on{color:#21201F}
+.nv.on .ni{background:#E6F1EA;color:#275C3A}
+.plus{width:52px;height:44px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.plus:hover{color:#fff;background:#2F6B44}
+.thumb{width:56px;height:56px;flex:none;border-radius:16px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.av{width:44px;height:44px;flex:none;border-radius:50%;background:#EDECE9;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#21201F}
+.tile{width:44px;height:44px;flex:none;border-radius:14px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;color:#21201F}
+.ic24{width:24px;height:24px;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(33,32,31,.42);z-index:5}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:6;background:#F2F1EE;border-radius:28px 28px 0 0;padding:0 12px 30px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 24px rgba(33,32,31,.10)}
+.bs.white{background:#fff}
+.hdl{height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.hdl i{width:40px;height:5px;border-radius:3px;background:#D6D4CF;display:block}
+.toast{position:absolute;left:12px;right:12px;z-index:7;min-height:56px;border-radius:18px;background:#21201F;color:#fff;display:flex;align-items:center;gap:12px;padding:0 8px 0 18px;box-sizing:border-box;font-size:15px;font-weight:400}
+.toast .ta{margin-left:auto;min-height:44px;padding:0 12px;display:flex;align-items:center;font-weight:600;color:#8FD3A6}
+.lift{box-shadow:0 4px 16px rgba(33,32,31,.12)}
+.tog{width:51px;height:31px;border-radius:16px;background:#E1DFDB;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.tog.on{background:#387D50}.tog.on::after{left:22px}
+.hair{height:1px;background:#F0EFEC;flex:none}
+.big-n{font-size:28px;line-height:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;box-sizing:border-box;flex:none}
+.wood{background:repeating-linear-gradient(90deg,#E6D3B1 0 7px,#DCC59F 7px 9px)}
+.carc{border:3px solid #21201F;box-sizing:border-box;background:#21201F}
+/* inside white containers controls go gray */
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.ban.n,.dlg) :is(.soft,.chip:not(.on),.opt:not(.on),.fld:not(.focus):not(.err):not(.est),.search,.ib:not(.keep)){background:#F2F1EE}
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.dlg) .seg{background:#EDECE9}
+/* motion v3: press + mount */
+.cta,.soft,.chip,.ib,.opt,.sg,.pm,.txt,.plus,.nv,.tile,a.row,button.row,a.sheet,.svc,.ans,.key,.qv,.tl,.vb,.dimb{transition:transform .12s cubic-bezier(.2,0,0,1),filter .12s,background-color .2s,color .2s,box-shadow .2s}
+.cta:active,.soft:active,.chip:active,.ib:active,.opt:active,.pm:active,.plus:active,.svc:active,.ans:active,.key:active,.qv:active,.tl:active,.vb:active,.dimb:active,a.sheet:active{transform:scale(.97);filter:brightness(.94)}
+a.row:active,button.row:active{background-color:#F7F7F5}
+.txt:active,.nv:active{opacity:.6}
+@keyframes v3up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes v3fin{from{opacity:0}to{opacity:1}}
+@keyframes v3tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3dlg{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3spin{to{transform:rotate(360deg)}}
+.scrim{animation:v3fin .2s ease-out both}
+.bs{animation:v3up .32s cubic-bezier(.32,.72,0,1) both}
+.toast{animation:v3tin .2s cubic-bezier(.2,0,0,1) both}
+.dlg{animation:v3dlg .2s cubic-bezier(.2,0,0,1) both}
+.spin{animation:v3spin .8s linear infinite}
+.chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*/V3*/
+
+.ttl{font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:0 8px;flex:none}
+.sum{font-weight:500;color:#6E6B66}
+.tabs4 .sg{font-size:14px}
+.fchips{display:flex;gap:6px;overflow:hidden;flex:none;-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent);mask-image:linear-gradient(90deg,#000 86%,transparent)}
+.fchips .chip{height:36px;padding:0 12px;font-size:14px;border-radius:18px}
+.fchips .chip .cd{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(33,32,31,.15);flex:none}
+.cnt{display:flex;align-items:center;gap:10px;padding:0 8px;flex:none}
+.cnt .tog{transform:scale(.82);transform-origin:right center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.card{display:flex;flex-direction:column;text-align:left;background:#fff;border-radius:22px;padding:6px 6px 10px;position:relative}
+.card .tx2{height:78px;border-radius:17px;display:block}
+.card .code{font-size:12px;line-height:16px;color:#6E6B66;padding:8px 6px 0;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .nm{font-size:15px;line-height:19px;font-weight:600;color:#21201F;padding:2px 6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .pr{font-size:14px;line-height:18px;color:#21201F;padding:4px 6px 0;font-variant-numeric:tabular-nums;font-weight:500}
+.card .pr span{color:#6E6B66;font-weight:400}
+.card.on{box-shadow:inset 0 0 0 3px #21201F}
+.card .ck{position:absolute;right:12px;top:12px;width:26px;height:26px;border-radius:50%;background:#21201F;color:#fff;display:flex;align-items:center;justify-content:center}
+.card.na .tx2{opacity:.4}.card.na .pr{color:#A1221A}
+.pal{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 8px;background:#fff;border-radius:24px;padding:16px 14px}
+.pc{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pc i{width:42px;height:42px;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(33,32,31,.12)}
+.pc.on i{box-shadow:0 0 0 3px #fff,0 0 0 5px #21201F}
+.pc span{font-size:12px;line-height:14px;color:#6E6B66;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pc.on span{color:#21201F;font-weight:600}
+.styl{display:flex;align-items:center;gap:12px;background:#fff;border-radius:20px;padding:10px 14px 10px 10px;color:#21201F;flex:none}
+</style>
+</helmet>
+<div class="app">
+<div class="hdr"><a class="ib" href="Editor.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><span class="grow"></span><span class="cap" style="padding-right:6px">EMAN · {{count}}</span></div>
+<div class="body" style="gap:8px;padding-top:2px">
+<div class="ttl">Материалы</div>
+<div class="seg tabs4" role="tablist"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button class="sg {{t.on}}" role="tab" onClick="{{t.pick}}">{{t.t}}</button></sc-for></div>
+
+<sc-if value="{{isDecor}}" hint-placeholder-val="{{ true }}">
+<div class="search" style="height:44px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Код или название: H1145, «дуб»</div>
+<div class="fchips">
+<button class="chip on">Все бренды</button><button class="chip">Egger</button><button class="chip">Ultradecor</button><button class="chip">SwissKrono</button><button class="chip">Kastamonu</button><button class="chip">Kronospan</button>
+</div>
+<div class="fchips">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="7"><button class="chip {{c.on}}" onClick="{{c.pick}}"><span class="cd" style="background:{{c.dot}}"></span>{{c.t}}</button></sc-for>
+</div>
+<div class="cnt"><span class="cap" style="flex:1">{{found}}</span><span style="font-size:14px;font-weight:500">В наличии</span><button class="tog {{stockC}}" onClick="{{stockT}}" aria-label="Только в наличии"></button></div>
+<sc-if value="{{isFac}}" hint-placeholder-val="{{ false }}">
+<a class="styl" href="FacadeStyle.dc.html"><span class="tile" style="width:44px;height:44px;border-radius:14px;background:#F4EBDD"><svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true"><rect x="1.5" y="1.5" width="23" height="27" rx="2" fill="#fff" stroke="#21201F" stroke-width="2"/><rect x="6" y="6" width="14" height="18" rx="1" fill="none" stroke="#21201F" stroke-width="1.6"/></svg></span><span class="tx" style="flex:1;min-width:0"><span class="rt" style="display:block">Стиль фасада</span><span class="rs">фрезеровка, декор, рамка, углы</span></span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
+</sc-if>
+<div class="grid2">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="4">
+<button class="card {{it.on}} {{it.na}}" onClick="{{it.pick}}" aria-label="{{it.name}}">
+<span class="tx2" style="background:{{it.tex}};background-size:{{it.bs}}"></span>
+<span class="code">{{it.code}}</span><span class="nm">{{it.name}}</span><span class="pr">{{it.price}}</span>
+<sc-if value="{{it.sel}}" hint-placeholder-val="{{ false }}"><span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></sc-if>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isPaint}}" hint-placeholder-val="{{ false }}">
+<div class="cap" style="padding:0 8px;margin-top:-2px">Покраска фасадов МДФ в EMAN · 2–3 рабочих дня</div>
+<div style="display:flex;gap:8px;flex:none"><div class="seg" style="width:150px;flex:none"><sc-for list="{{sys}}" as="y" hint-placeholder-count="2"><button class="sg {{y.on}}" onClick="{{y.pick}}">{{y.t}}</button></sc-for></div><div class="search" style="height:46px;flex:1;min-width:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>{{codePh}}</div></div>
+<div class="pal" style="grid-template-columns:repeat({{pcols}},minmax(0,1fr))">
+<sc-for list="{{pal}}" as="p" hint-placeholder-count="18"><button class="pc {{p.on}}" onClick="{{p.pick}}" aria-label="{{p.c}}"><i style="background:{{p.hex}}"></i><span>{{p.c}}</span></button></sc-for>
+</div>
+<div style="font-size:17px;font-weight:700;padding:4px 8px 0">Блеск</div>
+<div class="seg"><sc-for list="{{gl}}" as="g" hint-placeholder-count="3"><button class="sg {{g.on}}" onClick="{{g.pick}}">{{g.t}}</button></sc-for></div>
+<div class="cnt"><span class="cap" style="flex:1">Цена за м² с грунтом</span><span style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">{{m2}} <span class="sum" style="font-size:14px">сум</span></span></div>
+</sc-if>
+</div>
+<div class="foot" style="padding-top:6px">
+<a class="cta val" href="Editor.dc.html"><span style="display:flex;flex-direction:column;line-height:19px;min-width:0"><span>{{ctaT}}</span><span style="font-size:13px;font-weight:400;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{selName}}</span></span><span class="v">{{selPrice}}</span></a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p){ super(p); this.state = { tab: 0, sel: 0, col: 0, stock: true, sys: 0, pc: 2, gl: 0 }; }
+renderVals() {
+const st = this.state;
+const wood = (a, b, c) => 'repeating-linear-gradient(93deg,rgba(80,50,20,.10) 0 1px,transparent 1px 7px),repeating-linear-gradient(90deg,' + a + ' 0 18px,' + b + ' 18px 21px,' + a + ' 21px 40px,' + c + ' 40px 43px)';
+const stone = (a, b) => 'radial-gradient(circle at 30% 40%,rgba(255,255,255,.35) 0 1.5px,transparent 2.5px),radial-gradient(circle at 70% 70%,rgba(0,0,0,.08) 0 1.5px,transparent 2.5px),linear-gradient(135deg,' + a + ',' + b + ')';
+const uni = (a, b) => 'linear-gradient(160deg,' + a + ',' + b + ')';
+const SETS = [
+[ ['Egger H1145 ST10','Дуб Бардолино',wood('#C9A57A','#B8915F','#D4B48A'),'14px 100%','712 000'],
+  ['Egger W1000 ST9','Белый премиум',uni('#F7F6F3','#ECEAE4'),'100% 100%','612 000'],
+  ['Egger F186 ST9','Бетон Чикаго',stone('#BEBAB2','#A9A59D'),'10px 10px','702 000'],
+  ['Egger H3734 ST9','Орех Дижон',wood('#7A5539','#664430','#8A6243'),'14px 100%','684 000'],
+  ['Kastamonu A616','Дуб Сонома',wood('#D2B486','#C3A272','#DCC197'),'14px 100%','нет в наличии'],
+  ['SwissKrono U 7116','Антрацит',uni('#46484A','#3A3C3E'),'100% 100%','640 000'] ],
+[ ['EMAN МДФ 19','Белый под покраску',uni('#F4F3EF','#E8E6E0'),'100% 100%','1 180 000'],
+  ['Egger W1100 ST9','Альпийский белый',uni('#FBFAF7','#EFEDE7'),'100% 100%','624 000'],
+  ['Ultradecor 1712','Риффл дуб',wood('#C9A57A','#B8915F','#D4B48A'),'14px 100%','1 240 000'],
+  ['Egger U702 ST9','Кашемир',uni('#D9D0C3','#CBC1B3'),'100% 100%','630 000'] ],
+[ ['ABS 2 мм · H1145','Дуб Бардолино',wood('#C9A57A','#B8915F','#D4B48A'),'14px 100%','4 200 / м'],
+  ['ABS 2 мм · W1000','Белый премиум',uni('#F7F6F3','#ECEAE4'),'100% 100%','3 600 / м'],
+  ['ABS 0,8 мм · W1000','Белый тонкая',uni('#F7F6F3','#ECEAE4'),'100% 100%','1 900 / м'],
+  ['Лазерная 1 мм','Без шва',uni('#EFECE6','#E2DED6'),'100% 100%','7 800 / м'] ]
+];
+const t = st.tab, isPaint = t === 3;
+const set = SETS[Math.min(t, 2)];
+const sel = Math.min(st.sel, set.length - 1);
+const items = set.map((x, i) => ({ code: x[0], name: x[1], tex: x[2], bs: x[3], price: x[4] === 'нет в наличии' ? 'нет в наличии' : x[4], na: x[4] === 'нет в наличии' ? 'na' : '', on: i === sel ? 'on' : '', sel: i === sel, pick: () => { if (x[4] !== 'нет в наличии') this.setState({ sel: i }); } }));
+const C = [['Все','conic-gradient(#F4F2EC 0 25%,#9C9C98 0 50%,#C9A57A 0 75%,#46484A 0)'],['Белые','#F7F6F3'],['Серые','#A9A59D'],['Бежевые','#D9D0C3'],['Светлое дерево','#D2B486'],['Тёмное дерево','#6E4C33'],['Чёрные','#2A2B2C'],['Цветные','conic-gradient(#3E6B4E 0 33%,#1F4FBF 0 66%,#C2652A 0)']];
+const RAL = [['9010','#F1ECE1'],['9016','#F6F6F1'],['9001','#EAE1CC'],['1013','#E3D9C3'],['7035','#C8CBC7'],['7044','#B9B5A8'],['7016','#383E42'],['9005','#121314'],['6021','#87A180'],['5014','#637D96'],['3012','#C79A84'],['1015','#E6D2B5'],['7047','#D0D0CD'],['7038','#B0B3AF'],['8017','#45312A'],['6019','#B7D9B1'],['5024','#6A93B0'],['1019','#A08F7D']];
+const NCS = [['0500-N','#F2F1ED'],['0502-Y','#F1EFE6'],['1002-Y','#E2DED1'],['1505-Y30R','#DACDB8'],['2002-B','#C9CCCE'],['3000-N','#B3B2AE'],['7500-N','#4A4A49'],['9000-N','#232323'],['3020-G','#8FAF95'],['3020-B','#8EA5BE'],['2020-Y90R','#C9A391'],['1015-Y20R','#E7D3B3'],['1500-N','#D9D8D4'],['2500-N','#BEBDBA'],['6020-Y70R','#6E4F3F'],['1515-G','#C2D8C3'],['2030-B','#92AFCB'],['4010-Y30R','#9E8E78']];
+const P = st.sys === 0 ? RAL : NCS;
+const pc = Math.min(st.pc, P.length - 1);
+const G = ['Матовый', 'Полуматовый', 'Глянец'], GP = [185000, 205000, 265000];
+const f = (n) => n.toLocaleString('ru-RU');
+return {
+count: '3 214 декоров',
+tabs: ['Корпус', 'Фасады', 'Кромка', 'Цвет'].map((x, i) => ({ t: x, on: i === t ? 'on' : '', pick: () => this.setState({ tab: i, sel: 0 }) })),
+isDecor: !isPaint, isPaint, isFac: t === 1,
+cols: C.map((c, i) => ({ t: c[0], dot: c[1], on: i === st.col ? 'on' : '', pick: () => this.setState({ col: i }) })),
+found: (st.stock ? '2 871 в наличии' : '3 214 декоров') + ' · ЛДСП 18 мм, лист 2800×2070',
+stockC: st.stock ? 'on' : '', stockT: () => this.setState({ stock: !st.stock }),
+items,
+sys: ['RAL', 'NCS'].map((x, i) => ({ t: x, on: i === st.sys ? 'on' : '', pick: () => this.setState({ sys: i, pc: 0 }) })),
+codePh: st.sys === 0 ? 'RAL 9010' : 'S 0502-Y',
+pcols: st.sys === 0 ? 6 : 4,
+pal: (st.sys === 0 ? P : P.slice(0, 12)).map((p, i) => ({ c: p[0], hex: p[1], on: i === pc ? 'on' : '', pick: () => this.setState({ pc: i }) })),
+gl: G.map((x, i) => ({ t: x, on: i === st.gl ? 'on' : '', pick: () => this.setState({ gl: i }) })),
+m2: f(GP[st.gl]),
+ctaT: ['Применить к корпусу', 'Применить к фасадам', 'Применить кромку', 'Покрасить фасады'][t],
+selName: isPaint ? (st.sys === 0 ? 'RAL ' : 'NCS S ') + P[pc][0] + ' · ' + G[st.gl].toLowerCase() : set[sel][0] + ' · ' + set[sel][1],
+selPrice: isPaint ? f(Math.round(GP[st.gl] * 3.4 / 1000) * 1000) : set[sel][4]
+};
+}
+}
+</script>
+</body>
+</html>
