@@ -40,7 +40,7 @@ COPY ai/src ai/src
 COPY api/src api/src
 RUN --mount=type=cache,target=/root/.cache/uv \
     cd api && uv sync --frozen --no-dev --no-editable \
-    && /opt/venv/bin/python -c "import mebel_core, mebel_ai, mebel_api; from importlib.resources import files; assert files('mebel_core').joinpath('fonts/DejaVuSans.ttf').is_file()"
+    && /opt/venv/bin/python -c "import mebel_core, mebel_ai, mebel_api; from importlib.resources import files; assert files('mebel_core').joinpath('fonts/DejaVuSans.ttf').is_file(); assert files('mebel_core').joinpath('data/eman_decors.json').is_file()"
 
 # ---------- рабочий образ ----------
 FROM ${PYTHON_IMAGE} AS runtime
@@ -48,11 +48,12 @@ FROM ${PYTHON_IMAGE} AS runtime
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    MEDIA_DIR=/data/media
+    MEDIA_DIR=/data/media \
+    TEXTURES_DIR=/data/textures
 
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app \
-    && mkdir -p /app /data/media \
+    && mkdir -p /app /data/media /data/textures \
     && chown -R app:app /app /data
 
 COPY --from=builder /opt/venv /opt/venv
@@ -60,6 +61,8 @@ COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY --chown=app:app api/alembic.ini ./alembic.ini
 COPY --chown=app:app api/alembic ./alembic
+# скрипты обслуживания: импорт каталога EMAN, сборка текстур, переименование проектов
+COPY --chown=app:app api/scripts ./scripts
 COPY --chmod=0755 deploy/docker/api-entrypoint.sh /usr/local/bin/api-entrypoint
 
 USER app

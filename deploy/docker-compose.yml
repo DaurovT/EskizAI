@@ -36,6 +36,8 @@ x-api-env: &api-env
   FREE_PROJECTS_PER_MONTH: ${FREE_PROJECTS_PER_MONTH:-3}
   LIMIT_TIMEZONE: ${LIMIT_TIMEZONE:-Asia/Tashkent}
   SHARE_BASE_URL: ${SHARE_BASE_URL:-http://localhost:3000/p}
+  # Публичный адрес API: из него строятся ссылки на GLB для AR (Scene Viewer / Quick Look качают сами)
+  PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
   SHARE_DEFAULT_DAYS: ${SHARE_DEFAULT_DAYS:-30}
   CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000"]}'
   TASK_QUEUE_MODE: ${TASK_QUEUE_MODE:-thread}
@@ -44,6 +46,10 @@ x-api-env: &api-env
   AI_WARN_RATIO: ${AI_WARN_RATIO:-0.8}
   AI_PHOTO_LIMIT: ${AI_PHOTO_LIMIT:-5}
   SENTRY_DSN: ${SENTRY_DSN:-}
+  PUSH_PROVIDER: ${PUSH_PROVIDER:-log}
+  EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+  # Текстуры декоров EMAN (в git не входят: собираются api/scripts/build_eman_decors.py)
+  TEXTURES_DIR: ${TEXTURES_DIR:-/data/textures}
 
 services:
   postgres:
@@ -142,6 +148,7 @@ services:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:
       - media:/data/media
+      - textures:/data/textures
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
       interval: 10s
@@ -192,6 +199,7 @@ services:
       retries: 6
 
 volumes:
+  textures:
   pgdata:
   redisdata:
   miniodata:

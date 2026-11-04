@@ -20,7 +20,7 @@ cp deploy/.env.example deploy/.env    # необязательно
 make up                               # = docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-- API: http://localhost:8000/docs, `GET /health`. Вход в dev — код `0000`.
+- API: http://localhost:8000/docs, `GET /health`. Вход в dev — код `00000`.
 - Ссылка клиента: http://localhost:3000/p/demo (демо-данные; `SHARE_API_URL` пустой).
 - MinIO: http://localhost:9001 (логин/пароль — `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`), бакет `mebel` создаёт `minio-init`.
 - Миграции применяет api при старте. Только миграции: `make migrate`.
@@ -83,6 +83,6 @@ make up                               # = docker compose -f deploy/docker-compos
 ## Известные пробелы
 
 - MinIO: официальные образы убраны из Docker Hub и Quay, закреплён `bitnamilegacy/minio` (обновлений нет). Только для локальной разработки.
-- `SHARE_API_URL`: web ждёт от `GET {SHARE_API_URL}/share/{token}` формат `SharePayload` (`web/src/lib/share-types.ts`); совпадение с ответом API не проверено, поэтому по умолчанию web работает на демо-данных.
+- `SHARE_API_URL`: web берёт данные из `GET {SHARE_API_URL}/share/{token}` (формат `SharePayload`, `web/src/lib/share-types.ts`, совпадение с API проверено тестами). Пусто — демо-данные; в проде — `http://api:8000`.
 - Sentry не подключён в коде (переменная `SENTRY_DSN` заведена заранее). Воркера на Redis нет.
 - Образы собираются на сервере; публикация в реестр (GHCR) и деплой из CI — следующий шаг.
