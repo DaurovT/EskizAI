@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     eskiz_email: str = ""
     eskiz_password: str = ""
     eskiz_sender: str = "4546"
+    eskiz_base_url: str = "https://notify.eskiz.uz"
+    # Текст SMS: должен совпадать с шаблоном, согласованным в кабинете Eskiz; {code} — код входа
+    eskiz_template: str = "IQLabs Confirmation code: {code}"
     telegram_gateway_token: str = ""
 
     # Админка (временно — общий токен до ролей админки)

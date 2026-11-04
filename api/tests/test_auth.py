@@ -153,9 +153,95 @@ def test_employee_added_by_owner_logs_into_same_workshop(api, client, owner):
     assert r.status_code == 403
 
 
-def test_providers_are_stubs_outside_dev(tmp_path):
+def test_eskiz_without_credentials_is_503(tmp_path):
     app = build_app(make_settings(tmp_path, auth_code_provider="eskiz"))
     with TestClient(app) as c:
         r = c.post("/auth/request-code", json={"phone": PHONE, "channel": "sms"})
         assert r.status_code == 503
         assert "SMS" in r.json()["error"]["message"]
+
+
+# --- Eskiz: HTTP-вызовы через подменённый транспорт ---
+
+import httpx  # noqa: E402
+
+from mebel_api.services.auth_codes import EskizSmsSender, RoutingSender  # noqa: E402
+
+
+def _eskiz(tmp_path, handler, **kw):
+    s = make_settings(tmp_path, auth_code_provider="eskiz", eskiz_email="a@b.uz", eskiz_password="pw", **kw)
+    return s, EskizSmsSender(s, transport=httpx.MockTransport(handler))
+
+
+def test_eskiz_logs_in_once_and_sends(tmp_path):
+    calls = []
+
+    def h(req: httpx.Request):
+        calls.append((req.url.path, req.headers.get("authorization"), req.content.decode()))
+        if req.url.path == "/api/auth/login":
+            return httpx.Response(200, json={"data": {"token": "T1"}})
+        return httpx.Response(200, json={"id": "1", "status": "waiting"})
+
+    _, s = _eskiz(tmp_path, h, eskiz_template="Code: {code}")
+    assert s.send("+998901112233", "12345", "sms") == "sms"
+    s.send("+998901112233", "54321", "sms")
+    assert [c[0] for c in calls] == ["/api/auth/login", "/api/message/sms/send", "/api/message/sms/send"]
+    body = calls[1][2]
+    assert calls[1][1] == "Bearer T1"
+    assert "mobile_phone=998901112233" in body and "message=Code%3A+12345" in body and "from=4546" in body
+
+
+def test_eskiz_relogins_on_401(tmp_path):
+    tokens = iter(["OLD", "NEW"])
+    seen = []
+
+    def h(req):
+        if req.url.path == "/api/auth/login":
+            return httpx.Response(200, json={"data": {"token": next(tokens)}})
+        seen.append(req.headers["authorization"])
+        return httpx.Response(401 if req.headers["authorization"] == "Bearer OLD" else 200, json={})
+
+    _, s = _eskiz(tmp_path, h)
+    s.send("+998901112233", "12345", "sms")
+    assert seen == ["Bearer OLD", "Bearer NEW"]
+
+
+def test_eskiz_errors_become_503(tmp_path):
+    from mebel_api.errors import ApiError
+
+    def bad_send(req):
+        if req.url.path == "/api/auth/login":
+            return httpx.Response(200, json={"data": {"token": "T"}})
+        return httpx.Response(400, json={"message": "template not approved"})
+
+    _, s = _eskiz(tmp_path, bad_send)
+    try:
+        s.send("+998901112233", "12345", "sms")
+        raise AssertionError("ожидали ApiError")
+    except ApiError as e:
+        assert e.status == 503
+
+    def boom(req):
+        raise httpx.ConnectError("down")
+
+    _, s = _eskiz(tmp_path, boom)
+    try:
+        s.send("+998901112233", "12345", "sms")
+        raise AssertionError("ожидали ApiError")
+    except ApiError as e:
+        assert e.status == 503
+
+
+def test_telegram_without_gateway_falls_back_to_sms(tmp_path):
+    sent = []
+
+    class FakeSms:
+        def send(self, phone, code, channel):
+            sent.append(channel)
+            return "sms"
+
+    s = make_settings(tmp_path, auth_code_provider="eskiz")
+    r = RoutingSender(s, None)
+    r.sms = FakeSms()
+    assert r.send("+998901112233", "12345", "telegram") == "sms"
+    assert sent == ["sms"]

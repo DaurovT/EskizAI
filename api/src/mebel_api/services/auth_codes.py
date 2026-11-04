@@ -1,13 +1,17 @@
 """Отправка кода входа: dev (в лог), SMS через Eskiz, Telegram Gateway.
 
-Eskiz и Telegram — заглушки: интерфейс готов, HTTP-вызовы — при подключении.
+Eskiz подключён (notify.eskiz.uz). Telegram Gateway — заглушка: пока он не настроен,
+код уходит SMS.
 """
 
 import logging
 import re
 import secrets
+import threading
 from datetime import timedelta
 from typing import Literal, Protocol
+
+import httpx
 
 from sqlalchemy import func, select
 
@@ -25,7 +29,7 @@ Channel = Literal["sms", "telegram"]
 class CodeSender(Protocol):
     name: str
 
-    def send(self, phone: str, code: str, channel: Channel) -> None: ...
+    def send(self, phone: str, code: str, channel: Channel) -> Channel | None: ...
 
 
 class DevCodeSender:
@@ -42,20 +46,61 @@ class DevCodeSender:
 
 
 class EskizSmsSender:
-    """SMS через Eskiz (notify.eskiz.uz) — заглушка.
+    """SMS через Eskiz (notify.eskiz.uz).
 
-    План: POST /api/auth/login (email, password) → токен на 30 дней, кэшировать;
+    POST /api/auth/login (email, password) → токен (живёт ~30 дней), держим в памяти процесса;
     POST /api/message/sms/send (mobile_phone=998…, message, from=ESKIZ_SENDER).
-    Текст SMS нужно заранее согласовать с Eskiz (шаблон).
+    На 401 — один раз входим заново. Текст SMS (ESKIZ_TEMPLATE) должен совпадать с шаблоном,
+    согласованным в кабинете Eskiz, иначе Eskiz отклонит отправку.
     """
 
     name = "eskiz"
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
         self.settings = settings
+        self._token: str | None = None
+        self._lock = threading.Lock()
+        self._client = httpx.Client(base_url=settings.eskiz_base_url, timeout=15.0, transport=transport)
 
-    def send(self, phone: str, code: str, channel: Channel) -> None:
-        raise ApiError(503, "sms_unavailable", "Отправка SMS пока не подключена. Попробуйте вход через Telegram")
+    def _login(self) -> str:
+        s = self.settings
+        if not (s.eskiz_email and s.eskiz_password):
+            raise ApiError(503, "sms_unavailable", "SMS не настроены: нет учётных данных Eskiz")
+        r = self._client.post("/api/auth/login", data={"email": s.eskiz_email, "password": s.eskiz_password})
+        token = (r.json().get("data") or {}).get("token") if r.status_code == 200 else None
+        if not token:
+            log.error("Eskiz: вход не удался (%s): %s", r.status_code, r.text[:300])
+            raise ApiError(503, "sms_unavailable", "Не удалось отправить SMS. Попробуйте чуть позже")
+        return token
+
+    def _post_sms(self, token: str, phone: str, text: str) -> httpx.Response:
+        return self._client.post(
+            "/api/message/sms/send",
+            headers={"Authorization": f"Bearer {token}"},
+            data={"mobile_phone": phone.lstrip("+"), "message": text, "from": self.settings.eskiz_sender},
+        )
+
+    def send(self, phone: str, code: str, channel: Channel) -> Channel:
+        tpl = self.settings.eskiz_template or Settings.model_fields["eskiz_template"].default
+        text = tpl.format(code=code)
+        try:
+            with self._lock:
+                if self._token is None:
+                    self._token = self._login()
+                token = self._token
+            r = self._post_sms(token, phone, text)
+            if r.status_code == 401:  # токен истёк — входим заново один раз
+                with self._lock:
+                    self._token = self._login()
+                    token = self._token
+                r = self._post_sms(token, phone, text)
+        except httpx.HTTPError as e:
+            log.error("Eskiz: сеть: %s", e)
+            raise ApiError(503, "sms_unavailable", "Не удалось отправить SMS. Попробуйте чуть позже") from e
+        if r.status_code >= 300:
+            log.error("Eskiz: отправка не удалась (%s): %s", r.status_code, r.text[:300])
+            raise ApiError(503, "sms_unavailable", "Не удалось отправить SMS. Попробуйте чуть позже")
+        return "sms"
 
 
 class TelegramGatewaySender:
@@ -85,10 +130,16 @@ class RoutingSender:
         self.telegram = TelegramGatewaySender(settings)
         self.name = settings.auth_code_provider
 
-    def send(self, phone: str, code: str, channel: Channel) -> None:
+    def send(self, phone: str, code: str, channel: Channel) -> Channel:
+        """Отправляет код; возвращает канал, которым он реально ушёл."""
         if self.settings.auth_code_provider == "dev":
-            return self.dev.send(phone, code, channel)
-        return (self.telegram if channel == "telegram" else self.sms).send(phone, code, channel)
+            self.dev.send(phone, code, channel)
+            return channel
+        # Telegram Gateway ещё не подключён — без токена код уходит SMS
+        if channel == "telegram" and self.settings.telegram_gateway_token:
+            self.telegram.send(phone, code, channel)
+            return "telegram"
+        return self.sms.send(phone, code, "sms")
 
 
 _DIGITS = re.compile(r"\D+")
@@ -128,7 +179,7 @@ def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, pur
         raise ApiError(429, "code_limit", "Слишком много запросов кода. Попробуйте через час")
 
     code = "".join(secrets.choice("0123456789") for _ in range(settings.auth_code_length))
-    sender.send(phone, code, channel)
+    channel = sender.send(phone, code, channel) or channel  # Telegram без шлюза уходит SMS
     db.add(
         AuthCode(
             phone=phone,
