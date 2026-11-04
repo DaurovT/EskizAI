@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TaskAccepted(BaseModel):
@@ -29,10 +29,28 @@ class AnswerItem(BaseModel):
     value: str = Field(max_length=500, description="Выбранный вариант, свой текст или «не знаю» (= по умолчанию)")
 
 
+MAX_ANSWERS = 50
+
+
 class AnswerIn(BaseModel):
     answers: dict[str, str] | list[AnswerItem] = Field(
-        description="Все ответы разом: [{question_id, value}] или (прежняя форма) id вопроса → ответ")
+        description="Все ответы разом: [{question_id, value}] или (прежняя форма) id вопроса → ответ. "
+                    f"Не больше {MAX_ANSWERS} ответов, ответ — до 500 символов; в ИИ уходят только ответы на "
+                    "заданные вопросы (GET /projects/{id}/chat → questions), прочие id отбрасываются")
     confirm_extra_project: bool = False
+
+    @field_validator("answers")
+    @classmethod
+    def _bounded(cls, v):
+        if len(v) > MAX_ANSWERS:
+            raise ValueError(f"Не больше {MAX_ANSWERS} ответов")
+        if isinstance(v, dict):
+            for k, val in v.items():
+                if len(k) > 100:
+                    raise ValueError("id вопроса — до 100 символов")
+                if len(val) > 500:
+                    raise ValueError("Ответ — не длиннее 500 символов")
+        return v
 
     def answer_map(self) -> dict[str, str]:
         if isinstance(self.answers, dict):

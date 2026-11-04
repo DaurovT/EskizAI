@@ -167,7 +167,8 @@ export interface ProjectCardOut extends ProjectListItem {
   has_order: boolean; photos: PhotoOut[]; model_summary: ModelSummary | null;
   estimate: ProjectEstimate | null; next_step: string; actions: ActionOut[];
 }
-export interface ProjectIn { title: string; client_id?: string | null; source_text?: string | null; is_example?: boolean }
+/** Пример «Попробовать на примере» создаёт только сервер — POST /projects/example (api.createExample). */
+export interface ProjectIn { title: string; client_id?: string | null; source_text?: string | null }
 /** Замер кухни (SCR-13b): расстояния — мм от угла вдоль стены (у прямой кухни — от левого края стены A). */
 export type KitchenWall = 'a' | 'b';
 export type UtilityKind = 'water' | 'sewer' | 'gas' | 'socket' | 'vent';
@@ -326,8 +327,15 @@ export interface FilesOut {
 }
 
 // --- orders (SCR-14/15/16/31) ---
-export type OrderStatus = 'created' | 'paid' | 'accepted' | 'cutting' | 'ready' | 'issued' | 'cancelled';
-export const ORDER_FLOW: OrderStatus[] = ['created', 'paid', 'accepted', 'cutting', 'ready', 'issued'];
+/**
+ * docs/staff_vendor_contract.md §5.3: created (у поставщика, в очереди) → accepted (проверен, счёт) → paid → cutting → ready → issued.
+ * Побочные: returned (вернули на правку → после resubmit снова created), awaiting_approval (исправление поставщика ждёт мастера),
+ * rejected (отклонён, финал), cancelled (отменён мастером до оплаты). Старый порядок created → paid → accepted тоже допустим.
+ */
+export type OrderStatus =
+  | 'created' | 'accepted' | 'paid' | 'cutting' | 'ready' | 'issued'
+  | 'returned' | 'awaiting_approval' | 'rejected' | 'cancelled';
+export const ORDER_FLOW: OrderStatus[] = ['created', 'accepted', 'paid', 'cutting', 'ready', 'issued'];
 export type PaymentMethod = 'click' | 'payme' | 'invoice';
 export interface OrderPayment {
   status: 'waiting' | 'failed' | 'paid'; method?: PaymentMethod | null; url?: string | null;
@@ -350,6 +358,111 @@ export interface OrderOut {
   steps?: OrderStep[]; items: OrderItem[]; excluded?: string[]; cancellable?: boolean;
   /** invoice — «Счёт EMAN · PDF» (GET /orders/{id}/invoice); у сотрудника без цен — пусто. */
   documents: { kind: string; title: string; format?: string; url?: string }[];
+  // --- кабинет поставщика (contract §4, §5.4, §5.6) ---
+  /** Деление заказа по поставщикам: заказы одного оформления делят group_id. */
+  group_id?: string | null; supplier_id?: string | null; supplier_name?: string | null;
+  /** Сумма счёта, выставленная конструктором при «Принять» (по умолчанию — по смете). */
+  invoice_total?: number | null;
+  /** Срок готовности от конструктора (дата ISO); старые заказы — ready_date. */
+  due_date?: string | null;
+  /** Конструктор поставщика (orders.assignee_id). Сервер может отдать объект или только имя. */
+  assignee?: { id?: string | null; name: string } | null;
+  assignee_name?: string | null;
+  /** Комментарий поставщика к последнему решению: «вернуть мастеру» (returned) или «отклонить» (rejected). */
+  vendor_status_note?: string | null;
+  /** Причина отклонения (код из списка поставщика или текст). */
+  reject_reason?: string | null;
+  /** Непрочитанные мастером сообщения поставщика/платформы. */
+  unread_count?: number;
+  /** История заказа (order_events) — если сервер её отдаёт в карточке. */
+  events?: OrderEvent[];
+  /** Сколько рекламаций/споров по заказу (для строк карточки без лишних запросов). */
+  returns_count?: number; disputes_count?: number;
+  /** Версия модели в заказе (после resubmit — новая), когда принят поставщиком, можно ли отправить заново, ожидающее исправление (§8). */
+  version_id?: string | null; accepted_at?: string | null; can_resubmit?: boolean; pending_correction_id?: string | null;
+}
+
+/** order_events: смена статуса и действия по заказу. */
+export type OrderActor = 'master' | 'vendor' | 'platform' | 'system';
+export interface OrderEvent {
+  id: string;
+  /** status_changed | message | correction_created | correction_approved | correction_declined | resubmitted | return_opened | return_decided | dispute_opened | dispute_resolved | … */
+  type: string;
+  /** Новый статус заказа, если событие его поменяло. */
+  status?: OrderStatus | null;
+  actor_type?: OrderActor | null; actor_name?: string | null;
+  comment?: string | null;
+  data?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** Файл переписки, исправления, рекламации: ключ в хранилище + ссылка для показа (абсолютная или от API_URL). */
+export interface OrderAttachment { key: string; url?: string | null; name?: string | null; content_type?: string | null; size?: number | null }
+
+/** order_messages (§5.4): переписка мастера с поставщиком внутри заказа. */
+export type MessageAuthor = 'master' | 'vendor' | 'platform';
+export interface OrderMessage {
+  id: string; order_id: string; author_type: MessageAuthor; author_id?: string | null;
+  /** Имя автора: конструктор поставщика, «Eskiz AI» для платформы. */
+  author_name?: string | null;
+  text: string | null; attachments: OrderAttachment[]; created_at: string;
+  read_by_master_at?: string | null; read_by_vendor_at?: string | null;
+}
+/** POST /orders/{id}/messages — multipart: text + files[]. */
+export interface OrderMessageIn { text?: string | null; files?: { uri: string; name: string; type: string }[] }
+
+/** Строка состава в исправлении/рекламации (как OrderLine, но поля могут отсутствовать). */
+export interface OrderLineRef { key?: string | null; name: string; unit?: string | null; qty: number | null; price?: number | null; total?: number | null }
+
+/** order_corrections (§5.4): поставщик сам исправил заказ — мастер подтверждает или отклоняет. */
+export type CorrectionStatus = 'pending' | 'approved' | 'declined';
+export interface OrderCorrection {
+  id: string; order_id: string; author_name?: string | null; comment: string | null;
+  lines_before: OrderLineRef[]; lines_after: OrderLineRef[];
+  /** Суммы и цены строк — только с правом «видит себестоимость»; без него сервер их не отдаёт. */
+  total_before?: number | null; total_after?: number | null; delta?: number | null;
+  files: OrderAttachment[]; status: CorrectionStatus;
+  master_comment?: string | null; decided_at?: string | null; created_at: string;
+}
+
+/** order_returns (§5.4): брак, ошибка раскроя, недовложение, отмена после оплаты, другое. */
+export type OrderReturnType = 'defect' | 'cut_error' | 'shortage' | 'cancel_after_pay' | 'other';
+export const RETURN_TYPES: OrderReturnType[] = ['defect', 'cut_error', 'shortage', 'cancel_after_pay', 'other'];
+export type ReturnStatus = 'open' | 'awaiting_owner' | 'resolved';
+export type ReturnDecision = 'redo' | 'refund' | 'declined';
+export interface OrderReturn {
+  /** Порядковый номер рекламации в заказе (сервер — число). */
+  id: string; order_id: string; number?: number | string | null; type: OrderReturnType;
+  /** amount, refund_amount — только с правом «видит себестоимость». */
+  description: string | null; lines: OrderLineRef[]; amount?: number | null; photos: OrderAttachment[];
+  status: ReturnStatus; decision: ReturnDecision | null; decision_comment?: string | null;
+  refund_amount?: number | null; created_by?: 'master' | 'vendor'; created_at: string; decided_at?: string | null;
+}
+/** POST /orders/{id}/returns — multipart: type, description, lines (JSON), files[]. */
+export interface OrderReturnIn { type: OrderReturnType; description: string; lines?: OrderLineRef[]; files?: { uri: string; name: string; type: string }[] }
+
+/** order_disputes (§4a): мастер не согласен с решением по рекламации или с отклонением заказа. */
+export type DisputeSubject = 'return' | 'rejection';
+export type DisputeReason = 'decision_unfair' | 'amount_wrong' | 'defect_not_accepted' | 'can_be_done' | 'other';
+export const DISPUTE_REASONS: Record<DisputeSubject, DisputeReason[]> = {
+  return: ['decision_unfair', 'defect_not_accepted', 'amount_wrong', 'other'],
+  rejection: ['decision_unfair', 'can_be_done', 'other'],
+};
+export type DisputeStatus = 'open' | 'resolved';
+/** Решение платформы: в пользу мастера (возврат/переделка за счёт поставщика), в пользу поставщика, частично. */
+export type DisputeDecision = 'master' | 'supplier' | 'partial';
+export interface OrderDispute {
+  id: string; order_id: string; subject: DisputeSubject; return_id?: string | null;
+  reason: DisputeReason | string; comment: string | null; photos: OrderAttachment[];
+  status: DisputeStatus; decision?: DisputeDecision | null; decision_comment?: string | null;
+  /** Сумма в пользу мастера после решения; до решения — запрошенная мастером (§8). Без права «видит себестоимость» — нет. */
+  amount?: number | null; requested_amount?: number | null;
+  created_at: string; resolved_at?: string | null;
+}
+/** POST /orders/{id}/disputes — multipart: subject, return_id?, reason, comment, files[]. */
+export interface OrderDisputeIn {
+  subject: DisputeSubject; return_id?: string | null; reason: DisputeReason; comment?: string | null;
+  files?: { uri: string; name: string; type: string }[];
 }
 
 // --- нестандарт (SCR-19, SCR-34) ---

@@ -1,15 +1,24 @@
-/** «Попробовать на примере» (PRD §15): готовый шкаф-купе, лимит не тратится, заказать нельзя. */
+/**
+ * «Попробовать на примере» (PRD §15): готовый шкаф-купе, лимит не тратится, заказать нельзя.
+ * Пример создаёт сервер из своего шаблона (модель v1, ширина — «оценка»); повторное нажатие открывает тот же пример.
+ */
 import { router } from 'expo-router';
+import { Alert } from 'react-native';
 import { api } from '../api';
-import { SAMPLES } from '../api/mock/data';
 import type { Lang } from '../api/types';
 import { translate } from '../i18n';
-import { updateMeta } from '../state/projectMeta';
+import { ensureExample } from '../lib/example';
 
 export async function openExample(lang: Lang) {
-  const p = await api.createProject({ title: translate(lang, 'example_title'), is_example: true });
-  await api.saveModel(p.id, { tree: SAMPLES.kupe_3doors.tree, source: 'manual', label: translate(lang, 'example_title') });
-  updateMeta(p.id, { estimated: ['/width'] });
+  const r = await ensureExample(api);
+  if (r.kind === 'limit') {
+    const t = (k: 'ex_limit_title' | 'ex_limit_text' | 'ex_limit_new' | 'cancel') => translate(lang, k);
+    Alert.alert(t('ex_limit_title'), t('ex_limit_text'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('ex_limit_new'), onPress: () => router.push('/project/new') },
+    ]);
+    return;
+  }
   // SCR-41: пример открывается экраном с подсказками (OnboardingHints.dc.html), из него — редактор/отправка
-  router.push(`/project/${p.id}/example`);
+  router.push(`/project/${r.id}/example`);
 }

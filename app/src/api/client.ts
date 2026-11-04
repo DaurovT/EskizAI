@@ -50,6 +50,11 @@ export interface Api {
   // projects
   listProjects(q?: ProjectQuery): Promise<T.Page<T.ProjectListItem>>;
   createProject(body: T.ProjectIn): Promise<T.ProjectCardOut>;
+  /**
+   * «Попробовать на примере» (POST /projects/example): сервер создаёт пример из своего шаблона (201) или отдаёт
+   * действующий пример цеха (200). Примеров за всё время — не больше 3: дальше `409 example_limit`.
+   */
+  createExample(): Promise<T.ProjectCardOut>;
   getProject(id: string): Promise<T.ProjectCardOut>;
   updateProject(id: string, body: Partial<T.ProjectIn>): Promise<T.ProjectCardOut>;
   deleteProject(id: string): Promise<void>;
@@ -124,6 +129,21 @@ export interface Api {
   cancelOrder(id: string, reason?: string): Promise<T.OrderOut>;
   /** «Счёт EMAN · PDF» по заказу. */
   downloadOrderInvoice(id: string): Promise<DownloadedFile>;
+  /** Повторная отправка после returned (§5.6): берёт текущую версию проекта, заказ снова created. */
+  resubmitOrder(id: string): Promise<T.OrderOut>;
+  // переписка с поставщиком (§5.6)
+  listOrderMessages(id: string): Promise<T.OrderMessage[]>;
+  sendOrderMessage(id: string, body: T.OrderMessageIn): Promise<T.OrderMessage>;
+  markOrderMessagesRead(id: string): Promise<void>;
+  // исправления поставщика (§5.6)
+  listOrderCorrections(id: string): Promise<T.OrderCorrection[]>;
+  approveOrderCorrection(id: string, correctionId: string): Promise<T.OrderOut>;
+  declineOrderCorrection(id: string, correctionId: string, comment?: string | null): Promise<T.OrderOut>;
+  // рекламации и споры (§5.6, §4a)
+  listOrderReturns(id: string): Promise<T.OrderReturn[]>;
+  createOrderReturn(id: string, body: T.OrderReturnIn): Promise<T.OrderReturn>;
+  listOrderDisputes(id: string): Promise<T.OrderDispute[]>;
+  openOrderDispute(id: string, body: T.OrderDisputeIn): Promise<T.OrderDispute>;
   // нестандарт (SCR-19, SCR-34)
   sendNonstandard(projectId: string, body: T.NonstandardIn): Promise<T.NonstandardOut>;
   listNonstandard(projectId: string): Promise<T.NonstandardOut[]>;

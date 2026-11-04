@@ -126,24 +126,24 @@ def test_quiet_hours_window():
 # --- 3. Платежи ---
 
 
-def test_payment_history(api, client, owner):
+def test_payment_history(api, client, owner, root_admin):
     wid = client.get("/workshops/me", headers=owner).json()["id"]
     pid = api.project(owner, title="Стеллаж")
     pid2 = api.project(owner, title="Тумба")
     assert client.get("/billing/payments", headers=owner).json() == {"items": [], "total": 0}
 
     r = client.post(f"/admin/workshops/{wid}/payments", json={"kind": "pack", "amount": 125_000, "method": "app_store",
-                                                               "paid_at": "2026-11-02T18:58:00+05:00"}, headers=ADMIN)
+                                                               "paid_at": "2026-11-02T18:58:00+05:00"}, headers=root_admin)
     assert r.status_code == 201, r.text
     pro = client.post(f"/admin/workshops/{wid}/payments", json={"kind": "pro", "amount": 150_000, "method": "click",
-                                                                 "paid_at": "2026-10-01T10:00:00+05:00"}, headers=ADMIN).json()
-    assert client.post(f"/admin/payments/{pro['id']}/refund", headers=ADMIN).json()["status"] == "refunded"
-    assert client.post(f"/admin/payments/{pro['id']}/refund", headers=ADMIN).status_code == 409
+                                                                 "paid_at": "2026-10-01T10:00:00+05:00"}, headers=root_admin).json()
+    assert client.post(f"/admin/payments/{pro['id']}/refund", headers=root_admin).json()["status"] == "refunded"
+    assert client.post(f"/admin/payments/{pro['id']}/refund", headers=root_admin).status_code == 409
     # оплата файлов вместе с открытием доступа; и раннее открытие «по оплате» без суммы
     client.post(f"/admin/projects/{pid}/file-access", json={"basis": "payment", "amount": 45_000, "method": "payme",
-                                                             "receipt_url": "https://payme.uz/r/1"}, headers=ADMIN)
-    client.post(f"/admin/projects/{pid2}/file-access", json={"basis": "payment"}, headers=ADMIN)
-    client.post(f"/admin/projects/{pid2}/file-access", json={"basis": "admin"}, headers=ADMIN)  # не платёж
+                                                             "receipt_url": "https://payme.uz/r/1"}, headers=root_admin)
+    client.post(f"/admin/projects/{pid2}/file-access", json={"basis": "payment"}, headers=root_admin)
+    client.post(f"/admin/projects/{pid2}/file-access", json={"basis": "admin"}, headers=root_admin)  # не платёж
 
     data = client.get("/billing/payments", headers=owner).json()
     items = data["items"]
@@ -165,7 +165,7 @@ def test_payment_history(api, client, owner):
     assert client.get("/billing/payments", headers=employee(api, client, owner)).status_code == 403
     assert client.post(f"/admin/workshops/{wid}/payments", json={"kind": "files", "amount": 1,
                                                                   "project_id": str(uuid.uuid4())},
-                       headers=ADMIN).status_code == 404
+                       headers=root_admin).status_code == 404
 
 
 # --- 4. Логотип цеха ---
@@ -246,18 +246,18 @@ def test_version_price(api, client, owner):
 # --- 7. Цена файлов без заказа ---
 
 
-def test_files_purchase_price(api, client, owner):
+def test_files_purchase_price(api, client, owner, root_admin):
     pid = api.project(owner)
     data = client.get(f"/projects/{pid}/files", headers=owner).json()
     assert data["purchase"] == {"price": 45_000, "full_price": 45_000, "discount_pct": 0, "pro_discount_pct": 50,
                                 "currency": "UZS"}
-    client.patch("/admin/settings", json={"files_price": 60_000, "files_pro_discount_pct": 25}, headers=ADMIN)
+    client.patch("/admin/settings", json={"files_price": 60_000, "files_pro_discount_pct": 25}, headers=root_admin)
     wid = client.get("/workshops/me", headers=owner).json()["id"]
-    client.post(f"/admin/workshops/{wid}/plan", json={"plan": "pro"}, headers=ADMIN)
+    client.post(f"/admin/workshops/{wid}/plan", json={"plan": "pro", "reason": "тест"}, headers=root_admin)
     p = client.get(f"/projects/{pid}/files", headers=owner).json()["purchase"]
     assert p["price"] == 45_000 and p["full_price"] == 60_000 and p["discount_pct"] == 25
-    assert client.patch("/admin/settings", json={"files_pro_discount_pct": 120}, headers=ADMIN).status_code == 422
-    client.post(f"/admin/projects/{pid}/file-access", json={"basis": "admin"}, headers=ADMIN)
+    assert client.patch("/admin/settings", json={"files_pro_discount_pct": 120}, headers=root_admin).status_code == 422
+    client.post(f"/admin/projects/{pid}/file-access", json={"basis": "admin"}, headers=root_admin)
     assert client.get(f"/projects/{pid}/files", headers=owner).json()["purchase"] is None
 
 

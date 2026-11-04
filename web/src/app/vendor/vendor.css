@@ -1,0 +1,15 @@
+/* Дополнения кабинета поставщика к admin.css (всё внутри .adm). */
+.adm .counters { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); margin-bottom: 14px; }
+.adm .counters .box { margin-bottom: 0; }
+.adm .counters .kpi.warn { color: var(--a-warn); }
+.adm .actions-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.adm .actions-grid > div { border: 1px solid var(--a-line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.adm .actions-grid h3 { margin: 0; }
+.adm .actions-grid textarea, .adm .actions-grid input, .adm .actions-grid select { width: 100%; box-sizing: border-box; }
+.adm .diff-old { color: var(--a-muted); text-decoration: line-through; margin-right: 6px; }
+.adm .big-change { color: var(--a-danger); font-weight: 600; }
+.adm .edit-cell input { width: 100px; }
+.adm .edit-cell input.wide { width: 100%; min-width: 160px; }
+@media (max-width: 800px) {
+  .adm .edit-cell input { width: 80px; }
+}

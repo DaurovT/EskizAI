@@ -26,15 +26,31 @@ from ..schemas.workshops import InviteOut
 from ..security import create_access_token, create_refresh_token, decode_token
 from ..services.account import accept_invite, delete_account, invite_for_user, invite_out, invite_status
 from ..services.action_log import log_action
-from ..services.auth_codes import DELETE_ACCOUNT, LOGIN, check_code, issue_code, normalize_phone
+from ..services.auth_codes import DELETE_ACCOUNT, LOGIN, account_exists, check_code, issue_code, normalize_phone
 
 router = APIRouter(prefix="/auth", tags=["auth"], responses=ERROR_RESPONSES)
 
 
 @router.post("/request-code", response_model=RequestCodeOut, summary="Запросить код входа")
 def request_code(body: RequestCodeIn, request: Request, db: DbDep, settings: SettingsDep) -> RequestCodeOut:
+    """Лимиты: на номер (пауза, в час, неверные коды за сутки), для номеров без аккаунта — на IP и на блок
+    номеров и доля общего лимита SMS (остаток — входу существующих мастеров). Регистрация закрыта —
+    новому номеру без приглашения `503 registration_closed` до отправки SMS."""
     phone = normalize_phone(body.phone)
-    return RequestCodeOut(**issue_code(db, settings, request.app.state.code_sender, phone, body.channel, LOGIN))
+    existing = account_exists(db, phone)
+    if not existing and not _invited(db, phone):
+        from ..services.spend_limits import registration_open
+
+        if not registration_open(db, settings):  # аварийный выключатель (§4a) — SMS не тратим
+            raise ApiError(503, "registration_closed", "Регистрация новых цехов временно закрыта. Попробуйте позже")
+    # IP клиента — как его видит uvicorn за Caddy (--proxy-headers; Caddy подменяет X-Forwarded-For)
+    ip = request.client.host if request.client else None
+    return RequestCodeOut(**issue_code(db, settings, request.app.state.code_sender, phone, body.channel, LOGIN,
+                                       ip=ip, existing=existing))
+
+
+def _invited(db, phone: str) -> bool:
+    return db.scalar(select(Invite.id).where(Invite.phone == phone, Invite.status == "pending").limit(1)) is not None
 
 
 def _issue_tokens(db, settings, user: User, is_new: bool = False) -> TokensOut:
@@ -62,6 +78,10 @@ def verify_code(body: VerifyCodeIn, db: DbDep, settings: SettingsDep) -> TokensO
     user = db.scalar(select(User).where(User.phone == phone))
     is_new = user is None
     if user is None:
+        from ..services.spend_limits import registration_open
+
+        if not _invited(db, phone) and not registration_open(db, settings):  # аварийный выключатель (§4a)
+            raise ApiError(503, "registration_closed", "Регистрация новых цехов временно закрыта. Попробуйте позже")
         workshop = Workshop(phone=phone)
         db.add(workshop)
         db.flush()
@@ -185,7 +205,8 @@ def delete_account_code(request: Request, current: CurrentDep, db: DbDep, settin
     """Код уходит на номер аккаунта. Код входа для удаления не подходит (и наоборот)."""
     channel = body.channel if body else "sms"
     return RequestCodeOut(**issue_code(db, settings, request.app.state.code_sender, current.user.phone, channel,
-                                       DELETE_ACCOUNT))
+                                       DELETE_ACCOUNT, ip=request.client.host if request.client else None,
+                                       existing=True))
 
 
 @router.post("/delete-account", response_model=DeleteAccountOut, summary="Удалить аккаунт навсегда")

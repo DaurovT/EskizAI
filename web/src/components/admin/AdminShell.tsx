@@ -1,73 +1,71 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { API_URL, getToken, setToken } from '@/lib/admin/api';
+import { usePathname } from 'next/navigation';
+import { StaffShell, type NavItem } from '@/components/staff/StaffShell';
+import { adminClient, API_URL } from '@/lib/admin/api';
+import type { StaffMe } from '@/lib/staff/client';
 
-const NAV: { href: string; label: string; sub?: boolean }[] = [
-  { href: '/admin', label: 'Дашборд' },
-  { href: '/admin/workshops', label: 'Цеха' },
-  { href: '/admin/projects', label: 'Проекты' },
-  { href: '/admin/orders', label: 'Заказы' },
-  { href: '/admin/catalog', label: 'Каталог' },
-  { href: '/admin/catalog/runs', label: 'Парсер прайса', sub: true },
-  { href: '/admin/catalog/review', label: 'Проверка цен', sub: true },
-  { href: '/admin/ai', label: 'ИИ-журнал' },
-  { href: '/admin/settings', label: 'Настройки' },
+/** Меню админки; perm — любое из прав (docs/staff_vendor_contract.md §1), «*» у суперадмина — всё. */
+const NAV: NavItem[] = [
+  { href: '/admin', label: 'Сводка', exact: true }, // любой сотрудник платформы (блок «период» — с правом finance)
+  { href: '/admin/workshops', label: 'Цеха', perm: ['workshops.view', 'workshops.grant'] },
+  { href: '/admin/projects', label: 'Проекты', perm: ['projects.view'] },
+  { href: '/admin/orders', label: 'Заказы', perm: ['orders.manage'] },
+  { href: '/admin/disputes', label: 'Споры', perm: ['disputes'] },
+  { href: '/admin/nonstandard', label: 'Нестандарт', perm: ['nonstandard.manage'] },
+  { href: '/admin/catalog', label: 'Каталог', exact: true, perm: ['catalog.manage'] },
+  { href: '/admin/catalog/runs', label: 'Парсер прайса', sub: true, perm: ['catalog.manage'] },
+  { href: '/admin/catalog/review', label: 'Проверка цен', sub: true, perm: ['catalog.manage'] },
+  { href: '/admin/suppliers', label: 'Поставщики', perm: ['suppliers.manage'] },
+  { href: '/admin/finance', label: 'Финансы', perm: ['finance'] },
+  { href: '/admin/limits', label: 'Тарифы и лимиты', perm: ['tariffs'] },
+  { href: '/admin/ai', label: 'ИИ-журнал', perm: ['ai.log'] },
+  { href: '/admin/broadcasts', label: 'Рассылки', perm: ['broadcasts'] },
+  { href: '/admin/staff', label: 'Сотрудники', perm: ['staff.manage'] },
+  { href: '/admin/audit', label: 'Журнал действий', perm: ['audit.view'] },
+  { href: '/admin/settings', label: 'Настройки', perm: ['settings'] },
+  { href: '/admin/security', label: 'Безопасность', staffOnly: true },
+  { href: '/admin/password', label: 'Сменить пароль', staffOnly: true },
 ];
 
-function isActive(path: string, href: string): boolean {
-  if (href === '/admin') return path === '/admin';
-  if (href === '/admin/catalog') return path === '/admin/catalog';
-  return path === href || path.startsWith(`${href}/`);
-}
+/** Вход по старому общему токену = суперадмин (переходный период). */
+const LEGACY_ME: StaffMe = {
+  id: 'admin-token',
+  email: '',
+  name: 'Общий токен админки',
+  role: 'superadmin',
+  org: { kind: 'platform' },
+  permissions: ['*'],
+  must_change_password: false,
+};
+
+const identity = (h: string) => h;
+const loginHref = () => '/admin/login';
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const path = usePathname() ?? '/admin';
-  const router = useRouter();
-  const isLogin = path.startsWith('/admin/login');
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (isLogin) {
-      setReady(true);
-      return;
-    }
-    if (!getToken()) {
-      router.replace('/admin/login');
-      return;
-    }
-    setReady(true);
-  }, [isLogin, router, path]);
-
-  if (isLogin) return <>{children}</>;
-  if (!ready) return <div className="adm" />;
-
+  const raw = usePathname() ?? '/admin';
+  // На домене админки адрес может быть без префикса (/orders): приводим к /admin/…
+  const path = raw === '/admin' || raw.startsWith('/admin/') ? raw : raw === '/' ? '/admin' : `/admin${raw}`;
   return (
-    <div className="adm">
-      <nav className="adm-nav">
-        <div className="brand">Мебель · админка</div>
-        {NAV.map((n) => (
-          <Link key={n.href} href={n.href} className={`${n.sub ? 'sub ' : ''}${isActive(path, n.href) ? 'active' : ''}`}>
-            {n.label}
-          </Link>
-        ))}
-        <button
-          type="button"
-          className="logout"
-          onClick={() => {
-            setToken(null);
-            router.replace('/admin/login');
-          }}
-        >
-          Выйти
-        </button>
+    <StaffShell
+      client={adminClient}
+      brand={() => 'Eskiz AI · админка'}
+      nav={NAV}
+      rel={path}
+      isPublic={path.startsWith('/admin/login')}
+      linkFor={identity}
+      loginHref={loginHref}
+      wrongOrg={(me) =>
+        me.org.kind === 'supplier' ? 'Это учётная запись поставщика — войдите в кабинет поставщика.' : null
+      }
+      legacyMe={LEGACY_ME}
+      footer={
         <div className="muted" style={{ padding: '12px 18px', fontSize: 11, color: '#8fa39c' }}>
           API: {API_URL}
         </div>
-      </nav>
-      <main className="adm-main">{children}</main>
-    </div>
+      }
+    >
+      {children}
+    </StaffShell>
   );
 }

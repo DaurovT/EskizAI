@@ -163,9 +163,9 @@ export default function ProjectCard() {
                       disabled={act.busy}
                       onClick={() => {
                         const note = window.prompt('Основание (например, «оплата файлов, чек №…»)');
-                        if (note === null) return;
+                        if (!note?.trim()) return; // основание обязательно — пишется в журнал
                         void act
-                          .run(() => post(`/admin/projects/${id}/file-access`, { basis: 'payment', note }), 'Файлы открыты')
+                          .run(() => post(`/admin/projects/${id}/file-access`, { basis: 'payment', note: note.trim() }), 'Файлы открыты')
                           .then(reload);
                       }}
                     >

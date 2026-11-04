@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
-from ..deps import AdminDep, CurrentDep, DbDep
+from ..deps import PriceRequestsDep, CurrentDep, DbDep
 from ..errors import ERROR_RESPONSES, ApiError, forbidden, not_found
 from ..models import PriceRequest, Project, Workshop
 from ..services import lifecycle, price_requests as prs
@@ -64,7 +64,7 @@ admin_router = APIRouter(prefix="/admin/price-requests", tags=["admin"], respons
 
 
 @admin_router.get("", summary="Очередь позиций «под запрос» (ADM-07)")
-def admin_list(admin: AdminDep, db: DbDep,
+def admin_list(admin: PriceRequestsDep, db: DbDep,
                status: Annotated[list[str] | None, Query(description="pending, priced, accepted, declined")] = None,
                limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)) -> dict:
     stmt = select(PriceRequest, Project, Workshop).join(Project, PriceRequest.project_id == Project.id) \
@@ -87,14 +87,14 @@ class PriceIn(BaseModel):
 
 
 @admin_router.post("/{request_id}/price", summary="Ввести цену и срок; сохранить в каталог; push мастеру")
-def admin_price(request_id: uuid.UUID, body: PriceIn, admin: AdminDep, db: DbDep) -> dict:
+def admin_price(request_id: uuid.UUID, body: PriceIn, admin: PriceRequestsDep, db: DbDep) -> dict:
     r = db.get(PriceRequest, request_id)
     if r is None:
         raise not_found("Позиция")
     if body.valid_until is not None and body.valid_until.tzinfo is None:
         raise ApiError(422, "validation_error", "Укажите часовой пояс, например 2026-11-10T18:00:00+05:00")
     applied = prs.set_price(db, r, price=body.price, lead_days=body.lead_days, supplier_name=body.supplier_name,
-                            note=body.note, save_to_catalog=body.save_to_catalog, actor=admin,
+                            note=body.note, save_to_catalog=body.save_to_catalog, actor=admin.id,
                             valid_until=body.valid_until)
     db.commit()
     return {**prs.out(r, db.get(Project, r.project_id)), "applied_to": [str(x.id) for x in applied]}

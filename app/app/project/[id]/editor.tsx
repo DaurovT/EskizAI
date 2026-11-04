@@ -180,7 +180,15 @@ export default function Editor() {
   }, [dimsKey]);
 
   // пустая шторка (ни переписки, ни вопросов, ни правок) — половина низкая, только подсказки
-  const aiLimited = (__DEV__ && shot === 'limit') || ai.error instanceof BudgetDeclinedError || (ai.error instanceof ApiError && ai.error.status === 402);
+  // 402 ai_budget_example — бюджет ИИ примеров цеха: пакет/Pro не помогают, это не баннер лимита, а сообщение ниже
+  const aiLimited = (__DEV__ && shot === 'limit') || ai.error instanceof BudgetDeclinedError
+    || (ai.error instanceof ApiError && ai.error.status === 402 && ai.error.code !== 'ai_budget_example');
+  // запрос ИИ отклонён сразу (409 ai_busy, 429 часовой лимит цеха, 503 дневной, бюджет примера…) — в чат он не попал, говорим здесь
+  useEffect(() => {
+    if (!(ai.error instanceof ApiError) || aiLimited) return;
+    const i = errorInfo(ai.error, lang);
+    Alert.alert(i.title, i.text || undefined);
+  }, [ai.error, aiLimited, lang]);
   const sheetEmpty = chat.data != null && !(chat.data.messages.length + localMsgs.length) && !ai.running && !evening && !aiLimited
     && !(state?.version.issues ?? []).some((i) => i.fixes.length) && !selected && !hw;
   // выбрана деталь / фурнитура — половина низкая; у фасада и добора — ещё строка кнопок

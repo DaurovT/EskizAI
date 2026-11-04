@@ -25,7 +25,7 @@ TYPES: dict[str, tuple[tuple[str, ...], str, str, str, str]] = {
                       "Mijoz rozi bo‘ldi", "tanlangan variant bilan"),
     "model_ready": (("model_ready",), "Модель готова", "если собиралась долго",
                     "Model tayyor", "agar uzoq yig‘ilgan bo‘lsa"),
-    "order_status": (("order_status",), "Заказ EMAN", "оплата, распил, готов",
+    "order_status": (("order_status", "order_message", "order_return", "order_dispute", "order_correction"), "Заказ EMAN", "оплата, распил, готов",
                      "EMAN buyurtmasi", "to‘lov, kesish, tayyor"),
     "prices_stale": (("prices_stale",), "Цены изменились", "в отправленных сметах",
                      "Narxlar o‘zgardi", "yuborilgan smetalarda"),

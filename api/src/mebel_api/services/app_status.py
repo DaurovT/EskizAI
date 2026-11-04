@@ -12,10 +12,12 @@ from ..errors import _body
 from .app_settings import all_settings
 
 MAINTENANCE_CODE = "maintenance"
-MAINTENANCE_MESSAGE = "Идут технические работы. Создание и правка проектов временно недоступны"
-# Во время техработ запрещены изменения проектов (создание, правка модели, ИИ, замеры, заказы, ссылки).
-# Чтение, вход, push, админка и публичная страница клиента (/share) работают.
-BLOCKED_PREFIXES = ("/projects",)
+MAINTENANCE_MESSAGE = "Идут технические работы. Создание и правка проектов и заказов временно недоступны"
+# Во время техработ запрещены изменения проектов (создание, правка модели, ИИ, замеры, заказы, ссылки)
+# и заказов (переписка, повторная отправка, возвраты, споры, решения по исправлениям, отмена).
+# Чтение, вход, push, админка, отметка «прочитано» и публичная страница клиента (/share) работают.
+BLOCKED_PREFIXES = ("/projects", "/orders", "/ai")
+ALLOWED_SUFFIXES = ("/messages/read",)  # отметка «прочитано» — не изменение заказа
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
@@ -61,7 +63,9 @@ def app_status(db: Session, settings: Settings, platform: str | None, version: s
 
 
 def is_blocked(method: str, path: str) -> bool:
-    return method.upper() in WRITE_METHODS and any(path == p or path.startswith(p + "/") for p in BLOCKED_PREFIXES)
+    path = path.rstrip("/") or "/"
+    return (method.upper() in WRITE_METHODS and not path.endswith(ALLOWED_SUFFIXES)
+            and any(path == p or path.startswith(p + "/") for p in BLOCKED_PREFIXES))
 
 
 def install_maintenance_guard(app: FastAPI) -> None:

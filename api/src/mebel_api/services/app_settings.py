@@ -27,6 +27,14 @@ def _str(v: Any) -> str:
     return str(v).strip()
 
 
+def _roles(v: Any) -> list[str]:
+    if isinstance(v, str):
+        v = [x.strip() for x in v.split(",") if x.strip()]
+    if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+        raise ValueError(v)
+    return v
+
+
 # ключ → (тип, описание)
 KNOWN: dict[str, tuple[Any, str]] = {
     "ai_budget_usd": (float, "Бюджет ИИ на проект, $"),
@@ -46,7 +54,20 @@ KNOWN: dict[str, tuple[Any, str]] = {
     "maintenance_until": (_str, "Техработы до (ISO, например 2026-11-03T14:00:00+05:00)"),
     "maintenance_message_ru": (_str, "Текст о техработах (по-русски, необязательно)"),
     "maintenance_message_uz": (_str, "Текст о техработах (по-узбекски, необязательно)"),
+    # Лимиты расходов и аварийные выключатели (§4a, ADM-12); 0 — без лимита
+    "ai_enabled": (_bool, "ИИ включён (выключатель на случай аварии или перерасхода)"),
+    "registration_enabled": (_bool, "Регистрация новых цехов открыта"),
+    "ai_daily_usd_global": (float, "Общий дневной лимит расходов на ИИ, $ (0 — без лимита)"),
+    "ai_daily_usd_per_workshop": (float, "Дневной лимит ИИ на цех, $ (0 — без лимита)"),
+    "ai_anomaly_factor": (float, "Подозрительная активность: расход цеха за день больше среднего в N раз"),
+    "sms_per_hour": (int, "SMS с кодами входа: не больше в час (0 — без лимита)"),
+    "sms_per_day": (int, "SMS с кодами входа: не больше в сутки (0 — без лимита)"),
+    "vendor_overdue_hours": (int, "Заказ у поставщика просрочен: без ответа конструктора дольше, ч"),
+    "mfa_required_roles": (_roles, "Роли, для которых 2FA обязательна (суперадмин — всегда)"),
 }
+LIMIT_KEYS = ("ai_daily_usd_global", "ai_daily_usd_per_workshop", "ai_anomaly_factor", "sms_per_hour", "sms_per_day",
+              "vendor_overdue_hours")
+SWITCH_KEYS = ("ai_enabled", "registration_enabled")
 
 
 def defaults(settings: Settings) -> dict[str, Any]:
@@ -66,6 +87,15 @@ def defaults(settings: Settings) -> dict[str, Any]:
         "maintenance_until": "",
         "maintenance_message_ru": "",
         "maintenance_message_uz": "",
+        "ai_enabled": True,
+        "registration_enabled": True,
+        "ai_daily_usd_global": 50.0,
+        "ai_daily_usd_per_workshop": 5.0,
+        "ai_anomaly_factor": 5.0,
+        "sms_per_hour": 300,
+        "sms_per_day": 3000,
+        "vendor_overdue_hours": 24,
+        "mfa_required_roles": [],
     }
 
 
@@ -88,6 +118,14 @@ def coerce(key: str, value: Any) -> Any:
         raise ValueError("Бюджет ИИ должен быть больше нуля")
     if key in ("app_min_version", "app_latest_version") and not _VERSION.match(value):
         raise ValueError("Версия — в виде 1.2.3")
+    if key in LIMIT_KEYS and value < 0:
+        raise ValueError("Лимит не может быть отрицательным")
+    if key == "mfa_required_roles":
+        from .staff_auth import ROLES
+
+        bad = [r for r in value if r not in ROLES]
+        if bad:
+            raise ValueError(f"Неизвестные роли: {', '.join(bad)}")
     if key == "maintenance_until" and value:
         try:
             dt = datetime.fromisoformat(value)

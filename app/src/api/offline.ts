@@ -17,6 +17,7 @@ export const CACHED_METHODS = [
   'listProjects', 'getProject', 'getModel', 'getEstimate', 'getClientEstimate', 'getChat', 'listVersions',
   'listClients', 'getClient', 'listOrders', 'getOrder', 'getWorkshop', 'limits', 'listFiles', 'listShareLinks', 'listMeasurements',
   'getNesting', 'listDecors', 'searchDecors', 'listPaintColors', 'getFrontStyles', 'getLightingZones', 'getBuiltinOptions', 'getHardware', 'listPriceRequests', 'listNonstandard',
+  'listOrderMessages', 'listOrderCorrections', 'listOrderReturns', 'listOrderDisputes',
 ] as const;
 type CachedMethod = (typeof CACHED_METHODS)[number];
 

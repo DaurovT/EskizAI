@@ -27,8 +27,22 @@
 	reverse_proxy api:8000
 }
 
-# Ссылка клиента /p/{token} и админка (открывается и во встроенном браузере Telegram).
+# Ссылка клиента /p/{token} (открывается и во встроенном браузере Telegram).
 {$WEB_DOMAIN} {
 	import common
+	reverse_proxy web:3000
+}
+
+# Главная админка платформы: тот же web, страницы /admin/* выбираются по хосту.
+{$ADMIN_DOMAIN} {
+	import common
+	header X-Frame-Options "DENY"
+	reverse_proxy web:3000
+}
+
+# Кабинет поставщика (EMAN и другие): тот же web, страницы /vendor/* выбираются по хосту.
+{$VENDOR_DOMAIN} {
+	import common
+	header X-Frame-Options "DENY"
 	reverse_proxy web:3000
 }

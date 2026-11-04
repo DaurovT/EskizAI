@@ -34,10 +34,37 @@ def test_fourth_project_is_blocked(api, client, owner):
 
 
 def test_examples_never_charged(api, client, owner):
-    for i in range(5):
-        pid = api.project(owner, f"Пример {i}", is_example=True)
-        assert sketch(client, owner, pid).status_code == 200
+    r = client.post("/projects/example", headers=owner)
+    assert r.status_code == 201, r.text
+    ex = r.json()
+    assert ex["is_example"] and ex["title"] == "Пример: шкаф-купе" and ex["current_version_id"]
+    assert sketch(client, owner, ex["id"]).status_code == 200
     assert client.get("/billing/limits", headers=owner).json()["free_used"] == 0
+
+
+def test_examples_only_server_side(api, client, owner, settings):
+    """H1: клиент не создаёт проекты «без лимита» сам — один пример на цех из шаблона сервера."""
+    first = client.post("/projects/example", headers=owner)
+    assert first.status_code == 201
+    again = client.post("/projects/example", headers=owner)
+    assert again.status_code == 200 and again.json()["id"] == first.json()["id"]
+    # старое приложение: is_example в POST /projects больше ничего не даёт — тот же пример, данные клиента не берутся
+    r = client.post("/projects", json={"title": "Мой «пример»", "is_example": True, "source_text": "x"}, headers=owner)
+    assert r.status_code == 201 and r.json()["id"] == first.json()["id"] and r.json()["source_text"] is None
+    assert client.get("/projects", headers=owner).json()["total"] == 1
+    # обычный проект — всегда настоящий, списывается при эскизе
+    pid = api.project(owner, "Свой")
+    assert client.get(f"/projects/{pid}", headers=owner).json()["is_example"] is False
+    # удалённый пример можно создать заново, но не больше EXAMPLE_PROJECTS_MAX за всё время
+    current = first.json()["id"]
+    for _ in range(settings.example_projects_max - 1):
+        assert client.delete(f"/projects/{current}", headers=owner).status_code == 200
+        r = client.post("/projects/example", headers=owner)
+        assert r.status_code == 201 and r.json()["id"] != current
+        current = r.json()["id"]
+    assert client.delete(f"/projects/{current}", headers=owner).status_code == 200
+    r = client.post("/projects/example", headers=owner)
+    assert r.status_code == 409 and r.json()["error"]["code"] == "example_limit"
 
 
 def test_paid_order_returns_project_to_limit(api, client, owner):

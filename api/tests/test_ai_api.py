@@ -202,8 +202,8 @@ def test_edit_requires_model_and_editable_project(api, client, owner, fake):
     assert client.post(f"/projects/{pid}/ai/design", json={}, headers=owner).status_code == 422
 
 
-def test_budget_warning_402_and_extra_project(api, client, owner, fake):
-    assert client.patch("/admin/settings", json={"ai_budget_usd": 0.03}, headers=ADMIN).status_code == 200
+def test_budget_warning_402_and_extra_project(api, client, owner, fake, root_admin):
+    assert client.patch("/admin/settings", json={"ai_budget_usd": 0.03}, headers=root_admin).status_code == 200
     pid = api.project(owner)
     api.advance(owner, pid, "sketch")  # списан 1 проект
     fake.replies.append(response(edit_reply([{"op": "replace", "path": "/width", "value_json": "1300"}]),
@@ -236,14 +236,14 @@ def test_ai_needs_project_limit_except_examples(api, client, owner, fake):
     pid = api.project(owner, tree=None)
     r = client.post(f"/projects/{pid}/ai/design", json={"text": "шкаф"}, headers=owner)
     assert r.status_code == 402 and r.json()["error"]["code"] == "limit_exhausted"
-    ex = api.project(owner, "Пример", tree=None, is_example=True)
+    ex = client.post("/projects/example", headers=owner).json()["id"]
     fake.replies.append(response(design()))
     assert task(client, owner, client.post(f"/projects/{ex}/ai/design", json={"text": "шкаф"},
                                           headers=owner))["status"] == "ready"
 
 
-def test_extra_charge_without_limit_is_402(api, client, owner, fake):
-    client.patch("/admin/settings", json={"ai_budget_usd": 0.01}, headers=ADMIN)
+def test_extra_charge_without_limit_is_402(api, client, owner, fake, root_admin):
+    client.patch("/admin/settings", json={"ai_budget_usd": 0.01}, headers=root_admin)
     pid = api.project(owner)
     api.advance(owner, pid, "sketch")
     for i in range(2):

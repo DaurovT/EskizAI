@@ -131,6 +131,8 @@ class AuthCode(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     consumed_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = _created()
+    # IP запроса кода (как его видит uvicorn за Caddy, --proxy-headers) — лимиты на IP против SMS-накрутки
+    ip: Mapped[Optional[str]] = mapped_column(String(45), index=True)
 
 
 class RefreshToken(Base):
@@ -311,6 +313,19 @@ class Order(Base):
     composition: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)  # снимок mebel_core.supplier_order()
     created_by: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = _created()
+    # Поставщики и кабинет поставщика (docs/staff_vendor_contract.md §4, §5)
+    supplier_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("suppliers.id", ondelete="SET NULL"),
+                                                             index=True)
+    group_id: Mapped[Optional[uuid.UUID]] = mapped_column(Uuid, index=True)  # заказы одного оформления
+    vendor_status_note: Mapped[Optional[str]] = mapped_column(Text)
+    assignee_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("staff_users.id", ondelete="SET NULL"),
+                                                             index=True)  # конструктор
+    due_date: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # срок готовности
+    reject_reason: Mapped[Optional[str]] = mapped_column(String(500))
+    return_comment: Mapped[Optional[str]] = mapped_column(Text)  # «вернуть мастеру»: что исправить
+    accepted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    commission_amount: Mapped[Optional[int]] = mapped_column(Integer)  # сумы, начислено при оплате
+    commission_reversed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # сумы, сторно
 
 
 class ShareLink(Base):
@@ -488,6 +503,9 @@ class Supplier(Base):
     site_url: Mapped[Optional[str]] = mapped_column(String(300))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = _created()
+    # Реквизиты, договор, склад, срок производства, текст ссылки на оплату (§4a, §5.1)
+    settings: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, server_default="{}")
+    blocked_reason: Mapped[Optional[str]] = mapped_column(String(500))
 
 
 class CatalogItem(Base):
@@ -618,6 +636,9 @@ class NonstandardRequest(Base):
     manager_note: Mapped[Optional[str]] = mapped_column(Text)
     designer_comment: Mapped[Optional[str]] = mapped_column(Text)  # комментарий конструктора мастеру (с ценой)
     files: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)  # доработанные файлы
+    supplier_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("suppliers.id", ondelete="SET NULL"),
+                                                             index=True)  # кому ушла (path=eman)
+    assignee_staff_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("staff_users.id", ondelete="SET NULL"))
     estimated_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     done_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
@@ -648,6 +669,8 @@ class PriceRequest(Base):
     supplier_name: Mapped[Optional[str]] = mapped_column(String(200))
     note: Mapped[Optional[str]] = mapped_column(String(500))
     catalog_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("catalog_items.id", ondelete="SET NULL"))
+    supplier_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("suppliers.id", ondelete="SET NULL"),
+                                                             index=True)  # по supplier_routes
     priced_by: Mapped[Optional[str]] = mapped_column(String(64))
     priced_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     valid_until: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)  # цена действует до (по умолчанию +7 дней)
@@ -677,4 +700,270 @@ class Payment(Base):
     created_by: Mapped[Optional[str]] = mapped_column(String(64))
     paid_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     refunded_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_at: Mapped[datetime] = _created()
+
+
+# --- Сотрудники платформы и поставщиков (docs/staff_vendor_contract.md) ---
+
+
+class StaffUser(Base):
+    """Сотрудник: платформа (supplier_id = NULL) или поставщик. Вход по почте и паролю."""
+
+    __tablename__ = "staff_users"
+
+    id: Mapped[uuid.UUID] = _id()
+    email: Mapped[str] = mapped_column(String(254), unique=True)  # в нижнем регистре
+    name: Mapped[str] = mapped_column(String(200))
+    role: Mapped[str] = mapped_column(String(30))
+    supplier_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("suppliers.id", ondelete="CASCADE"),
+                                                             index=True)
+    password_hash: Mapped[str] = mapped_column(String(300))
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_until: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    password_changed_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_by: Mapped[Optional[str]] = mapped_column(String(64))
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+
+class StaffSession(Base):
+    """Вход сотрудника (устройство): IP, браузер; отзыв — «завершить сессии». Токены — в staff_refresh_tokens."""
+
+    __tablename__ = "staff_sessions"
+
+    id: Mapped[uuid.UUID] = _id()
+    staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id", ondelete="CASCADE"), index=True)
+    ip: Mapped[Optional[str]] = mapped_column(String(64))
+    user_agent: Mapped[Optional[str]] = mapped_column(String(300))
+    created_at: Mapped[datetime] = _created()
+    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+
+
+class StaffRefreshToken(Base):
+    __tablename__ = "staff_refresh_tokens"
+
+    id: Mapped[uuid.UUID] = _id()  # jti
+    staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id", ondelete="CASCADE"), index=True)
+    session_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("staff_sessions.id", ondelete="CASCADE"),
+                                                            index=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_at: Mapped[datetime] = _created()
+
+
+class StaffMfa(Base):
+    """TOTP (RFC 6238): секрет и резервные коды (хеши). enabled_at = NULL — настройка не завершена."""
+
+    __tablename__ = "staff_mfa"
+
+    staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id", ondelete="CASCADE"), primary_key=True)
+    secret: Mapped[str] = mapped_column(String(64))
+    backup_codes: Mapped[list[str]] = mapped_column(JSON, default=list)
+    enabled_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    last_step: Mapped[Optional[int]] = mapped_column(Integer)  # защита от повтора кода
+    # Растёт при каждом изменении кодов: резервный код списывается условным UPDATE … WHERE version = :v
+    version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = _created()  # настройка начата (секрет выдан)
+
+
+class StaffMfaChallenge(Base):
+    """Выданный mfa_token (второй шаг входа): одноразовый, гаснет при сбросе пароля и завершении сессий."""
+
+    __tablename__ = "staff_mfa_challenges"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)  # jti токена
+    staff_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("staff_users.id", ondelete="CASCADE"), index=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    used_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_at: Mapped[datetime] = _created()
+
+
+class AuthThrottle(Base):
+    """Счётчики попыток входа сотрудников: почта+IP (блокировка), IP (ограничение частоты), 2FA.
+    key — HMAC от почты/IP (сами почта и IP не хранятся). Меняется только атомарным UPSERT … RETURNING."""
+
+    __tablename__ = "auth_throttle"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    staff_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("staff_users.id", ondelete="CASCADE"),
+                                                          index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    window_start: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    locked_until: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+
+
+class SupplierRoute(Base):
+    """Категория строки заказа → поставщик. Нет маршрута — поставщик по умолчанию (eman)."""
+
+    __tablename__ = "supplier_routes"
+
+    id: Mapped[uuid.UUID] = _id()
+    category: Mapped[str] = mapped_column(String(40), unique=True)
+    supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("suppliers.id", ondelete="CASCADE"), index=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+
+class SupplierCommission(Base):
+    """Ставка комиссии платформы: поставщик, категория (NULL — все), б.п., действует с."""
+
+    __tablename__ = "supplier_commissions"
+
+    id: Mapped[uuid.UUID] = _id()
+    supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("suppliers.id", ondelete="CASCADE"), index=True)
+    category: Mapped[Optional[str]] = mapped_column(String(40))
+    rate_bp: Mapped[int] = mapped_column(Integer)
+    effective_from: Mapped[datetime] = mapped_column(UTCDateTime)
+    reason: Mapped[Optional[str]] = mapped_column(String(500))
+    created_by: Mapped[Optional[str]] = mapped_column(String(64))
+    created_at: Mapped[datetime] = _created()
+
+
+class SupplierSettlement(Base):
+    """Выплата поставщика платформе (комиссия) — вносит суперадмин."""
+
+    __tablename__ = "supplier_settlements"
+
+    id: Mapped[uuid.UUID] = _id()
+    supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("suppliers.id", ondelete="CASCADE"), index=True)
+    period_from: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    period_to: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    amount: Mapped[int] = mapped_column(Integer)
+    paid_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    comment: Mapped[Optional[str]] = mapped_column(String(1000))
+    created_by: Mapped[Optional[str]] = mapped_column(String(64))
+    created_at: Mapped[datetime] = _created()
+
+
+class SupplierPriceSource(Base):
+    """Источник цен поставщика: файл по ссылке или API. Запуски — в parser_runs."""
+
+    __tablename__ = "supplier_price_sources"
+
+    id: Mapped[uuid.UUID] = _id()
+    supplier_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("suppliers.id", ondelete="CASCADE"), unique=True)
+    kind: Mapped[str] = mapped_column(String(20), default="file_url")  # file_url | api
+    url: Mapped[str] = mapped_column(String(1000))
+    format: Mapped[str] = mapped_column(String(10), default="csv")  # csv | xlsx | json
+    mapping: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # поле → колонка источника
+    secret: Mapped[Optional[str]] = mapped_column(String(500))  # ключ API — в ответах не отдаётся
+    schedule: Mapped[str] = mapped_column(String(10), default="daily")  # off | hourly | daily
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    last_status: Mapped[Optional[str]] = mapped_column(String(20))
+    last_error: Mapped[Optional[str]] = mapped_column(String(1000))
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+
+# --- Заказ у поставщика: переписка, история, исправления, возвраты, споры (§5.4, §4a) ---
+
+
+class OrderMessage(Base):
+    __tablename__ = "order_messages"
+
+    id: Mapped[uuid.UUID] = _id()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    author_type: Mapped[str] = mapped_column(String(10))  # master | vendor | platform
+    author_id: Mapped[Optional[str]] = mapped_column(String(64))
+    author_name: Mapped[Optional[str]] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text, default="")
+    attachments: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = _created()
+    read_by_master_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    read_by_vendor_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+
+
+class OrderEvent(Base):
+    """История заказа: статусы и действия (кто, когда, комментарий)."""
+
+    __tablename__ = "order_events"
+
+    id: Mapped[uuid.UUID] = _id()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(40))  # status | take | assign | correction | return | dispute | message…
+    from_status: Mapped[Optional[str]] = mapped_column(String(20))
+    to_status: Mapped[Optional[str]] = mapped_column(String(20))
+    actor_type: Mapped[str] = mapped_column(String(10))  # master | staff | system
+    actor_id: Mapped[Optional[str]] = mapped_column(String(64))
+    actor_name: Mapped[Optional[str]] = mapped_column(String(200))
+    comment: Mapped[Optional[str]] = mapped_column(Text)
+    data: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = _created()
+
+
+class OrderCorrection(Base):
+    __tablename__ = "order_corrections"
+
+    id: Mapped[uuid.UUID] = _id()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    author_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("staff_users.id", ondelete="SET NULL"))
+    comment: Mapped[str] = mapped_column(Text, default="")
+    lines_before: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    lines_after: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    total_before: Mapped[int] = mapped_column(Integer, default=0)
+    total_after: Mapped[int] = mapped_column(Integer, default=0)
+    files: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    prev_status: Mapped[Optional[str]] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending | approved | declined | applied
+    decision_comment: Mapped[Optional[str]] = mapped_column(Text)
+    decided_by: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    decided_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_at: Mapped[datetime] = _created()
+
+
+class OrderReturn(Base):
+    """Возврат / рекламация по оплаченному заказу."""
+
+    __tablename__ = "order_returns"
+
+    id: Mapped[uuid.UUID] = _id()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    opened_by_type: Mapped[str] = mapped_column(String(10))  # master | vendor
+    opened_by: Mapped[Optional[str]] = mapped_column(String(64))
+    kind: Mapped[str] = mapped_column(String(20))  # defect | cut_error | shortage | cancel_after_pay | other
+    lines: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    amount: Mapped[Optional[int]] = mapped_column(Integer)  # сумы, заявлено
+    photos: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    description: Mapped[str] = mapped_column(Text, default="")
+    decision: Mapped[Optional[str]] = mapped_column(String(20))  # redo | refund | declined
+    decision_comment: Mapped[Optional[str]] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | awaiting_owner | resolved
+    refund_amount: Mapped[Optional[int]] = mapped_column(Integer)
+    decided_by: Mapped[Optional[str]] = mapped_column(String(64))
+    decided_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    approved_by: Mapped[Optional[str]] = mapped_column(String(64))
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    created_at: Mapped[datetime] = _created()
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
+
+
+class OrderDispute(Base):
+    """Спор мастера с решением поставщика (возврат, отклонение) — решает суперадмин."""
+
+    __tablename__ = "order_disputes"
+
+    id: Mapped[uuid.UUID] = _id()
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    return_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("order_returns.id", ondelete="SET NULL"))
+    opened_by: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    subject: Mapped[str] = mapped_column(String(20))  # return | rejection
+    # decision_unfair | amount_wrong | defect_not_accepted | can_be_done | other
+    reason: Mapped[str] = mapped_column(String(40))
+    comment: Mapped[str] = mapped_column(Text, default="")  # мастер: с чем не согласен
+    photos: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    lines: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    amount: Mapped[Optional[int]] = mapped_column(Integer)  # сколько просит мастер
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | resolved
+    resolution: Mapped[Optional[str]] = mapped_column(String(20))  # master | supplier | partial
+    refund_amount: Mapped[Optional[int]] = mapped_column(Integer)  # решение: возврат за счёт поставщика
+    decision_comment: Mapped[Optional[str]] = mapped_column(Text)  # решение суперадмина — видят обе стороны
+    resolved_by: Mapped[Optional[str]] = mapped_column(String(64))
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = _created()

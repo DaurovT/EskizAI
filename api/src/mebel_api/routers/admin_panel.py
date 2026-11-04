@@ -15,7 +15,18 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 
 from ..db import utcnow
-from ..deps import AdminDep, DbDep, SettingsDep
+from ..deps import (
+    AiLogDep,
+    DbDep,
+    OrdersDep,
+    PlatformDep,
+    ProjectsViewDep,
+    SettingsAdminDep,
+    SettingsDep,
+    WorkshopsGrantDep,
+    WorkshopsViewDep,
+    require_reason,
+)
 from ..domain import ORDER_STATUS_LABELS, STATUS_LABELS, OrderStatus, ProjectStatus as S
 from ..errors import ERROR_RESPONSES, ApiError, not_found
 from ..models import (
@@ -35,7 +46,7 @@ from ..models import (
     Workshop,
 )
 from ..services import lifecycle
-from ..services.action_log import log_action
+from ..services.action_log import log_action, staff_names
 from ..services.ai import budget_state, chat_messages
 from ..services.app_settings import KNOWN, all_settings, coerce, set_setting
 from ..services.estimate import compute_range, is_measured, master_estimate
@@ -64,7 +75,67 @@ def _periods(settings) -> dict[str, datetime]:
 
 
 @router.get("/dashboard", summary="Дашборд: цеха, проекты, заказы, расходы на ИИ")
-def dashboard(admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def dashboard(admin: PlatformDep, db: DbDep, settings: SettingsDep,
+              from_: Annotated[str | None, Query(alias="from")] = None, to: str | None = None) -> dict:
+    out = _dashboard_base(db, settings)
+    if admin.can("finance"):  # расширенная сводка суперадмина (§4a): период, поставщики, деньги, споры
+        out["period"] = _dashboard_period(db, settings, from_, to)
+    return out
+
+
+def _dashboard_period(db, settings, from_: str | None, to: str | None) -> dict:
+    from ..models import AuthCode, OrderDispute, OrderReturn
+    from ..services import finance
+
+    start, end = finance.period(from_, to)
+    in_period = lambda col: (col >= start) & (col < end)  # noqa: E731
+    by_supplier = [{"supplier_id": str(sid) if sid else None, "supplier_name": name, "status": st, "count": n}
+                   for sid, name, st, n in db.execute(
+                       select(Order.supplier_id, Supplier.name, Order.status, func.count(Order.id))
+                       .outerjoin(Supplier, Order.supplier_id == Supplier.id).where(in_period(Order.created_at))
+                       .group_by(Order.supplier_id, Supplier.name, Order.status)).all()]
+    paid = list(db.scalars(select(Order).where(Order.paid_at.is_not(None), in_period(Order.paid_at))))
+    turnover = sum(o.invoice_total if o.invoice_total is not None else (o.estimate_total or 0) for o in paid)
+    accrued = sum(o.commission_amount or 0 for o in paid)
+    reversed_ = sum(o.commission_reversed or 0 for o in paid)
+    from ..models import SupplierSettlement
+
+    received = db.scalar(select(func.coalesce(func.sum(SupplierSettlement.amount), 0))
+                         .where(in_period(SupplierSettlement.paid_at))) or 0
+    pays = db.execute(select(Payment.kind, Payment.status, func.coalesce(func.sum(Payment.amount), 0))
+                      .where(in_period(Payment.paid_at)).group_by(Payment.kind, Payment.status)).all()
+    revenue = {"pack": 0, "pro": 0, "files": 0, "refunds": 0}
+    for kind, st, amount in pays:
+        if st == "refunded":
+            revenue["refunds"] += amount
+        revenue[kind] = revenue.get(kind, 0) + amount
+    overdue_h = int(all_settings(db, settings).get("vendor_overdue_hours") or 24)
+    ai = db.execute(select(func.count(AiRequest.id), func.coalesce(func.sum(AiRequest.cost_microusd), 0))
+                    .where(in_period(AiRequest.created_at))).one()
+    return {
+        "from": start.isoformat(), "to": end.isoformat(),
+        "workshops_new": db.scalar(select(func.count(Workshop.id)).where(in_period(Workshop.created_at))) or 0,
+        "masters_active": db.scalar(select(func.count(User.id)).where(in_period(User.last_login_at))) or 0,
+        "workshops_active": db.scalar(select(func.count(func.distinct(Project.workshop_id)))
+                                      .where(in_period(Project.updated_at))) or 0,
+        "projects_new": db.scalar(select(func.count(Project.id)).where(in_period(Project.created_at))) or 0,
+        "orders_by_supplier": by_supplier,
+        "turnover": turnover, "paid_orders": len(paid),
+        "commission": {"accrued": accrued, "reversed": reversed_, "received": received},
+        "platform_revenue": revenue,
+        "ai": {"requests": ai[0], "cost_usd": _usd(ai[1]),
+               "errors": db.scalar(select(func.count(AiRequest.id)).where(
+                   in_period(AiRequest.created_at), AiRequest.validation_result.not_in(["ok", "retried"]))) or 0},
+        "sms": {"codes_sent": db.scalar(select(func.count(AuthCode.id)).where(in_period(AuthCode.created_at))) or 0},
+        "overdue_orders": db.scalar(select(func.count(Order.id)).where(
+            Order.status == OrderStatus.created, Order.created_at < utcnow() - timedelta(hours=overdue_h))) or 0,
+        "overdue_hours": overdue_h,
+        "open_disputes": db.scalar(select(func.count(OrderDispute.id)).where(OrderDispute.status == "open")) or 0,
+        "open_returns": db.scalar(select(func.count(OrderReturn.id)).where(OrderReturn.status != "resolved")) or 0,
+    }
+
+
+def _dashboard_base(db, settings) -> dict:
     periods = _periods(settings)
     active_since = utcnow() - timedelta(days=30)
     by_status = dict(db.execute(select(Project.status, func.count(Project.id)).where(Project.deleted_at.is_(None))
@@ -118,7 +189,7 @@ def _owner(db, w: Workshop) -> User | None:
 
 
 @router.get("/workshops", summary="Цеха: список")
-def workshops(admin: AdminDep, db: DbDep, settings: SettingsDep, q: str | None = None,
+def workshops(admin: WorkshopsViewDep, db: DbDep, settings: SettingsDep, q: str | None = None,
               limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
     stmt = select(Workshop)
     if q:
@@ -149,7 +220,7 @@ def workshops(admin: AdminDep, db: DbDep, settings: SettingsDep, q: str | None =
 
 
 @router.get("/workshops/{workshop_id}", summary="Карточка цеха")
-def workshop_card(workshop_id: uuid.UUID, admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def workshop_card(workshop_id: uuid.UUID, admin: WorkshopsViewDep, db: DbDep, settings: SettingsDep) -> dict:
     w = db.get(Workshop, workshop_id)
     if w is None:
         raise not_found("Цех")
@@ -160,8 +231,9 @@ def workshop_card(workshop_id: uuid.UUID, admin: AdminDep, db: DbDep, settings: 
                              .where(Project.workshop_id == w.id).order_by(Order.created_at.desc()).limit(100)))
     ai_cost = db.scalar(select(func.coalesce(func.sum(AiRequest.cost_microusd), 0))
                         .where(AiRequest.workshop_id == w.id)) or 0
-    log = db.scalars(select(ActionLog).where(ActionLog.workshop_id == w.id).order_by(ActionLog.created_at.desc())
-                     .limit(50))
+    log = list(db.scalars(select(ActionLog).where(ActionLog.workshop_id == w.id)
+                          .order_by(ActionLog.created_at.desc()).limit(50)))
+    names = staff_names(db, log)
     return {
         "id": str(w.id), "name": w.name, "city": w.city, "phone": w.phone, "plan": w.plan,
         "pro_until": _iso(w.pro_until), "blocked": w.blocked, "created_at": _iso(w.created_at),
@@ -177,7 +249,7 @@ def workshop_card(workshop_id: uuid.UUID, admin: AdminDep, db: DbDep, settings: 
         "projects": [_project_brief(p) for p in projects],
         "orders": [_order_brief(db, o) for o in orders],
         "ai_cost_usd": _usd(ai_cost),
-        "action_log": [_log_out(e) for e in log],
+        "action_log": [_log_out(e, names) for e in log],
     }
 
 
@@ -187,13 +259,14 @@ class BlockIn(BaseModel):
 
 
 @router.post("/workshops/{workshop_id}/block", summary="Заблокировать / разблокировать цех")
-def block_workshop(workshop_id: uuid.UUID, body: BlockIn, admin: AdminDep, db: DbDep) -> dict:
+def block_workshop(workshop_id: uuid.UUID, body: BlockIn, admin: WorkshopsGrantDep, db: DbDep) -> dict:
+    require_reason(admin, body.reason)
     w = db.get(Workshop, workshop_id)
     if w is None:
         raise not_found("Цех")
     before = {"blocked": w.blocked}
     w.blocked = body.blocked
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=w.id, entity="workshop", entity_id=w.id,
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=w.id, entity="workshop", entity_id=w.id,
                action="block" if body.blocked else "unblock", before=before,
                after={"blocked": w.blocked, "reason": body.reason})
     db.commit()
@@ -219,7 +292,7 @@ def _project_brief(p: Project, workshop: Workshop | None = None, client: Client 
 
 @router.get("/projects", summary="Проекты: поиск по цеху, клиенту, типу изделия")
 def projects(
-    admin: AdminDep, db: DbDep, q: str | None = None, workshop_id: uuid.UUID | None = None,
+    admin: ProjectsViewDep, db: DbDep, q: str | None = None, workshop_id: uuid.UUID | None = None,
     status: Annotated[list[S] | None, Query()] = None, product_type: str | None = None,
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
 ) -> dict:
@@ -257,7 +330,7 @@ def _ai_out(r: AiRequest) -> dict:
 
 
 @router.get("/projects/{project_id}", summary="Карточка проекта: 3D, версии, смета, ИИ-журнал, чат, заказы")
-def project_card(project_id: uuid.UUID, admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def project_card(project_id: uuid.UUID, admin: ProjectsViewDep, db: DbDep, settings: SettingsDep) -> dict:
     p = db.get(Project, project_id)
     if p is None:
         raise not_found("Проект")
@@ -289,7 +362,7 @@ def project_card(project_id: uuid.UUID, admin: AdminDep, db: DbDep, settings: Se
 
 
 @router.get("/projects/{project_id}/versions/{version_id}", summary="Версия модели проекта (3D)")
-def project_version(project_id: uuid.UUID, version_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
+def project_version(project_id: uuid.UUID, version_id: uuid.UUID, admin: ProjectsViewDep, db: DbDep) -> dict:
     p = db.get(Project, project_id)
     v = db.get(ModelVersion, version_id)
     if p is None or v is None or v.project_id != p.id:
@@ -307,17 +380,17 @@ class FileAccessIn(BaseModel):
 
 
 @router.post("/projects/{project_id}/file-access", summary="Открыть производственные файлы (оплата файлов вручную)")
-def grant_file_access(project_id: uuid.UUID, body: FileAccessIn, admin: AdminDep, db: DbDep) -> dict:
+def grant_file_access(project_id: uuid.UUID, body: FileAccessIn, admin: WorkshopsGrantDep, db: DbDep) -> dict:
     p = db.get(Project, project_id)
     if p is None:
         raise not_found("Проект")
-    row = FileAccess(project_id=p.id, basis=body.basis, note=body.note, granted_by=admin)
+    row = FileAccess(project_id=p.id, basis=body.basis, note=body.note, granted_by=admin.id)
     db.add(row)
     if body.basis == "payment" and body.amount is not None:
         db.add(Payment(workshop_id=p.workshop_id, project_id=p.id, kind="files", amount=body.amount,
-                       method=body.method, receipt_url=body.receipt_url, created_by=admin))
+                       method=body.method, receipt_url=body.receipt_url, created_by=admin.id))
     db.flush()
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=p.workshop_id, entity="file_access",
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=p.workshop_id, entity="file_access",
                entity_id=row.id, action="grant", after={"project_id": str(p.id), "basis": body.basis,
                                                          "note": body.note})
     db.commit()
@@ -327,7 +400,8 @@ def grant_file_access(project_id: uuid.UUID, body: FileAccessIn, admin: AdminDep
 # --- Заказы (ADM-08) ---
 
 ORDER_FLOW = [OrderStatus.paid, OrderStatus.accepted, OrderStatus.cutting, OrderStatus.ready, OrderStatus.issued]
-CANCELLABLE = {OrderStatus.created, OrderStatus.paid, OrderStatus.accepted}
+CANCELLABLE = {OrderStatus.created, OrderStatus.paid, OrderStatus.accepted, OrderStatus.returned,
+               OrderStatus.awaiting_approval}
 
 
 def _order_brief(db, o: Order) -> dict:
@@ -345,6 +419,14 @@ def _order_brief(db, o: Order) -> dict:
         "distance_km": o.distance_km,
         "status_changed_at": _iso(o.status_changed_at),
         "number": o.number, "payment_url": o.payment_url, "payment_failed_at": _iso(o.payment_failed_at),
+        # Поставщики (docs/staff_vendor_contract.md §4–5)
+        "supplier_id": str(o.supplier_id) if o.supplier_id else None,
+        "supplier_name": s.name if (s := db.get(Supplier, o.supplier_id) if o.supplier_id else None) else None,
+        "group_id": str(o.group_id) if o.group_id else None,
+        "assignee_id": str(o.assignee_id) if o.assignee_id else None,
+        "due_date": _iso(o.due_date), "accepted_at": _iso(o.accepted_at), "reject_reason": o.reject_reason,
+        "vendor_status_note": o.vendor_status_note, "commission_amount": o.commission_amount,
+        "commission_reversed": o.commission_reversed,
     }
 
 
@@ -356,9 +438,12 @@ def _get_order(db, order_id: uuid.UUID) -> Order:
 
 
 @router.get("/orders", summary="Заказы поставщикам")
-def orders(admin: AdminDep, db: DbDep, status: Annotated[list[OrderStatus] | None, Query()] = None,
-           q: str | None = None, limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
+def orders(admin: OrdersDep, db: DbDep, status: Annotated[list[OrderStatus] | None, Query()] = None,
+           q: str | None = None, supplier_id: uuid.UUID | None = None,
+           limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
     stmt = select(Order).join(Project, Order.project_id == Project.id).join(Workshop, Project.workshop_id == Workshop.id)
+    if supplier_id:
+        stmt = stmt.where(Order.supplier_id == supplier_id)
     if status:
         stmt = stmt.where(Order.status.in_([s.value for s in status]))
     if q:
@@ -370,7 +455,7 @@ def orders(admin: AdminDep, db: DbDep, status: Annotated[list[OrderStatus] | Non
 
 
 @router.get("/orders/{order_id}", summary="Карточка заказа: состав, раскрой, CSV")
-def order_card(order_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
+def order_card(order_id: uuid.UUID, admin: OrdersDep, db: DbDep) -> dict:
     o = _get_order(db, order_id)
     p = db.get(Project, o.project_id)
     w = db.get(Workshop, p.workshop_id)
@@ -381,8 +466,9 @@ def order_card(order_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
 
         composition = compose(v, o.distance_km)
     owner = _owner(db, w)
-    history = db.scalars(select(ActionLog).where(ActionLog.entity == "order", ActionLog.entity_id == str(o.id))
-                         .order_by(ActionLog.created_at))
+    history = list(db.scalars(select(ActionLog).where(ActionLog.entity == "order", ActionLog.entity_id == str(o.id))
+                              .order_by(ActionLog.created_at)))
+    names = staff_names(db, history)
     return {
         **_order_brief(db, o),
         "workshop_phone": w.phone or (owner.phone if owner else None),
@@ -391,7 +477,7 @@ def order_card(order_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
         "lines": (composition or {}).get("lines", []),
         "cost_total": (composition or {}).get("total"),
         "allowed_statuses": _allowed(o),
-        "history": [_log_out(e) for e in history],
+        "history": [_log_out(e, names) for e in history],
         "csv_url": f"/admin/orders/{o.id}/csv",
     }
 
@@ -399,7 +485,9 @@ def order_card(order_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
 def _allowed(o: Order) -> list[str]:
     st = OrderStatus(o.status)
     out = []
-    if st in ORDER_FLOW and st != OrderStatus.issued:
+    # Принят поставщиком до оплаты (новый порядок §5.3) — «Оплачен» ставится через order-paid
+    unpaid_accepted = st == OrderStatus.accepted and o.paid_at is None
+    if st in ORDER_FLOW and st != OrderStatus.issued and not unpaid_accepted:
         out.append(ORDER_FLOW[ORDER_FLOW.index(st) + 1].value)
     if st in CANCELLABLE:
         out.append(OrderStatus.cancelled.value)
@@ -407,7 +495,7 @@ def _allowed(o: Order) -> list[str]:
 
 
 @router.get("/orders/{order_id}/csv", summary="CSV онлайн-кроя для ручной передачи в EMAN")
-def order_csv(order_id: uuid.UUID, admin: AdminDep, db: DbDep) -> Response:
+def order_csv(order_id: uuid.UUID, admin: OrdersDep, db: DbDep) -> Response:
     from mebel_core import build, export_csv, parse_tree
 
     o = _get_order(db, order_id)
@@ -425,16 +513,16 @@ class HandOverIn(BaseModel):
 
 
 @router.post("/orders/{order_id}/hand-over", summary="Отметить ручную передачу заказа в EMAN")
-def hand_over(order_id: uuid.UUID, body: HandOverIn, admin: AdminDep, db: DbDep) -> dict:
+def hand_over(order_id: uuid.UUID, body: HandOverIn, admin: OrdersDep, db: DbDep) -> dict:
     o = _get_order(db, order_id)
     if o.status == OrderStatus.cancelled:
         raise ApiError(409, "order_cancelled", "Заказ отменён")
     o.handed_over_at = utcnow()
-    o.handed_over_by = admin
+    o.handed_over_by = admin.id
     if body.note:
         o.notes = body.note
     p = db.get(Project, o.project_id)
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
                action="hand_over", after={"note": body.note})
     db.commit()
     return _order_brief(db, o)
@@ -444,10 +532,11 @@ class OrderStatusIn(BaseModel):
     status: OrderStatus
     invoice_total: int | None = Field(None, ge=0)
     note: str | None = Field(None, max_length=1000)
+    reason: str | None = Field(None, max_length=500, description="Обязательна для отмены оплаченного заказа (§4a)")
 
 
 @router.post("/orders/{order_id}/status", summary="Сменить статус заказа (менеджер)")
-def order_status(order_id: uuid.UUID, body: OrderStatusIn, admin: AdminDep, db: DbDep) -> dict:
+def order_status(order_id: uuid.UUID, body: OrderStatusIn, admin: OrdersDep, db: DbDep) -> dict:
     """Принят EMAN → В распиле → Готов → Выдан; отмена — до «В распиле» (раздел 16).
     «Оплачен» ставится через POST /admin/projects/{id}/order-paid."""
     o = _get_order(db, order_id)
@@ -455,10 +544,18 @@ def order_status(order_id: uuid.UUID, body: OrderStatusIn, admin: AdminDep, db: 
         raise ApiError(409, "illegal_order_transition",
                        f"Из «{ORDER_STATUS_LABELS[o.status]}» нельзя перейти в «{ORDER_STATUS_LABELS[body.status.value]}»",
                        {"allowed": _allowed(o)})
+    from ..services import order_flow as flow
+
+    reason = None
+    if body.status == OrderStatus.cancelled and o.paid_at is not None:
+        reason = require_reason(admin, body.reason or body.note)
     before = {"status": o.status, "commission_status": o.commission_status, "invoice_total": o.invoice_total}
     now = utcnow()
+    from_status = o.status
     o.status = body.status
     o.status_changed_at = now
+    if body.status == OrderStatus.accepted and o.accepted_at is None:
+        o.accepted_at = now
     if body.invoice_total is not None:
         o.invoice_total = body.invoice_total
     if body.note:
@@ -466,12 +563,15 @@ def order_status(order_id: uuid.UUID, body: OrderStatusIn, admin: AdminDep, db: 
     if body.status == OrderStatus.cancelled:
         o.cancelled_at = now
         if o.commission_status == "accrued":
+            flow.reverse_commission(db, o)
             o.commission_status = "reversed"  # сторно комиссии при отмене с возвратом
     p = db.get(Project, o.project_id)
     from ..services import events
 
+    flow.event(db, o, "status_changed", actor_type="platform", actor_id=admin.id, actor_name=admin.name,
+               from_status=from_status, to_status=body.status, comment=reason or body.note)
     events.order_status(db, o)  # push владельцу и автору: «Заказ №… готов к выдаче» (раздел 19)
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
                action="status", before=before,
                after={"status": o.status, "commission_status": o.commission_status, "invoice_total": o.invoice_total})
     db.commit()
@@ -485,7 +585,7 @@ class PaymentIn(BaseModel):
 
 
 @router.post("/orders/{order_id}/payment", summary="Ссылка на оплату EMAN и способ; отметка «оплата не прошла»")
-def order_payment(order_id: uuid.UUID, body: PaymentIn, admin: AdminDep, db: DbDep) -> dict:
+def order_payment(order_id: uuid.UUID, body: PaymentIn, admin: OrdersDep, db: DbDep) -> dict:
     """До интеграции с мерчантом EMAN: менеджер вставляет ссылку от EMAN, мастер видит её в SCR-31.
     «Оплачено» — POST /admin/projects/{id}/order-paid."""
     o = _get_order(db, order_id)
@@ -503,7 +603,7 @@ def order_payment(order_id: uuid.UUID, body: PaymentIn, admin: AdminDep, db: DbD
     if body.failed is not None:
         o.payment_failed_at = utcnow() if body.failed else None
     p = db.get(Project, o.project_id)
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=p.workshop_id, entity="order", entity_id=o.id,
                action="payment", before=before,
                after={"payment_url": o.payment_url, "payment_provider": o.payment_provider,
                       "payment_failed_at": _iso(o.payment_failed_at)})
@@ -515,7 +615,7 @@ def order_payment(order_id: uuid.UUID, body: PaymentIn, admin: AdminDep, db: DbD
 
 
 @router.get("/ai-stats", summary="ИИ: расход, проверки, точность распознавания")
-def ai_stats(admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def ai_stats(admin: AiLogDep, db: DbDep, settings: SettingsDep) -> dict:
     periods = _periods(settings)
     totals = {}
     for name, since in periods.items():
@@ -551,7 +651,28 @@ def ai_stats(admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
     per_project = db.execute(select(AiRequest.project_id, func.sum(AiRequest.cost_microusd))
                              .where(AiRequest.project_id.is_not(None)).group_by(AiRequest.project_id)).all()
     avg_project = (sum(c for _, c in per_project) / len(per_project)) if per_project else 0
+    # Расход по дням (30 дней) и подозрительная активность: цех за сегодня больше своего среднего в N раз
+    since = periods["today"] - timedelta(days=29)
+    daily: dict[str, float] = {}
+    per_ws: dict[Any, list[int]] = {}
+    for created, wid, cost in db.execute(select(AiRequest.created_at, AiRequest.workshop_id, AiRequest.cost_microusd)
+                                         .where(AiRequest.created_at >= since)).all():
+        day = created.astimezone(ZoneInfo(settings.limit_timezone)).date().isoformat()
+        daily[day] = daily.get(day, 0) + (cost or 0)
+        if wid is not None:
+            bucket = per_ws.setdefault(wid, [0, 0])  # [сегодня, раньше]
+            bucket[0 if created >= periods["today"] else 1] += cost or 0
+    factor = float(all_settings(db, settings).get("ai_anomaly_factor") or 5)
+    suspicious = []
+    for wid, (today, before) in per_ws.items():
+        avg = before / 29
+        if today and today > factor * max(avg, 1):
+            w = db.get(Workshop, wid)
+            suspicious.append({"workshop_id": str(wid), "workshop_name": w.name if w else None,
+                               "today_usd": _usd(today), "avg_day_usd": _usd(round(avg))})
     return {
+        "by_day": [{"date": d, "cost_usd": _usd(c)} for d, c in sorted(daily.items())],
+        "suspicious": suspicious, "anomaly_factor": factor,
         "totals": totals, "by_purpose": by_purpose, "by_validation": by_validation, "by_workshop": by_workshop,
         "accuracy": {
             "design_requests": design_total,
@@ -568,13 +689,13 @@ def ai_stats(admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
 
 
 @router.get("/settings", summary="Настройки: бюджет ИИ и т. п.")
-def get_settings_admin(admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def get_settings_admin(admin: SettingsAdminDep, db: DbDep, settings: SettingsDep) -> dict:
     values = all_settings(db, settings)
     return {"values": values, "descriptions": {k: d for k, (_, d) in KNOWN.items()}}
 
 
 @router.patch("/settings", summary="Изменить настройки (пишется в журнал действий)")
-def patch_settings(body: dict[str, Any], admin: AdminDep, db: DbDep, settings: SettingsDep) -> dict:
+def patch_settings(body: dict[str, Any], admin: SettingsAdminDep, db: DbDep, settings: SettingsDep) -> dict:
     before_all = all_settings(db, settings)
     for key, value in body.items():
         if key not in KNOWN:
@@ -585,13 +706,14 @@ def patch_settings(body: dict[str, Any], admin: AdminDep, db: DbDep, settings: S
             raise ApiError(422, "invalid_setting", str(e))
         set_setting(db, key, value)
     after_all = all_settings(db, settings) | {k: coerce(k, v) for k, v in body.items()}
-    log_action(db, actor_type="admin", actor_id=admin, entity="settings", entity_id=None, action="update",
+    log_action(db, actor_type=admin.type, actor_id=admin.id, entity="settings", entity_id=None, action="update",
                before={k: before_all.get(k) for k in body}, after={k: after_all.get(k) for k in body})
     db.commit()
     return {"values": all_settings(db, settings)}
 
 
-def _log_out(e: ActionLog) -> dict:
-    return {"id": str(e.id), "actor_type": e.actor_type, "actor_id": e.actor_id, "entity": e.entity,
+def _log_out(e: ActionLog, names: dict[str, str] | None = None) -> dict:
+    return {"id": str(e.id), "actor_type": e.actor_type, "actor_id": e.actor_id,
+            "actor_name": (names or {}).get(e.actor_id or "") if e.actor_type == "staff" else None, "entity": e.entity,
             "entity_id": e.entity_id, "action": e.action, "before": e.before, "after": e.after,
             "created_at": _iso(e.created_at)}

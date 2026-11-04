@@ -223,6 +223,11 @@ export default function Breakdown() {
         ) : info?.kind === 'offline' ? (
           <ErrorScreen icon="cloud-offline-outline" tone="gray" title={info.title} text={info.text}
             primary={{ title: t('retry'), onPress: () => { ai.setError(null); setFix('add'); } }} secondary={describe} ghost={support} />
+        ) : info && (info.kind === 'busy' || info.kind === 'limit' || info.kind === 'forbidden') ? (
+          // ИИ занят этим проектом (409 ai_busy), лимиты ИИ цеха (429/503), бюджет примера (402) — понятным текстом, без «не разобрал»
+          <ErrorScreen icon={info.kind === 'busy' ? 'hourglass-outline' : info.kind === 'forbidden' ? 'lock-closed-outline' : 'wallet-outline'}
+            tone={info.kind === 'busy' ? 'blue' : info.kind === 'forbidden' ? 'gray' : 'amber'} title={info.title} text={info.text} note={t('err_no_limit')}
+            primary={{ title: t('ocd_to_project'), onPress: () => router.replace(`/project/${id}`) }} ghost={support} />
         ) : badPhoto ? (
           <ErrorScreen icon="image-outline" tone="amber" title={t('err_bad_photo_title')} text={t('err_bad_photo_text2')} note={t('err_no_limit')}
             primary={{ title: t('err_retake'), onPress: () => router.replace('/project/new') }} secondary={describe} ghost={support} />

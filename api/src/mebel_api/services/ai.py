@@ -54,11 +54,20 @@ FAILED_MESSAGE = {
 
 
 def budget_state(db: Session, settings: Settings, project: Project) -> BudgetOut:
-    spent = db.scalar(select(func.coalesce(func.sum(AiRequest.cost_microusd), 0)).where(
-        AiRequest.project_id == project.id)) or 0
-    extra = db.scalar(select(func.count(ExtraCharge.id)).where(
-        ExtraCharge.project_id == project.id, ExtraCharge.reason == "ai_budget")) or 0
-    budget_micro = round(float(get_setting(db, settings, "ai_budget_usd")) * 1_000_000)
+    """Бюджет ИИ проекта. Пример — маленький бюджет, общий на все примеры цеха (удалить пример и создать
+    новый — бюджет не обновляет)."""
+    if project.is_example:
+        examples = select(Project.id).where(Project.workshop_id == project.workshop_id, Project.is_example.is_(True))
+        spent = db.scalar(select(func.coalesce(func.sum(AiRequest.cost_microusd), 0)).where(
+            AiRequest.project_id.in_(examples))) or 0
+        extra = 0
+        budget_micro = round(settings.ai_example_budget_usd * 1_000_000)
+    else:
+        spent = db.scalar(select(func.coalesce(func.sum(AiRequest.cost_microusd), 0)).where(
+            AiRequest.project_id == project.id)) or 0
+        extra = db.scalar(select(func.count(ExtraCharge.id)).where(
+            ExtraCharge.project_id == project.id, ExtraCharge.reason == "ai_budget")) or 0
+        budget_micro = round(float(get_setting(db, settings, "ai_budget_usd")) * 1_000_000)
     warn_ratio = float(get_setting(db, settings, "ai_warn_ratio"))
     limit = budget_micro * (1 + extra)
     ratio = spent / limit if limit else 1.0
@@ -74,12 +83,32 @@ def budget_state(db: Session, settings: Settings, project: Project) -> BudgetOut
                      exceeded=exceeded, message=message)
 
 
+def task_key(project: Project | uuid.UUID | str) -> str:
+    """Ключ очереди: в проекте одновременно — одна ИИ-задача."""
+    pid = project.id if isinstance(project, Project) else project
+    return f"ai:{pid}"
+
+
+def ai_busy_error() -> ApiError:
+    return ApiError(409, "ai_busy", "ИИ уже работает над этим проектом. Дождитесь ответа")
+
+
 def ensure_ai_allowed(
     db: Session, settings: Settings, workshop: Workshop, project: Project, *, confirm_extra: bool, user_id,
-    commit: bool = True,
+    commit: bool = True, tasks=None, task_count: int = 1,
 ) -> None:
     """Проверки перед постановкой ИИ-задачи. Списание доп. проекта — здесь же (с подтверждением).
-    commit=False — списание остаётся в общей транзакции вызывающего (несколько предметов на фото)."""
+    commit=False — списание остаётся в общей транзакции вызывающего (несколько предметов на фото).
+    tasks — очередь: занят ли проект (409 ai_busy) и сколько уже зарезервировано задачами в очереди."""
+    from .spend_limits import ensure_ai_allowed as ensure_spend
+
+    if tasks is not None and tasks.busy(task_key(project)):
+        raise ai_busy_error()
+    # выключатель ИИ, дневные лимиты (общий и на цех), часовой лимит цеха; резерв задач в очереди — §4a, §8
+    ensure_spend(db, settings, workshop,
+                 reserved_global=tasks.reserved_usd() if tasks is not None else 0.0,
+                 reserved_workshop=tasks.reserved_usd(str(workshop.id)) if tasks is not None else 0.0,
+                 reserve=settings.ai_task_reserve_usd * max(task_count, 1))
     if not project.is_example and project.charged_at is None:
         state = limit_state(db, settings, workshop)
         if not state.can_charge:
@@ -211,6 +240,25 @@ def pending_questions(db: Session, project: Project) -> tuple[list[QuestionOut],
     return [q for q in last_questions(row) if q.id not in answers], answers
 
 
+MAX_ANSWERS = 50
+MAX_ANSWER_CHARS = 500
+
+
+def answerable_ids(row: AiSession | None) -> set[str]:
+    """id вопросов последнего распознавания и уже отвеченных (можно переответить); `object` — выбор предмета
+    на фото с несколькими предметами (прежний путь вместо choose-objects)."""
+    return {q.id for q in last_questions(row)} | set(session_answers(row)) | {"object"}
+
+
+def known_answers(answers: dict[str, str], asked) -> dict[str, str]:
+    """Только ответы на заданные вопросы, не больше MAX_ANSWERS, каждый — не длиннее MAX_ANSWER_CHARS."""
+    out = {}
+    for qid, value in answers.items():
+        if qid in asked and len(out) < MAX_ANSWERS:
+            out[qid] = str(value)[:MAX_ANSWER_CHARS]
+    return out
+
+
 def answer_text(answers: dict[str, str], questions: dict[str, QuestionOut]) -> str:
     """Реплика мастера в чате: «вопрос — ответ» по строке (вместо id вопросов)."""
     lines = []
@@ -277,10 +325,11 @@ class AiRunner:
         with self.db.sessionmaker() as db:
             project, workshop, user = self._load(db, payload)
             session = self._session(db, project, llm)
-            answers: dict[str, str] = payload["answers"]
             # тексты заданных вопросов — для чата и для модели (ответ без id-шников)
             row = db.scalar(select(AiSession).where(AiSession.project_id == project.id))
             asked = {q.id: q for q in last_questions(row)}
+            # в запрос к модели — только ответы на заданные вопросы (ручка уже отфильтровала; здесь — страховка)
+            answers = known_answers(payload["answers"], answerable_ids(row))
             # после распознавания мастер правил модель — ответы применяются к текущему дереву, правки не теряются
             current_tree = None
             designed = (row.last_result or {}).get("version_id") if row else None

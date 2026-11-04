@@ -74,6 +74,10 @@ class OrderStatus(StrEnum):
     ready = "ready"
     issued = "issued"
     cancelled = "cancelled"
+    # Кабинет поставщика (docs/staff_vendor_contract.md §5.3)
+    returned = "returned"  # возвращён мастеру на правку → после повторной отправки снова created
+    awaiting_approval = "awaiting_approval"  # поставщик исправил состав — ждёт подтверждения мастера
+    rejected = "rejected"  # отклонён поставщиком (финал)
 
 
 class ShareEventKind(StrEnum):
@@ -115,4 +119,7 @@ ORDER_STATUS_LABELS = {
     "ready": "Готов",
     "issued": "Выдан",
     "cancelled": "Отменён",
+    "returned": "Возвращён на правку",
+    "awaiting_approval": "Ждёт подтверждения исправления",
+    "rejected": "Отклонён поставщиком",
 }

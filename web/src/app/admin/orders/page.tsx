@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { Loading, Pager, Tag } from '@/components/admin/ui';
 import { qs } from '@/lib/admin/api';
-import { dt, ORDER_STATUSES, sum } from '@/lib/admin/format';
+import { dt, ORDER_STATUSES, orderStatusColor, sum } from '@/lib/admin/format';
 import { useApi } from '@/lib/admin/useApi';
 
 interface Row {
@@ -12,6 +12,10 @@ interface Row {
   project_id: string;
   project_title: string | null;
   workshop_name: string | null;
+  supplier?: string | null;
+  supplier_id?: string | null;
+  supplier_name?: string | null;
+  assignee_name?: string | null;
   status: string;
   status_label: string;
   estimate_total: number | null;
@@ -30,8 +34,11 @@ function Orders() {
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [offset, setOffset] = useState(0);
+  const [supplierId, setSupplierId] = useState(params.get('supplier_id') ?? '');
+  const suppliers = useApi<{ id: string; name: string }[] | { items: { id: string; name: string }[] }>('/admin/suppliers');
+  const supplierList = suppliers.data ? (Array.isArray(suppliers.data) ? suppliers.data : (suppliers.data.items ?? [])) : [];
   const { data, error, loading } = useApi<{ items: Row[]; total: number }>(
-    `/admin/orders${qs({ status: statuses, q: query, limit: LIMIT, offset })}`,
+    `/admin/orders${qs({ status: statuses, q: query, supplier_id: supplierId, limit: LIMIT, offset })}`,
   );
   return (
     <>
@@ -60,6 +67,22 @@ function Orders() {
             </option>
           ))}
         </select>
+        {supplierList.length > 1 && (
+          <select
+            value={supplierId}
+            onChange={(e) => {
+              setOffset(0);
+              setSupplierId(e.target.value);
+            }}
+          >
+            <option value="">Все поставщики</option>
+            {supplierList.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
         <button className="b" type="submit">
           Найти
         </button>
@@ -72,10 +95,11 @@ function Orders() {
               <tr>
                 <th>Заказ</th>
                 <th>Цех</th>
+                <th>Поставщик</th>
                 <th>Статус</th>
                 <th className="num">По смете</th>
                 <th className="num">По счёту</th>
-                <th>Передан в EMAN</th>
+                <th>Передан поставщику</th>
                 <th>Создан</th>
               </tr>
             </thead>
@@ -87,7 +111,11 @@ function Orders() {
                   </td>
                   <td>{o.workshop_name ?? '—'}</td>
                   <td>
-                    <Tag color={o.status === 'cancelled' ? 'red' : o.status === 'created' ? 'yellow' : 'green'}>{o.status_label}</Tag>
+                    {o.supplier_name ?? o.supplier ?? '—'}
+                    {o.assignee_name && <div className="muted">{o.assignee_name}</div>}
+                  </td>
+                  <td>
+                    <Tag color={orderStatusColor(o.status)}>{o.status_label}</Tag>
                   </td>
                   <td className="num">{sum(o.estimate_total)}</td>
                   <td className="num">{sum(o.invoice_total)}</td>

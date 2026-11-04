@@ -91,7 +91,8 @@ export async function withBudgetConfirm<T>(
   try {
     return await send(false);
   } catch (e) {
-    if (!(e instanceof ApiError) || !e.isPaymentRequired) throw e;
+    // бюджет примеров цеха не продлевается списанием проекта — спрашивать нечего
+    if (!(e instanceof ApiError) || !e.isPaymentRequired || e.code === 'ai_budget_example') throw e;
     if (!(await ask(e))) throw new BudgetDeclinedError(e);
     return send(true);
   }

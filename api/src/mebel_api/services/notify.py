@@ -126,10 +126,12 @@ def make_sender(settings) -> PushSender:
 # --- Шаблоны (ru / uz) ---
 
 ORDER_STATUS_TEXT = {
-    "ru": {"paid": "оплачен", "accepted": "принят EMAN", "cutting": "в распиле", "ready": "готов к выдаче",
-           "issued": "выдан", "cancelled": "отменён"},
-    "uz": {"paid": "to‘landi", "accepted": "EMAN qabul qildi", "cutting": "kesilmoqda", "ready": "olib ketishga tayyor",
-           "issued": "berildi", "cancelled": "bekor qilindi"},
+    "ru": {"paid": "оплачен", "accepted": "принят поставщиком {supplier}", "cutting": "в распиле", "ready": "готов к выдаче",
+           "issued": "выдан", "cancelled": "отменён", "returned": "возвращён на правку",
+           "rejected": "отклонён поставщиком", "awaiting_approval": "исправлен поставщиком — подтвердите"},
+    "uz": {"paid": "to‘landi", "accepted": "yetkazib beruvchi {supplier} qabul qildi", "cutting": "kesilmoqda", "ready": "olib ketishga tayyor",
+           "issued": "berildi", "cancelled": "bekor qilindi", "returned": "tuzatish uchun qaytarildi",
+           "rejected": "yetkazib beruvchi rad etdi", "awaiting_approval": "yetkazib beruvchi tuzatdi — tasdiqlang"},
 }
 
 TEMPLATES: dict[str, dict[str, tuple[str, str]]] = {
@@ -153,13 +155,34 @@ TEMPLATES: dict[str, dict[str, tuple[str, str]]] = {
         "ru": ("Заказ №{number}", "Заказ №{number} {status_text}"),
         "uz": ("Buyurtma №{number}", "Buyurtma №{number} {status_text}"),
     },
+    "order_message": {
+        "ru": ("Заказ №{number}: сообщение", "{text}"),
+        "uz": ("Buyurtma №{number}: xabar", "{text}"),
+    },
+    "order_return": {
+        "ru": ("Заказ №{number}: возврат", "Статус возврата обновлён"),
+        "uz": ("Buyurtma №{number}: qaytarish", "Qaytarish holati yangilandi"),
+    },
+    "order_correction": {
+        "ru": ("Заказ №{number}: исправление", "Поставщик исправил заказ — подтвердите в приложении"),
+        "uz": ("Buyurtma №{number}: tuzatish", "Yetkazib beruvchi buyurtmani tuzatdi — ilovada tasdiqlang"),
+    },
+    "order_dispute": {
+        "ru": ("Заказ №{number}: спор", "По спору принято решение"),
+        "uz": ("Buyurtma №{number}: nizo", "Nizo bo‘yicha qaror qabul qilindi"),
+    },
+    "broadcast": {
+        "ru": ("{head_ru}", "{text_ru}"),
+        "uz": ("{head_uz}", "{text_uz}"),
+    },
     "price_request_priced": {
         "ru": ("Цена под запрос", "Цена на «{name}» добавлена в смету"),
         "uz": ("So‘rov bo‘yicha narx", "«{name}» narxi smetaga qo‘shildi"),
     },
     "prices_stale": {
-        "ru": ("Цены изменились", "Цены EMAN изменились — пересчитайте смету «{title}» перед отправкой"),
-        "uz": ("Narxlar o‘zgardi", "EMAN narxlari o‘zgardi — «{title}» smetasini yuborishdan oldin qayta hisoblang"),
+        "ru": ("Цены изменились", "Цены поставщика изменились — пересчитайте смету «{title}» перед отправкой"),
+        "uz": ("Narxlar o‘zgardi", "Yetkazib beruvchi narxlari o‘zgardi — «{title}» smetasini yuborishdan oldin "
+                                   "qayta hisoblang"),
     },
     "limit_one_left": {
         "ru": ("Остался 1 проект", "Остался 1 проект. Закажите материалы по проекту — лимит вернётся"),
@@ -210,7 +233,10 @@ def render(kind: str, lang: str, params: dict[str, Any]) -> tuple[str, str]:
         pt = price_text(p.get("price"), lang)
         p["price_part"] = f" — {pt}" if pt else ""
     if kind == "order_status":
-        p["status_text"] = ORDER_STATUS_TEXT[lang].get(p.get("status", ""), p.get("status", ""))
+        text = ORDER_STATUS_TEXT[lang].get(p.get("status", ""), p.get("status", ""))
+        p["status_text"] = " ".join(text.format(supplier=p.get("supplier") or "").split())  # без поставщика — без имени
+        if p.get("comment"):  # «вернуть мастеру» / «отклонён»: причина — в том же push, без второго про сообщение
+            p["status_text"] += f": {p['comment']}"
     if kind == "nonstandard_estimated" and isinstance(p.get("price"), int):
         p["price"] = money_short(p["price"], lang)
     return tpl[0].format(**p), tpl[1].format(**p)[:500]

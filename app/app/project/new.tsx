@@ -5,7 +5,6 @@
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -16,6 +15,7 @@ import type { ClientOut } from '../../src/api/types';
 import { MAX_PHOTO_BYTES, MAX_PHOTOS } from '../../src/config';
 import { useT } from '../../src/i18n';
 import { pendingDesign } from '../../src/services/design';
+import { preparePhoto, type Photo } from '../../src/services/photos';
 import { updateMeta } from '../../src/state/projectMeta';
 import { takeShared } from '../../src/state/shareIntent';
 import { useOffline } from '../../src/state/net';
@@ -23,21 +23,10 @@ import { showError } from '../../src/ui/dialogs';
 import { Badge, BigTitle, Button, Card, Chip, Group, Header, ListItem, Press, Screen, Sheet, T, Toggle, resolveFont } from '../../src/ui/kit';
 import { colors, palette, type as ty } from '../../src/ui/theme';
 
-interface Photo { uri: string; width?: number | null; height?: number | null; size?: number | null; mimeType?: string | null; fromShare?: boolean; tint?: string }
-
 const TIPS_OFF = 'mebel.photoTips.off';
 
-/** Сжимаем до 1600 px по длинной стороне: 3G и NFR-06. */
-async function prepare(p: Photo): Promise<Photo> {
-  try {
-    const big = (p.width ?? 0) > 1600 || (p.height ?? 0) > 1600 || (p.size ?? 0) > 2_000_000;
-    if (!big) return p;
-    const r = await ImageManipulator.manipulateAsync(p.uri, [{ resize: (p.width ?? 0) >= (p.height ?? 0) ? { width: 1600 } : { height: 1600 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
-    return { ...p, uri: r.uri, width: r.width, height: r.height, mimeType: 'image/jpeg' };
-  } catch {
-    return p;
-  }
-}
+/** Сжатие до 1600 px — общее с перепиской и рекламациями (services/photos). */
+const prepare = preparePhoto;
 
 export default function NewProject() {
   const { t, lang } = useT();

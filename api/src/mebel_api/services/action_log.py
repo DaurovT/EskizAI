@@ -39,3 +39,22 @@ def log_action(
     )
     db.add(entry)
     return entry
+
+
+def staff_names(db: Session, entries) -> dict[str, str]:
+    """Имена сотрудников для записей журнала (actor_type = staff) — «кто сделал» рядом с действием."""
+    from ..models import StaffUser
+
+    ids = set()
+    for e in entries:
+        if e.actor_type == "staff" and e.actor_id:
+            try:
+                ids.add(uuid.UUID(e.actor_id))
+            except ValueError:
+                pass
+    names = {"admin-token": "Админ-токен"}
+    if ids:
+        from sqlalchemy import select
+
+        names |= {str(i): n for i, n in db.execute(select(StaffUser.id, StaffUser.name).where(StaffUser.id.in_(ids)))}
+    return names

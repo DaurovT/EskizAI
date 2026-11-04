@@ -13,7 +13,7 @@ from typing import Literal, Protocol
 
 import httpx
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from ..config import Settings
 from ..db import utcnow
@@ -161,8 +161,67 @@ LOGIN = "login"
 DELETE_ACCOUNT = "delete_account"
 
 
-def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, purpose: str = LOGIN) -> dict:
-    """Создаёт и отправляет код. Пауза между кодами — по назначению, часовой лимит — общий на номер."""
+def account_exists(db, phone: str) -> bool:
+    """У номера есть действующий аккаунт мастера — ему достаётся запас общего лимита SMS."""
+    from ..models import User
+
+    return db.scalar(select(User.id).where(User.phone == phone, User.is_active.is_(True),
+                                           User.deleted_at.is_(None)).limit(1)) is not None
+
+
+def phone_block(phone: str) -> str:
+    """Блок из 10 000 номеров: +99890123xxxx → +99890123 (накрутка идёт подряд идущими номерами)."""
+    return phone[:-4]
+
+
+def failures_today(db, phone: str) -> int:
+    """Неверные коды номера за 24 часа: попытки по всем кодам минус удачные (удачная — тоже попытка)."""
+    since = utcnow() - timedelta(days=1)
+    attempts, consumed = db.execute(
+        select(func.coalesce(func.sum(AuthCode.attempts), 0), func.count(AuthCode.consumed_at))
+        .where(AuthCode.phone == phone, AuthCode.created_at > since)
+    ).one()
+    return int(attempts or 0) - int(consumed or 0)
+
+
+def ensure_not_locked(db, settings: Settings, phone: str) -> None:
+    limit = settings.auth_code_max_failures_per_day
+    if limit and failures_today(db, phone) >= limit:
+        log.warning("Вход по номеру %s закрыт: %s неверных кодов за сутки", phone, limit)
+        raise ApiError(429, "code_locked", "Слишком много неверных кодов. Вход по этому номеру закрыт на сутки")
+
+
+def _new_numbers_codes(db, since, *conds) -> int:
+    """Коды на номера без аккаунта (по ним идёт накрутка; вход существующих мастеров не считается)."""
+    from ..models import User
+
+    return db.scalar(select(func.count(AuthCode.id)).where(
+        AuthCode.created_at > since, AuthCode.phone.not_in(select(User.phone)), *conds)) or 0
+
+
+def ensure_new_number_limits(db, settings: Settings, phone: str, ip: str | None) -> None:
+    """Лимиты на IP и на блок номеров — для номеров без аккаунта (§8, защита от SMS-накрутки)."""
+    from .spend_limits import cap_hit
+
+    now = utcnow()
+    checks = []
+    if ip:
+        checks += [(AuthCode.ip == ip, timedelta(minutes=10), settings.auth_code_ip_per_10min, "ip_10min"),
+                   (AuthCode.ip == ip, timedelta(days=1), settings.auth_code_ip_per_day, "ip_day")]
+    block = phone_block(phone)
+    checks += [(AuthCode.phone.like(block + "%"), timedelta(hours=1), settings.auth_code_prefix_per_hour, "block_hour"),
+               (AuthCode.phone.like(block + "%"), timedelta(days=1), settings.auth_code_prefix_per_day, "block_day")]
+    for cond, window, limit, name in checks:
+        if limit and _new_numbers_codes(db, now - window, cond) >= limit:
+            who = ip if name.startswith("ip") else block
+            cap_hit(db, f"sms_{name}:{who}", {"phone": phone, "ip": ip, "limit": limit})
+            raise ApiError(429, "code_limit", "Слишком много запросов кода. Попробуйте позже")
+
+
+def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, purpose: str = LOGIN,
+               ip: str | None = None, existing: bool | None = None) -> dict:
+    """Создаёт и отправляет код. Пауза между кодами — по назначению, часовой лимит — общий на номер.
+    Номер без аккаунта (existing=False) — ещё лимиты на IP и блок номеров и только доля общего лимита SMS."""
     now = utcnow()
     last = db.scalar(
         select(AuthCode).where(AuthCode.phone == phone, AuthCode.purpose == purpose)
@@ -177,6 +236,14 @@ def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, pur
     )
     if (hour_count or 0) >= settings.auth_code_max_per_hour:
         raise ApiError(429, "code_limit", "Слишком много запросов кода. Попробуйте через час")
+    ensure_not_locked(db, settings, phone)
+    if existing is None:
+        existing = account_exists(db, phone)
+    if not existing:
+        ensure_new_number_limits(db, settings, phone, ip)
+    from .spend_limits import ensure_sms_allowed
+
+    ensure_sms_allowed(db, settings, existing=existing)  # общий лимит SMS в час и в сутки (§4a)
 
     code = "".join(secrets.choice("0123456789") for _ in range(settings.auth_code_length))
     channel = sender.send(phone, code, channel) or channel  # Telegram без шлюза уходит SMS
@@ -187,6 +254,7 @@ def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, pur
             channel=channel,
             purpose=purpose,
             expires_at=now + timedelta(seconds=settings.auth_code_ttl_seconds),
+            ip=(ip or None) and ip[:45],
         )
     )
     db.commit()
@@ -199,11 +267,21 @@ def issue_code(db, settings: Settings, sender, phone: str, channel: Channel, pur
     }
 
 
+def dev_code_accepted(settings: Settings, code: str) -> bool:
+    """Код разработчика — только в локальной разработке: ENV=dev и коды в лог (AUTH_CODE_PROVIDER=dev)."""
+    return settings.env == "dev" and settings.auth_code_provider == "dev" and secrets.compare_digest(
+        code.encode(), settings.dev_auth_code.encode())
+
+
 def check_code(db, settings: Settings, phone: str, code: str, purpose: str = LOGIN) -> None:
-    """Проверяет последний неиспользованный код этого назначения и гасит его. Ошибка — ApiError."""
-    if settings.env == "dev" and code == settings.dev_auth_code:
+    """Проверяет последний неиспользованный код этого назначения и гасит его. Ошибка — ApiError.
+
+    Попытка списывается атомарно до сравнения (UPDATE … WHERE attempts < max): параллельные догадки
+    не обходят лимит. Списанная попытка коммитится сразу — даже если запрос дальше упадёт."""
+    if dev_code_accepted(settings, code):
         return
     now = utcnow()
+    ensure_not_locked(db, settings, phone)
     entry = db.scalar(
         select(AuthCode)
         .where(AuthCode.phone == phone, AuthCode.purpose == purpose, AuthCode.consumed_at.is_(None))
@@ -212,11 +290,26 @@ def check_code(db, settings: Settings, phone: str, code: str, purpose: str = LOG
     )
     if entry is None or entry.expires_at <= now:
         raise ApiError(400, "code_expired", "Код устарел или не запрашивался. Запросите новый код")
-    if entry.attempts >= settings.auth_code_max_attempts:
+    took = db.execute(
+        update(AuthCode)
+        .where(AuthCode.id == entry.id, AuthCode.consumed_at.is_(None),
+               AuthCode.attempts < settings.auth_code_max_attempts)
+        .values(attempts=AuthCode.attempts + 1)
+        .execution_options(synchronize_session=False)
+    ).rowcount
+    db.commit()
+    if took != 1:
+        if db.scalar(select(AuthCode.consumed_at).where(AuthCode.id == entry.id)) is not None:
+            raise ApiError(400, "code_expired", "Код устарел или не запрашивался. Запросите новый код")
         raise ApiError(429, "code_attempts", "Слишком много неверных попыток. Запросите новый код")
     if not secrets.compare_digest(entry.code_hash, hash_code(settings, phone, code)):
-        entry.attempts += 1
-        db.commit()
-        left = settings.auth_code_max_attempts - entry.attempts
+        used = db.scalar(select(AuthCode.attempts).where(AuthCode.id == entry.id)) or 0
+        left = max(0, settings.auth_code_max_attempts - used)
         raise ApiError(400, "code_invalid", f"Неверный код. Осталось попыток: {left}", {"attempts_left": left})
+    consumed = db.execute(
+        update(AuthCode).where(AuthCode.id == entry.id, AuthCode.consumed_at.is_(None))
+        .values(consumed_at=now).execution_options(synchronize_session=False)
+    ).rowcount
+    if consumed != 1:  # тот же код уже использован параллельным запросом
+        raise ApiError(400, "code_expired", "Код устарел или не запрашивался. Запросите новый код")
     entry.consumed_at = now

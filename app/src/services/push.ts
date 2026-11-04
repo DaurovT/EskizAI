@@ -11,12 +11,18 @@ import * as Notifications from 'expo-notifications';
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 import { api } from '../api';
+import { orderEvents } from '../state/orderEvents';
 
 const TOKEN = 'mebel.pushToken';
 const DEVICE = 'mebel.deviceId';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+  handleNotification: async (n) => {
+    // новое сообщение в переписке, которая сейчас открыта, — без баннера (экран обновится сам)
+    const d = n.request.content.data as { kind?: string; order_id?: string } | undefined;
+    const inChat = d?.kind === 'order_message' && !!d.order_id && d.order_id === orderEvents.activeChat();
+    return { shouldShowBanner: !inChat, shouldShowList: !inChat, shouldPlaySound: false, shouldSetBadge: false };
+  },
 });
 
 export async function deviceId(): Promise<string> {

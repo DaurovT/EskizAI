@@ -11,10 +11,12 @@ import { SUPPORT_TG } from '../config';
 const ICONS: Record<string, IconName> = {
   offline: 'cloud-offline-outline', timeout: 'time-outline', ai: 'sparkles-outline', rebuild: 'construct-outline',
   limit: 'wallet-outline', session: 'log-in-outline', not_found: 'search-outline', generic: 'alert-circle-outline', bad_photo: 'image-outline',
+  busy: 'hourglass-outline', forbidden: 'lock-closed-outline', login: 'log-in-outline', maintenance: 'construct-outline',
 };
 /** Цвет плитки по Errors.dc.html: нет сети — серый, фото/ИИ/лимит — янтарный, долго — синий, правка не прошла — красный. */
 const TONES: Record<string, Tone> = {
   offline: 'gray', session: 'gray', not_found: 'gray', bad_photo: 'amber', ai: 'amber', limit: 'amber', timeout: 'blue', rebuild: 'red', generic: 'red',
+  busy: 'blue', forbidden: 'gray', login: 'amber', maintenance: 'gray',
 };
 
 /** SCR-28: у каждой ошибки — причина и 1–3 выхода (.cta / .soft / .txt), плюс поддержка в Telegram. */

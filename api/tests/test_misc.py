@@ -130,7 +130,7 @@ def test_openapi_has_tags_and_docs(client):
     tags = {t for p in spec["paths"].values() for op in p.values() for t in op.get("tags", [])}
     assert tags == {
         "auth", "workshops", "clients", "projects", "models", "estimates", "share", "billing", "tasks", "admin",
-        "system", "ai", "files", "catalog", "orders", "nonstandard", "devices",
+        "system", "ai", "files", "catalog", "orders", "nonstandard", "devices", "staff", "vendor",
     }
     assert client.get("/docs").status_code == 200
 

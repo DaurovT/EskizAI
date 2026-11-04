@@ -9,6 +9,7 @@ import { Keyboard, Linking, Platform, Pressable, StyleSheet, Text, TextInput, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../src/api';
 import { isApiError } from '../src/api/errors';
+import { errorLine } from '../src/ui/dialogs';
 import { MOCK, SHOTS_MODE, TERMS_URL } from '../src/config';
 import { useT } from '../src/i18n';
 import { deviceId, savedPushToken } from '../src/services/push';
@@ -68,7 +69,8 @@ export default function Login() {
       if (isApiError(e) && e.code === 'code_too_often') {
         setResendIn(Number((e.details as { resend_in?: number })?.resend_in ?? 60));
         setStep('code');
-      } else setError(isApiError(e) ? e.message : t('err_generic_text'));
+      } else if (step === 'code') setCodeErr({ left: null, text: errorLine(e, lang) }); // повторный запрос с экрана кода
+      else setError(errorLine(e, lang)); // 503 registration_closed, 429 code_limit / code_locked / sms_limit — понятным текстом
     } finally {
       setBusy(false);
     }
@@ -88,7 +90,7 @@ export default function Login() {
     } catch (e) {
       const left = isApiError(e) ? (e.details as { attempts_left?: number } | undefined)?.attempts_left : undefined;
       if (isApiError(e) && e.code === 'code_invalid') setCodeErr({ left: typeof left === 'number' ? left : null, text: t('code_wrong') });
-      else setCodeErr({ left: null, text: isApiError(e) ? e.message : t('err_generic_text') });
+      else setCodeErr({ left: null, text: errorLine(e, lang) }); // 429 code_locked — вход по номеру закрыт до завтра
     } finally {
       setBusy(false);
     }

@@ -43,15 +43,36 @@ export const PROJECT_STATUSES: [string, string][] = [
   ['cancelled', 'Отменён'],
 ];
 
+/** Статусы заказа (§5.3): основной путь, затем побочные. */
 export const ORDER_STATUSES: [string, string][] = [
-  ['created', 'Создан'],
+  ['created', 'Создан (в очереди)'],
+  ['accepted', 'Принят поставщиком'],
   ['paid', 'Оплачен'],
-  ['accepted', 'Принят EMAN'],
   ['cutting', 'В распиле'],
   ['ready', 'Готов'],
   ['issued', 'Выдан'],
+  ['returned', 'Возвращён мастеру'],
+  ['awaiting_approval', 'Ждёт подтверждения исправления'],
+  ['rejected', 'Отклонён поставщиком'],
   ['cancelled', 'Отменён'],
 ];
+
+export function orderStatusColor(status: string): 'green' | 'red' | 'yellow' | undefined {
+  if (status === 'cancelled' || status === 'rejected') return 'red';
+  if (status === 'created' || status === 'returned' || status === 'awaiting_approval') return 'yellow';
+  if (status === 'issued' || status === 'ready') return 'green';
+  return undefined;
+}
+
+/** Даты для фильтров периода: YYYY-MM-DD по Ташкенту. */
+export function isoDay(d: Date): string {
+  const t = new Date(d.getTime() + 5 * 3600 * 1000);
+  return t.toISOString().slice(0, 10);
+}
+
+export function daysAgo(n: number): string {
+  return isoDay(new Date(Date.now() - n * 86400 * 1000));
+}
 
 export const ORDER_STATUS_LABEL: Record<string, string> = Object.fromEntries(ORDER_STATUSES);
 

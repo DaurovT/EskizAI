@@ -20,7 +20,7 @@ import { confirm, showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { Carcass } from '../../../src/ui/Illus';
 import { LangSwitch } from '../../../src/ui/LangSwitch';
-import { Banner, Button, Card, Dialog, Field, Footer, Gap, Group, IconButton, ListItem, Loading, MenuItem, OfflineBanner, Sheet, T, type IconName } from '../../../src/ui/kit';
+import { Banner, Button, Card, Dialog, Field, Footer, Gap, Group, IconButton, ListItem, Loading, MenuItem, OfflineBanner, Sheet, T, toast, type IconName } from '../../../src/ui/kit';
 import { palette, space } from '../../../src/ui/theme';
 
 export default function ProjectCard() {
@@ -73,7 +73,7 @@ export default function ProjectCard() {
       case 'order': {
         if (p.is_example) return Alert.alert(t('example_badge'));
         if (!canOrder) return Alert.alert(t('oc_owner_only'));
-        const existing = (orders.data ?? []).find((o) => o.status !== 'cancelled');
+        const existing = (orders.data ?? []).find((o) => o.status !== 'cancelled' && o.status !== 'rejected');
         return existing ? router.push(`/order/${existing.id}`) : router.push(`/project/${id}/order`);
       }
       case 'deliver':
@@ -95,7 +95,20 @@ export default function ProjectCard() {
   // сгенерированное по дате название — типом и габаритом (Ш×Г×В)
   const shownTitle = displayTitle(p.title, sizeTitle(p.product_type ? td(`pk_${p.product_type}`, t('new_title_sketch')) : t('new_title_sketch'), size ? [size[0], size[2], size[1]] : null));
   const current = versions.data?.find((v) => v.is_current) ?? versions.data?.[0];
-  const activeOrders = (orders.data ?? []).filter((o) => o.status !== 'cancelled');
+  const activeOrders = (orders.data ?? []).filter((o) => o.status !== 'cancelled' && o.status !== 'rejected');
+  // поставщик вернул заказ на правку (§5.3): после исправления — «Отправить заново» с текущей версией проекта
+  const returned = (orders.data ?? []).find((o) => o.status === 'returned');
+  const resubmit = async () => {
+    if (!returned) return;
+    if (!(await confirm(t('ocd_resubmit_q'), t('ocd_resubmit_text'), t('ocd_resubmit_do'), t('cancel')))) return;
+    setBusy('resubmit');
+    try {
+      await api.resubmitOrder(returned.id);
+      orders.reload();
+      toast.show({ text: t('ocd_resubmitted'), tone: 'success' });
+      router.push(`/order/${returned.id}`);
+    } catch (e) { showError(e, lang); } finally { setBusy(null); }
+  };
   const openEditor = () => router.push(`/project/${id}/editor`);
   const duplicate = async () => {
     setMenu(false);
@@ -124,6 +137,17 @@ export default function ProjectCard() {
       <OfflineBanner />
       <ScrollView contentContainerStyle={st.body}>
         {p.is_example ? <Banner tone="est" text={t('example_badge')} /> : null}
+        {returned ? (
+          <Banner tone="est" icon="arrow-undo-outline" title={t('pc_order_returned', { n: returned.number })}
+            text={returned.vendor_status_note ?? t('ocd_returned_hint')} onPress={() => router.push(`/order/${returned.id}`)}>
+            {/* «Отправить заново» — владелец или сотрудник с правом заказа (иначе 403) */}
+            {canOrder ? (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                <Button small title={t('pc_resubmit')} onPress={resubmit} loading={busy === 'resubmit'} disabled={offline} style={{ flexGrow: 1 }} />
+              </View>
+            ) : null}
+          </Banner>
+        ) : null}
         <Card padded={false} onPress={p.current_version_id ? openEditor : () => router.push(`/project/${id}/breakdown`)} accessibilityLabel={p.title}>
           <View style={st.sum}>
             <View style={st.thumb}><Carcass w={56} h={66} r={20} b={2} /></View>

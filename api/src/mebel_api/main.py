@@ -4,7 +4,6 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from .config import Settings, get_settings
 from .db import Database
@@ -30,13 +29,14 @@ from .routers import (
     tasks,
     workshops,
 )
-from .routers import app_status, decor
+from .routers import admin_platform, app_status, decor, staff, vendor
 from .services.ai import AiRunner
 from .services.app_status import install_maintenance_guard
 from .services.auth_codes import DevCodeSender, RoutingSender
 from .services.notify import Notifier, PushSender, make_sender
 from .services.storage import make_storage
 from .services.tasks import make_task_queue
+from .services.uploads import PublicMedia
 
 TAGS = [
     {"name": "auth", "description": "Вход по номеру телефона и одноразовому коду, токены"},
@@ -55,6 +55,8 @@ TAGS = [
     {"name": "billing", "description": "Лимиты проектов и тариф"},
     {"name": "tasks", "description": "Статус фоновых задач (ИИ, раскрой, файлы)"},
     {"name": "admin", "description": "Админка: оплата заказа менеджером, тарифы, журналы"},
+    {"name": "staff", "description": "Сотрудники платформы и поставщиков: вход по почте, 2FA, сессии, роли"},
+    {"name": "vendor", "description": "Кабинет поставщика: заказы, переписка, исправления, возвраты, прайс, деньги"},
     {"name": "system", "description": "Служебное"},
 ]
 
@@ -69,12 +71,18 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
         description="API приложения для мебельщиков: цеха, клиенты, проекты, версии модели, ссылки клиента. "
         "Все суммы — целые сумы (UZS), размеры — мм. Ошибки: `{\"error\": {\"code\", \"message\", \"details\"}}`.",
         openapi_tags=TAGS,
+        # В проде схема API и страницы документации не публикуются
+        **({"docs_url": None, "redoc_url": None, "openapi_url": None} if settings.env == "prod" else {}),
     )
     app.state.settings = settings
     app.state.db = Database(settings.database_url)
     app.state.storage = make_storage(settings)
     app.state.tasks = make_task_queue(settings.task_queue_mode)
     AiRunner(app.state.db, app.state.storage, settings).register(app.state.tasks)
+    from .services import price_import
+
+    app.state.tasks.register("price_source_run",
+                             lambda payload: price_import.run_source_task(app.state.db, settings, payload))
     app.state.code_sender = RoutingSender(settings, code_sender)
     # Push: отправитель подменяется (тесты — MemoryPushSender); отправка после коммита сессии
     app.state.push_sender = push_sender or make_sender(settings)
@@ -98,18 +106,28 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
     app.include_router(price_requests.admin_router)
     app.include_router(app_status.router)
     app.include_router(decor.router)  # /catalog/front-styles, /catalog/lighting-zones
+    app.include_router(staff.router)  # /staff/* — сотрудники (docs/staff_vendor_contract.md)
+    app.include_router(admin_platform.router)  # суперадмин: поставщики, деньги, споры, лимиты, журнал
+    app.include_router(vendor.router)  # /vendor/* — кабинет поставщика
+    if settings.price_source_scheduler:
+        from .services.price_import import start_scheduler
+
+        start_scheduler(app.state.db, settings)
 
     if settings.storage_backend == "local":
+        # Публичная зона (фото проектов, логотипы); MEDIA_DIR/private — закрытые файлы, по /media не отдаются
         settings.media_dir.mkdir(parents=True, exist_ok=True)
-        app.mount(settings.media_base_url, StaticFiles(directory=settings.media_dir), name="media")
+        app.mount(settings.media_base_url,
+                  PublicMedia(directory=settings.media_dir, blocked=app.state.storage.private_root), name="media")
 
     # Текстуры декоров EMAN: статика с кэшем (файлы не меняются под тем же именем)
     settings.textures_dir.mkdir(parents=True, exist_ok=True)
-    app.mount(settings.textures_base_url, StaticFiles(directory=settings.textures_dir), name="textures")
+    app.mount(settings.textures_base_url, PublicMedia(directory=settings.textures_dir), name="textures")
 
     @app.get("/health", tags=["system"], summary="Проверка работы")
     def health() -> dict:
-        return {"status": "ok", "env": settings.env}
+        # Приложению (проверка связи) нужен только код 200; окружение — не в проде
+        return {"status": "ok"} if settings.env == "prod" else {"status": "ok", "env": settings.env}
 
     return app
 

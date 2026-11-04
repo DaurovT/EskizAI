@@ -5,7 +5,7 @@
 #   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
 #
 # Нужны в deploy/.env: ENV=prod, JWT_SECRET, ADMIN_TOKEN, POSTGRES_PASSWORD, AUTH_CODE_PROVIDER≠dev,
-# API_DOMAIN, WEB_DOMAIN, ACME_EMAIL, CORS_ORIGINS, SHARE_BASE_URL, S3_* — см. deploy/README.md.
+# API_DOMAIN, WEB_DOMAIN, ADMIN_DOMAIN, VENDOR_DOMAIN, ACME_EMAIL, CORS_ORIGINS, SHARE_BASE_URL, S3_* — см. deploy/README.md.
 
 services:
   caddy:
@@ -19,6 +19,8 @@ services:
     environment:
       API_DOMAIN: ${API_DOMAIN:?API_DOMAIN не задан}
       WEB_DOMAIN: ${WEB_DOMAIN:?WEB_DOMAIN не задан}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?ADMIN_DOMAIN не задан}
+      VENDOR_DOMAIN: ${VENDOR_DOMAIN:?VENDOR_DOMAIN не задан}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL не задан}
     ports:
       - "80:80"

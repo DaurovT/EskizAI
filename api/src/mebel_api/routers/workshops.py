@@ -99,10 +99,16 @@ async def upload_logo(current: OwnerDep, db: DbDep, storage: StorageDep,
         raise ApiError(413, "image_too_large", "Логотип больше 2 МБ")
     if not data:
         raise ApiError(422, "empty_file", "Файл пустой")
+    from ..services.uploads import sniff
+
+    real = sniff(data)  # заявленному типу не верим: внутри должна быть картинка того же формата
+    if real not in LOGO_TYPES:
+        raise ApiError(415, "unsupported_image", "Загрузите логотип в формате JPEG, PNG или WebP")
+    ext = LOGO_TYPES[real]
     w = current.workshop
     before = w.logo_url
     _drop_logo(w, storage)
-    stored = storage.save(f"workshops/{w.id}/logo/{uuid.uuid4().hex}.{ext}", data, file.content_type or "image/png")
+    stored = storage.save(f"workshops/{w.id}/logo/{uuid.uuid4().hex}.{ext}", data, real)
     w.logo_url, w.logo_key = stored.url, stored.key
     log_action(db, actor_type="user", actor_id=current.user.id, workshop_id=w.id, entity="workshop", entity_id=w.id,
                action="upload_logo", before={"logo_url": before}, after={"logo_url": w.logo_url})

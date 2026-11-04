@@ -6,6 +6,7 @@ import type { ViewerModel } from '@mebel/viewer';
 import type { Api, DownloadedFile } from '../client';
 import { ApiError } from '../errors';
 import type * as T from '../types';
+import { RETURN_TYPES } from '../types';
 import { MOCK_STATUS, SHARE_URL } from '../../config';
 import { applyPatch, getAt } from '../../lib/jsonPatch';
 import { recolorViewer, scaleViewer } from '../../lib/viewerEdit';
@@ -29,6 +30,13 @@ export interface MockOptions {
   /** Сохранение файла для «Поделиться» (в приложении — expo-file-system). */
   writeFile?: (name: string, content: string, mimeType: string) => Promise<string>;
   role?: T.Role;
+  /** Права сотрудника (role = employee): «видит себестоимость» и «заказывает в EMAN». У владельца — всё. */
+  canSeeCost?: boolean;
+  canOrder?: boolean;
+  /** Регистрация закрыта: новый номер получает 503 registration_closed уже на request-code. */
+  registrationClosed?: boolean;
+  /** Сколько ИИ-задач хватает общего бюджета примеров цеха (дальше 402 ai_budget_example). */
+  exampleAiTasks?: number;
   now?: () => number;
   /** Демо SCR-45: какой ответ даёт /app/status. */
   appStatus?: 'none' | 'optional' | 'required' | 'maintenance';
@@ -82,8 +90,11 @@ let seq = 1000;
 const uid = (p: string) => `${p}-${(seq++).toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const iso = (msAgo = 0) => new Date(Date.now() - msAgo).toISOString();
 const DAY = 86_400_000;
-const T_ORDER_FLOW: T.OrderStatus[] = ['created', 'paid', 'accepted', 'cutting', 'ready', 'issued'];
-const ORDER_LABELS: Record<T.OrderStatus, string> = { created: 'Создан', paid: 'Оплачен', accepted: 'Принят EMAN', cutting: 'В распиле', ready: 'Готов', issued: 'Выдан', cancelled: 'Отменён' };
+const T_ORDER_FLOW: T.OrderStatus[] = ['created', 'accepted', 'paid', 'cutting', 'ready', 'issued'];
+const ORDER_LABELS: Record<T.OrderStatus, string> = {
+  created: 'Создан', accepted: 'Принят EMAN', paid: 'Оплачен', cutting: 'В распиле', ready: 'Готов', issued: 'Выдан', cancelled: 'Отменён',
+  returned: 'Вернули на правку', awaiting_approval: 'Ждёт подтверждения', rejected: 'Отклонён',
+};
 
 export function createMockApi(opts: MockOptions = {}): Api {
   const latency = opts.latencyMs ?? 250;
@@ -99,7 +110,21 @@ export function createMockApi(opts: MockOptions = {}): Api {
 
   // ----- состояние -----
   let userIsNew = true;
-  const user: T.UserOut = { id: 'u-1', phone: '+998901234567', name: 'Рустам', role, language: 'ru', workshop_id: 'w-1' };
+  const user: T.UserOut = {
+    id: 'u-1', phone: '+998901234567', name: 'Рустам', role, language: 'ru', workshop_id: 'w-1',
+    ...(role === 'employee' ? { can_see_cost: !!opts.canSeeCost, can_order: !!opts.canOrder } : {}),
+  };
+  // права как на сервере (deps.CurrentUser): владелец — всё, сотрудник — по флагам
+  const seesCost = () => user.role !== 'employee' || !!user.can_see_cost;
+  const canOrderNow = () => user.role !== 'employee' || !!user.can_order;
+  const needOrderRight = () => {
+    if (!canOrderNow()) throw new ApiError(403, 'forbidden', 'Это делает владелец цеха или сотрудник с правом заказа');
+  };
+  // «Попробовать на примере»: один действующий пример, за всё время — не больше 3; ИИ — общий маленький бюджет
+  const EXAMPLES_MAX = 3;
+  let examplesMade = 0;
+  let exampleAiUsed = 0;
+  const exampleAiTasks = opts.exampleAiTasks ?? 3;
   let pricing: T.PricingOut = {
     labor_mode: 'percent', labor_percent: 50, labor_fixed: 0, markup_body: 20, markup_fronts: 20,
     markup_hardware: 15, markup_services: 0, default_estimate_view: 'short', employee_estimate_views: ['total', 'short'],
@@ -313,6 +338,145 @@ export function createMockApi(opts: MockOptions = {}): Api {
   };
   const orderSteps = (o: T.OrderOut): T.OrderStep[] => T_ORDER_FLOW.map((st, i) => ({ status: st, label: ORDER_LABELS[st], done: o.status !== 'cancelled' && T_ORDER_FLOW.indexOf(o.status) >= i, current: o.status === st, at: st === 'created' ? o.created_at : o.status !== 'cancelled' && T_ORDER_FLOW.indexOf(o.status) > i ? new Date(new Date(o.created_at).getTime() + i * 5.3 * 3600_000).toISOString() : null }));
 
+  // ----- кабинет поставщика глазами мастера (contract §5.6): переписка, исправления, рекламации, споры, история -----
+  interface OrderExtra { messages: T.OrderMessage[]; corrections: T.OrderCorrection[]; returns: T.OrderReturn[]; disputes: T.OrderDispute[]; events: T.OrderEvent[] }
+  const orderX = new Map<string, OrderExtra>();
+  const ox = (id: string): OrderExtra => {
+    let x = orderX.get(id);
+    if (!x) { x = { messages: [], corrections: [], returns: [], disputes: [], events: [] }; orderX.set(id, x); }
+    return x;
+  };
+  const getO = (id: string): T.OrderOut => {
+    const o = orders.find((x) => x.id === id);
+    if (!o) throw new ApiError(404, 'not_found', 'Заказ не найден');
+    return o;
+  };
+  const DESIGNER = 'Дильшод · конструктор EMAN';
+  const event = (o: T.OrderOut, type: string, status: T.OrderStatus | null, actor: T.OrderActor, comment: string | null = null, at = iso()) => {
+    ox(o.id).events.push({ id: uid('ev'), type, status, actor_type: actor, actor_name: actor === 'vendor' ? DESIGNER : actor === 'platform' ? 'Eskiz AI' : actor === 'master' ? user.name : null, comment, data: null, created_at: at });
+  };
+  const setOrderStatus = (o: T.OrderOut, to: T.OrderStatus, actor: T.OrderActor, comment: string | null = null) => {
+    o.status = to; o.status_label = ORDER_LABELS[to]; o.steps = orderSteps(o);
+    event(o, 'status_changed', to, actor, comment);
+  };
+  /** Мастер отменяет сам до оплаты (§5.3): в очереди, на правке, принят без оплаты. */
+  const cancellableOrder = (o: T.OrderOut) => o.status === 'created' || o.status === 'returned' || (o.status === 'accepted' && o.payment?.status !== 'paid');
+  const unreadOf = (id: string) => ox(id).messages.filter((m) => m.author_type !== 'master' && !m.read_by_master_at).length;
+  const orderView = (o: T.OrderOut, full = false): T.OrderOut => {
+    const x = ox(o.id);
+    const out: T.OrderOut = {
+      ...o, steps: o.steps ?? orderSteps(o), cancellable: cancellableOrder(o),
+      unread_count: unreadOf(o.id), returns_count: x.returns.length, disputes_count: x.disputes.length,
+      ...(full ? { events: x.events.map((e) => ({ ...e, data: e.data ? money(e.data) : e.data })) } : {}),
+    };
+    if (seesCost()) return out;
+    // сотрудник без права «видит себестоимость»: без сумм заказа, цен строк и счёта (routers/orders.order_out)
+    const rest = omit(out, [...MONEY_KEYS, 'goods_total', 'delivery']);
+    return { ...rest, items: out.items.map((i) => omit(i, ['price', 'amount'])), documents: out.documents.filter((d) => d.kind !== 'invoice'),
+      payment: out.payment ? { status: out.payment.status } : null };
+  };
+  const attach = (f: { uri: string; name: string; type: string }): T.OrderAttachment => ({ key: uid('f'), url: f.uri, name: f.name, content_type: f.type, size: null });
+  const demoFile = (name: string, content_type: string): T.OrderAttachment => ({ key: uid('f'), url: null, name, content_type, size: 48_000 });
+  const message = (orderId: string, author: T.MessageAuthor, text: string | null, ago = 0, read = true, attachments: T.OrderAttachment[] = []): T.OrderMessage => ({
+    id: uid('msg'), order_id: orderId, author_type: author, author_id: author === 'master' ? user.id : null,
+    author_name: author === 'vendor' ? DESIGNER : author === 'platform' ? 'Eskiz AI' : user.name,
+    text, attachments, created_at: iso(ago), read_by_master_at: read || author === 'master' ? iso(ago) : null, read_by_vendor_at: author === 'master' ? null : iso(ago),
+  });
+  const PAID_LIKE: T.OrderStatus[] = ['paid', 'cutting', 'ready', 'issued'];
+  // суммы (contract §8) — только с правом «видит себестоимость»
+  const MONEY_KEYS = ['total', 'amount', 'refund_amount', 'requested_amount', 'invoice_total', 'total_before', 'total_after', 'delta', 'commission'];
+  const LINE_MONEY_KEYS = ['price', 'total', 'amount'];
+  const omit = <O extends object>(o: O, keys: string[]): O => Object.fromEntries(Object.entries(o).filter(([k]) => !keys.includes(k))) as O;
+  const money = <O extends object>(o: O): O => (seesCost() ? o : omit(o, MONEY_KEYS));
+  const correctionOut = (c: T.OrderCorrection): T.OrderCorrection => {
+    const out = JSON.parse(JSON.stringify(c)) as T.OrderCorrection;
+    if (out.total_before != null && out.total_after != null) out.delta = out.total_after - out.total_before;
+    if (seesCost()) return out;
+    return { ...omit(out, MONEY_KEYS), lines_before: out.lines_before.map((l) => omit(l, LINE_MONEY_KEYS)), lines_after: out.lines_after.map((l) => omit(l, LINE_MONEY_KEYS)) };
+  };
+
+  /** Демо: заказы во всех новых статусах (по кухне Нигоры) + переписка, рекламации и спор по заказу № 1234. */
+  function seedVendorOrders(projectId: string, title: string) {
+    const base = (id: string, number: string, status: T.OrderStatus, ago: number, extra: Partial<T.OrderOut>): T.OrderOut => ({
+      id, number, project_id: projectId, project_title: title, status, status_label: ORDER_LABELS[status], total: 4_380_000, goods_total: 4_380_000,
+      ready_date: null, created_at: iso(ago), payment: null, supplier_id: 'sup-eman', supplier_name: 'EMAN', group_id: `g-${number}`,
+      items: [
+        { key: 'sheet:ldsp_16_white', name: 'ЛДСП 16 Белый', qty: 4, unit: 'лист', price: 520_000, amount: 2_080_000 },
+        { key: 'service:cut:ldsp', name: 'Распил ЛДСП (пакетный)', qty: 4, unit: 'лист', price: 50_000, amount: 200_000 },
+        { key: 'edge:pvc_2:body', name: 'Кромкование ПВХ 2 мм', qty: 38.5, unit: 'м', price: 6_000, amount: 231_000 },
+        { key: 'hw:hinge', name: 'Петля 110° с доводчиком', qty: 8, unit: 'шт', price: 24_000, amount: 192_000 },
+        { key: 'countertop:38', name: 'Столешница 38 мм', qty: 1, unit: 'шт', price: 1_677_000, amount: 1_677_000 },
+      ],
+      documents: [], ...extra,
+    });
+    const o1 = orders.find((o) => o.id === 'o-1')!;
+    Object.assign(o1, { supplier_id: 'sup-eman', supplier_name: 'EMAN', group_id: 'g-1234', assignee: { id: 'st-1', name: DESIGNER }, invoice_total: 14_850_000, due_date: o1.ready_date, paid_at: iso(5 * DAY) });
+    event(o1, 'status_changed', 'created', 'master', null, iso(6 * DAY));
+    event(o1, 'status_changed', 'accepted', 'vendor', 'Проверил, всё сходится. Счёт выставлен.', iso(5.6 * DAY));
+    event(o1, 'status_changed', 'paid', 'system', null, iso(5 * DAY));
+    event(o1, 'status_changed', 'cutting', 'vendor', null, iso(2 * DAY));
+    ox(o1.id).messages.push(
+      message(o1.id, 'vendor', 'Здравствуйте! Заказ взял в работу. Столешницу 38 мм под мойку вырезаем по шаблону?', 5.8 * DAY),
+      message(o1.id, 'master', 'Да, шаблон пришлю фото. Мойка врезная, 780×480.', 5.7 * DAY),
+      message(o1.id, 'platform', 'Заказ оплачен. Деньги получены поставщиком.', 5 * DAY),
+      message(o1.id, 'vendor', 'Распил идёт по графику, столешницу привезут во вторник — готовность 5 ноября.', 3 * 3600_000, false),
+    );
+    const r1: T.OrderReturn = {
+      id: 'ret-1', order_id: o1.id, number: 1, type: 'shortage', description: 'В комплекте не хватает двух петель 110°.', lines: [{ key: 'hw:hinge', name: 'Петля 110° с доводчиком', unit: 'шт', qty: 2 }],
+      photos: [], status: 'resolved', decision: 'redo', decision_comment: 'Довезём 2 петли с ближайшей отгрузкой, бесплатно.', created_by: 'master', created_at: iso(DAY), decided_at: iso(20 * 3600_000),
+    };
+    const r2: T.OrderReturn = {
+      id: 'ret-2', order_id: o1.id, number: 2, type: 'defect', description: 'Скол кромки на фасаде 716×396, видно с лицевой стороны.', lines: [{ name: 'Фасад 716×396', qty: 1, unit: 'шт' }], amount: 350_000,
+      photos: [demoFile('скол_1.jpg', 'image/jpeg'), demoFile('скол_2.jpg', 'image/jpeg')], status: 'resolved', decision: 'declined',
+      decision_comment: 'По фото скол — повреждение при сборке, на складе деталь была целой.', created_by: 'master', created_at: iso(2 * DAY), decided_at: iso(1.5 * DAY),
+    };
+    ox(o1.id).returns.push(r2, r1);
+    ox(o1.id).disputes.push({
+      id: 'dsp-1', order_id: o1.id, subject: 'return', return_id: r2.id, reason: 'defect_not_accepted', comment: 'Деталь пришла со сколом, есть фото при приёмке.',
+      photos: [demoFile('приёмка.jpg', 'image/jpeg')], status: 'resolved', decision: 'partial', amount: 175_000,
+      decision_comment: 'Поставщик переделает фасад, доставку оплачивает мастер.', created_at: iso(1.2 * DAY), resolved_at: iso(10 * 3600_000),
+    });
+
+    const o3 = base('o-3', '1236', 'returned', 2 * DAY, {
+      project_title: `${title} · пенал`, assignee: { id: 'st-1', name: DESIGNER },
+      vendor_status_note: 'Глубина пенала 450, а в замере ниши 600 — проверьте замер и отправьте заново. Остальное в порядке.',
+    });
+    const o4 = base('o-4', '1238', 'awaiting_approval', 3 * DAY, {
+      project_title: `${title} · верхние`, assignee: { id: 'st-1', name: DESIGNER }, invoice_total: 4_380_000,
+    });
+    const o5 = base('o-5', '1231', 'rejected', 9 * DAY, {
+      project_title: `${title} · остров`, reject_reason: 'no_material',
+      vendor_status_note: 'Декор U999 ST2 снят с производства, замены в этом цвете нет.',
+    });
+    const o6 = base('o-6', '1242', 'accepted', 8 * 3600_000, {
+      project_title: `${title} · ящики`, assignee: { id: 'st-2', name: 'Азамат · конструктор EMAN' }, invoice_total: 4_420_000, total: 4_380_000,
+      due_date: iso(-5 * DAY), ready_date: iso(-5 * DAY), payment: { status: 'waiting', method: null, url: 'https://eman.uz/pay/demo-1242' },
+      documents: [{ kind: 'invoice', title: 'Счёт EMAN №1242', format: 'pdf' }],
+    });
+    orders.push(o3, o4, o5, o6);
+    for (const o of [o3, o4, o5, o6]) { o.steps = undefined; event(o, 'status_changed', 'created', 'master', null, o.created_at); }
+    event(o3, 'status_changed', 'returned', 'vendor', o3.vendor_status_note!, iso(DAY));
+    ox(o3.id).messages.push(message(o3.id, 'vendor', 'Вернул на правку — посмотрите комментарий к заказу.', DAY, false));
+    event(o4, 'correction_created', 'awaiting_approval', 'vendor', 'Петли заменили на Blum, добавили лист.', iso(5 * 3600_000));
+    ox(o4.id).corrections.push({
+      id: 'cor-1', order_id: o4.id, author_name: DESIGNER, comment: 'Петли 110° закончились — поставили Blum с доводчиком (дороже), и для раскроя не хватает одного листа. Раскрой пересчитан.',
+      lines_before: o4.items.map((i) => ({ key: i.key, name: i.name, unit: i.unit, qty: i.qty, price: i.price, total: i.amount })),
+      lines_after: [
+        { key: 'sheet:ldsp_16_white', name: 'ЛДСП 16 Белый', unit: 'лист', qty: 5, price: 520_000, total: 2_600_000 },
+        { key: 'service:cut:ldsp', name: 'Распил ЛДСП (пакетный)', unit: 'лист', qty: 5, price: 50_000, total: 250_000 },
+        { key: 'edge:pvc_2:body', name: 'Кромкование ПВХ 2 мм', unit: 'м', qty: 38.5, price: 6_000, total: 231_000 },
+        { key: 'hw:hinge_blum', name: 'Петля Blum Clip top 110°', unit: 'шт', qty: 8, price: 46_000, total: 368_000 },
+        { key: 'countertop:38', name: 'Столешница 38 мм', unit: 'шт', qty: 1, price: 1_677_000, total: 1_677_000 },
+      ],
+      total_before: 4_380_000, total_after: 5_126_000, files: [demoFile('Раскрой_v2.pdf', 'application/pdf'), demoFile('ЧПУ_v2.dxf', 'application/dxf')],
+      status: 'pending', created_at: iso(5 * 3600_000),
+    });
+    ox(o4.id).messages.push(message(o4.id, 'vendor', 'Отправил исправление — подтвердите, пожалуйста, новую сумму.', 5 * 3600_000, false));
+    event(o5, 'status_changed', 'rejected', 'vendor', o5.vendor_status_note!, iso(8 * DAY));
+    event(o6, 'status_changed', 'accepted', 'vendor', 'Счёт выставлен, готовность через 5 дней после оплаты.', iso(6 * 3600_000));
+  }
+
+
   // ----- начальные проекты -----
   const seed = (title: string, sample: SampleKey | null, status: T.ProjectStatus, client: string | null, ago: number, extra: Partial<MProject> = {}) => {
     const p = baseProject({ title, status: 'draft', client_id: client, created_at: iso(ago), updated_at: iso(ago / 2), ...extra });
@@ -366,10 +530,13 @@ export function createMockApi(opts: MockOptions = {}): Api {
       payment: { status: 'waiting', method: 'payme', url: 'https://eman.uz/pay/demo-1240' },
       items: [{ name: 'Ручка-скоба 128 мм', qty: 14, unit: 'шт', amount: 308_000 }, { name: 'Доводчик', qty: 8, unit: 'шт', amount: 512_000 }], documents: [] },
   );
+  seedVendorOrders(kitchen.id, kitchen.title);
 
   // ----- уведомления мастера (Notifications.dc.html) -----
   const notifications: T.NotificationOut[] = [
     { id: 'n-1', kind: 'share_opened', title: 'Азиза открыла ссылку', body: 'Смотрела 3D 4 минуты · Шкаф для Азизы', data: null, status: null, project_id: 'p-aziza', read: false, created_at: iso(12 * 60_000) },
+    { id: 'n-6', kind: 'order_message', title: 'EMAN: новое сообщение по заказу № 1234', body: 'Распил идёт по графику, столешницу привезут во вторник…', data: { order_id: 'o-1' }, status: null, project_id: 'p-kitchen', read: false, created_at: iso(3 * 3600_000) },
+    { id: 'n-7', kind: 'order_status', title: 'EMAN: исправление по заказу № 1238', body: 'Сумма изменилась — подтвердите исправление', data: { order_id: 'o-4', status: 'awaiting_approval' }, status: null, project_id: 'p-kitchen', read: false, created_at: iso(5 * 3600_000) },
     { id: 'n-2', kind: 'order_status', title: 'EMAN: заказ № 1234 в распиле', body: 'Готов 5 ноября · Кухня Нигоры', data: { order_id: 'o-1' }, status: 'cutting', project_id: 'p-kitchen', read: false, created_at: iso(2 * 3600_000) },
     { id: 'n-3', kind: 'price_request_priced', title: 'Пришла цена под запрос', body: 'Профиль купе бронза: 52 000 сум за м · Купе в прихожую', data: null, status: null, project_id: 'p-kupe', read: true, created_at: iso(DAY) },
     { id: 'n-4', kind: 'model_ready', title: 'Модель готова', body: 'Шкаф в нишу, спальня', data: null, status: null, project_id: 'p-niche', read: true, created_at: iso(DAY + 3 * 3600_000) },
@@ -379,6 +546,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
   // ----- настройки уведомлений (Misc.dc.html) и платежи (PayHistory.dc.html) -----
   const NOTIF_TYPES: [T.NotificationTypeKey, string, string][] = [
     ['client_opened', 'Клиент открыл ссылку', 'и запустил AR'], ['client_agreed', 'Клиент согласовал', 'с выбранным вариантом'],
+    // как на сервере (notif_settings.py): сообщения, исправления, возвраты и споры — под тем же переключателем «Заказ»
     ['model_ready', 'Модель готова', 'если собиралась долго'], ['order_status', 'Заказ EMAN', 'оплата, распил, готов'],
     ['prices_stale', 'Цены изменились', 'в отправленных сметах'], ['price_request', 'Пришла цена под запрос', 'от EMAN или партнёра'],
     ['nonstandard', 'Нестандарт', 'оценка и готовые файлы'],
@@ -544,7 +712,18 @@ export function createMockApi(opts: MockOptions = {}): Api {
     }
   };
 
+  /** Одна ИИ-задача на проект: пока предыдущая в работе — 409 ai_busy. */
+  const aiTaskOf = new Map<string, string>();
   const startAi = (p: MProject, ms: number, confirmExtra: boolean | undefined, billable: boolean, run: () => unknown) => {
+    const prev = tasks.get(aiTaskOf.get(p.id) ?? '');
+    if (prev && !prev.done && now() < prev.readyAt) throw new ApiError(409, 'ai_busy', 'ИИ уже работает над этим проектом. Дождитесь ответа');
+    if (p.is_example) {
+      if (exampleAiUsed >= exampleAiTasks) throw new ApiError(402, 'ai_budget_example', 'ИИ в примере закончился. Создайте свой проект — первые проекты бесплатны');
+      exampleAiUsed += 1;
+      const accepted = enqueue(ms, run);
+      aiTaskOf.set(p.id, accepted.task_id);
+      return accepted;
+    }
     if (billable) {
       if (p.aiEdits >= aiBudget && !confirmExtra) {
         throw new ApiError(402, 'ai_budget_exhausted', 'Бюджет ИИ-правок в этом проекте исчерпан. Следующая правка спишет ещё один проект из лимита', { free_left: limits.free_left });
@@ -556,7 +735,9 @@ export function createMockApi(opts: MockOptions = {}): Api {
       }
       p.aiEdits += 1;
     }
-    return enqueue(ms, run);
+    const accepted = enqueue(ms, run);
+    aiTaskOf.set(p.id, accepted.task_id);
+    return accepted;
   };
 
   // ----- файлы -----
@@ -591,6 +772,10 @@ export function createMockApi(opts: MockOptions = {}): Api {
     mode: 'mock',
     requestCode: (phone) => wait(() => {
       if (phone.replace(/\D/g, '').length < 12) throw new ApiError(422, 'invalid_phone', 'Введите номер полностью: +998 XX XXX XX XX');
+      // новый номер без приглашения (демо-приглашения — …0000 / …0001) при закрытой регистрации — до отправки кода
+      if (opts.registrationClosed && userIsNew && !/000[01]$/.test(phone)) {
+        throw new ApiError(503, 'registration_closed', 'Регистрация новых цехов временно закрыта. Попробуйте позже');
+      }
       return { phone, channel: 'telegram', expires_in: 300, resend_in: 60, code_length: 5 };
     }),
     verifyCode: (body) => wait(() => {
@@ -709,7 +894,18 @@ export function createMockApi(opts: MockOptions = {}): Api {
       return { items, total: items.length, limit: 100, offset: 0 };
     }),
     createProject: (body) => wait(() => {
-      const p = baseProject({ title: body.title, client_id: body.client_id ?? null, source_text: body.source_text ?? null, is_example: !!body.is_example });
+      const p = baseProject({ title: body.title, client_id: body.client_id ?? null, source_text: body.source_text ?? null });
+      projects.unshift(p);
+      return card(p);
+    }),
+    createExample: () => wait(() => {
+      const live = projects.find((x) => x.is_example);
+      if (live) return card(live);
+      if (examplesMade >= EXAMPLES_MAX) throw new ApiError(409, 'example_limit', 'Пример уже был создан. Создайте свой проект — первые проекты бесплатны');
+      examplesMade += 1;
+      const title = user.language === 'uz' ? 'Namuna: kupe shkaf' : 'Пример: шкаф-купе';
+      const p = baseProject({ title, is_example: true, sample: 'kupe_3doors' });
+      createVersion(p, JSON.parse(JSON.stringify(SAMPLES.kupe_3doors.tree)), 'manual', title, false, ['/width']);
       projects.unshift(p);
       return card(p);
     }),
@@ -733,6 +929,8 @@ export function createMockApi(opts: MockOptions = {}): Api {
     uploadPhoto: (id, file, kind = 'source') => wait(() => {
       const p = getP(id);
       if (p.photos.filter((x) => x.kind === kind).length >= 5) throw new ApiError(409, 'too_many_photos', 'Можно загрузить не больше 5 фото');
+      // сервер смотрит на содержимое (JPEG, PNG, WebP, HEIC); мок — на тип файла
+      if (!/^image\/(jpe?g|png|webp|hei[cf])$/i.test(file.type)) throw new ApiError(415, 'unsupported_photo', 'Загрузите фото в формате JPEG, PNG, WebP или HEIC');
       const ph: T.PhotoOut = { id: uid('ph'), kind, url: file.uri, content_type: file.type, size_bytes: 0, created_at: iso() };
       p.photos.push(ph);
       return ph;
@@ -1136,9 +1334,10 @@ export function createMockApi(opts: MockOptions = {}): Api {
       return preview(p, km);
     }),
     createOrder: (id, km) => wait(() => {
+      needOrderRight();
       const p = getP(id);
       if (p.status !== 'contract') throw new ApiError(409, 'illegal_transition', 'Заказ оформляется из проекта в статусе «Договор»');
-      if (orders.some((o) => o.project_id === p.id && o.status !== 'cancelled')) throw new ApiError(409, 'order_exists', 'По проекту уже есть заказ');
+      if (orders.some((o) => o.project_id === p.id && o.status !== 'cancelled' && o.status !== 'rejected')) throw new ApiError(409, 'order_exists', 'По проекту уже есть заказ');
       const pr = preview(p, km);
       const o: T.OrderOut = {
         id: uid('o'), number: String(orderSeq++), project_id: p.id, project_title: p.title, status: 'created', status_label: 'Создан',
@@ -1146,23 +1345,118 @@ export function createMockApi(opts: MockOptions = {}): Api {
         ready_date: null, created_at: iso(), payment: { status: 'waiting', method: null, url: null }, cancellable: true,
         items: [...pr.lines.map((l) => ({ key: l.key, name: l.name, qty: l.qty, unit: l.unit, price: l.price, amount: l.total })), ...pr.excluded.map((n) => ({ name: n, qty: null, unit: null, excluded: true }))],
         excluded: pr.excluded, documents: [{ kind: 'invoice', title: 'Счёт EMAN', format: 'pdf' }],
+        supplier_id: 'sup-eman', supplier_name: 'EMAN', group_id: uid('g'),
       };
       o.steps = orderSteps(o);
       orders.unshift(o);
-      return { ...o };
+      event(o, 'status_changed', 'created', 'master');
+      return orderView(o, true);
     }),
-    listOrders: () => wait(() => orders.map((o) => ({ ...o, steps: o.steps ?? orderSteps(o), cancellable: o.status === 'created' }))),
-    getOrder: (id) => wait(() => {
-      const o = orders.find((x) => x.id === id);
-      if (!o) throw new ApiError(404, 'not_found', 'Заказ не найден');
-      return { ...o, steps: o.steps ?? orderSteps(o), cancellable: o.status === 'created' };
-    }),
+    listOrders: () => wait(() => orders.map((o) => orderView(o))),
+    getOrder: (id) => wait(() => orderView(getO(id), true)),
     cancelOrder: (id) => wait(() => {
-      const o = orders.find((x) => x.id === id);
-      if (!o) throw new ApiError(404, 'not_found', 'Заказ не найден');
-      if (o.status !== 'created') throw new ApiError(409, 'order_not_cancellable', 'Оплаченный заказ отменяет менеджер EMAN (до распила, с возвратом по их правилам). Напишите менеджеру');
-      o.status = 'cancelled'; o.status_label = 'Отменён'; o.steps = orderSteps(o); o.cancellable = false;
-      return { ...o };
+      needOrderRight();
+      const o = getO(id);
+      // до оплаты: в очереди, вернули на правку, принят без оплаты (§5.3 cancelled — «отменён мастером до оплаты»)
+      if (!cancellableOrder(o)) throw new ApiError(409, 'order_not_cancellable', 'Оплаченный заказ отменяет менеджер EMAN (до распила, с возвратом по их правилам). Напишите менеджеру');
+      setOrderStatus(o, 'cancelled', 'master');
+      o.cancellable = false;
+      return orderView(o, true);
+    }),
+    resubmitOrder: (id) => wait(() => {
+      needOrderRight();
+      const o = getO(id);
+      if (o.status !== 'returned') throw new ApiError(409, 'illegal_transition', 'Отправить заново можно только заказ, возвращённый на правку');
+      o.vendor_status_note = null;
+      setOrderStatus(o, 'created', 'master', 'Исправлено, отправлено заново');
+      event(o, 'resubmitted', null, 'master');
+      return orderView(o, true);
+    }),
+    listOrderMessages: (id) => wait(() => { needOrderRight(); getO(id); return ox(id).messages.map((m) => ({ ...m, attachments: [...m.attachments] })); }),
+    sendOrderMessage: (id, body) => wait(() => {
+      needOrderRight();
+      const o = getO(id);
+      const text = body.text?.trim() || null;
+      if (!text && !body.files?.length) throw new ApiError(422, 'validation', 'Напишите сообщение или приложите фото');
+      if (text && text.length > 4000) throw new ApiError(422, 'validation', 'Сообщение длиннее 4000 символов');
+      const m = message(o.id, 'master', text, 0, true, (body.files ?? []).map(attach));
+      ox(o.id).messages.push(m);
+      // демо: конструктор отвечает, когда «прочитал» (опрос/push обновят экран)
+      const reply = setTimeout(() => {
+        ox(o.id).messages.forEach((x) => { if (x.author_type === 'master' && !x.read_by_vendor_at) x.read_by_vendor_at = iso(); });
+        ox(o.id).messages.push(message(o.id, 'vendor', 'Принял, посмотрю и отвечу в течение часа.', 0, false));
+      }, designMs);
+      (reply as unknown as { unref?: () => void }).unref?.(); // в тестах (Node) таймер не держит процесс
+      return { ...m };
+    }),
+    markOrderMessagesRead: (id) => wait(() => { needOrderRight(); getO(id); for (const m of ox(id).messages) if (m.author_type !== 'master' && !m.read_by_master_at) m.read_by_master_at = iso(); }),
+    listOrderCorrections: (id) => wait(() => { needOrderRight(); getO(id); return ox(id).corrections.map(correctionOut); }),
+    approveOrderCorrection: (id, cid) => wait(() => {
+      needOrderRight();
+      if (!seesCost()) throw new ApiError(403, 'forbidden', 'Исправление с новой суммой подтверждает владелец цеха или сотрудник, который видит цены');
+      const o = getO(id);
+      const c = ox(id).corrections.find((x) => x.id === cid);
+      if (!c) throw new ApiError(404, 'not_found', 'Исправление не найдено');
+      if (c.status !== 'pending') throw new ApiError(409, 'correction_decided', 'По этому исправлению уже есть решение');
+      Object.assign(c, { status: 'approved', decided_at: iso() });
+      o.items = c.lines_after.map((l) => ({ key: l.key ?? null, name: l.name, qty: l.qty, unit: l.unit ?? null, price: l.price ?? null, amount: l.total ?? null }));
+      if (c.total_after != null) { o.total = c.total_after; o.goods_total = c.total_after; o.invoice_total = c.total_after; }
+      o.payment = o.payment ?? { status: 'waiting', method: null, url: `https://eman.uz/pay/demo-${o.number}` };
+      event(o, 'correction_approved', null, 'master');
+      setOrderStatus(o, 'accepted', 'master');
+      return orderView(o, true);
+    }),
+    declineOrderCorrection: (id, cid, comment) => wait(() => {
+      needOrderRight();
+      const o = getO(id);
+      const c = ox(id).corrections.find((x) => x.id === cid);
+      if (!c) throw new ApiError(404, 'not_found', 'Исправление не найдено');
+      if (c.status !== 'pending') throw new ApiError(409, 'correction_decided', 'По этому исправлению уже есть решение');
+      Object.assign(c, { status: 'declined', decided_at: iso(), master_comment: comment || null });
+      event(o, 'correction_declined', null, 'master', comment || null);
+      // отказ мастера возвращает к переписке: заказ снова у конструктора на проверке
+      setOrderStatus(o, 'created', 'master');
+      if (comment) ox(id).messages.push(message(o.id, 'master', comment));
+      return orderView(o, true);
+    }),
+    listOrderReturns: (id) => wait(() => { needOrderRight(); getO(id); return ox(id).returns.map((r) => money(JSON.parse(JSON.stringify(r)) as T.OrderReturn)); }),
+    createOrderReturn: (id, body) => wait(() => {
+      needOrderRight();
+      const o = getO(id);
+      if (!(PAID_LIKE.includes(o.status) || o.payment?.status === 'paid')) throw new ApiError(409, 'order_not_paid', 'Рекламация оформляется по оплаченному заказу');
+      if (!RETURN_TYPES.includes(body.type)) throw new ApiError(422, 'validation', 'Неизвестный тип рекламации');
+      if ((body.description ?? '').trim().length < 3) throw new ApiError(422, 'validation', 'Опишите проблему');
+      const x = ox(id);
+      const r: T.OrderReturn = {
+        id: uid('ret'), order_id: o.id, number: x.returns.length + 1, type: body.type, description: body.description.trim(), lines: body.lines ?? [],
+        photos: (body.files ?? []).map(attach), status: 'open', decision: null, decision_comment: null, created_by: 'master', created_at: iso(),
+      };
+      x.returns.unshift(r);
+      event(o, 'return_opened', null, 'master', r.description);
+      return money(JSON.parse(JSON.stringify(r)) as T.OrderReturn);
+    }),
+    listOrderDisputes: (id) => wait(() => { needOrderRight(); getO(id); return ox(id).disputes.map((d) => money(JSON.parse(JSON.stringify(d)) as T.OrderDispute)); }),
+    openOrderDispute: (id, body) => wait(() => {
+      needOrderRight();
+      const o = getO(id);
+      const x = ox(id);
+      if (body.subject === 'rejection') {
+        if (o.status !== 'rejected') throw new ApiError(409, 'illegal_transition', 'Спор по отклонению — только для отклонённого заказа');
+        if (x.disputes.some((d) => d.subject === 'rejection')) throw new ApiError(409, 'dispute_exists', 'Спор по этому заказу уже открыт');
+      } else {
+        const r = x.returns.find((y) => y.id === body.return_id);
+        if (!r) throw new ApiError(404, 'not_found', 'Рекламация не найдена');
+        if (!r.decision) throw new ApiError(409, 'return_not_decided', 'Спор можно открыть после решения поставщика');
+        if (x.disputes.some((d) => d.subject === 'return' && d.return_id === r.id)) throw new ApiError(409, 'dispute_exists', 'Спор по этой рекламации уже открыт');
+      }
+      if (!(body.comment ?? '').trim()) throw new ApiError(422, 'validation', 'Опишите, с чем вы не согласны');
+      const d: T.OrderDispute = {
+        id: uid('dsp'), order_id: o.id, subject: body.subject, return_id: body.subject === 'return' ? body.return_id ?? null : null, reason: body.reason,
+        comment: body.comment?.trim() || null, photos: (body.files ?? []).map(attach), status: 'open', decision: null, decision_comment: null, created_at: iso(),
+      };
+      x.disputes.unshift(d);
+      event(o, 'dispute_opened', null, 'master', d.comment);
+      return money(JSON.parse(JSON.stringify(d)) as T.OrderDispute);
     }),
     downloadOrderInvoice: (id) => wait(async (): Promise<DownloadedFile> => {
       const o = orders.find((x) => x.id === id);

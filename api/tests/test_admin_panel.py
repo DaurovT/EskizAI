@@ -96,23 +96,24 @@ def test_order_cancel_reverses_commission(api, client, owner):
     assert r["status"] == "cancelled" and r["commission_status"] == "reversed"
 
 
-def test_settings_and_ai_stats(api, client, owner):
-    s = client.get("/admin/settings", headers=ADMIN).json()
+def test_settings_and_ai_stats(api, client, owner, root_admin):
+    s = client.get("/admin/settings", headers=root_admin).json()
     assert s["values"]["ai_budget_usd"] == 0.3 and s["values"]["ai_warn_ratio"] == 0.8
-    r = client.patch("/admin/settings", json={"ai_budget_usd": 0.5}, headers=ADMIN)
+    r = client.patch("/admin/settings", json={"ai_budget_usd": 0.5}, headers=root_admin)
     assert r.json()["values"]["ai_budget_usd"] == 0.5
-    assert client.patch("/admin/settings", json={"ai_warn_ratio": 2}, headers=ADMIN).status_code == 422
-    assert client.patch("/admin/settings", json={"bogus": 1}, headers=ADMIN).status_code == 422
-    log = client.get("/admin/action-log", headers=ADMIN).json()
+    assert client.patch("/admin/settings", json={"ai_warn_ratio": 2}, headers=root_admin).status_code == 422
+    assert client.patch("/admin/settings", json={"bogus": 1}, headers=root_admin).status_code == 422
+    log = client.get("/admin/action-log", headers=root_admin).json()
     assert log[0]["entity"] == "settings" and log[0]["before"] == {"ai_budget_usd": 0.3}
-    stats = client.get("/admin/ai-stats", headers=ADMIN).json()
+    stats = client.get("/admin/ai-stats", headers=root_admin).json()
     assert stats["totals"]["month"]["requests"] == 0 and stats["accuracy"]["ai_projects"] == 0
 
 
-def test_suppliers(client):
-    sup = client.get("/admin/suppliers", headers=ADMIN).json()
+def test_suppliers(client, root_admin):
+    sup = client.get("/admin/suppliers", headers=root_admin).json()
     assert sup[0]["code"] == "eman"
-    r = client.patch(f"/admin/suppliers/{sup[0]['id']}", json={"commission_percent": 3}, headers=ADMIN)
+    r = client.patch(f"/admin/suppliers/{sup[0]['id']}", json={"commission_percent": 3, "reason": "договор"},
+                     headers=root_admin)
     assert r.json()["commission_percent"] == 3
-    assert client.get("/admin/action-log", headers=ADMIN).json()[0]["entity"] == "supplier"
-    assert client.post("/admin/suppliers", json={"code": "eman", "name": "x"}, headers=ADMIN).status_code == 409
+    assert client.get("/admin/action-log", headers=root_admin).json()[0]["entity"] == "supplier"
+    assert client.post("/admin/suppliers", json={"code": "eman", "name": "x"}, headers=root_admin).status_code == 409

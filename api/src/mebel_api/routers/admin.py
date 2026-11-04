@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from ..db import utcnow
-from ..deps import AdminDep, DbDep
+from ..deps import AiLogDep, AuditDep, DbDep, FinanceDep, OrdersDep, WorkshopsGrantDep, require_reason
 from ..domain import OrderStatus, Plan, ProjectStatus as S
 from ..errors import ERROR_RESPONSES, ApiError, not_found
 from ..models import ActionLog, AiRequest, Order, Payment, Project, Workshop
@@ -20,7 +20,6 @@ from ..schemas.common import Out
 from ..schemas.workshops import ActionLogOut
 from ..services import lifecycle
 from ..services.action_log import log_action
-from ..services.limits import return_to_limit
 
 router = APIRouter(prefix="/admin", tags=["admin"], responses=ERROR_RESPONSES)
 
@@ -47,6 +46,7 @@ class OrderOut(Out):
 
 
 class PlanIn(BaseModel):
+    reason: str | None = Field(None, max_length=500, description="Причина (обязательна для сотрудника, §4a)")
     plan: Plan | None = None
     add_pack_projects: int = Field(0, ge=-1000, le=1000, description="Ручное начисление проектов в пакет")
     pro_until: datetime | None = None
@@ -76,38 +76,37 @@ class AiRequestOut(Out):
     response_model=OrderOut,
     summary="Заказ оплачен (Договор → В работе)",
 )
-def order_paid(project_id: uuid.UUID, body: OrderPaidIn, admin: AdminDep, db: DbDep) -> Order:
+def order_paid(project_id: uuid.UUID, body: OrderPaidIn, admin: OrdersDep, db: DbDep) -> Order:
     """Менеджер отмечает оплату заказа на мерчант EMAN (ADM-08). Проект возвращается в бесплатный лимит."""
+    from ..services import order_flow as flow
+    from ..services.supplier_routes import default_supplier
+
     p = db.get(Project, project_id)
     if p is None or p.deleted_at is not None:
         raise not_found("Проект")
     lifecycle.ensure_transition(p, S.in_work)
     workshop = db.get(Workshop, p.workshop_id)
-    now = utcnow()
-    # Заказ, который мастер уже оформил (статус «Создан»), — отмечаем оплаченным; иначе создаём
-    order = db.scalar(select(Order).where(Order.project_id == p.id, Order.status == OrderStatus.created).limit(1))
+    # Заказ, который мастер уже оформил (создан или принят поставщиком, не оплачен), — отмечаем оплаченным
+    order = db.scalar(select(Order).where(Order.project_id == p.id,
+                                          Order.status.in_([OrderStatus.created, OrderStatus.accepted]),
+                                          Order.paid_at.is_(None)).order_by(Order.created_at).limit(1))
     if order is None:
         from .orders import next_number
 
-        order = Order(project_id=p.id, version_id=p.frozen_version_id, number=next_number(db), **body.model_dump())
+        supplier = default_supplier(db)
+        order = Order(project_id=p.id, version_id=p.frozen_version_id, number=next_number(db), supplier=supplier.code,
+                      supplier_id=supplier.id, **body.model_dump())
         db.add(order)
+        db.flush()
+        order.group_id = order.id
     else:
         for k, v in body.model_dump().items():
             if v is not None:
                 setattr(order, k, v)
-    order.status = OrderStatus.paid
-    order.paid_at = now
-    order.payment_failed_at = None
-    order.status_changed_at = now
-    order.commission_status = "accrued"  # комиссия EMAN начисляется при «Оплачен» (раздел 16)
-    returned = return_to_limit(db, workshop, p)
-    lifecycle.set_status(db, p, S.in_work, actor_user_id=None, actor="admin", note="Заказ в EMAN оплачен")
-    db.flush()
-    from ..services import events
-
-    events.order_status(db, order)  # push «Заказ №… оплачен»
+    returned = flow.mark_paid(db, order, actor_type="platform", actor_id=admin.id, actor_name=admin.name,
+                              project_actor="admin", comment="Оплата отмечена менеджером", log=False)
     log_action(
-        db, actor_type="admin", actor_id=admin, workshop_id=workshop.id, entity="order", entity_id=order.id,
+        db, actor_type=admin.type, actor_id=admin.id, workshop_id=workshop.id, entity="order", entity_id=order.id,
         action="mark_paid", after={**body.model_dump(), "project_id": str(p.id), "returned_to_limit": returned},
     )
     db.commit()
@@ -115,7 +114,8 @@ def order_paid(project_id: uuid.UUID, body: OrderPaidIn, admin: AdminDep, db: Db
 
 
 @router.post("/workshops/{workshop_id}/plan", summary="Тариф и ручное начисление проектов")
-def set_plan(workshop_id: uuid.UUID, body: PlanIn, admin: AdminDep, db: DbDep) -> dict:
+def set_plan(workshop_id: uuid.UUID, body: PlanIn, admin: WorkshopsGrantDep, db: DbDep) -> dict:
+    reason = require_reason(admin, body.reason)
     w = db.get(Workshop, workshop_id)
     if w is None:
         raise not_found("Цех")
@@ -129,8 +129,8 @@ def set_plan(workshop_id: uuid.UUID, body: PlanIn, admin: AdminDep, db: DbDep) -
     w.pack_projects_left += body.add_pack_projects
     after = {"plan": w.plan, "pack_projects_left": w.pack_projects_left, "pro_until": _iso(w.pro_until)}
     log_action(
-        db, actor_type="admin", actor_id=admin, workshop_id=w.id, entity="workshop_plan", entity_id=w.id,
-        action="update", before=before, after=after,
+        db, actor_type=admin.type, actor_id=admin.id, workshop_id=w.id, entity="workshop_plan", entity_id=w.id,
+        action="update", before={**before, "reason": None}, after={**after, "reason": reason},
     )
     db.commit()
     return after
@@ -142,7 +142,7 @@ def _iso(d: datetime | None) -> str | None:
 
 @router.get("/ai-requests", response_model=list[AiRequestOut], summary="ИИ-журнал")
 def ai_requests(
-    admin: AdminDep, db: DbDep, project_id: uuid.UUID | None = None, workshop_id: uuid.UUID | None = None,
+    admin: AiLogDep, db: DbDep, project_id: uuid.UUID | None = None, workshop_id: uuid.UUID | None = None,
     purpose: str | None = None, validation: str | None = None,
     limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0),
 ) -> list[AiRequest]:
@@ -160,7 +160,7 @@ def ai_requests(
 
 @router.get("/action-log", response_model=list[ActionLogOut], summary="Журнал действий")
 def admin_action_log(
-    admin: AdminDep, db: DbDep, workshop_id: uuid.UUID | None = None, limit: int = Query(100, ge=1, le=500)
+    admin: AuditDep, db: DbDep, workshop_id: uuid.UUID | None = None, limit: int = Query(100, ge=1, le=500)
 ) -> list[ActionLog]:
     stmt = select(ActionLog).order_by(ActionLog.created_at.desc()).limit(limit)
     if workshop_id:
@@ -189,7 +189,7 @@ def _payment_dict(p: Payment) -> dict:
 
 
 @router.post("/workshops/{workshop_id}/payments", status_code=201, summary="Записать платёж цеха (пакет, Pro, файлы)")
-def add_payment(workshop_id: uuid.UUID, body: PaymentIn, admin: AdminDep, db: DbDep) -> dict:
+def add_payment(workshop_id: uuid.UUID, body: PaymentIn, admin: FinanceDep, db: DbDep) -> dict:
     """Только запись в историю платежей мастера. Начисление (пакет, Pro, доступ к файлам) — отдельно:
     `/admin/workshops/{id}/plan`, `/admin/projects/{id}/file-access`."""
     w = db.get(Workshop, workshop_id)
@@ -201,25 +201,25 @@ def add_payment(workshop_id: uuid.UUID, body: PaymentIn, admin: AdminDep, db: Db
             raise not_found("Проект")
     if body.paid_at is not None and body.paid_at.tzinfo is None:
         raise ApiError(422, "validation_error", "Укажите часовой пояс времени оплаты")
-    row = Payment(workshop_id=w.id, created_by=admin, **body.model_dump(exclude={"paid_at"}),
+    row = Payment(workshop_id=w.id, created_by=admin.id, **body.model_dump(exclude={"paid_at"}),
                   paid_at=body.paid_at or utcnow())
     db.add(row)
     db.flush()
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=w.id, entity="payment", entity_id=row.id,
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=w.id, entity="payment", entity_id=row.id,
                action="create", after=_payment_dict(row))
     db.commit()
     return _payment_dict(row)
 
 
 @router.post("/payments/{payment_id}/refund", summary="Отметить возврат платежа")
-def refund_payment(payment_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
+def refund_payment(payment_id: uuid.UUID, admin: FinanceDep, db: DbDep) -> dict:
     row = db.get(Payment, payment_id)
     if row is None:
         raise not_found("Платёж")
     if row.status == "refunded":
         raise ApiError(409, "already_refunded", "Возврат уже отмечен")
     row.status, row.refunded_at = "refunded", utcnow()
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=row.workshop_id, entity="payment",
+    log_action(db, actor_type=admin.type, actor_id=admin.id, workshop_id=row.workshop_id, entity="payment",
                entity_id=row.id, action="refund", after=_payment_dict(row))
     db.commit()
     return _payment_dict(row)

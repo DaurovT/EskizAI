@@ -4,6 +4,7 @@
 Проверки лимита, бюджета и статуса проекта — синхронно, до постановки задачи (402 / 409 сразу).
 """
 
+import threading
 import uuid
 
 from fastapi import APIRouter
@@ -27,6 +28,7 @@ from ..schemas.ai import (
 )
 from ..services import ai as ai_service
 from ..services import object_projects
+from ..services.tasks import TaskBusy
 from ..services.versions import ensure_model_editable
 from .projects import get_project
 
@@ -34,11 +36,26 @@ router = APIRouter(tags=["ai"], responses={**ERROR_RESPONSES, 402: {"description
                                            503: {"description": "ИИ не настроен"}})
 
 
-def _prepare(db, settings, current: CurrentUser, project_id: uuid.UUID, confirm: bool) -> Project:
+# Проверка лимитов и постановка в очередь — под одним замком: параллельные запросы не проскакивают лимит,
+# пока оценка новой задачи ещё не учтена в резерве очереди (один процесс API, --workers 1)
+_ADMIT = threading.Lock()
+
+
+def _prepare(db, settings, current: CurrentUser, project_id: uuid.UUID, confirm: bool, tasks=None) -> Project:
     p = get_project(db, current, project_id)
     ensure_model_editable(p)
-    ai_service.ensure_ai_allowed(db, settings, current.workshop, p, confirm_extra=confirm, user_id=current.user.id)
+    ai_service.ensure_ai_allowed(db, settings, current.workshop, p, confirm_extra=confirm, user_id=current.user.id,
+                                 tasks=tasks)
     return p
+
+
+def _enqueue(tasks, settings, name: str, current: CurrentUser, p: Project, llm, **extra) -> str:
+    """Одна ИИ-задача на проект (409 ai_busy); оценка стоимости резервируется до завершения задачи."""
+    try:
+        return tasks.enqueue(name, _payload(current, p, **extra), workshop_id=str(current.workshop.id),
+                             deps={"llm": llm}, key=ai_service.task_key(p), reserve_usd=settings.ai_task_reserve_usd)
+    except TaskBusy:
+        raise ai_service.ai_busy_error() from None
 
 
 def _payload(current: CurrentUser, p: Project, **extra) -> dict:
@@ -69,10 +86,10 @@ def design(project_id: uuid.UUID, body: DesignIn, current: CurrentDep, db: DbDep
     ) is not None
     if not (body.text or "").strip() and not has_photos:
         raise ApiError(422, "nothing_to_recognize", "Загрузите фото или опишите изделие словами")
-    _prepare(db, settings, current, project_id, body.confirm_extra_project)
-    task_id = tasks.enqueue("ai.design", _payload(current, p, text=(body.text or "").strip(), photo_ids=photo_ids,
-                                                  language=body.language),
-                            workshop_id=str(current.workshop.id), deps={"llm": llm})
+    with _ADMIT:
+        _prepare(db, settings, current, project_id, body.confirm_extra_project, tasks)
+        task_id = _enqueue(tasks, settings, "ai.design", current, p, llm, text=(body.text or "").strip(),
+                           photo_ids=photo_ids, language=body.language)
     return TaskAccepted(task_id=task_id)
 
 
@@ -83,14 +100,17 @@ def answer(project_id: uuid.UUID, body: AnswerIn, current: CurrentDep, db: DbDep
     """Все ответы раунда разом: `{"answers": [{"question_id", "value"}]}` (или прежнее `{"answers": {id: value}}`).
     «не знаю» — значение по умолчанию с пометкой «оценка». Ответы хранятся в сессии: отвеченное не спрашивается
     снова; в результате (DesignOut) — пересобранная модель и, если нужно, следующий раунд вопросов."""
-    answers = {k: v for k, v in body.answer_map().items() if k.strip()}
-    if not answers:
-        raise ApiError(422, "no_answers", "Нет ответов")
     p = get_project(db, current, project_id)
     _has_session(db, p)
-    _prepare(db, settings, current, project_id, body.confirm_extra_project)
-    task_id = tasks.enqueue("ai.answer", _payload(current, p, answers=answers),
-                            workshop_id=str(current.workshop.id), deps={"llm": llm})
+    # в ИИ — только ответы на заданные вопросы (id из последнего распознавания), не больше 50, до 500 символов
+    row = db.scalar(select(AiSession).where(AiSession.project_id == p.id))
+    answers = ai_service.known_answers({k: v for k, v in body.answer_map().items() if k.strip()},
+                                       ai_service.answerable_ids(row))
+    if not answers:
+        raise ApiError(422, "no_answers", "Нет ответов на заданные вопросы")
+    with _ADMIT:
+        _prepare(db, settings, current, project_id, body.confirm_extra_project, tasks)
+        task_id = _enqueue(tasks, settings, "ai.answer", current, p, llm, answers=answers)
     return TaskAccepted(task_id=task_id)
 
 
@@ -100,9 +120,9 @@ def choose_type(project_id: uuid.UUID, body: ChooseTypeIn, current: CurrentDep, 
                 tasks: TasksDep, llm: LLMDep) -> TaskAccepted:
     p = get_project(db, current, project_id)
     _has_session(db, p)
-    _prepare(db, settings, current, project_id, body.confirm_extra_project)
-    task_id = tasks.enqueue("ai.choose_type", _payload(current, p, product_kind=body.product_kind.strip()),
-                            workshop_id=str(current.workshop.id), deps={"llm": llm})
+    with _ADMIT:
+        _prepare(db, settings, current, project_id, body.confirm_extra_project, tasks)
+        task_id = _enqueue(tasks, settings, "ai.choose_type", current, p, llm, product_kind=body.product_kind.strip())
     return TaskAccepted(task_id=task_id)
 
 
@@ -117,26 +137,27 @@ def choose_objects(project_id: uuid.UUID, body: ChooseObjectsIn, current: Curren
     p = get_project(db, current, project_id)
     _has_session(db, p)
     ensure_model_editable(p)
-    ai_service.ensure_ai_allowed(db, settings, current.workshop, p, confirm_extra=body.confirm_extra_project,
-                                 user_id=current.user.id, commit=False)
-    plans = object_projects.split_objects(db, settings, current.workshop, current.user.id, p, body.objects)
-    charged = sum(1 for pl in plans if pl.charged)
-    if charged:
-        from ..services import events
+    with _ADMIT:
+        ai_service.ensure_ai_allowed(db, settings, current.workshop, p, confirm_extra=body.confirm_extra_project,
+                                     user_id=current.user.id, commit=False, tasks=tasks,
+                                     task_count=len(body.objects))
+        plans = object_projects.split_objects(db, settings, current.workshop, current.user.id, p, body.objects)
+        charged = sum(1 for pl in plans if pl.charged)
+        if charged:
+            from ..services import events
 
-        events.limit_left(db, settings, current.workshop)  # «Остался 1 проект» (раздел 19)
-    db.commit()
-    out = []
-    for pl in plans:
-        box = pl.obj.get("box") or None
-        # Свой LLM на задачу: журнал ИИ-запросов пишется в свой проект
-        task_llm = type(llm)(client=llm.client) if pl.created else llm
-        task_id = tasks.enqueue("ai.choose_object", _payload(current, pl.project, label=pl.obj.get("label") or "",
-                                                             photo=pl.obj.get("photo", 0), box=box,
-                                                             object_index=pl.index),
-                                workshop_id=str(current.workshop.id), deps={"llm": task_llm})
-        out.append(ObjectProjectOut(project_id=str(pl.project.id), task_id=task_id, object_index=pl.index,
-                                    label=pl.obj.get("label") or "", title=pl.project.title, created=pl.created))
+            events.limit_left(db, settings, current.workshop)  # «Остался 1 проект» (раздел 19)
+        db.commit()
+        out = []
+        for pl in plans:
+            box = pl.obj.get("box") or None
+            # Свой LLM на задачу: журнал ИИ-запросов пишется в свой проект
+            task_llm = type(llm)(client=llm.client) if pl.created else llm
+            task_id = _enqueue(tasks, settings, "ai.choose_object", current, pl.project, task_llm,
+                               label=pl.obj.get("label") or "", photo=pl.obj.get("photo", 0), box=box,
+                               object_index=pl.index)
+            out.append(ObjectProjectOut(project_id=str(pl.project.id), task_id=task_id, object_index=pl.index,
+                                        label=pl.obj.get("label") or "", title=pl.project.title, created=pl.created))
     return ChooseObjectsOut(projects=out, charged=charged)
 
 
@@ -150,9 +171,9 @@ def edit(project_id: uuid.UUID, body: EditIn, current: CurrentDep, db: DbDep, se
     p = get_project(db, current, project_id)
     if p.current_version_id is None or db.get(ModelVersion, p.current_version_id) is None:
         raise ApiError(409, "model_missing", "Модель ещё не построена — сначала распознайте фото или описание")
-    _prepare(db, settings, current, project_id, body.confirm_extra_project)
-    task_id = tasks.enqueue("ai.edit", _payload(current, p, instruction=body.instruction.strip()),
-                            workshop_id=str(current.workshop.id), deps={"llm": llm})
+    with _ADMIT:
+        _prepare(db, settings, current, project_id, body.confirm_extra_project, tasks)
+        task_id = _enqueue(tasks, settings, "ai.edit", current, p, llm, instruction=body.instruction.strip())
     return TaskAccepted(task_id=task_id)
 
 

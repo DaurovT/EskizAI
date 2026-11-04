@@ -6,7 +6,7 @@ from urllib.parse import quote
 from fastapi import APIRouter
 from fastapi.responses import Response
 
-from ..deps import CurrentDep, DbDep, SettingsDep
+from ..deps import CurrentDep, DbDep, SettingsDep, StorageDep
 from ..errors import ERROR_RESPONSES, ApiError, not_found
 from ..models import FileDownload
 from ..services import files as fs
@@ -53,5 +53,23 @@ def download(project_id: uuid.UUID, kind: str, current: CurrentDep, db: DbDep, s
     return Response(
         content=data, media_type=k.content_type,
         headers={"Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}",
-                 "X-Model-Version": str(version.number)},
+                 "X-Model-Version": str(version.number), "X-Content-Type-Options": "nosniff"},
     )
+
+
+@router.get("/signed-files/{token}", summary="Файл по подписанной ссылке (без токена, ссылка живёт 2 часа)",
+            responses={200: {"content": {"application/octet-stream": {}}}})
+def signed_file(token: str, settings: SettingsDep, storage: StorageDep) -> Response:
+    """Вложения переписки по заказу, фото возвратов и споров, файлы исправлений (docs/staff_vendor_contract.md §9).
+    Токен непрозрачный (зашифрован). Тип — по содержимому файла: в браузере открываются только PNG/JPEG/WebP,
+    остальное — скачиванием; `nosniff` и `Content-Security-Policy: sandbox`."""
+    from ..services.signed_files import verify
+    from ..services.uploads import file_response
+
+    p = verify(settings, token)
+    try:
+        data = storage.read(p["k"])
+    except (OSError, ValueError):
+        raise not_found("Файл")
+    return file_response(data, p.get("n") or "file", p.get("ct"),
+                         headers={"Cache-Control": "private, max-age=600", "Referrer-Policy": "no-referrer"})

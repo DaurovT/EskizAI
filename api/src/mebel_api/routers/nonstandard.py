@@ -8,7 +8,6 @@
 
 import uuid
 from typing import Annotated, Literal
-from urllib.parse import quote
 
 from fastapi import APIRouter, File, Query, UploadFile
 from fastapi.responses import Response
@@ -16,10 +15,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from ..db import utcnow
-from ..deps import AdminDep, CurrentDep, DbDep, StorageDep
+from ..deps import NonstandardDep, CurrentDep, DbDep, StorageDep
 from ..errors import ERROR_RESPONSES, ApiError, not_found
 from ..models import AiSession, NonstandardRequest, Project, ProjectPhoto, Workshop
-from ..services import events
+from ..services import events, uploads
 from ..services.action_log import log_action
 from .projects import get_project
 
@@ -61,6 +60,7 @@ def out(r: NonstandardRequest, project: Project | None = None, *, admin: bool = 
     if admin:
         o["manager_note"] = r.manager_note
         o["workshop_id"] = str(r.workshop_id)
+        o["supplier_id"] = str(r.supplier_id) if r.supplier_id else None
         o["files"] = [{**f, "admin_url": f"/admin/nonstandard/{r.id}/files/{f['id']}"} for f in r.files or []]
     return o
 
@@ -85,9 +85,15 @@ def create(project_id: uuid.UUID, body: NonstandardIn, current: CurrentDep, db: 
         session = db.scalar(select(AiSession).where(AiSession.project_id == p.id))
         differences = list(((session.last_result or {}).get("differences") or [])) if session else []
     number = (db.scalar(select(func.max(NonstandardRequest.number))) or 0) + 1
+    supplier = None
+    if body.path == "eman":  # конструкторам поставщика — по маршруту категории «nonstandard» (по умолчанию EMAN)
+        from ..services.supplier_routes import route_for_category
+
+        supplier = route_for_category(db, "nonstandard")
     r = NonstandardRequest(number=number, project_id=p.id, workshop_id=p.workshop_id, author_id=current.user.id,
                            version_id=p.current_version_id, description=body.description.strip(),
-                           photo_ids=[str(i) for i in body.photo_ids], differences=differences, path=body.path)
+                           photo_ids=[str(i) for i in body.photo_ids], differences=differences, path=body.path,
+                           supplier_id=supplier.id if supplier else None)
     db.add(r)
     db.flush()
     log_action(db, actor_type="user", actor_id=str(current.user.id), workshop_id=p.workshop_id, entity="nonstandard",
@@ -135,12 +141,12 @@ def cancel(project_id: uuid.UUID, request_id: uuid.UUID, current: CurrentDep, db
 
 
 def _file_response(storage, f: dict) -> Response:
-    data = storage.read(f["key"])
-    name = f.get("name") or "file"
-    ascii_name = name.encode("ascii", "ignore").decode() or "file"
-    return Response(content=data, media_type=f.get("content_type") or "application/octet-stream",
-                    headers={"Content-Disposition": f"attachment; filename=\"{ascii_name}\"; "
-                                                    f"filename*=UTF-8''{quote(name)}"})
+    """Тип — по содержимому; в браузере открываются только PNG/JPEG/WebP, остальное — скачиванием."""
+    try:
+        data = storage.read(f["key"])
+    except (OSError, ValueError):
+        raise not_found("Файл") from None
+    return uploads.file_response(data, f.get("name") or "file", f.get("content_type"))
 
 
 @router.get("/projects/{project_id}/nonstandard/{request_id}/files/{file_id}", summary="Скачать доработанный файл",
@@ -168,7 +174,7 @@ def _admin_get(db, request_id: uuid.UUID) -> tuple[NonstandardRequest, Project]:
 
 
 @admin_router.get("", summary="Очередь заявок «нестандарт»")
-def admin_list(admin: AdminDep, db: DbDep,
+def admin_list(admin: NonstandardDep, db: DbDep,
                status: Annotated[list[str] | None, Query(description="sent, estimated, in_work, done, cancelled")] = None,
                limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
     stmt = select(NonstandardRequest)
@@ -185,7 +191,7 @@ def admin_list(admin: AdminDep, db: DbDep,
 
 
 @admin_router.get("/{request_id}", summary="Заявка «нестандарт»")
-def admin_get(request_id: uuid.UUID, admin: AdminDep, db: DbDep) -> dict:
+def admin_get(request_id: uuid.UUID, admin: NonstandardDep, db: DbDep) -> dict:
     r, p = _admin_get(db, request_id)
     w = db.get(Workshop, r.workshop_id)
     photos = []
@@ -205,18 +211,15 @@ class AdminPatchIn(BaseModel):
                                          description="Комментарий конструктора мастеру: как сделаем (видит мастер)")
 
 
-@admin_router.patch("/{request_id}", summary="Назначить, оценить (цена, срок), сменить статус")
-def admin_patch(request_id: uuid.UUID, body: AdminPatchIn, admin: AdminDep, db: DbDep) -> dict:
-    """Цена и срок в «отправленной» заявке переводят её в «оценена» (мастеру — push).
-    «Готово» — мастеру push «доработанные файлы в проекте»."""
-    r, p = _admin_get(db, request_id)
+def apply_patch(db, r: NonstandardRequest, data: dict, status: str | None, actor) -> None:
+    """Общая логика админки и кабинета поставщика: цена и срок в «отправленной» заявке переводят её в «оценена»
+    (мастеру — push); «Готово» — push «доработанные файлы в проекте»."""
     before = {"status": r.status, "price": r.price, "lead_days": r.lead_days, "assignee": r.assignee,
               "designer_comment": r.designer_comment}
-    data = body.model_dump(exclude_unset=True)
     for k in ("assignee", "price", "lead_days", "manager_note", "designer_comment"):
         if k in data:
             setattr(r, k, data[k])
-    target = body.status
+    target = status
     if target is None and r.status == "sent" and r.price is not None and r.lead_days is not None:
         target = "estimated"
     now = utcnow()
@@ -234,38 +237,53 @@ def admin_patch(request_id: uuid.UUID, body: AdminPatchIn, admin: AdminDep, db: 
         elif target == "done":
             r.done_at = now
             events.nonstandard(db, r, "nonstandard_done")
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=r.workshop_id, entity="nonstandard",
+    log_action(db, actor_type=actor.type, actor_id=actor.id, workshop_id=r.workshop_id, entity="nonstandard",
                entity_id=r.id, action="update", before=before,
                after={"status": r.status, "price": r.price, "lead_days": r.lead_days, "assignee": r.assignee,
                       "designer_comment": r.designer_comment})
+
+
+@admin_router.patch("/{request_id}", summary="Назначить, оценить (цена, срок), сменить статус")
+def admin_patch(request_id: uuid.UUID, body: AdminPatchIn, admin: NonstandardDep, db: DbDep) -> dict:
+    """Цена и срок в «отправленной» заявке переводят её в «оценена» (мастеру — push).
+    «Готово» — мастеру push «доработанные файлы в проекте»."""
+    r, p = _admin_get(db, request_id)
+    apply_patch(db, r, body.model_dump(exclude_unset=True, exclude={"status"}), body.status, admin)
     db.commit()
     return out(r, p, admin=True)
 
 
-@admin_router.post("/{request_id}/files", status_code=201, summary="Прикрепить доработанный файл")
-async def admin_upload(request_id: uuid.UUID, admin: AdminDep, db: DbDep, storage: StorageDep,
-                       file: UploadFile = File(description="PDF, DXF, архив и т. п., до 50 МБ")) -> dict:
-    r, p = _admin_get(db, request_id)
+async def store_file(db, r: NonstandardRequest, file: UploadFile, storage, actor) -> dict:
     data = await file.read(MAX_FILE_BYTES + 1)
     if len(data) > MAX_FILE_BYTES:
         raise ApiError(413, "file_too_large", "Файл больше 50 МБ")
     if not data:
         raise ApiError(422, "empty_file", "Файл пустой")
     fid = uuid.uuid4().hex
-    name = (file.filename or "file").replace("/", "_")[:200]
-    key = f"workshops/{r.workshop_id}/projects/{r.project_id}/nonstandard/{r.id}/{fid}_{name.encode('ascii', 'ignore').decode() or 'file'}"
-    stored = storage.save(key, data, file.content_type or "application/octet-stream")
-    entry = {"id": fid, "name": name, "key": stored.key, "content_type": file.content_type or "application/octet-stream",
-             "size": len(data), "uploaded_at": utcnow().isoformat(), "uploaded_by": admin}
+    name = uploads.display_name(file.filename)
+    ct = uploads.safe_content_type(data, file.content_type)
+    # Закрытая зона хранилища; в ключе — только безопасное имя и расширение из белого списка (иначе .bin)
+    key = f"workshops/{r.workshop_id}/projects/{r.project_id}/nonstandard/{r.id}/{fid}_{uploads.key_name(name)}"
+    stored = storage.save(key, data, ct, private=True)
+    entry = {"id": fid, "name": name, "key": stored.key, "content_type": ct,
+             "size": len(data), "uploaded_at": utcnow().isoformat(), "uploaded_by": actor.id}
     r.files = [*(r.files or []), entry]
-    log_action(db, actor_type="admin", actor_id=admin, workshop_id=r.workshop_id, entity="nonstandard",
+    log_action(db, actor_type=actor.type, actor_id=actor.id, workshop_id=r.workshop_id, entity="nonstandard",
                entity_id=r.id, action="file", after={"name": name, "size": len(data)})
+    return entry
+
+
+@admin_router.post("/{request_id}/files", status_code=201, summary="Прикрепить доработанный файл")
+async def admin_upload(request_id: uuid.UUID, admin: NonstandardDep, db: DbDep, storage: StorageDep,
+                       file: UploadFile = File(description="PDF, DXF, архив и т. п., до 50 МБ")) -> dict:
+    r, p = _admin_get(db, request_id)
+    await store_file(db, r, file, storage, admin)
     db.commit()
     return out(r, p, admin=True)
 
 
 @admin_router.get("/{request_id}/files/{file_id}", summary="Скачать файл заявки (админка)")
-def admin_download(request_id: uuid.UUID, file_id: str, admin: AdminDep, db: DbDep, storage: StorageDep) -> Response:
+def admin_download(request_id: uuid.UUID, file_id: str, admin: NonstandardDep, db: DbDep, storage: StorageDep) -> Response:
     r, _ = _admin_get(db, request_id)
     f = next((f for f in r.files or [] if f["id"] == file_id), None)
     if f is None:
@@ -274,7 +292,7 @@ def admin_download(request_id: uuid.UUID, file_id: str, admin: AdminDep, db: DbD
 
 
 @admin_router.delete("/{request_id}/files/{file_id}", summary="Удалить файл заявки")
-def admin_delete_file(request_id: uuid.UUID, file_id: str, admin: AdminDep, db: DbDep, storage: StorageDep) -> dict:
+def admin_delete_file(request_id: uuid.UUID, file_id: str, admin: NonstandardDep, db: DbDep, storage: StorageDep) -> dict:
     r, p = _admin_get(db, request_id)
     f = next((f for f in r.files or [] if f["id"] == file_id), None)
     if f is None:

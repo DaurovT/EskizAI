@@ -8,7 +8,7 @@ import { isApiError } from '../src/api/errors';
 import { useT } from '../src/i18n';
 import { maskPhone } from '../src/lib/format';
 import { useSession } from '../src/state/session';
-import { showError } from '../src/ui/dialogs';
+import { errorLine, showError } from '../src/ui/dialogs';
 import { Button, Card, Dialog, Hairline, Screen, T, Tile, resolveFont, type IconName } from '../src/ui/kit';
 import { palette, type as ty } from '../src/ui/theme';
 
@@ -66,7 +66,7 @@ export default function DeleteAccount() {
       await api.deleteAccount(code);
       setStep('done');
     } catch (e) {
-      setError(isApiError(e) ? e.message : t('err_generic_text'));
+      setError(errorLine(e, lang)); // 429 code_locked и др. — понятным текстом
       setCode('');
     } finally {
       setBusy(false);

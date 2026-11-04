@@ -208,7 +208,8 @@ def test_templates_and_expo_sender():
     assert money_short(9_800_000, "ru") == "9,8 млн" and money_short(450_000, "uz") == "450 ming"
     assert price_text({"from": 9_800_000, "to": 11_200_000}, "ru") == "9,8–11,2 млн"
     title, body = render("prices_stale", "uz", {"title": "Shkaf"})
-    assert "EMAN" in body and title == "Narxlar o‘zgardi"
+    # поставщиков несколько — в тексте нет «EMAN»
+    assert "EMAN" not in body and "Yetkazib beruvchi narxlari" in body and title == "Narxlar o‘zgardi"
     sent = {}
 
     class Resp:
@@ -376,17 +377,17 @@ def test_price_request_flow(api, client, owner, push):
 # --- 7. Декоры, 8. раскрой, фурнитура ---
 
 
-def test_decors_from_core_and_catalog(api, client, owner):
+def test_decors_from_core_and_catalog(api, client, owner, root_admin):
     d = client.get("/catalog/decors", headers=owner).json()["items"]
     ids = {x["id"] for x in d}
     assert {"ldsp_16_white", "ldsp_16_oak", "hdf_3_white"} <= ids and "mirror_4_silver" not in ids
     oak = next(x for x in d if x["id"] == "ldsp_16_oak")
     assert oak["has_grain"] and oak["thickness"] == 16 and oak["source"] == "core" and oak["color"].startswith("#")
-    supplier = client.post("/admin/suppliers", json={"code": "eman2", "name": "EMAN"}, headers=ADMIN).json()
+    supplier = client.post("/admin/suppliers", json={"code": "eman2", "name": "EMAN"}, headers=root_admin).json()
     client.post("/admin/catalog/items", json={"supplier_id": supplier["id"], "sku": "EG-H3395", "type": "sheet",
                                               "name": "ЛДСП Egger H3395 Дуб Сонома 16", "core_key": "ldsp_16_oak",
                                               "thickness_mm": 16, "decor": "H3395", "has_grain": True,
-                                              "price": 700_000, "unit": "лист", "available": False}, headers=ADMIN)
+                                              "price": 700_000, "unit": "лист", "available": False}, headers=root_admin)
     oak = next(x for x in client.get("/catalog/decors", headers=owner).json()["items"] if x["id"] == "ldsp_16_oak")
     assert oak["source"] == "catalog" and oak["available"] is False and oak["decor"] == "H3395"
     assert "price" not in oak

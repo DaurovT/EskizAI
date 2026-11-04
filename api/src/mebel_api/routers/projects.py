@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Query, UploadFile
+from fastapi import APIRouter, File, Form, Query, Response, UploadFile
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -24,7 +24,7 @@ from ..schemas.projects import (
     ProjectUpdateIn,
     StatusChangeOut,
 )
-from ..services import lifecycle, titles
+from ..services import examples, lifecycle, titles
 from ..services.activity import activities
 from ..services.estimate import compute_range, is_measured, master_estimate, remember, staff_estimate
 from ..services.limits import charge_project
@@ -32,6 +32,7 @@ from ..services.visibility import for_employee
 
 router = APIRouter(prefix="/projects", tags=["projects"], responses=ERROR_RESPONSES)
 
+# Тип фото — по содержимому (services/uploads.sniff), заявленному клиентом Content-Type не верим
 ALLOWED_PHOTO_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic"}
 
 
@@ -112,7 +113,11 @@ def project_card(db, current: CurrentUser, p: Project, with_estimate: bool = Fal
 
 
 @router.post("", response_model=ProjectCardOut, status_code=201, summary="Создать проект")
-def create_project(body: ProjectIn, current: CurrentDep, db: DbDep) -> ProjectCardOut:
+def create_project(body: ProjectIn, current: CurrentDep, db: DbDep, settings: SettingsDep) -> ProjectCardOut:
+    if body.is_example:  # старые сборки приложения: пример создаёт только сервер (POST /projects/example)
+        p, _ = examples.get_or_create_example(db, settings, current.workshop, current.user)
+        db.commit()
+        return project_card(db, current, p)
     client = _client(db, current, body.client_id)
     # Нет названия / «Новый проект 03.11.2026» / первая фраза описания — название ведёт сервер
     auto = titles.is_default_title(body.title, body.source_text)
@@ -125,12 +130,27 @@ def create_project(body: ProjectIn, current: CurrentDep, db: DbDep) -> ProjectCa
         title_source=titles.AUTO if auto else titles.USER,
         client_id=body.client_id,
         source_text=body.source_text,
-        is_example=body.is_example,
+        is_example=False,
     )
     db.add(p)
     db.flush()
     db.add(ProjectStatusChange(project_id=p.id, from_status=None, to_status=S.draft, actor_user_id=current.user.id))
     db.commit()
+    return project_card(db, current, p)
+
+
+@router.post("/example", response_model=ProjectCardOut, status_code=201, summary="Пример «Попробовать на примере»",
+             responses={200: {"description": "Пример цеха уже есть — возвращается он же"},
+                        409: {"description": "example_limit — примеров за всё время больше нельзя"}})
+def create_example(current: CurrentDep, db: DbDep, settings: SettingsDep, response: Response) -> ProjectCardOut:
+    """Готовый шкаф-купе из шаблона сервера (модель v1, ширина — «оценка»); лимит проектов не тратит.
+    Один действующий пример на цех: повторный вызов — 200 и тот же пример. Удалили пример — можно создать
+    новый, но не больше EXAMPLE_PROJECTS_MAX за всё время (`409 example_limit`). ИИ в примерах — общий
+    маленький бюджет цеха (`402 ai_budget_example`)."""
+    p, created = examples.get_or_create_example(db, settings, current.workshop, current.user)
+    db.commit()
+    if not created:
+        response.status_code = 200
     return project_card(db, current, p)
 
 
@@ -506,8 +526,17 @@ async def upload_photo(
     file: UploadFile = File(description="JPEG, PNG, WebP или HEIC, до 10 МБ"),
     kind: PhotoKind = Form(PhotoKind.source),
 ) -> ProjectPhoto:
+    from ..services.uploads import sniff
+
     p = get_project(db, current, project_id)
-    ext = ALLOWED_PHOTO_TYPES.get((file.content_type or "").lower())
+    data = await file.read(settings.max_photo_bytes + 1)
+    if len(data) > settings.max_photo_bytes:
+        raise ApiError(413, "photo_too_large", f"Фото больше {settings.max_photo_bytes // (1024 * 1024)} МБ")
+    if not data:
+        raise ApiError(422, "empty_file", "Файл пустой")
+    # Фото проекта публичные (/media, страница клиента): «картинка», которая не картинка, — 415
+    content_type = sniff(data)
+    ext = ALLOWED_PHOTO_TYPES.get(content_type or "")
     if ext is None:
         raise ApiError(415, "unsupported_photo", "Загрузите фото в формате JPEG, PNG, WebP или HEIC")
     count = db.scalar(
@@ -515,15 +544,10 @@ async def upload_photo(
     ) or 0
     if count >= settings.max_photos_per_kind:
         raise ApiError(409, "too_many_photos", f"Можно загрузить не больше {settings.max_photos_per_kind} фото")
-    data = await file.read(settings.max_photo_bytes + 1)
-    if len(data) > settings.max_photo_bytes:
-        raise ApiError(413, "photo_too_large", f"Фото больше {settings.max_photo_bytes // (1024 * 1024)} МБ")
-    if not data:
-        raise ApiError(422, "empty_file", "Файл пустой")
     key = f"workshops/{p.workshop_id}/projects/{p.id}/{kind}/{uuid.uuid4().hex}.{ext}"
-    stored = storage.save(key, data, file.content_type or "application/octet-stream")
+    stored = storage.save(key, data, content_type)
     photo = ProjectPhoto(
-        project_id=p.id, kind=kind, storage_key=stored.key, url=stored.url, content_type=file.content_type,
+        project_id=p.id, kind=kind, storage_key=stored.key, url=stored.url, content_type=content_type,
         size_bytes=len(data), uploaded_by=current.user.id,
     )
     db.add(photo)

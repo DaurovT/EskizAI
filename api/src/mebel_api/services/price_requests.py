@@ -27,12 +27,15 @@ def sync(db: Session, project: Project, version: ModelVersion, er) -> None:
     if not lines:
         return
     existing = {r.line_key: r for r in db.scalars(select(PriceRequest).where(PriceRequest.project_id == project.id))}
+    from .supplier_routes import route_for_key
+
     for line in lines:
         r = existing.get(line.key)
         if r is None:
+            supplier = route_for_key(db, line.key)  # позиция без цены уходит поставщику по маршруту категории
             db.add(PriceRequest(project_id=project.id, workshop_id=project.workshop_id, line_key=line.key,
                                 name=line.client_name or line.name, unit=line.unit, qty=float(line.qty),
-                                estimate_price=line.unit_price))
+                                estimate_price=line.unit_price, supplier_id=supplier.id if supplier else None))
         elif r.status == "pending":
             r.qty, r.name = float(line.qty), line.client_name or line.name
     db.flush()
@@ -75,8 +78,9 @@ def out(r: PriceRequest, project: Project | None = None) -> dict[str, Any]:
 
 def set_price(db: Session, req: PriceRequest, *, price: int, lead_days: int | None, supplier_name: str | None,
               note: str | None, save_to_catalog: bool, actor: str,
-              valid_until: datetime | None = None) -> list[PriceRequest]:
-    """Цена от поставщика/партнёра. Возвращает все заявки, получившие цену (эта и такие же в других проектах)."""
+              valid_until: datetime | None = None, actor_type: str = "admin") -> list[PriceRequest]:
+    """Цена от поставщика/партнёра. Возвращает все заявки, получившие цену (эта и такие же в других проектах).
+    save_to_catalog=False — разовая цена для этой сметы (конструктор поставщика, §5.2): каталог не меняется."""
     from . import events
 
     if req.status in ("accepted",):
@@ -87,11 +91,11 @@ def set_price(db: Session, req: PriceRequest, *, price: int, lead_days: int | No
     target = catalog_target(req.line_key)
     if save_to_catalog and target is not None:
         type_, core_key = target
-        supplier = db.scalar(select(Supplier).where(Supplier.code == "eman"))
+        supplier = db.get(Supplier, req.supplier_id) if req.supplier_id else None
         if supplier is None:
-            supplier = Supplier(code="eman", name="EMAN")
-            db.add(supplier)
-            db.flush()
+            from .catalog.pipeline import ensure_supplier
+
+            supplier = ensure_supplier(db, "eman")
         sku = f"REQ-{core_key}"
         item = db.scalar(select(CatalogItem).where(CatalogItem.supplier_id == supplier.id, CatalogItem.sku == sku))
         old_price = item.price if item else None
@@ -108,15 +112,17 @@ def set_price(db: Session, req: PriceRequest, *, price: int, lead_days: int | No
         item_id = item.id
     same = [req]
     if item_id is not None:  # та же позиция в других проектах получает цену из справочника
-        same += list(db.scalars(select(PriceRequest).where(PriceRequest.line_key == req.line_key,
-                                                           PriceRequest.status == "pending",
-                                                           PriceRequest.id != req.id)))
+        stmt = select(PriceRequest).where(PriceRequest.line_key == req.line_key, PriceRequest.status == "pending",
+                                          PriceRequest.id != req.id)
+        if req.supplier_id is not None:  # цена поставщика — только его позициям
+            stmt = stmt.where(PriceRequest.supplier_id == req.supplier_id)
+        same += list(db.scalars(stmt))
     for r in same:
         r.status, r.price, r.lead_days = "priced", price, lead_days
         r.supplier_name, r.note, r.catalog_item_id = supplier_name, note, item_id
         r.priced_by, r.priced_at, r.decided_at, r.valid_until = actor, now, None, valid_until
         events.price_request_priced(db, r)
-    log_action(db, actor_type="admin", actor_id=actor, workshop_id=req.workshop_id, entity="price_request",
+    log_action(db, actor_type=actor_type, actor_id=actor, workshop_id=req.workshop_id, entity="price_request",
                entity_id=req.id, action="price",
                after={"price": price, "lead_days": lead_days, "valid_until": valid_until.isoformat(),
                       "catalog_item_id": str(item_id) if item_id else None,

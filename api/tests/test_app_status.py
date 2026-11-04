@@ -17,12 +17,12 @@ def test_status_defaults_without_auth(client):
     assert body["release_notes"] == {"ru": [], "uz": []}
 
 
-def test_required_and_optional_update(client):
+def test_required_and_optional_update(client, root_admin):
     r = client.patch("/admin/settings", json={
         "app_min_version": "1.0.0", "app_latest_version": "1.2", "app_store_url_android": "https://play.example/app",
         "app_release_notes_ru": "Угловые кухни в редакторе\n• Замер кухни по стенам\n",
         "app_release_notes_uz": "Burchakli oshxonalar",
-    }, headers=ADMIN)
+    }, headers=root_admin)
     assert r.status_code == 200, r.text
     s = lambda v, p="ios": client.get("/app/status", params={"platform": p, "version": v}).json()  # noqa: E731
     assert s("0.9.5")["update"] == "required"
@@ -37,25 +37,25 @@ def test_required_and_optional_update(client):
     assert r["update"] == "required" and r["platform"] == "android"
 
 
-def test_settings_validation(client):
-    assert client.patch("/admin/settings", json={"app_min_version": "abc"}, headers=ADMIN).status_code == 422
-    assert client.patch("/admin/settings", json={"maintenance_until": "завтра"}, headers=ADMIN).status_code == 422
-    r = client.patch("/admin/settings", json={"maintenance_until": "2026-11-03T14:00:00"}, headers=ADMIN)
+def test_settings_validation(client, root_admin):
+    assert client.patch("/admin/settings", json={"app_min_version": "abc"}, headers=root_admin).status_code == 422
+    assert client.patch("/admin/settings", json={"maintenance_until": "завтра"}, headers=root_admin).status_code == 422
+    r = client.patch("/admin/settings", json={"maintenance_until": "2026-11-03T14:00:00"}, headers=root_admin)
     assert r.status_code == 422 and "часовой пояс" in r.json()["error"]["message"]
-    assert client.patch("/admin/settings", json={"maintenance_on": "maybe"}, headers=ADMIN).status_code == 422
-    r = client.patch("/admin/settings", json={"maintenance_on": "false"}, headers=ADMIN)
+    assert client.patch("/admin/settings", json={"maintenance_on": "maybe"}, headers=root_admin).status_code == 422
+    r = client.patch("/admin/settings", json={"maintenance_on": "false"}, headers=root_admin)
     assert r.json()["values"]["maintenance_on"] is False
-    assert client.get("/admin/settings", headers=ADMIN).json()["descriptions"]["maintenance_on"]
+    assert client.get("/admin/settings", headers=root_admin).json()["descriptions"]["maintenance_on"]
 
 
-def test_maintenance_blocks_project_writes_only(api, client, owner):
+def test_maintenance_blocks_project_writes_only(api, client, owner, root_admin):
     pid = api.project(owner)
     api.advance(owner, pid, "sent")
     token = client.get(f"/projects/{pid}/share-links", headers=owner).json()[0]["token"]
     r = client.patch("/admin/settings", json={
         "maintenance_on": True, "maintenance_until": "2026-11-03T14:00:00+05:00",
         "maintenance_message_ru": "Обновляем каталог",
-    }, headers=ADMIN)
+    }, headers=root_admin)
     assert r.status_code == 200, r.text
 
     status = client.get("/app/status").json()["maintenance"]
@@ -77,7 +77,7 @@ def test_maintenance_blocks_project_writes_only(api, client, owner):
     assert client.post(f"/share/{token}/agree").status_code == 200
     assert client.post("/auth/request-code", json={"phone": "+998935550000"}).status_code == 200
 
-    client.patch("/admin/settings", json={"maintenance_on": False}, headers=ADMIN)
+    client.patch("/admin/settings", json={"maintenance_on": False}, headers=root_admin)
     assert client.post("/projects", json={"title": "Новый"}, headers=owner).status_code == 201
 
 

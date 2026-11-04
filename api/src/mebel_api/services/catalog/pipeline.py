@@ -50,10 +50,14 @@ def _norm(name: str) -> str:
 
 
 def create_run(db: Session, supplier: Supplier, source: PriceSource, *, created_by: str, file_name: str | None,
-               full_snapshot: bool = True) -> ParserRun:
-    run = ParserRun(supplier_id=supplier.id, source=source.code, file_name=file_name, full_snapshot=full_snapshot,
-                    created_by=created_by, status="parsed")
-    db.add(run)
+               full_snapshot: bool = True, run: ParserRun | None = None) -> ParserRun:
+    """`run` — уже созданный запуск (фоновое «обновить сейчас»: запрос отдал его id сразу) — заполняется он."""
+    if run is None:
+        run = ParserRun(supplier_id=supplier.id, source=source.code, file_name=file_name,
+                        full_snapshot=full_snapshot, created_by=created_by, status="parsed")
+        db.add(run)
+    else:
+        run.source, run.file_name, run.full_snapshot, run.status = source.code, file_name, full_snapshot, "parsed"
     db.flush()
     try:
         for item in source.records():
@@ -121,7 +125,7 @@ def match_run(db: Session, run: ParserRun) -> dict[str, Any]:
     return stats
 
 
-def review(db: Session, rec: RawPriceRecord, approve: bool, actor: str) -> None:
+def review(db: Session, rec: RawPriceRecord, approve: bool, actor: str, *, actor_type: str = "admin") -> None:
     if rec.review_status not in ("pending", "approved", "rejected"):
         raise ApiError(409, "review_not_needed", "Эта запись не требует проверки")
     if rec.published_at is not None:
@@ -129,7 +133,7 @@ def review(db: Session, rec: RawPriceRecord, approve: bool, actor: str) -> None:
     before = rec.review_status
     rec.review_status = "approved" if approve else "rejected"
     rec.reviewed_by = actor
-    log_action(db, actor_type="admin", actor_id=actor, entity="raw_price_record", entity_id=rec.id,
+    log_action(db, actor_type=actor_type, actor_id=actor, entity="raw_price_record", entity_id=rec.id,
                action="review", before={"review_status": before, "price": rec.old_price},
                after={"review_status": rec.review_status, "price": rec.price, "change_pct": rec.change_pct})
     run = db.get(ParserRun, rec.run_id)
@@ -140,11 +144,15 @@ def review(db: Session, rec: RawPriceRecord, approve: bool, actor: str) -> None:
 
 
 def _source_label(run: ParserRun) -> str:
-    return f"file:{run.file_name}" if run.source == "csv" and run.file_name else (
-        "eman.uz" if run.source == "eman_html" else run.source)
+    if run.source in ("csv", "xlsx", "vendor_file") and run.file_name:
+        return f"file:{run.file_name}"[:120]
+    if run.source == "price_source":
+        return f"source:{run.file_name or 'url'}"[:120]
+    return "eman.uz" if run.source == "eman_html" else run.source
 
 
-def publish(db: Session, run: ParserRun, actor: str, *, skip_pending: bool = False) -> dict[str, Any]:
+def publish(db: Session, run: ParserRun, actor: str, *, skip_pending: bool = False,
+            actor_type: str = "admin") -> dict[str, Any]:
     if run.status == "failed":
         raise ApiError(409, "run_failed", "Запуск завершился ошибкой — публиковать нечего")
     records = records_of(db, run)
@@ -189,7 +197,7 @@ def publish(db: Session, run: ParserRun, actor: str, *, skip_pending: bool = Fal
                                         run_id=run.id, changed_by=actor))
                 item.price = rec.price
                 item.available = bool(p.get("available", True))
-                log_action(db, actor_type="admin", actor_id=actor, entity="catalog_item", entity_id=item.id,
+                log_action(db, actor_type=actor_type, actor_id=actor, entity="catalog_item", entity_id=item.id,
                            action="price_publish", before=before,
                            after={"price": item.price, "available": item.available})
                 out["updated"] += 1
@@ -201,13 +209,13 @@ def publish(db: Session, run: ParserRun, actor: str, *, skip_pending: bool = Fal
         item = db.get(CatalogItem, uuid.UUID(iid))
         if item is not None and item.available:
             item.available = False
-            log_action(db, actor_type="admin", actor_id=actor, entity="catalog_item", entity_id=item.id,
+            log_action(db, actor_type=actor_type, actor_id=actor, entity="catalog_item", entity_id=item.id,
                        action="missing_in_price", before={"available": True}, after={"available": False})
             out["hidden"] += 1
     run.status = "published"
     run.published_at = run.published_at or now
     run.stats = {**(run.stats or {}), "published": out}
-    log_action(db, actor_type="admin", actor_id=actor, entity="parser_run", entity_id=run.id, action="publish",
+    log_action(db, actor_type=actor_type, actor_id=actor, entity="parser_run", entity_id=run.id, action="publish",
                after=out)
     db.flush()
     return out

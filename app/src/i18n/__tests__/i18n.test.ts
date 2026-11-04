@@ -38,6 +38,6 @@ describe('i18n: ru и uz полные и согласованные', () => {
 
   it('статусы проекта и заказа переведены', () => {
     for (const s of ['draft', 'sketch', 'sent', 'measured', 'contract', 'in_work', 'delivered', 'cancelled']) expect(`st_${s}` in uz).toBe(true);
-    for (const s of ['created', 'paid', 'accepted', 'cutting', 'ready', 'issued', 'cancelled']) expect(`os_${s}` in uz).toBe(true);
+    for (const s of ['created', 'paid', 'accepted', 'cutting', 'ready', 'issued', 'cancelled', 'returned', 'awaiting_approval', 'rejected']) expect(`os_${s}` in uz).toBe(true);
   });
 });

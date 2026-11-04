@@ -12,7 +12,7 @@ import { Onest_500Medium } from '@expo-google-fonts/onest/500Medium';
 import { Onest_600SemiBold } from '@expo-google-fonts/onest/600SemiBold';
 import { Onest_700Bold } from '@expo-google-fonts/onest/700Bold';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { api } from '../src/api';
@@ -26,6 +26,7 @@ import { AppSplash } from '../src/ui/AppSplash';
 import { shareStore } from '../src/state/shareIntent';
 import { syncPushToken } from '../src/services/push';
 import { routeForPush, type PushData } from '../src/lib/pushRoute';
+import { orderEvents } from '../src/state/orderEvents';
 import { DialogHost, Loading, ToastHost } from '../src/ui/kit';
 import { StackHeader } from '../src/ui/navigation';
 import { SystemScreen } from '../src/ui/SystemScreen';
@@ -67,7 +68,10 @@ function ShareIntentBridge() {
 }
 
 function Gate() {
-  const { status, workshop, invite } = useSession();
+  const { status, workshop, invite, canOrder } = useSession();
+  // для тапа по push: сотруднику без права заказа — карточка заказа вместо переписки/рекламаций
+  const canOrderRef = useRef(canOrder);
+  canOrderRef.current = canOrder;
   const system = useSystemScreen();
   const segments = useSegments();
   const { t } = useT();
@@ -113,12 +117,17 @@ function Gate() {
   useEffect(() => {
     if (status !== 'signedIn') return;
     const open = (r: Notifications.NotificationResponse | null) => {
-      const to = routeForPush(r?.notification.request.content.data as PushData | undefined);
+      const to = routeForPush(r?.notification.request.content.data as PushData | undefined, canOrderRef.current);
       if (to) router.push(to as never);
     };
     Notifications.getLastNotificationResponseAsync().then(open).catch(() => undefined);
     const sub = Notifications.addNotificationResponseReceivedListener(open);
-    return () => sub.remove();
+    // push по заказу при открытом приложении: список, карточка и переписка заказа тихо обновляются
+    const recv = Notifications.addNotificationReceivedListener((n) => {
+      const d = n.request.content.data as PushData | undefined;
+      if (d?.order_id) orderEvents.emit(String(d.order_id), d.kind ?? null);
+    });
+    return () => { sub.remove(); recv.remove(); };
   }, [status]);
 
   if (status === 'loading') return <Loading />;

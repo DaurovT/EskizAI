@@ -33,6 +33,10 @@ def make_settings(tmp_path: Path, **overrides) -> Settings:
         media_dir=tmp_path / "media",
         auth_code_resend_seconds=0,
         task_queue_mode="inline",  # задачи выполняются сразу — тесты детерминированы
+        # все тестовые входы идут с одного IP («testclient») и из соседних номеров — лимиты против
+        # SMS-накрутки проверяются отдельно (test_auth_limits.py)
+        auth_code_ip_per_10min=1000, auth_code_ip_per_day=1000,
+        auth_code_prefix_per_hour=1000, auth_code_prefix_per_day=1000,
     )
     base.update(overrides)
     return Settings(_env_file=None, **base)
@@ -148,3 +152,12 @@ def tree_variant(**changes) -> dict:
     t = copy.deepcopy(GOOD_TREE)
     t.update(changes)
     return t
+
+
+@pytest.fixture
+def root_admin(app, client) -> dict:
+    """Суперадмин с 2FA (Bearer) — для ручек, где старый X-Admin-Token не принимается (настройки, лимиты,
+    поставщики, деньги, сотрудники; docs/staff_vendor_contract.md §8)."""
+    from .staff_helpers import superadmin
+
+    return superadmin(app, client, "root-admin@eskizai.uz")

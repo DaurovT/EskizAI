@@ -11,6 +11,7 @@ import { useResource } from '../src/hooks/useResource';
 import { useT } from '../src/i18n';
 import { formatDayMonth } from '../src/lib/format';
 import { routeForPush } from '../src/lib/pushRoute';
+import { useSession } from '../src/state/session';
 import { ErrorState } from '../src/ui/ErrorState';
 import { Card, EmptyState, Hairline, IconButton, Loading, Press, Screen, T, type IconName } from '../src/ui/kit';
 import { palette, tones, type Tone } from '../src/ui/theme';
@@ -23,8 +24,17 @@ function look(n: NotificationOut): [IconName, Tone] {
     case 'order_status': {
       // статус заказа — в data.status (n.status на сервере — статус отправки push)
       const st = (n.data?.status as string | undefined) ?? n.status;
+      if (st === 'returned') return ['arrow-undo-outline', 'amber'];
+      if (st === 'awaiting_approval') return ['create-outline', 'amber'];
+      if (st === 'rejected') return ['close-circle-outline', 'red'];
+      if (st === 'accepted') return ['receipt-outline', 'green'];
       return st === 'ready' || st === 'issued' ? ['cube-outline', 'green'] : st === 'cutting' ? ['cut-outline', 'amber'] : ['cube-outline', 'blue'];
     }
+    // кабинет поставщика (contract §5.6): переписка, исправление, рекламация, спор
+    case 'order_message': return ['chatbubble-outline', 'blue'];
+    case 'order_correction': return ['create-outline', 'amber'];
+    case 'order_return': case 'return_decided': return ['alert-circle-outline', 'amber'];
+    case 'order_dispute': case 'dispute_resolved': return ['shield-checkmark-outline', 'blue'];
     case 'price_request_priced': case 'nonstandard_estimated': case 'nonstandard_done': return ['information-circle-outline', 'blue'];
     case 'prices_stale': case 'limit_one_left': return ['alert-circle-outline', 'amber'];
     case 'model_ready': return ['sparkles-outline', 'green'];
@@ -34,6 +44,7 @@ function look(n: NotificationOut): [IconName, Tone] {
 const dayKey = (iso: string) => new Date(iso).toDateString();
 
 export default function Notifications() {
+  const { canOrder } = useSession();
   const { t, lang } = useT();
   const { data, setData, error, loading, refreshing, reload, refresh } = useResource(() => api.listNotifications(), []);
   if (loading && !data) return <Loading />;
@@ -53,7 +64,7 @@ export default function Notifications() {
       api.markNotificationRead(n.id).catch(() => undefined);
       setData(data.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
     }
-    const to = routeForPush({ ...(n.data ?? {}), kind: n.kind, project_id: n.project_id ?? undefined });
+    const to = routeForPush({ ...(n.data ?? {}), kind: n.kind, project_id: n.project_id ?? undefined }, canOrder);
     if (to) router.push(to as never);
   };
 

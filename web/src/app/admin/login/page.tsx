@@ -2,9 +2,39 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { API_URL, ApiError, checkToken, setToken } from '@/lib/admin/api';
+import { LoginForm } from '@/components/staff/auth';
+import { adminClient, API_URL, ApiError, checkToken } from '@/lib/admin/api';
 
+/** Вход в админку: почта и пароль сотрудника; запасной путь — старый общий токен (X-Admin-Token). */
 export default function LoginPage() {
+  const router = useRouter();
+  const [legacy, setLegacy] = useState(false);
+
+  if (legacy) return <LegacyLogin onBack={() => setLegacy(false)} />;
+
+  return (
+    <LoginForm
+      client={adminClient}
+      title="Вход в админку"
+      subtitle="Eskiz AI · сотрудники платформы"
+      onSuccess={(me) => {
+        if (me.org.kind === 'supplier') return 'Это учётная запись поставщика — войдите в кабинет поставщика.';
+        router.replace('/admin');
+        return null;
+      }}
+      footer={
+        <>
+          <button type="button" className="linkbtn" onClick={() => setLegacy(true)}>
+            Войти по токену (переходный режим)
+          </button>
+          <div className="muted">API: {API_URL}</div>
+        </>
+      }
+    />
+  );
+}
+
+function LegacyLogin({ onBack }: { onBack: () => void }) {
   const router = useRouter();
   const [token, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +46,8 @@ export default function LoginPage() {
     setError(null);
     try {
       if (await checkToken(token.trim())) {
-        setToken(token.trim());
+        adminClient.clear();
+        adminClient.setLegacy(token.trim());
         router.replace('/admin');
       } else {
         setError('Неверный токен админки');
@@ -31,28 +62,22 @@ export default function LoginPage() {
   return (
     <div className="adm-login">
       <form onSubmit={submit}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>Вход в админку</h1>
+        <h1>Вход по токену</h1>
+        <div className="muted">
+          Переходный режим: общий токен ADMIN_TOKEN с сервера, права суперадмина. Нужен, пока не создан первый
+          суперадмин (scripts/create_staff.py).
+        </div>
         <label>
           Токен админки
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setValue(e.target.value)}
-            autoFocus
-            style={{ width: '100%', padding: 8, marginTop: 4, border: '1px solid #e1e4e8', borderRadius: 6 }}
-          />
+          <input type="password" value={token} onChange={(e) => setValue(e.target.value)} autoFocus />
         </label>
-        {error && <div style={{ color: '#b42318' }}>{error}</div>}
-        <button
-          type="submit"
-          disabled={busy || !token.trim()}
-          style={{ padding: 10, borderRadius: 8, border: 0, background: '#1f6f5c', color: '#fff', cursor: 'pointer' }}
-        >
+        {error && <div className="err">{error}</div>}
+        <button type="submit" className="go" disabled={busy || !token.trim()}>
           {busy ? 'Проверяю…' : 'Войти'}
         </button>
-        <div style={{ fontSize: 12, color: '#6a717d' }}>
-          Временно — общий токен (ADMIN_TOKEN на сервере). API: {API_URL}
-        </div>
+        <button type="button" className="linkbtn" onClick={onBack}>
+          ← Вход по почте и паролю
+        </button>
       </form>
     </div>
   );

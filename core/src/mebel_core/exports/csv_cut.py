@@ -13,6 +13,7 @@ from ..assembler import BuildResult
 from ..catalog import edge_type, material
 from ..decor import part_ops
 from ..units import to_mm
+from .csv_safe import SafeWriter
 
 HEADER = ["№", "Наименование", "Материал", "Длина", "Ширина", "Кол-во", "Кромка Д1", "Кромка Д2", "Кромка Ш1",
           "Кромка Ш2", "Текстура", "Поворот", "Обработка"]
@@ -20,7 +21,7 @@ HEADER = ["№", "Наименование", "Материал", "Длина", "
 
 def export_csv(result: BuildResult) -> bytes:
     buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";", lineterminator="\r\n")
+    w = SafeWriter(csv.writer(buf, delimiter=";", lineterminator="\r\n"))  # названия — текстом, не формулой
     w.writerow(HEADER)
     for p in result.parts:
         mat = material(p.material)

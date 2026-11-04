@@ -17,7 +17,11 @@ class ProjectIn(BaseModel):
                     "(«Шкаф-купе 2400×650×2400») и будет обновлять его по модели; иначе — название мастера")
     client_id: uuid.UUID | None = None
     source_text: str | None = Field(None, max_length=10000, description="Исходное описание от мастера или клиента")
-    is_example: bool = Field(False, description="«Попробовать на примере» — не списывается из лимита")
+    is_example: bool = Field(
+        False, json_schema_extra={"deprecated": True},
+        description="Устарело — используйте POST /projects/example. true больше не создаёт проект «без лимита» "
+                    "из данных клиента: сервер отдаёт пример цеха из своего шаблона (как POST /projects/example), "
+                    "остальные поля игнорируются")
 
 
 class ProjectUpdateIn(BaseModel):

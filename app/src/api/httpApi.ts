@@ -22,6 +22,14 @@ function toBlob(file: UploadFile): Blob {
   }
 }
 
+/** Списки новых ручек: сервер может отдать массив или страницу {items}. */
+const items = <R>(r: R[] | { items: R[] }): R[] => (Array.isArray(r) ? r : r.items ?? []);
+
+/** Фото к сообщению / рекламации / спору — повторяющееся поле files (multipart, как у фото проекта). */
+function appendFiles(form: FormData, files?: UploadFile[]) {
+  for (const f of files ?? []) form.append('files', toBlob(f), f.name);
+}
+
 export function createHttpApi(http: Http, download?: Downloader): Api {
   const get = <R>(p: string, query?: RequestOpts['query']) => http.request<R>(p, { query });
   const post = <R>(p: string, body: unknown = {}) => http.request<R>(p, { method: 'POST', body });
@@ -72,6 +80,7 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
     listProjects: (q: ProjectQuery = {}) =>
       get('/projects', { status: q.status, q: q.q, client_id: q.client_id, archived: q.archived, limit: q.limit ?? 100, offset: q.offset }),
     createProject: (body) => post('/projects', body),
+    createExample: () => post('/projects/example'),
     getProject: (id) => get(pj(id)),
     updateProject: (id, body) => patch(pj(id), body),
     deleteProject: async (id) => { await del(pj(id)); },
@@ -155,6 +164,37 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
     downloadOrderInvoice: async (id) => {
       if (!download) throw new ApiError(0, 'no_downloader', 'download unavailable');
       return download(`${http.baseUrl}/orders/${enc(id)}/invoice`, await http.authHeader(), `invoice_${id}.pdf`);
+    },
+    resubmitOrder: (id) => post(`/orders/${enc(id)}/resubmit`),
+    listOrderMessages: async (id) => items(await get<T.OrderMessage[] | { items: T.OrderMessage[] }>(`/orders/${enc(id)}/messages`)),
+    sendOrderMessage: (id, body) => {
+      const form = new FormData();
+      form.append('text', body.text ?? '');
+      appendFiles(form, body.files);
+      return http.request(`/orders/${enc(id)}/messages`, { method: 'POST', form });
+    },
+    markOrderMessagesRead: async (id) => { await post(`/orders/${enc(id)}/messages/read`); },
+    listOrderCorrections: async (id) => items(await get<T.OrderCorrection[] | { items: T.OrderCorrection[] }>(`/orders/${enc(id)}/corrections`)),
+    approveOrderCorrection: (id, cid) => post(`/orders/${enc(id)}/corrections/${enc(cid)}/approve`),
+    declineOrderCorrection: (id, cid, comment) => post(`/orders/${enc(id)}/corrections/${enc(cid)}/decline`, { comment: comment || null }),
+    listOrderReturns: async (id) => items(await get<T.OrderReturn[] | { items: T.OrderReturn[] }>(`/orders/${enc(id)}/returns`)),
+    createOrderReturn: (id, body) => {
+      const form = new FormData();
+      form.append('type', body.type);
+      form.append('description', body.description);
+      if (body.lines?.length) form.append('lines', JSON.stringify(body.lines));
+      appendFiles(form, body.files);
+      return http.request(`/orders/${enc(id)}/returns`, { method: 'POST', form });
+    },
+    listOrderDisputes: async (id) => items(await get<T.OrderDispute[] | { items: T.OrderDispute[] }>(`/orders/${enc(id)}/disputes`)),
+    openOrderDispute: (id, body) => {
+      const form = new FormData();
+      form.append('subject', body.subject);
+      if (body.return_id) form.append('return_id', body.return_id);
+      form.append('reason', body.reason);
+      if (body.comment) form.append('comment', body.comment);
+      appendFiles(form, body.files);
+      return http.request(`/orders/${enc(id)}/disputes`, { method: 'POST', form });
     },
 
     sendNonstandard: (id, body) => post(`${pj(id)}/nonstandard`, body),
