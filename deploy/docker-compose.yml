@@ -35,6 +35,7 @@ x-api-env: &api-env
   ADMIN_TOKEN: ${ADMIN_TOKEN:-dev-admin-token}
   # Старый X-Admin-Token = суперадмин (переходный период); false — только вход сотрудников по почте
   ADMIN_TOKEN_ENABLED: ${ADMIN_TOKEN_ENABLED:-false}
+  SUPERADMIN_MFA_REQUIRED: ${SUPERADMIN_MFA_REQUIRED:-true}
   # Сотрудники платформы и поставщиков (docs/staff_vendor_contract.md)
   STAFF_ACCESS_TTL_MINUTES: ${STAFF_ACCESS_TTL_MINUTES:-30}
   STAFF_REFRESH_TTL_DAYS: ${STAFF_REFRESH_TTL_DAYS:-14}

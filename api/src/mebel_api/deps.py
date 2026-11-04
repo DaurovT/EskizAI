@@ -163,7 +163,7 @@ class StaffActor:
 
 def mfa_required_for(db: Session, settings: Settings, role: str) -> bool:
     if role == "superadmin":
-        return True
+        return settings.superadmin_mfa_required
     from .models import AppSetting
 
     row = db.get(AppSetting, "mfa_required_roles")

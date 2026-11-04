@@ -413,3 +413,14 @@ def test_concurrent_create_same_email_is_not_500(file_app):
         body = {"email": "dup@eskizai.uz", "name": "D", "role": "support"}
         res = _parallel(lambda _: c.post("/staff/users", json=body, headers=root).status_code, 4)
     assert sorted(res) == [201, 409, 409, 409]
+
+
+def test_superadmin_mfa_can_be_made_optional(tmp_path):
+    from mebel_api.deps import mfa_required_for
+
+    from .conftest import make_settings
+
+    on = make_settings(tmp_path)
+    off = make_settings(tmp_path, superadmin_mfa_required=False)
+    assert mfa_required_for(None, on, "superadmin") is True
+    assert mfa_required_for(None, off, "superadmin") is False

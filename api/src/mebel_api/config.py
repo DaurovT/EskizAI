@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     staff_max_failed_logins: int = 5
     staff_lockout_minutes: int = 15  # блокировка — по паре «почта + IP» (чужой IP не закрывает вход владельцу)
     # Ограничение частоты неудачных попыток с одного IP (/staff/auth/login и /staff/auth/mfa — отдельно)
+    # 2FA обязательна для суперадмина. Выключать только временно (SUPERADMIN_MFA_REQUIRED=false)
+    superadmin_mfa_required: bool = True
     staff_login_ip_limit: int = 20
     staff_login_ip_window_minutes: int = 10
     # Повтор уже ротированного refresh завершает всю сессию; в эти секунды после ротации — просто 401
