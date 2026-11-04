@@ -57,9 +57,9 @@
 ### 1. Что нужно заранее
 
 - VPS: Ubuntu 24.04, от 2 ядер и 4 ГБ RAM (сборка `web` требует ~2 ГБ), диск от 40 ГБ. Доступ по SSH-ключу, входящие порты только 22, 80, 443.
-- Два домена (A-записи на IP сервера), например `api.eskizai.uz` (API) и `eskizai.uz` (страница клиента и админка).
+- Домены (A-записи на IP сервера): `api.eskizai.uz` (API) и `app.eskizai.uz` (страница клиента `/p/…` и админка). Корень `eskizai.uz` и `www` оставлены под лендинг, MX — под будущую почту.
 - Ключ Anthropic API (console.anthropic.com → API Keys). **Новый**: старый ключ разработки засвечен.
-- Учётка SMS-провайдера Eskiz (notify.eskiz.uz) — см. блокеры ниже.
+- Учётка SMS-провайдера Eskiz (notify.eskiz.uz): почта и секретный ключ → `ESKIZ_EMAIL`/`ESKIZ_PASSWORD`. Текст SMS (`ESKIZ_TEMPLATE`) должен совпадать с одобренным в кабинете шаблоном.
 - Хранение данных за пределами Узбекистана (если VPS в ЕС) — подтвердить у юриста до пилота (PRD, NFR-11).
 
 ### 2. Код и настройки
@@ -83,7 +83,7 @@ sudo nano deploy/.env
 | `SHARE_API_URL` | `http://api:8000` — откуда страница клиента берёт данные (пусто = демо-данные) |
 | `CORS_ORIGINS` | `["https://<WEB_DOMAIN>"]` |
 | `ANTHROPIC_API_KEY` | ключ Anthropic (без него ИИ отвечает 503, остальное работает) |
-| `AUTH_CODE_PROVIDER` | `eskiz` + `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_SENDER` — **после того как отправка SMS дописана** |
+| `AUTH_CODE_PROVIDER` | `eskiz` + `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_SENDER`, `ESKIZ_TEMPLATE` (вход «через Telegram» без шлюза уходит SMS) |
 | `PUSH_PROVIDER` | `expo` + `EXPO_ACCESS_TOKEN` — когда приложение собирается через EAS |
 
 ### 3. Запуск
@@ -143,7 +143,7 @@ curl https://<API_DOMAIN>/health          # {"status":"ok","env":"prod"}
 
 | Что | Почему важно | Где |
 | --- | --- | --- |
-| **Отправка кода входа по SMS не реализована** | Eskiz и Telegram Gateway — заглушки, а в `ENV=prod` тестовый код `00000` запрещён. Без этого никто не войдёт | `api/src/mebel_api/services/auth_codes.py` (`EskizSmsSender.send`) |
+| **Шаблон SMS «Eskiz AI»** | SMS уходят через Eskiz, но пока по одобренному шаблону «IQLabs Confirmation code: {code}». Подать шаблон «Eskiz AI» в кабинете Eskiz и задать `ESKIZ_TEMPLATE` | кабинет notify.eskiz.uz |
 | **Хранилище S3 — заглушка** | Фото и файлы хранятся в томе `media` на самом сервере (`STORAGE_BACKEND=local`). Для одного VPS это нормально, при росте нужен S3 | `api/src/mebel_api/services/storage.py` |
 | **Оплаты не подключены** | Пакеты и Pro (App Store / Google Play / Click / Payme), оплата EMAN — пока вручную через админку | PRD, раздел монетизации |
 | **Push** | Нужен EAS `projectId` (`npx eas-cli init`) и `EXPO_ACCESS_TOKEN` | `app/app.json`, `PUSH_PROVIDER` |
