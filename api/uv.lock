@@ -431,6 +431,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "mebel-ai" },
     { name = "mebel-core" },
     { name = "psycopg", extra = ["binary"] },
@@ -453,6 +454,7 @@ dev = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "mebel-ai", editable = "../ai" },
     { name = "mebel-core", editable = "../core" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
