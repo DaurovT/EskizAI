@@ -25,6 +25,7 @@ FLOOR_MATERIALS: dict[str, dict] = {
 
 T = mm(100)  # толщина стены
 E = mm(300)  # на сколько пол/потолок выходят за нишу
+EF = mm(600)  # стена комнаты по бокам от проёма ниши (и пол/потолок до её края) — видно, что шкаф в стене
 
 
 def _box(wid: str, kind: str, x0, y0, z0, x1, y1, z1, **extra) -> dict:
@@ -104,12 +105,13 @@ def _wardrobe_room(result: BuildResult) -> dict | None:
         _box("wall_left", "wall_left", xl - T, y_front, 0, xl, D + T, z_top, lean=lean_l),
         _box("wall_right", "wall_right", xr, y_front, 0, xr + T, D + T, z_top, lean=lean_r),
         _box("wall_back", "wall_back", xl - T, D, 0, xr + T, D + T, z_top),
-        _box("floor", "floor", xl - T - E, y_front - E, -T, xr + T + E, D + T, 0),
-        _box("ceiling", "ceiling", xl - T - E, y_front - E, zc, xr + T + E, D + T, zc + T, lean=lean_h),
+        _box("floor", "floor", xl - T - (EF if nd else E), y_front - E, -T, xr + T + (EF if nd else E), D + T, 0),
+        _box("ceiling", "ceiling", xl - T - (EF if nd else E), y_front - E, zc, xr + T + (EF if nd else E), D + T,
+             zc + T, lean=lean_h),
     ]
-    if nd:  # стена комнаты по бокам от проёма ниши
-        walls += [_box("wall_front_left", "wall_front", xl - T - E, y_front - T, 0, xl - T, y_front, zc),
-                  _box("wall_front_right", "wall_front", xr + T, y_front - T, 0, xr + T + E, y_front, zc)]
+    if nd:  # стена комнаты по бокам от проёма ниши (лицом к зрителю)
+        walls += [_box("wall_front_left", "wall_front", xl - T - EF, y_front - T, 0, xl, y_front, zc),
+                  _box("wall_front_right", "wall_front", xr, y_front - T, 0, xr + T + EF, y_front, zc)]
     return {
         "walls": walls,
         "niche": {"width": wmin, "width_max": max(widths) if widths else wmin,

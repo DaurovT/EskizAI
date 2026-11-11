@@ -1027,7 +1027,9 @@ export class ProductScene {
       // Тонкая ось — нормаль стены; внутренняя грань — со стороны изделия
       const ax = size.x <= size.y && size.x <= size.z ? 'x' : size.y <= size.z ? 'y' : 'z';
       const mid = (lo[ax] + hi[ax]) / 2;
-      const sign = center[ax] >= mid ? 1 : -1;
+      // грань — к изделию; у стены вокруг проёма ниши изделие за ней — грань к зрителю (наружу)
+      const outward = String(w.kind ?? w.id ?? '').includes('front');
+      const sign = (center[ax] >= mid ? 1 : -1) * (outward ? -1 : 1);
       const plane = sign > 0 ? hi[ax] : lo[ax];
       const [u, v] = (['x', 'y', 'z'] as const).filter((k) => k !== ax) as ['x' | 'y' | 'z', 'x' | 'y' | 'z'];
       const n = new Vector3();
