@@ -34,3 +34,6 @@ app/ios/Pods/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# второй продукт DGN Eskiz — отдельный репозиторий в этой папке
+/dgn-eskiz/
