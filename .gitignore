@@ -35,5 +35,3 @@ app/ios/Pods/
 .coverage
 htmlcov/
 
-# второй продукт DGN Eskiz — отдельный репозиторий в этой папке
-/dgn-eskiz/
