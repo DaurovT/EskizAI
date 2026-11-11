@@ -386,8 +386,8 @@ export default function Breakdown() {
           <View style={ai.running ? { opacity: 0.45 } : null} pointerEvents={ai.running ? 'none' : 'auto'}>
             {questionRows(true)}
             {d.understood.map((u, i) => <FoundRow key={`u${i}`} sure title={u} compact first={!answered.length && !pendingQs.length && i === 0} note={notes[`u${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix({ name: u, kind: 'text', count: 1, sure: true }, `u${i}`)} />)}
-            {d.unclear.map((u, i) => <FoundRow key={`q${i}`} sure={false} title={u} compact first={false} note={notes[`q${i}`]?.text} answer={notes[`q${i}`] ? undefined : t('tp_answer')} onFix={() => openFix({ name: u, kind: 'unclear', count: 1, sure: false }, `q${i}`)} />)}
-            {d.elements.map((el, i) => <FoundRow key={`e${i}`} sure={el.sure} title={elTitle(el)} compact first={false} note={notes[`e${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix(el, `e${i}`)} />)}
+            {d.unclear.map((u, i) => <FoundRow key={`q${i}`} sure={false} mark="info" title={u} compact first={false} note={notes[`q${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix({ name: u, kind: 'unclear', count: 1, sure: false }, `q${i}`)} />)}
+            {d.elements.map((el, i) => <FoundRow key={`e${i}`} sure={el.sure} mark={el.sure ? 'sure' : 'proposed'} estLabel={el.sure ? undefined : t('bd_proposed')} est={!el.sure} title={elTitle(el)} compact first={false} note={notes[`e${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix(el, `e${i}`)} />)}
           </View>
         </Card>
         {ai.running ? <Banner tone="est" icon="sync-outline" text={t('bd_recalc_running')} /> : null}
@@ -399,10 +399,11 @@ export default function Breakdown() {
 
   // ---------- SCR-05: разбор фото (и ожидание ИИ) ----------
   const keepRows = !!d && (!ai.running || hasInput || !!answered.length);
-  const rows: { key: string; sure: boolean; title: string; est?: boolean; el: DesignElement }[] = d && keepRows ? [
-    ...d.elements.map((el, i) => ({ key: `e${i}`, sure: el.sure, title: elTitle(el), est: !el.sure && /≈/.test(el.name), el })),
-    ...d.unclear.map((u, i) => ({ key: `u${i}`, sure: false, title: u, el: { name: u, kind: 'unclear', count: 1, sure: false } })),
-    ...d.differences.map((u, i) => ({ key: `d${i}`, sure: false, title: u, el: { name: u, kind: 'difference', count: 1, sure: false } })),
+  const rows: { key: string; sure: boolean; title: string; est?: boolean; mark: Mark; el: DesignElement }[] = d && keepRows ? [
+    ...d.elements.map((el, i) => ({ key: `e${i}`, sure: el.sure, title: elTitle(el), est: !el.sure && /≈/.test(el.name),
+      mark: (el.sure ? 'sure' : 'proposed') as Mark, el })),
+    ...d.unclear.map((u, i) => ({ key: `u${i}`, sure: false, title: u, mark: 'info' as Mark, el: { name: u, kind: 'unclear', count: 1, sure: false } })),
+    ...d.differences.map((u, i) => ({ key: `d${i}`, sure: false, title: u, mark: 'info' as Mark, el: { name: u, kind: 'difference', count: 1, sure: false } })),
   ] : [];
   const pins = d && !ai.running ? d.elements.slice(0, 6) : [];
   return (
@@ -439,8 +440,9 @@ export default function Breakdown() {
           <View style={ai.running ? { opacity: 0.45 } : null} pointerEvents={ai.running ? 'none' : 'auto'}>
             {questionRows(true)}
             {rows.map((r, i) => (
-              <FoundRow key={r.key} sure={r.sure} title={r.title} est={r.est} first={!answered.length && !pendingQs.length && i === 0}
-                note={notes[r.key]?.text} fixLabel={t('rec_fix')} estLabel={t('rec_est')} onFix={() => openFix(r.el, r.key)} />
+              <FoundRow key={r.key} sure={r.sure} title={r.title} est={r.est} mark={r.mark} first={!answered.length && !pendingQs.length && i === 0}
+                note={notes[r.key]?.text} fixLabel={t('rec_fix')} estLabel={r.est ? t('rec_est') : r.mark === 'proposed' ? t('bd_proposed') : undefined}
+                onFix={() => openFix(r.el, r.key)} />
             ))}
           </View>
         ) : (
@@ -535,19 +537,28 @@ function ScatterPins({ labels }: { labels: { label: string; q: boolean }[] }) {
 }
 
 /** Строка «Что я нашёл» (.it): знак ✓/?, название, «оценка»; справа карандаш (.fix) или «Ответить» (.ans). */
-function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer, note, onFix }: {
+type Mark = 'sure' | 'q' | 'proposed' | 'info';
+
+/** Отметка строки: ✓ найдено; ? вопрос; лампочка — предложено ИИ (на фото не видно); i — пояснение. */
+function MarkIcon({ mark }: { mark: Mark }) {
+  if (mark === 'sure') return <View style={[s.mk, { backgroundColor: palette.greenSoft }]}><MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} /></View>;
+  if (mark === 'proposed') return <View style={[s.mk, { backgroundColor: palette.amberSoft }]}><MaterialCommunityIcons name="lightbulb-outline" size={17} color={palette.amberDeep} /></View>;
+  if (mark === 'info') return <View style={[s.mk, { backgroundColor: palette.ground }]}><MaterialCommunityIcons name="information-variant" size={18} color={palette.muted} /></View>;
+  return <View style={[s.mk, { backgroundColor: palette.amberSoft }]}><T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T></View>;
+}
+
+function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer, note, mark, onFix }: {
   sure: boolean; title: string; est?: boolean; first: boolean; compact?: boolean; fixLabel?: string; estLabel?: string; answer?: string;
-  note?: string; onFix: () => void;
+  note?: string; mark?: Mark; onFix: () => void;
 }) {
   if (note) sure = true;
+  const m: Mark = note ? 'sure' : mark ?? (sure ? 'sure' : 'q');
   return (
     <Press feedback="row" onPress={onFix} accessibilityRole="button" accessibilityLabel={`${title}. ${answer ?? fixLabel ?? ''}`}
       style={[s.it, compact && { minHeight: 50 }, !first && s.itLine]}>
-      <View style={[s.mk, { backgroundColor: sure ? palette.greenSoft : palette.amberSoft }]}>
-        {sure ? <MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} /> : <T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T>}
-      </View>
+      <MarkIcon mark={m} />
       <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-        <T v="rt" style={compact ? { fontSize: 15, lineHeight: 20 } : null} numberOfLines={2}>{title}</T>
+        <T v="rt" style={[compact ? { fontSize: 15, lineHeight: 20 } : null, m === 'info' ? { color: palette.muted } : null]} numberOfLines={3}>{title}</T>
         {est && estLabel && !note ? <View style={s.est}><T style={s.estText}>{estLabel}</T></View> : null}
         {note ? <T style={s.noteText} numberOfLines={2}>{note}</T> : null}
       </View>
