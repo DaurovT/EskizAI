@@ -330,7 +330,7 @@ class SlidingDoors(_Strict):
         default_factory=list,
         description="Заполнение каждой двери слева направо: panel — ЛДСП, mirror — зеркало. Пусто — все ЛДСП",
     )
-    panel_material: str = Field("ldsp_10_white", description="ЛДСП заполнения (обычно 10 мм)")
+    panel_material: str = Field("ldsp_10_white", description="Заполнение (10 мм): ЛДСП нужного декора или «mdf_10_paint» — тогда купе красятся в цвет fronts.style.paint")
 
 
 class Mezzanine(_Strict):

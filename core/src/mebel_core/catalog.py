@@ -62,6 +62,8 @@ MATERIALS: dict[str, Material] = {
         # МДФ под покраску — для фрезеровки и покраски фасадов (декор, docs/decor_contract.md)
         Material(id="mdf_19_paint", name="МДФ 19 под покраску", kind="mdf", thickness=mm(19), has_grain=False, color="#e9e6df"),
         Material(id="mdf_16_paint", name="МДФ 16 под покраску", kind="mdf", thickness=mm(16), has_grain=False, color="#e9e6df"),
+        # заполнение дверей-купе под покраску (профиль купе — под 10 мм)
+        Material(id="mdf_10_paint", name="МДФ 10 под покраску", kind="mdf", thickness=mm(10), has_grain=False, color="#e9e6df"),
         Material(id="mdf_22_paint", name="МДФ 22 под покраску", kind="mdf", thickness=mm(22), has_grain=False, color="#e9e6df"),
         Material(id="hdf_3_white", name="ХДФ 3 Белый", kind="hdf", thickness=mm(3), has_grain=False, color="#efebe3"),
     ]

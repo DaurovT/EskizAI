@@ -20,6 +20,7 @@ from .schema import FrontStyle
 from .units import mm, to_mm
 
 DECOR_VERSION = "0.1.0"
+SLIDING_PAINT_MDF_ID = "mdf_10_paint"  # заполнение купе под покраску
 PAINT_MDF_ID = "mdf_19_paint"  # МДФ под покраску (каталог); нет в каталоге — исправление не предлагается
 
 MIN_INSET = mm(40)  # от края фасада до фрезеровки
@@ -474,6 +475,7 @@ def apply_decor(ctx: BuildContext) -> None:
         if decor.paint or decor.milling or decor.overlay or decor.inlay or decor.radius:
             part.decor = decor
 
+    _paint_sliding(ctx)
     if need_mdf:
         _mdf_error(ctx, need_mdf)
     for name, n in skipped.items():
@@ -498,6 +500,35 @@ def _fit(part: Part, gen, inset: int, half: int, depth: int, conflict: dict) -> 
     hits = _conflicts(part, [to_part(part, c) for c, _ in paths], half, depth)
     conflict.setdefault("Декор фасада", set()).update(hits)
     return paths, False
+
+
+def _paint_sliding(ctx: BuildContext) -> None:
+    """Покраска фасадов переходит на заполнения дверей-купе (кроме зеркал). Красится только МДФ: заполнение
+    из ЛДСП остаётся в своём цвете — предупреждаем и предлагаем МДФ 10 под покраску."""
+    paint = ctx.product.fronts.style.paint if ctx.product.fronts.style else None
+    sd = getattr(ctx.product, "sliding_doors", None)
+    if paint is None or sd is None:
+        return
+    fills = [p for p in ctx.parts if p.role == "sliding_fill" and material(p.material).kind != "mirror"
+             and not p.material.startswith("mirror")]
+    if not fills:
+        return
+    if material(fills[0].material).kind != "mdf":
+        fixes = []
+        if SLIDING_PAINT_MDF_ID in MATERIALS:
+            fixes.append(Fix(description=f"Заполнение купе — {MATERIALS[SLIDING_PAINT_MDF_ID].name}",
+                             patch=[PatchOp(op="replace", path="/sliding_doors/panel_material",
+                                            value=SLIDING_PAINT_MDF_ID)]))
+        ctx.issues.append(Issue(
+            level="warning", code="sliding_paint_needs_mdf",
+            message=f"Двери-купе не покрашены: заполнение из «{material(fills[0].material).name}», а красится только "
+                    f"МДФ. Чтобы купе были в цвете {paint.code or paint.color}, заполнение — МДФ 10 под покраску",
+            path="sliding_doors.panel_material", fixes=fixes))
+        return
+    for part in fills:
+        part.decor = PartDecor(paint={"color": paint.color, "code": paint.code, "system": paint.system,
+                                      "gloss": paint.gloss, "both_sides": paint.both_sides})
+        part.edges = {}  # крашеный МДФ не кромится
 
 
 def _mdf_error(ctx: BuildContext, what: set[str]) -> None:

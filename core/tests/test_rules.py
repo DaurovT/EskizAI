@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from mebel_core import build
+from mebel_core import apply_patch, build
 from mebel_core.fixes import apply_fix
 from mebel_core.units import mm
 
@@ -166,3 +166,35 @@ def test_small_mismatch_auto_fits_last_zone_and_section() -> None:
     assert r.ok and "sections_auto_fit" in codes(r)
     tree["sections"] = [{"width": 500}, {"width": 500}]  # разница 152 мм — это уже ошибка
     assert "sections_mismatch" in codes(build(tree))
+
+
+BLACK = {"color": "#0A0A0A", "code": "RAL 9005", "system": "RAL", "gloss": "matte"}
+
+
+def test_sliding_panels_take_front_paint_only_on_mdf() -> None:
+    """Покраска фасадов переходит на заполнения купе из МДФ; зеркало не красится."""
+    tree = load("kupe_3doors")
+    tree.setdefault("fronts", {}).setdefault("style", {})["paint"] = BLACK
+    tree["sliding_doors"]["panel_material"] = "mdf_10_paint"
+    result = build(tree)
+    assert result.ok, [i.message for i in result.issues]
+    fills = [p for p in result.parts if p.role == "sliding_fill"]
+    painted = [p for p in fills if p.decor is not None and p.decor.paint]
+    mirrors = [p for p in fills if p.material.startswith("mirror")]
+    assert len(painted) == 2 and all(p.decor.paint["code"] == "RAL 9005" for p in painted)
+    assert mirrors and all(p.decor is None for p in mirrors)
+    assert "sliding_paint_needs_mdf" not in codes(result)
+
+
+def test_sliding_ldsp_panels_warn_and_fix_switches_to_mdf() -> None:
+    """Заполнение из ЛДСП не красится: честное предупреждение и исправление на МДФ 10."""
+    tree = load("kupe_3doors")
+    tree.setdefault("fronts", {}).setdefault("style", {})["paint"] = BLACK
+    result = build(tree)
+    fills = [p for p in result.parts if p.role == "sliding_fill"]
+    assert all(p.decor is None for p in fills)
+    warn = issue(result, "sliding_paint_needs_mdf")
+    assert warn.level == "warning" and warn.fixes
+    fixed = apply_patch(tree, warn.fixes[0].patch)
+    assert fixed["sliding_doors"]["panel_material"] == "mdf_10_paint"
+    assert "sliding_paint_needs_mdf" not in codes(build(fixed))

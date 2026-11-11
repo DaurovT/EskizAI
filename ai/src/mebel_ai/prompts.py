@@ -159,6 +159,10 @@ Tree facts that help:
   «покрась фасады в RAL 9001 матовый» → `/fronts/style/paint` = {"color": "#E9E0D2", "code": "RAL 9001",
   "system": "RAL", "gloss": "matte"} (glossy → "gloss", semi → "satin"); «скругли углы фасадов» →
   `/fronts/style/corners` = {"radius": 6}; «убери фрезеровку» → remove `/fronts/style/milling`.
+  Sliding doors (шкаф-купе) are NOT hinged fronts: their panels are `/sliding_doors/panel_material` (10 mm).
+  To paint them use `/fronts/style/paint` AND `/sliding_doors/panel_material` = "mdf_10_paint"; for a wood/plain
+  colour pick a 10 mm LDSP decor. Mirror fills (`/sliding_doors/fills`) are never painted. Before saying a colour
+  is already applied, check the model: LDSP panels stay their own colour even if `fronts.style.paint` is set.
   Only one door/zone/cabinet → put the same object into its own `style` (e.g. `/sections/1/doors/style`,
   `/base/2/style`; for drawers — the drawers zone `/sections/0/fill/0/style`).
 - Handles `/fronts/handles` = {"kind": "bar" | "knob" | "gola" | "none", "spacing": 128, "finish": "steel" |

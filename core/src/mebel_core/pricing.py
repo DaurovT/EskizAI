@@ -42,6 +42,7 @@ SHEETS: dict[str, PriceItem] = {
         PriceItem(id="mdf_22_paint", name="МДФ 22 под покраску 2800×2070", unit="лист", price=854_000),
         PriceItem(id="mdf_19_paint", name="МДФ 19 под покраску 2800×2070", unit="лист", price=707_600),
         PriceItem(id="mdf_16_paint", name="МДФ 16 под покраску 2800×2070", unit="лист", price=634_400),
+        PriceItem(id="mdf_10_paint", name="МДФ 10 под покраску 2800×2070", unit="лист", price=470_000, status="analog"),
         PriceItem(id="hdf_3_white", name="ХДФ 3 Белый 2800×2070", unit="лист", price=165_000, status="request"),
     ]
 }

@@ -182,7 +182,7 @@ def paint_colors(current: CurrentDep, system: Annotated[str | None, Query(descri
     from mebel_core import DEMO_PRICES
     from mebel_core.catalog import MATERIALS
     from mebel_core.decors import load_paint
-    from mebel_core.units import to_mm
+    from mebel_core.units import mm, to_mm
 
     pal = load_paint()
     colors = [c for c in pal["colors"]
@@ -193,6 +193,7 @@ def paint_colors(current: CurrentDep, system: Annotated[str | None, Query(descri
         pi = DEMO_PRICES.decor.get(g["price_item"])
         gloss.append({**g, "price_m2": pi.price if pi else None, "price_status": pi.status if pi else None})
     mats = [{"id": m.id, "name": m.name, "thickness": to_mm(m.thickness)}
-            for m in MATERIALS.values() if m.id.startswith("mdf_") and m.id.endswith("_paint")]
+            for m in MATERIALS.values() if m.id.startswith("mdf_") and m.id.endswith("_paint")
+            and m.thickness >= mm(16)]  # МДФ 10 — только заполнение купе, фасадом не бывает
     return {"colors": colors, "gloss": gloss, "materials": sorted(mats, key=lambda m: m["thickness"]),
             "back_factor": DEMO_PRICES.paint_back_factor, "total": len(colors)}
