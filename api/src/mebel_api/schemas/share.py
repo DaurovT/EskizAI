@@ -28,8 +28,22 @@ class ShareMaster(BaseModel):
 class ShareGlb(BaseModel):
     closed: str
     open: str
-    closedUsdz: str | None = None
+    closedUsdz: str | None = Field(None, description="USDZ «закрыто» для AR Quick Look (iPhone)")
     openUsdz: str | None = None
+    placement: Literal["floor", "wall"] | None = Field(
+        None, description="Размещение в AR: floor — на пол, wall — навесное (на стену)")
+
+
+class ArOut(BaseModel):
+    """GET /projects/{id}/ar — файлы AR мастера (docs/ar_contract.md)."""
+
+    version_id: str
+    version_number: int
+    size_mm: list[float] = Field(description="[ширина, глубина, высота], мм — в порядке подписи «1600 × 600 × 2400»")
+    placement: Literal["floor", "wall"]
+    glb_url: str = Field(description="Подписанная ссылка на GLB «закрыто» (Scene Viewer), без входа, 1 час")
+    usdz_url: str = Field(description="Подписанная ссылка на USDZ «закрыто» (AR Quick Look), без входа, 1 час")
+    expires_at: str = Field(description="Когда ссылки перестанут работать, ISO 8601 (UTC)")
 
 
 class SharePayload(BaseModel):
@@ -43,7 +57,7 @@ class SharePayload(BaseModel):
     project: ShareProject
     master: dict[str, Any] = Field(description="ShareMaster без пустых необязательных полей")
     model: dict[str, Any] = Field(description="Viewer model формата \"1\" (mebel_core.viewer)")
-    glb: dict[str, str] = Field(description="ShareGlb: closed, open (+ closedUsdz, openUsdz, если есть)")
+    glb: dict[str, str] = Field(description="ShareGlb: closed, open, closedUsdz, placement (+ openUsdz, если есть)")
     estimate: dict[str, Any] | None = Field(description="client_view() ядра в выбранном виде; null — цена скрыта")
     priceDate: str | None
 

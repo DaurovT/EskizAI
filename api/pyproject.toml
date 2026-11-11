@@ -27,6 +27,7 @@ mebel-ai = { path = "../ai", editable = true }
 dev = [
     "pytest>=8",
     "httpx>=0.27",
+    "usd-core>=25.5",
 ]
 
 [build-system]

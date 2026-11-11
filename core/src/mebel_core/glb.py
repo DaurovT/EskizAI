@@ -12,6 +12,7 @@
 """
 
 import io
+from dataclasses import dataclass
 
 import numpy as np
 import trimesh
@@ -220,40 +221,116 @@ def _decor_meshes(p, base_color: str):
     return out
 
 
-def export_glb(result: BuildResult, opened: bool = False) -> bytes:
+@dataclass(frozen=True)
+class Look:
+    """Материал узла сцены: для GLB — PBRMaterial, для USDZ — UsdPreviewSurface."""
+
+    name: str
+    color: str
+    metallic: float = 0.0
+    roughness: float = 0.8
+    emissive: str | None = None
+    texture: str | None = None  # URL скана декора (Material.texture) — только для USDZ
+    texture_mm: tuple[int, int] = (1000, 1000)
+
+
+def _visual(look: Look):
+    kw = {"emissiveFactor": [c / 255 for c in _rgba(look.emissive)[:3]]} if look.emissive else {}
+    return trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial(
+        name=look.name, baseColorFactor=_rgba(look.color), metallicFactor=look.metallic,
+        roughnessFactor=look.roughness, **kw))
+
+
+def _look_of(visual) -> Look:
+    m = visual.material
+    em = getattr(m, "emissiveFactor", None)
+    emissive = None
+    if em is not None and any(float(c) > 0 for c in em):
+        emissive = "#{:02x}{:02x}{:02x}".format(*(int(round(float(c) * 255)) for c in em[:3]))
+    color = "#{:02x}{:02x}{:02x}".format(*(int(c) for c in m.baseColorFactor[:3]))
+    return Look(name=m.name, color=color, metallic=float(m.metallicFactor or 0), roughness=float(m.roughnessFactor),
+                emissive=emissive)
+
+
+def _part_uv(mesh: trimesh.Trimesh, grain: str, tile_mm: tuple[int, int]) -> np.ndarray:
+    """UV на каждый угол треугольника (faceVarying), меш — в локальных координатах детали (dmm).
+
+    Проекция по преобладающей оси нормали; плитка текстуры — tile_mm (вдоль u — направление рисунка:
+    у дерева волокно идёт вдоль длинной стороны плитки). grain "width" — рисунок поперёк длины детали."""
+    tri = mesh.triangles / 10.0  # мм
+    normals = np.abs(mesh.face_normals)
+    axis = np.argmax(normals, axis=1)
+    # (u, v) — какие локальные оси идут в текстуру для грани с нормалью по x / y / z
+    pairs = {0: (1, 2), 1: (0, 2), 2: (0, 1)} if grain != "width" else {0: (1, 2), 1: (2, 0), 2: (1, 0)}
+    uv = np.empty((len(tri), 3, 2))
+    for a, (iu, iv) in pairs.items():
+        sel = axis == a
+        uv[sel, :, 0] = tri[sel][:, :, iu] / tile_mm[0]
+        uv[sel, :, 1] = tri[sel][:, :, iv] / tile_mm[1]
+    return uv.reshape(-1, 2)
+
+
+def scene_items(result: BuildResult, opened: bool = False, uv: bool = False):
+    """Узлы сцены: (имя узла, имя геометрии, меш в метрах glTF, Look, UV на углы треугольников или None).
+
+    Общий источник для GLB и USDZ: одна и та же геометрия и материалы. UV считаются только при uv=True
+    и только у деталей с текстурой декора."""
     nodes = {n.id: n for n in result.nodes}
-    scene = trimesh.Scene()
     for p in result.parts:
         mesh = _part_mesh(p)
         matrix = _part_matrix(p)
         if opened and p.node and p.node in nodes:
             matrix = _node_matrix(nodes[p.node]) @ matrix
-        mesh.apply_transform(_TO_GLTF @ matrix)
-        # Цвет — материалом PBR (без цветов вершин: так легче файл и не нужен scipy)
+        mat = material(p.material)
         paint = p.decor.paint if p.decor is not None else None
-        color = paint["color"] if paint else material(p.material).color
+        color = paint["color"] if paint else mat.color
         rough = {"matte": 0.85, "satin": 0.5, "gloss": 0.15}.get(paint["gloss"], 0.8) if paint else None
-        mesh.visual = trimesh.visual.TextureVisuals(
-            material=trimesh.visual.material.PBRMaterial(
-                name=f"paint_{color.lstrip('#')}_{paint['gloss']}" if paint else p.material,
-                baseColorFactor=_rgba(color),
-                metallicFactor=0.8 if material(p.material).kind == "metal" else 0.0,
-                roughnessFactor=rough if rough is not None else (0.35 if material(p.material).kind == "metal" else 0.8),
-            )
+        texture = None if paint else mat.texture
+        look = Look(
+            name=f"paint_{color.lstrip('#')}_{paint['gloss']}" if paint else p.material,
+            color=color,
+            metallic=0.8 if mat.kind == "metal" else 0.0,
+            roughness=rough if rough is not None else (0.35 if mat.kind == "metal" else 0.8),
+            texture=texture, texture_mm=tuple(mat.texture_size_mm),
         )
-        scene.add_geometry(mesh, node_name=f"{p.number}:{p.key}", geom_name=f"part_{p.number}")
+        part_uv = _part_uv(mesh, p.grain, look.texture_mm) if uv and texture else None
+        mesh.apply_transform(_TO_GLTF @ matrix)
+        yield f"{p.number}:{p.key}", f"part_{p.number}", mesh, look, part_uv
         if p.decor is not None:
             for name, dm, visual in _decor_meshes(p, color):
                 dm.apply_transform(_TO_GLTF @ matrix)
-                dm.visual = visual
-                scene.add_geometry(dm, node_name=f"{p.number}:{p.key}:{name}", geom_name=f"part_{p.number}_{name}")
+                yield f"{p.number}:{p.key}:{name}", f"part_{p.number}_{name}", dm, _look_of(visual), None
     for i, (item, mesh) in enumerate(_hardware_meshes(result, nodes, opened)):
-        scene.add_geometry(mesh, node_name=f"hw:{item.id}", geom_name=f"hw_{i}")
+        yield f"hw:{item.id}", f"hw_{i}", mesh, _look_of(mesh.visual), None
     for i, mesh in enumerate(_light_meshes(result)):
-        scene.add_geometry(mesh, node_name=f"led:{result.lights[i].id}", geom_name=f"led_{i}")
+        yield f"led:{result.lights[i].id}", f"led_{i}", mesh, _look_of(mesh.visual), None
+
+
+def export_glb(result: BuildResult, opened: bool = False) -> bytes:
+    scene = trimesh.Scene()
+    for node_name, geom_name, mesh, look, _ in scene_items(result, opened):
+        # Цвет — материалом PBR (без цветов вершин: так легче файл и не нужен scipy)
+        mesh.visual = _visual(look)
+        scene.add_geometry(mesh, node_name=node_name, geom_name=geom_name)
     buf = io.BytesIO()
     scene.export(buf, file_type="glb")
     return buf.getvalue()
+
+
+# Навесное изделие: ни одна деталь не ниже этой высоты над полом (ножки и цоколь — до 200 мм)
+WALL_MIN_Z = 3000  # dmm
+
+
+def ar_placement(result: BuildResult) -> str:
+    """Размещение в AR: "wall" — навесное (нет опоры на пол: только верхние шкафы, полка, навесной шкаф),
+    иначе "floor". Решается по геометрии: самая низкая точка деталей выше WALL_MIN_Z — изделие висит."""
+    lows = []
+    for p in result.parts:
+        o = p.placement.origin
+        z = o.z + sum(min(0.0, _AXES[ax][2] * size) for ax, size in
+                      ((p.placement.u, p.length), (p.placement.v, p.width), (p.placement.n, p.thickness)))
+        lows.append(z)
+    return "wall" if lows and min(lows) >= WALL_MIN_Z else "floor"
 
 
 _TEMP_COLOR = {3000: "#ffd9a8", 4000: "#fff1de", 6000: "#eef4ff"}

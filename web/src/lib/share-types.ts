@@ -109,10 +109,14 @@ export interface ShareGlb {
   closed: string;
   /** URL GLB «открыто» (все двери и ящики открыты). */
   open: string;
-  /** Необязательно: готовые USDZ для iOS. Если нет — model-viewer соберёт USDZ сам. */
+  /** USDZ «закрыто» для AR Quick Look (iPhone), собран на сервере: GET /share/{token}/usdz/closed. */
   closedUsdz?: string;
   openUsdz?: string;
+  /** Размещение в AR: floor — на пол (по умолчанию), wall — навесное, на стену. Решает ядро. */
+  placement?: ArPlacement;
 }
+
+export type ArPlacement = 'floor' | 'wall';
 
 export interface SharePayload {
   version: 1;

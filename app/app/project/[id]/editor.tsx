@@ -657,7 +657,7 @@ export default function Editor() {
             <T style={[s.vbText, viewMenu && { color: palette.white }]}>{t('ed_view')}</T>
             <Ionicons name={viewMenu ? 'chevron-up' : 'chevron-down'} size={14} color={viewMenu ? palette.white : palette.muted} />
           </Press>
-          <Press onPress={() => toast.show(t('ed_ar_soon'))} accessibilityRole="button" accessibilityLabel="AR" style={s.vb}>
+          <Press onPress={() => router.push(`/project/${id}/ar`)} accessibilityRole="button" accessibilityLabel="AR" style={s.vb}>
             <Ionicons name="cube-outline" size={17} color={palette.ink} />
             <T style={s.vbText}>AR</T>
           </Press>

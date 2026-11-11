@@ -14,7 +14,7 @@ export function confirm(title: string, message: string | undefined, ok: string, 
 }
 
 export type ErrorKind = 'offline' | 'generic' | 'ai' | 'timeout' | 'rebuild' | 'limit' | 'session' | 'not_found' | 'bad_photo' | 'maintenance'
-  | 'busy' | 'forbidden' | 'login';
+  | 'busy' | 'forbidden' | 'login' | 'ar';
 
 /**
  * Коды сервера, у которых свой понятный текст на языке мастера (сообщение сервера — только по-русски).
@@ -37,6 +37,10 @@ export const KNOWN_ERRORS: Record<string, { kind: ErrorKind; title: DictKey; tex
   // 403 — нет права (переписка, возвраты, споры, исправления — у сотрудника без права заказа)
   // по-русски — точный текст сервера («Это делает владелец цеха или сотрудник с правом заказа»)
   forbidden: { kind: 'forbidden', title: 'err_forbidden_title', text: 'err_forbidden_text', serverRu: true },
+  // AR мастера (docs/ar_contract.md): 409 нет модели; устройство без AR; файл модели не скачался
+  no_model: { kind: 'ar', title: 'err_ar_no_model_title', text: 'err_ar_no_model_text' },
+  ar_unsupported: { kind: 'ar', title: 'err_ar_unsupported_title', text: 'err_ar_unsupported_text' },
+  ar_download_failed: { kind: 'ar', title: 'err_ar_download_title', text: 'err_ar_download_text' },
 };
 
 /** Причина и понятный текст для SCR-28. Сообщения сервера (по-русски) показываем как есть. */

@@ -13,6 +13,7 @@ from .routers import (
     admin_catalog,
     admin_panel,
     ai,
+    ar,
     auth,
     billing,
     catalog,
@@ -108,7 +109,7 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
     # /admin/workshops.csv, /admin/suppliers/performance не должны перехватываться маршрутами с {id}
     app.include_router(admin_ops.router)
     for r in (auth, workshops, clients, projects, models, estimates, ai, files, catalog, orders, share, billing, tasks,
-              devices, nonstandard, price_requests, admin, admin_panel, admin_catalog):
+              devices, nonstandard, price_requests, admin, admin_panel, admin_catalog, ar):
         app.include_router(r.router)
     app.include_router(nonstandard.admin_router)
     app.include_router(price_requests.admin_router)

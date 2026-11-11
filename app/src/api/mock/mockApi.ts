@@ -87,6 +87,9 @@ interface MProject {
 }
 
 let seq = 1000;
+/** AR в моке: образцы model-viewer (GLB для Scene Viewer, USDZ для Quick Look). */
+export const MOCK_AR_GLB = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
+export const MOCK_AR_USDZ = 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz';
 const uid = (p: string) => `${p}-${(seq++).toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const iso = (msAgo = 0) => new Date(Date.now() - msAgo).toISOString();
 const DAY = 86_400_000;
@@ -1083,6 +1086,22 @@ export function createMockApi(opts: MockOptions = {}): Api {
       return link;
     }),
     listShareLinks: (id) => wait(() => [...getP(id).links]),
+    getProjectAr: (id) => wait(() => {
+      const p = getP(id);
+      const v = curVersion(p);
+      if (!v) throw new ApiError(409, 'no_model', 'Модели ещё нет — сначала сделайте эскиз');
+      // габарит контракта — [ширина, глубина, высота]; viewer.size ядра — [ширина, высота, глубина]
+      const vs = v.viewer?.size ?? [];
+      const size: [number, number, number] = [
+        Math.round(vs[0] ?? v.tree.width ?? 0), Math.round(vs[2] ?? v.tree.depth ?? 0), Math.round(vs[1] ?? v.tree.height ?? 0),
+      ];
+      const wall = String(v.tree.installation ?? '') === 'wall' || ['shelf', 'wall_cabinet', 'kitchen_upper'].includes(String(v.tree.type ?? ''));
+      // публичные образцы model-viewer (стабильные ссылки): в моке открывается настоящий файл
+      return {
+        version_id: v.id, version_number: v.number, size_mm: size, placement: wall ? 'wall' : 'floor',
+        glb_url: MOCK_AR_GLB, usdz_url: MOCK_AR_USDZ, expires_at: iso(-3600_000),
+      } satisfies T.ProjectArOut;
+    }),
 
     getTask: <R>(taskId: string) => wait(() => {
       const t = tasks.get(taskId);

@@ -6,18 +6,17 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Header
 from fastapi.responses import Response
-from mebel_core import build, export_glb, parse_tree
 from sqlalchemy import select
 
 from ..db import utcnow
-from ..deps import CurrentDep, DbDep, SettingsDep
+from ..deps import CurrentDep, DbDep, SettingsDep, StorageDep
 from ..domain import ESTIMATE_VIEW_LABELS, EstimateView, Plan, ProjectStatus as S, ShareEventKind
 from ..errors import ERROR_RESPONSES, ApiError, forbidden, not_found
 from ..models import ModelVersion, Project, ShareEvent, ShareLink, User, Workshop
 from ..schemas.common import Ok
 from ..schemas.projects import ShareLinkIn, ShareLinkOut
 from ..schemas.share import AgreeOut, ShareEventIn, ShareGlb, ShareMaster, SharePayload, ShareProject
-from ..services import lifecycle
+from ..services import ar_files, lifecycle
 from ..services.estimate import client_estimate, compute_range, is_measured, remember
 from ..services.visibility import for_client
 from .projects import get_project
@@ -147,7 +146,7 @@ def public_share(token: str, db: DbDep, settings: SettingsDep) -> SharePayload:
     estimate = None
     if link.show_price and link.price_snapshot is not None:
         estimate = for_client(link.price_snapshot)
-    glb_base = f"{settings.public_api_url.rstrip('/')}/share/{link.token}/glb"
+    share_base = f"{settings.public_api_url.rstrip('/')}/share/{link.token}"
     size = viewer.get("size") or [0, 0, 0]
     return SharePayload(
         token=link.token,
@@ -158,7 +157,9 @@ def public_share(token: str, db: DbDep, settings: SettingsDep) -> SharePayload:
                              modelVersion=str(version.number)),
         master=_master(db, project, workshop),
         model=viewer,
-        glb=ShareGlb(closed=f"{glb_base}/closed", open=f"{glb_base}/open").model_dump(exclude_none=True),
+        glb=ShareGlb(closed=f"{share_base}/glb/closed", open=f"{share_base}/glb/open",
+                     closedUsdz=f"{share_base}/usdz/closed",
+                     placement=ar_files.placement(version)).model_dump(exclude_none=True),
         estimate=estimate,
         priceDate=link.price_snapshot_at.isoformat() if link.show_price and link.price_snapshot_at else None,
     )
@@ -166,13 +167,28 @@ def public_share(token: str, db: DbDep, settings: SettingsDep) -> SharePayload:
 
 @router.get("/share/{token}/glb/{state}", summary="GLB для AR (закрыто / открыто), публичный",
             responses={200: {"content": {"model/gltf-binary": {}}}})
-def share_glb(token: str, state: Literal["closed", "open"], db: DbDep) -> Response:
-    """Версия, отправленная клиенту; метры, реальный масштаб. Scene Viewer качает файл сам — без входа."""
+def share_glb(token: str, state: Literal["closed", "open"], db: DbDep, settings: SettingsDep,
+              storage: StorageDep) -> Response:
+    """Версия, отправленная клиенту; метры, реальный масштаб. Scene Viewer качает файл сам — без входа.
+    Файл строится один раз на версию и состояние (кэш)."""
     link = _active_link(db, token)
     version = db.get(ModelVersion, link.version_id)
-    data = export_glb(build(parse_tree(version.tree)), opened=state == "open")
-    return Response(content=data, media_type="model/gltf-binary",
+    data = ar_files.get_file(storage, settings, version, state, "glb")
+    return Response(content=data, media_type=ar_files.CONTENT_TYPES["glb"],
                     headers={"Cache-Control": "public, max-age=3600"})
+
+
+@router.get("/share/{token}/usdz/closed", summary="USDZ для AR Quick Look (закрыто), публичный",
+            responses={200: {"content": {"model/vnd.usdz+zip": {}}}})
+def share_usdz(token: str, db: DbDep, settings: SettingsDep, storage: StorageDep) -> Response:
+    """Та же модель, что GLB «закрыто»: метры, Y вверх, текстуры декоров, без комнаты; размещение — placement.
+    Quick Look качает файл сам — без входа. Кэш по версии."""
+    link = _active_link(db, token)
+    version = db.get(ModelVersion, link.version_id)
+    data = ar_files.get_file(storage, settings, version, "closed", "usdz")
+    return Response(content=data, media_type=ar_files.CONTENT_TYPES["usdz"],
+                    headers={"Cache-Control": "public, max-age=3600",
+                             "Content-Disposition": 'inline; filename="model.usdz"'})
 
 
 def _record_event(db, link: ShareLink, kind: ShareEventKind, meta: dict, user_agent: str | None) -> None:

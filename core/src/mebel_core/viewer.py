@@ -28,6 +28,7 @@ inlay[], radius; пути — в системе детали (мм), первы�
 
 from .assembler import BuildResult
 from .catalog import material
+from .glb import ar_placement
 from .hw3d import FINISHES, hardware_visuals_mm
 from .units import to_mm
 
@@ -145,7 +146,9 @@ def viewer_model(result: BuildResult) -> dict:
         "hardware": hardware_visuals_mm(result),
         "hardwareFinishes": FINISHES,
         "lights": lights_mm(result),
-        "issues": [i.model_dump() for i in result.issues],
+        # размещение в AR: "floor" — на пол (по умолчанию), "wall" — навесное, на стену (glb.ar_placement)
+        "placement": ar_placement(result),
+        "issues":[i.model_dump() for i in result.issues],
     }
     room = room_model(result)
     if room is not None:

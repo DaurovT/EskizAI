@@ -216,7 +216,8 @@ def _check_share_payload(d: dict) -> None:
     assert {"name", "phone"} <= set(m) <= {"name", "workshop", "city", "phone", "telegram", "logoUrl"}
     assert m["phone"].startswith("+998")
     assert d["model"]["format"] == "1" and d["model"]["parts"]
-    assert set(d["glb"]) <= {"closed", "open", "closedUsdz", "openUsdz"} and {"closed", "open"} <= set(d["glb"])
+    assert set(d["glb"]) <= {"closed", "open", "closedUsdz", "openUsdz", "placement"}
+    assert {"closed", "open", "closedUsdz", "placement"} <= set(d["glb"]) and d["glb"]["placement"] in ("floor", "wall")
     e = d["estimate"]
     if e is not None:
         assert e["view"] in ("total", "short", "detailed") and isinstance(e["exact"], bool)

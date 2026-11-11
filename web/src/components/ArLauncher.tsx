@@ -54,7 +54,7 @@ interface Progress {
 
 /**
  * Кнопка «Примерить у себя дома (AR)» и шторка WEB-4. AR запускает <model-viewer>
- * (webxr / Scene Viewer / Quick Look; USDZ для iOS он собирает сам). Если AR на
+ * (webxr / Scene Viewer / Quick Look; USDZ для iOS — готовый с сервера, glb.closedUsdz). Если AR на
  * устройстве нет — вместо кнопки плашка «Телефон не поддерживает примерку» (Misc).
  */
 export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed, onAgree, onFailed, dev }: Props) {
@@ -108,10 +108,12 @@ export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed
       mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
       // Реальный масштаб: клиент не может растянуть шкаф пальцами.
       mv.setAttribute('ar-scale', 'fixed');
-      mv.setAttribute('ar-placement', 'floor');
+      // Навесное (верхние шкафы, полка) — на стену; решает ядро (glb.placement).
+      mv.setAttribute('ar-placement', glb.placement === 'wall' ? 'wall' : 'floor');
       mv.setAttribute('loading', 'lazy');
       mv.setAttribute('interaction-prompt', 'none');
       mv.setAttribute('alt', '3D');
+      // USDZ собирает сервер (текстуры декоров, размещение) — в браузере не собираем.
       if (glb.closedUsdz) mv.setAttribute('ios-src', glb.closedUsdz);
       const slot = document.createElement('span');
       slot.setAttribute('slot', 'ar-button');
@@ -169,7 +171,7 @@ export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed
       mvRef.current?.remove();
       mvRef.current = null;
     };
-  }, [token, glb.closed, glb.closedUsdz, forced]);
+  }, [token, glb.closed, glb.closedUsdz, glb.placement, forced]);
 
   // «Нет AR» — событие в аналитику ссылки (один раз).
   const reportedRef = useRef(false);

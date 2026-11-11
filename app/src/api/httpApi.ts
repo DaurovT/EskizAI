@@ -130,6 +130,7 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
 
     createShareLink: (id, body) => post(`${pj(id)}/share-links`, body),
     listShareLinks: (id) => get(`${pj(id)}/share-links`),
+    getProjectAr: (id) => get(`${pj(id)}/ar`),
 
     getTask: (taskId) => get(`/tasks/${enc(taskId)}`),
     aiDesign: (id, body) => post(`${pj(id)}/ai/design`, body),

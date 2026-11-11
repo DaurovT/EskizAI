@@ -102,6 +102,8 @@ export interface Api {
   // ссылка клиента
   createShareLink(projectId: string, body: T.ShareLinkIn): Promise<T.ShareLinkOut>;
   listShareLinks(projectId: string): Promise<T.ShareLinkOut[]>;
+  /** AR мастера (SCR-47): текущая версия, размещение и подписанные ссылки GLB/USDZ; нет модели — 409 no_model. */
+  getProjectAr(projectId: string): Promise<T.ProjectArOut>;
   // задачи и ИИ
   getTask<R = unknown>(taskId: string): Promise<T.TaskOut<R>>;
   aiDesign(projectId: string, body: T.DesignIn): Promise<T.TaskAccepted>;

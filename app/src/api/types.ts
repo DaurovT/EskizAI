@@ -242,6 +242,18 @@ export interface ShareLinkOut {
   ar_failures: number; first_opened_at: string | null; agreed_at: string | null; created_at: string;
 }
 
+// --- AR мастера (GET /projects/{id}/ar, docs/ar_contract.md) ---
+/** floor — на пол (по умолчанию); wall — навесное изделие без опоры на пол. Решает ядро. */
+export type ArPlacement = 'floor' | 'wall';
+export interface ProjectArOut {
+  version_id: string; version_number: number;
+  /** Габарит в порядке контракта: [ширина, глубина, высота], мм. */
+  size_mm: [number, number, number];
+  placement: ArPlacement;
+  /** Короткоживущие подписанные ссылки (≈1 ч), открываются без токена. */
+  glb_url: string; usdz_url: string; expires_at: string;
+}
+
 // --- tasks (GET /tasks/{id}) ---
 export type TaskStatus = 'queued' | 'running' | 'done' | 'failed';
 export interface TaskOut<R = unknown> {
