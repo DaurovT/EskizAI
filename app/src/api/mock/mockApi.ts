@@ -650,12 +650,12 @@ export function createMockApi(opts: MockOptions = {}): Api {
     return finishDesign(p, sample, tree, [...estimated], { understood, unclear });
   };
 
-  const answer = (p: MProject, given: Record<string, string>): T.DesignOut => {
+  const answer = (p: MProject, given: Record<string, string>, notes: string[] = []): T.DesignOut => {
     const d = p.design ?? { sample: 'wardrobe_full' as SampleKey, tree: SAMPLES.wardrobe_full.tree, estimated: ['/width', '/height', '/depth'], questions: [] };
     // реплика мастера — «вопрос — ответ»; ответы копятся за всю сессию
     const asked = Object.fromEntries(d.questions.map((q) => [q.id, q]));
     p.chat.push({ id: uid('m'), author: 'master', kind: 'answer', undone: false, created_at: iso(),
-      text: Object.entries(given).map(([k, v]) => `${asked[k]?.text ?? k} — ${v === 'не знаю' ? `по умолчанию (${asked[k]?.default ?? '—'})` : v}`).join('\n') });
+      text: [...Object.entries(given).map(([k, v]) => `${asked[k]?.text ?? k} — ${v === 'не знаю' ? `по умолчанию (${asked[k]?.default ?? '—'})` : v}`), ...notes].join('\n') });
     const answers = { ...(p.aiAnswers ?? {}), ...given };
     p.aiAnswers = answers;
     // в нише — второй раунд: высота ниши (как настоящий ИИ, только если ещё не спрашивали)
@@ -1096,7 +1096,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
         : { id: taskId, status: 'done', result: t.done.result, error: null }) as T.TaskOut<R>;
     }),
     aiDesign: (id, body) => wait(() => { const p = getP(id); return startAi(p, designMs, body.confirm_extra_project, false, () => design(p, body)); }),
-    aiAnswer: (id, answers, confirm) => wait(() => { const p = getP(id); return startAi(p, designMs / 2, confirm, false, () => answer(p, answers)); }),
+    aiAnswer: (id, answers, confirm, notes) => wait(() => { const p = getP(id); return startAi(p, designMs / 2, confirm, false, () => answer(p, answers, notes ?? [])); }),
     aiChooseType: (id, kind, confirm) => wait(() => {
       const p = getP(id);
       return startAi(p, designMs / 2, confirm, false, () => finishDesign(p, kindToSample(kind), JSON.parse(JSON.stringify(SAMPLES[kindToSample(kind)].tree)), ['/width', '/height', '/depth']));

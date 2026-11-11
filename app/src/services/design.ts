@@ -13,7 +13,7 @@ export function applyDesign(projectId: string, d: DesignOut, opts: { replace?: b
     estimated: d.status === 'ready' ? d.estimated ?? [] : m.estimated,
     answers: d.status === 'questions' ? m.answers : {},
     // ответы прошлых раундов живут, пока идут уточнения; новое распознавание — с чистого листа
-    answered: d.status === 'questions' && opts.from === 'questions' ? m.answered : [],
+    answered: opts.from === 'questions' ? m.answered : [],
   }));
   if (opts.navigate === false) return;
   const go = (path: string) => (opts.replace ? router.replace(path as never) : router.push(path as never));

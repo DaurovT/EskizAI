@@ -68,12 +68,12 @@ class DesignResponse(_Strict):
     alternatives: list[str] = Field(description="Две другие версии, что это может быть")
     elements: list[Element]
     understood: list[str] = Field(description="Что понято из фото и текста — коротко, по пунктам")
-    unclear: list[str] = Field(description="Что неясно или додумано")
+    unclear: list[str] = Field(description="Что неясно, но вариантами не спросить (то, что спрошено в questions, сюда не дублировать)")
     tree: Tree = Field(description="Дерево модулей изделия строго по схеме")
     estimated: list[str] = Field(
         description="JSON Pointer'ы значений, взятых на глаз или по умолчанию (покажутся мастеру как «оценка»)"
     )
-    questions: list[Question] = Field(description="Не больше 3 вопросов, самые важные для цены и изготовления")
+    questions: list[Question] = Field(description="Не больше 6 вопросов с вариантами: каждое сомнение, которое мастер решит выбором")
     differences: list[str] = Field(
         description="Что на фото не собирается из модулей и операций (для «нестандарта»)"
     )
@@ -95,13 +95,13 @@ class DesignWire(_Strict):
     alternatives: list[str] = Field(description="Две другие версии, что это может быть")
     elements: list[Element]
     understood: list[str] = Field(description="Что понято из фото и текста — коротко, по пунктам")
-    unclear: list[str] = Field(description="Что неясно или додумано")
+    unclear: list[str] = Field(description="Что неясно, но вариантами не спросить (то, что спрошено в questions, сюда не дублировать)")
     tree_json: str = Field(
         description="Дерево модулей одной строкой JSON строго по схеме дерева из системного промпта "
                     "(объект с полем type: wardrobe или kitchen)"
     )
     estimated: list[str] = Field(description="JSON Pointer'ы значений, взятых на глаз или по умолчанию")
-    questions: list[Question] = Field(description="Не больше 3 вопросов, самые важные для цены и изготовления")
+    questions: list[Question] = Field(description="Не больше 6 вопросов с вариантами: каждое сомнение, которое мастер решит выбором")
     differences: list[str] = Field(description="Что на фото не собирается из модулей и операций")
     objects: list[PhotoObject] = Field(description="Если на фото несколько предметов мебели — все с рамками; иначе пусто")
     room: Optional[RoomRegions] = Field(None, description="Фото пустой ниши или стены, куда встроить мебель: участки "

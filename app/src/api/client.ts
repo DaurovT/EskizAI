@@ -106,7 +106,8 @@ export interface Api {
   getTask<R = unknown>(taskId: string): Promise<T.TaskOut<R>>;
   aiDesign(projectId: string, body: T.DesignIn): Promise<T.TaskAccepted>;
   /** Все ответы раунда разом (на сервер — [{question_id, value}]); «не знаю» — по умолчанию. */
-  aiAnswer(projectId: string, answers: Record<string, string>, confirmExtra?: boolean): Promise<T.TaskAccepted>;
+  /** Все ответы раунда и свободные замечания мастера (`notes`) — одним запросом. */
+  aiAnswer(projectId: string, answers: Record<string, string>, confirmExtra?: boolean, notes?: string[]): Promise<T.TaskAccepted>;
   aiChooseType(projectId: string, productKind: string, confirmExtra?: boolean): Promise<T.TaskAccepted>;
   /** Номера в DesignOut.objects; первый остаётся в проекте, остальные — новые проекты (лимит за каждый). */
   aiChooseObjects(projectId: string, objects: number[], confirmExtra?: boolean): Promise<T.ChooseObjectsOut>;

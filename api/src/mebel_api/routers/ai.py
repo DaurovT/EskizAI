@@ -106,11 +106,11 @@ def answer(project_id: uuid.UUID, body: AnswerIn, current: CurrentDep, db: DbDep
     row = db.scalar(select(AiSession).where(AiSession.project_id == p.id))
     answers = ai_service.known_answers({k: v for k, v in body.answer_map().items() if k.strip()},
                                        ai_service.answerable_ids(row))
-    if not answers:
+    if not answers and not body.notes:
         raise ApiError(422, "no_answers", "Нет ответов на заданные вопросы")
     with _ADMIT:
         _prepare(db, settings, current, project_id, body.confirm_extra_project, tasks)
-        task_id = _enqueue(tasks, settings, "ai.answer", current, p, llm, answers=answers)
+        task_id = _enqueue(tasks, settings, "ai.answer", current, p, llm, answers=answers, notes=body.notes)
     return TaskAccepted(task_id=task_id)
 
 

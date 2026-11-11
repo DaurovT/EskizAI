@@ -16,6 +16,8 @@ interface Meta {
   answers: Record<string, string>;
   /** Отправленные ответы прошлых раундов (текст вопроса → ответ) — показать свернуто, не спрашивать снова. */
   answered?: { id: string; text: string; value: string }[];
+  /** Замечания мастера к строкам «Что я нашёл» до отправки (ключ строки → что не так). */
+  notes?: Record<string, { title: string; text: string }>;
 }
 export const metaStore = createStore<Record<string, Meta>>({});
 

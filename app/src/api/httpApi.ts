@@ -133,9 +133,11 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
 
     getTask: (taskId) => get(`/tasks/${enc(taskId)}`),
     aiDesign: (id, body) => post(`${pj(id)}/ai/design`, body),
-    aiAnswer: (id, answers, confirm) => {
+    aiAnswer: (id, answers, confirm, notes) => {
       const list = Object.entries(answers).map(([question_id, value]) => ({ question_id, value }));
-      return post(`${pj(id)}/ai/answer`, confirm ? { answers: list, confirm_extra_project: true } : { answers: list });
+      return post(`${pj(id)}/ai/answer`, {
+        answers: list, ...(notes?.length ? { notes } : {}), ...(confirm ? { confirm_extra_project: true } : {}),
+      });
     },
     aiChooseType: (id, product_kind, confirm) =>
       post(`${pj(id)}/ai/choose-type`, confirm ? { product_kind, confirm_extra_project: true } : { product_kind }),

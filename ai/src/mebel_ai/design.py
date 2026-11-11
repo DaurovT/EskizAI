@@ -72,7 +72,7 @@ class DesignSession:
         return self._run("design")
 
     def answer(self, answers: dict[str, str], questions: dict[str, Any] | None = None,
-               current_tree: dict | None = None) -> DesignResult:
+               current_tree: dict | None = None, notes: list[str] | None = None) -> DesignResult:
         """Ответы мастера на вопросы (id вопроса → вариант или свой текст), все разом.
 
         `questions` — заданные вопросы (текст и значение по умолчанию): с ними ответ однозначен для модели.
@@ -89,6 +89,8 @@ class DesignSession:
                 lines.append(f"{head}: не знаю — поставь значение по умолчанию{dflt} и отметь его как оценку")
             else:
                 lines.append(f"{head}: {value}")
+        for n in notes or []:
+            lines.append(f"- замечание мастера: {n}")
         asked = ", ".join(self.answers)
         base = ""
         if current_tree:

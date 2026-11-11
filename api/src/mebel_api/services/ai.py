@@ -336,10 +336,11 @@ class AiRunner:
             if project.current_version_id and str(project.current_version_id) != designed:
                 cur = db.get(ModelVersion, project.current_version_id)
                 current_tree = cur.tree if cur else None
-            msg = add_chat(db, project, "master", answer_text(answers, asked), kind="answer",
-                           user_id=user.id if user else None)
+            notes = [str(n)[:MAX_ANSWER_CHARS] for n in (payload.get("notes") or [])][:10]
+            text = "\n".join([answer_text(answers, asked), *notes]).strip()
+            msg = add_chat(db, project, "master", text, kind="answer", user_id=user.id if user else None)
             return self._run_design(db, project, workshop, user, session, "answer",
-                                    lambda: session.answer(answers, asked, current_tree), master_msg=msg)
+                                    lambda: session.answer(answers, asked, current_tree, notes=notes), master_msg=msg)
 
     def choose_type(self, payload: dict[str, Any], llm: LLM) -> dict:
         with self.db.sessionmaker() as db:

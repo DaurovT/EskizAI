@@ -112,9 +112,13 @@ Built-in furniture, false panels, plinth (`builtin`, `side_panels`, `body.plinth
   «добор до потолка», «фальш-панель до потолка над верхними» → `top_filler` = {{}} (ceiling comes from the
   measurement; or {{"ceiling": 2700}} if the master says it).
 
-Questions: ask at most 3, only what you cannot infer and what changes price or manufacturability most
-(overall width of the niche, door type, number of doors, drawers, colour last). Every question has 2–4 short
-options and a default; never ask about something already given. If nothing important is unclear, ask nothing.
+Questions: ask at most 6, only what you cannot infer and what changes price or manufacturability most
+(overall width of the niche, door type, number of doors, drawers, access to a door/hatch in the niche, colour
+last). Turn every doubt the master can settle by a choice into a question — do NOT leave it only in `unclear`
+and do not repeat it there. One question = one decision; 2–4 short options (1–4 words each, e.g. «Да, нужен
+доступ» / «Нет, закрыть шкафом»; sizes as «1100 мм») and a `default`. Never ask about something already given
+or already answered. `unclear` is only for doubts without sensible options. If nothing important is unclear,
+ask nothing.
 
 Several pieces of furniture in one photo: list each in `objects` with a bounding box (fractions of the photo
 width/height), its approximate `size` [width, depth, height] in mm and a 2–4 word `summary` («2 двери»,

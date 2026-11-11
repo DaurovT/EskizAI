@@ -140,6 +140,25 @@ def test_answer_after_manual_edit_keeps_master_changes(api, client, owner, fake)
     assert out["status"] == "questions"
 
 
+def test_answer_with_notes_sends_master_remarks_in_one_request(api, client, owner, fake):
+    """Ответы и свободные замечания мастера с экрана «Что я нашёл» — одним запросом; одни замечания тоже можно."""
+    pid = api.project(owner, tree=None)
+    fake.replies += [response(design(questions=Q)), response(design()), response(design())]
+    task(client, owner, client.post(f"/projects/{pid}/ai/design", json={"text": "шкаф"}, headers=owner))
+    body = {"answers": {"doors": "3"}, "notes": ["Ниша 1100, а не 1200", "  "]}
+    task(client, owner, client.post(f"/projects/{pid}/ai/answer", json=body, headers=owner))
+    sent = next(m for m in reversed(fake.calls[1]["messages"]) if m["role"] == "user")["content"][0]["text"]
+    assert "- doors" in sent and "замечание мастера: Ниша 1100, а не 1200" in sent
+    chat = client.get(f"/projects/{pid}/chat", headers=owner).json()
+    last = [m for m in chat["messages"] if m["kind"] == "answer" and m["author"] == "master"][-1]
+    assert "Ниша 1100" in last["text"]
+    only = client.post(f"/projects/{pid}/ai/answer", json={"answers": {}, "notes": ["Дверь в нише закрыть"]},
+                       headers=owner)
+    assert only.status_code == 202, only.text
+    assert client.post(f"/projects/{pid}/ai/answer", json={"answers": {}, "notes": ["   "]},
+                       headers=owner).status_code == 422
+
+
 def test_design_failure_is_reported_and_logged(api, client, owner, fake):
     pid = api.project(owner, tree=None)
     fake.replies += [response("x"), response("y"), response("z")]

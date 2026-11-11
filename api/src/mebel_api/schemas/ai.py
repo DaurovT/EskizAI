@@ -37,7 +37,15 @@ class AnswerIn(BaseModel):
         description="Все ответы разом: [{question_id, value}] или (прежняя форма) id вопроса → ответ. "
                     f"Не больше {MAX_ANSWERS} ответов, ответ — до 500 символов; в ИИ уходят только ответы на "
                     "заданные вопросы (GET /projects/{id}/chat → questions), прочие id отбрасываются")
+    notes: list[str] = Field(default_factory=list, max_length=10,
+                             description="Свободные замечания мастера к распознаванию (до 10, по 500 символов) — "
+                                         "уходят в ИИ вместе с ответами одним запросом")
     confirm_extra_project: bool = False
+
+    @field_validator("notes")
+    @classmethod
+    def _notes(cls, v: list[str]) -> list[str]:
+        return [n.strip()[:500] for n in v if n and n.strip()]
 
     @field_validator("answers")
     @classmethod

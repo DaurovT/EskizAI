@@ -11,7 +11,7 @@ import { Alert, Animated, Easing, Image, Linking, ScrollView, StyleSheet, View }
 import { api } from '../../../src/api';
 import { ApiError } from '../../../src/api/errors';
 import { BudgetDeclinedError, TaskTimeoutError, withBudgetConfirm } from '../../../src/api/tasks';
-import type { ChooseObjectsOut, DesignElement, DesignObject, DesignOut, EditOut } from '../../../src/api/types';
+import type { ChooseObjectsOut, DesignElement, DesignObject, DesignOut, DesignQuestion, EditOut } from '../../../src/api/types';
 import { useAiTask } from '../../../src/hooks/useAiTask';
 import { useT } from '../../../src/i18n';
 import { applyDesign, pendingDesign } from '../../../src/services/design';
@@ -30,7 +30,6 @@ const objectLine = (o: DesignObject) =>
   [o.size?.length === 3 ? `≈ ${o.size.join(' × ')}` : null, o.summary || null].filter(Boolean).join(' · ');
 /** Русское склонение для 2–4 / 5+ (больше 10 предметов не бывает). */
 const fewOrMany = (n: number) => (n >= 5 ? 'many' : 'few');
-const plural = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? 'one' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'few' : 'many');
 const elTitle = (el: DesignElement) => `${el.name}${el.count > 1 ? ` × ${el.count}` : ''}`;
 const TINTS = ['#CDBFA8', '#DCD3C1', '#D9D2C6', '#CFC6B5', '#E0D4BF'];
 
@@ -47,7 +46,8 @@ const SHOT_DESIGN: Record<string, { photos: string[]; design: DesignOut }> = __D
         { name: 'Без ручек (push)', kind: 'handle', count: 1, sure: true, note: 'Без ручек' },
         { name: 'Ножки металл · партнёр', kind: 'legs', count: 1, sure: false, note: 'Ножки металл?' },
       ],
-      questions: [{ id: 'q_width', text: 'Какая ширина?', options: ['1800 мм'] }], message: null, version_id: null, issues: [], error: null,
+      questions: [{ id: 'q_width', text: 'Какая ширина ниши?', options: ['1800 мм', '2000 мм', '2200 мм'], default: '2000 мм' },
+        { id: 'q_door', text: 'В глубине ниши дверь — нужен к ней доступ?', options: ['Да, нужен', 'Нет, закрыть шкафом'], default: 'Да, нужен' }], message: null, version_id: null, issues: [], error: null,
     },
   },
   multi: {
@@ -82,13 +82,19 @@ const SHOT_DESIGN: Record<string, { photos: string[]; design: DesignOut }> = __D
   },
 } : {};
 
+const DONT_KNOW = 'не знаю';
+
 export default function Breakdown() {
-  const { id, shot } = useLocalSearchParams<{ id: string; shot?: string }>();
+  const { id, shot, q: shotQ } = useLocalSearchParams<{ id: string; shot?: string; q?: string }>();
   const { t, lang } = useT();
   const meta = useMeta(id);
   const ai = useAiTask();
   const [fix, setFix] = useState<DesignElement | 'add' | null>(null);
+  const [fixKey, setFixKey] = useState<string | null>(null);
   const [fixText, setFixText] = useState('');
+  const [openQ, setOpenQ] = useState<string | null>(null);
+  const [customQ, setCustomQ] = useState<DesignQuestion | null>(null);
+  const [customText, setCustomText] = useState('');
   const [opening, setOpening] = useState(false);
   const [picked, setPicked] = useState<number[] | null>(null);
   const [splitting, setSplitting] = useState(false);
@@ -104,6 +110,45 @@ export default function Breakdown() {
   const sel = picked ?? (multi ? [chosenIdx] : []);
   const toggle = (i: number) => setPicked(sel.includes(i) ? sel.filter((x) => x !== i) : [...sel, i]);
 
+  // ---- Ответы прямо в «Что я нашёл»: копятся локально (без запроса к ИИ), отправка — одной кнопкой ----
+  const answered = meta.answered ?? [];
+  const doneIds = new Set([...answered.map((a) => a.id), ...Object.keys(d?.answers ?? {})]);
+  const pendingQs = (d?.questions ?? []).filter((q) => q.id !== 'object' && !doneIds.has(q.id));
+  const answers = meta.answers;
+  const notes = meta.notes ?? {};
+  const noteList = Object.values(notes).map((n) => (n.title ? `${n.title}: ${n.text}` : n.text));
+  const answeredNow = pendingQs.filter((q) => answers[q.id]).length;
+  const hasInput = answeredNow > 0 || noteList.length > 0;
+  const setAnswer = (qid: string, v: string) => {
+    updateMeta(id, (m) => ({ answers: { ...m.answers, [qid]: v } }));
+    setOpenQ(null);
+  };
+  const openFix = (el: DesignElement | 'add', key: string | null) => {
+    setFix(el);
+    setFixKey(key);
+    setFixText(key && notes[key] ? notes[key].text : '');
+  };
+  /** Все ответы раунда (неотвеченное — «не знаю», значение по умолчанию) и замечания — одним запросом. */
+  const recalc = async () => {
+    const out: Record<string, string> = {};
+    for (const q of pendingQs) out[q.id] = answers[q.id] ?? DONT_KNOW;
+    const round = pendingQs.map((q) => ({ id: q.id, text: q.text,
+      value: out[q.id] === DONT_KNOW ? `${t('q_default_mark')}${q.default ? ` (${q.default})` : ''}` : out[q.id] }));
+    const sentNotes = noteList;
+    const r = await ai.run<DesignOut>((c) => api.aiAnswer(id, out, c, sentNotes));
+    if (!r) return;
+    updateMeta(id, (m) => {
+      const rest = { ...m.answers };
+      for (const k of Object.keys(out)) delete rest[k];
+      return { answered: [...(m.answered ?? []).filter((a) => !(a.id in out)), ...round], answers: rest, notes: {} };
+    });
+    // остаёмся здесь: новые вопросы (если есть) — тем же списком, отвеченное — с галочкой
+    applyDesign(id, r, { from: 'questions', navigate: false });
+  };
+  const recalcTitle = pendingQs.length
+    ? (answeredNow === pendingQs.length ? t('bd_recalc') : t('bd_recalc_progress', { a: answeredNow, n: pendingQs.length }))
+    : t('bd_recalc_notes');
+
   const startDesign = useCallback(async (text: string | null, photo_ids: string[]) => {
     const r = await ai.run<DesignOut>((confirm) => api.aiDesign(id, { text, photo_ids, language: lang, ...(confirm ? { confirm_extra_project: true } : {}) }));
     if (r) applyDesign(id, r, { from: 'breakdown', replace: true });
@@ -111,7 +156,12 @@ export default function Breakdown() {
 
   useEffect(() => {
     if (__DEV__ && shot && SHOT_DESIGN[shot]) {
-      updateMeta(id, { photos: SHOT_DESIGN[shot].photos, design: SHOT_DESIGN[shot].design, answers: {} });
+      const q0 = SHOT_DESIGN[shot].design.questions[0];
+      // снимки: q=open — вопрос раскрыт; q=answered — ответ выбран (✓) и замечание к строке
+      updateMeta(id, { photos: SHOT_DESIGN[shot].photos, design: SHOT_DESIGN[shot].design, answered: [],
+        answers: shotQ === 'answered' && q0 ? { [q0.id]: q0.options[0] } : {},
+        notes: shotQ === 'answered' ? { e1: { title: 'Скругление', text: 'Радиус 250, не 300' } } : {} });
+      if (shotQ === 'open' && q0) setOpenQ(q0.id);
       if (shot === 'text') setSourceText('Кухня прямая 2,8 м, верх до потолка, фасады белый матовый, столешница под камень, мойка справа, место под духовку и посудомойку 45 см.');
       return;
     }
@@ -124,7 +174,7 @@ export default function Breakdown() {
     });
     api.getProject(id).then((p) => setSourceText(p.source_text ?? null)).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, shot]);
+  }, [id, shot, shotQ]);
 
   const sendFix = async () => {
     const text = fixText.trim();
@@ -132,6 +182,12 @@ export default function Breakdown() {
     const el = fix;
     setFix(null);
     setFixText('');
+    if (d && d.status !== 'failed' && !multi) {
+      const key = fixKey ?? `add${Date.now()}`;
+      const title = el && el !== 'add' ? el.name : '';
+      updateMeta(id, (m) => ({ notes: { ...(m.notes ?? {}), [key]: { title, text } } }));
+      return;
+    }
     const instruction = el && el !== 'add' ? `${el.name}: ${text}` : text;
     if (d?.version_id) {
       const r = await ai.run<EditOut>((c) => api.aiEdit(id, instruction, c));
@@ -191,11 +247,33 @@ export default function Breakdown() {
     else openModel();
   };
 
+  const local = !!d && d.status !== 'failed' && !multi;
   const fixSheet = (
-    <Sheet visible={!!fix} onClose={() => setFix(null)} title={fix && fix !== 'add' ? `${t('bd_fix_title')} — ${fix.name}` : t('bd_add_text')}>
-      <Field value={fixText} onChangeText={setFixText} placeholder={fix && fix !== 'add' ? t('bd_fix_ph') : t('bd_add_text_ph')} multiline autoFocus />
-      <Button title={t('ed_send')} onPress={sendFix} disabled={!fixText.trim()} />
-    </Sheet>
+    <>
+      <Sheet visible={!!fix} onClose={() => setFix(null)} title={fix && fix !== 'add' ? `${t('bd_note_title')} — ${fix.name}` : t('bd_add_text')}>
+        <Field value={fixText} onChangeText={setFixText} placeholder={fix && fix !== 'add' ? t('bd_note_ph') : t('bd_add_text_ph')} multiline autoFocus />
+        <Button title={local ? t('bd_note_save') : t('ed_send')} onPress={sendFix} disabled={!fixText.trim()} />
+      </Sheet>
+      <Sheet visible={!!customQ} onClose={() => setCustomQ(null)} title={customQ?.text ?? ''}>
+        <Field value={customText} onChangeText={setCustomText} placeholder={t('bd_q_custom_ph')} multiline autoFocus />
+        <Button title={t('bd_note_save')} disabled={!customText.trim()}
+          onPress={() => { if (customQ) setAnswer(customQ.id, customText.trim()); setCustomQ(null); setCustomText(''); }} />
+      </Sheet>
+    </>
+  );
+  /** Вопросы ИИ строками: тап — варианты, выбор — ответ и зелёная галочка; отвеченное раньше — сверху. */
+  const questionRows = (startFirst: boolean) => (
+    <>
+      {answered.map((a, i) => (
+        <AnsweredRow key={`a${a.id}`} title={a.text} value={a.value} first={startFirst && i === 0} />
+      ))}
+      {pendingQs.map((q, i) => (
+        <QuestionRow key={`q${q.id}`} q={q} first={startFirst && !answered.length && i === 0} open={openQ === q.id}
+          value={answers[q.id]} dontKnow={t('q_dont_know_short')} customLabel={t('bd_q_custom')}
+          onToggle={() => setOpenQ(openQ === q.id ? null : q.id)} onPick={(v) => setAnswer(q.id, v)}
+          onCustom={() => { setCustomQ(q); setCustomText(answers[q.id] && !q.options.includes(answers[q.id]) && answers[q.id] !== DONT_KNOW ? answers[q.id] : ''); }} />
+      ))}
+    </>
   );
 
   // шапка: «назад» + справа плашка («Фото 1 из 2» / «Нашёл 3 предмета»); у разбора описания — большой заголовок
@@ -287,27 +365,32 @@ export default function Breakdown() {
   }
 
   // ---------- SCR-29: разбор описания ----------
-  if (!isPhoto && d && !ai.running) {
-    // вопросы ИИ задаст в чате: по неясным пунктам, если отдельных вопросов нет
-    const qn = d.questions.length || d.unclear.length;
+  if (!isPhoto && d && (!ai.running || hasInput)) {
     const kitchen = d.product_kind?.startsWith('kitchen');
-    const ask = () => (d.questions.length ? router.push(`/project/${id}/questions`) : setFix('add'));
+    const inline = pendingQs.length > 0 || hasInput;
     return (
       <Screen gap={8} contentStyle={{ paddingTop: 0 }} footerStyle={{ gap: 2, paddingTop: 6 }}
         footer={<>
-          <Button title={d.status === 'choose_type' ? t('bd_choose_type') : kitchen ? t('tp_cta_kitchen') : t('tp_cta')}
-            value={qn ? t(`tp_q_${plural(qn)}` as 'tp_q_one', { n: qn }) : undefined} onPress={next} loading={opening} />
-          <Button v="ghost" title={t('tp_more')} onPress={() => setFix('add')} />
+          {inline && d.status !== 'choose_type' ? (
+            <Button title={recalcTitle} onPress={recalc} loading={ai.running} />
+          ) : (
+            <Button title={d.status === 'choose_type' ? t('bd_choose_type') : kitchen ? t('tp_cta_kitchen') : t('tp_cta')} onPress={next} loading={opening} />
+          )}
+          <Button v="ghost" title={t('tp_more')} onPress={() => openFix('add', null)} disabled={ai.running} />
         </>}
       >
         {head(t('bd_text_title'))}
         {sourceText ? <Card><Marked text={sourceText} ok={[...d.understood, ...d.elements.map((e) => e.name)]} unclear={d.unclear} /></Card> : null}
         <Card padded={false}>
           <T style={{ fontSize: 18, lineHeight: 24, fontWeight: '700', paddingTop: 14, paddingHorizontal: 20, paddingBottom: 4 }}>{t('tp_build')}</T>
-          {d.understood.map((u, i) => <FoundRow key={`u${i}`} sure title={u} compact first={i === 0} fixLabel={t('rec_fix')} onFix={() => setFix({ name: u, kind: 'text', count: 1, sure: true })} />)}
-          {d.unclear.map((u, i) => <FoundRow key={`q${i}`} sure={false} title={u} compact first={!d.understood.length && i === 0} answer={t('tp_answer')} onFix={ask} />)}
-          {d.elements.map((el, i) => <FoundRow key={`e${i}`} sure={el.sure} title={elTitle(el)} compact first={false} fixLabel={t('rec_fix')} onFix={() => setFix(el)} />)}
+          <View style={ai.running ? { opacity: 0.45 } : null} pointerEvents={ai.running ? 'none' : 'auto'}>
+            {questionRows(true)}
+            {d.understood.map((u, i) => <FoundRow key={`u${i}`} sure title={u} compact first={!answered.length && !pendingQs.length && i === 0} note={notes[`u${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix({ name: u, kind: 'text', count: 1, sure: true }, `u${i}`)} />)}
+            {d.unclear.map((u, i) => <FoundRow key={`q${i}`} sure={false} title={u} compact first={false} note={notes[`q${i}`]?.text} answer={notes[`q${i}`] ? undefined : t('tp_answer')} onFix={() => openFix({ name: u, kind: 'unclear', count: 1, sure: false }, `q${i}`)} />)}
+            {d.elements.map((el, i) => <FoundRow key={`e${i}`} sure={el.sure} title={elTitle(el)} compact first={false} note={notes[`e${i}`]?.text} fixLabel={t('rec_fix')} onFix={() => openFix(el, `e${i}`)} />)}
+          </View>
         </Card>
+        {ai.running ? <Banner tone="est" icon="sync-outline" text={t('bd_recalc_running')} /> : null}
         {d.message ? <Banner tone="est" icon="information-circle-outline" text={d.message} /> : null}
         {fixSheet}
       </Screen>
@@ -315,7 +398,8 @@ export default function Breakdown() {
   }
 
   // ---------- SCR-05: разбор фото (и ожидание ИИ) ----------
-  const rows: { key: string; sure: boolean; title: string; est?: boolean; el: DesignElement }[] = d && !ai.running ? [
+  const keepRows = !!d && (!ai.running || hasInput || !!answered.length);
+  const rows: { key: string; sure: boolean; title: string; est?: boolean; el: DesignElement }[] = d && keepRows ? [
     ...d.elements.map((el, i) => ({ key: `e${i}`, sure: el.sure, title: elTitle(el), est: !el.sure && /≈/.test(el.name), el })),
     ...d.unclear.map((u, i) => ({ key: `u${i}`, sure: false, title: u, el: { name: u, kind: 'unclear', count: 1, sure: false } })),
     ...d.differences.map((u, i) => ({ key: `d${i}`, sure: false, title: u, el: { name: u, kind: 'difference', count: 1, sure: false } })),
@@ -324,8 +408,12 @@ export default function Breakdown() {
   return (
     <Screen gap={8} contentStyle={{ paddingTop: 0 }} footerStyle={{ gap: 2, paddingTop: 6 }}
       footer={<>
-        <Button title={t('rec_ok_next')} onPress={next} loading={opening} disabled={ai.running || !d} />
-        <Button v="ghost" title={t('rec_wrong')} onPress={() => router.push(`/project/${id}/nonstandard`)} />
+        {d && (pendingQs.length > 0 || hasInput) && d.status !== 'choose_type' ? (
+          <Button title={recalcTitle} onPress={recalc} loading={ai.running} disabled={!d} />
+        ) : (
+          <Button title={t('rec_ok_next')} onPress={next} loading={opening} disabled={ai.running || !d} />
+        )}
+        <Button v="ghost" title={t('rec_wrong')} onPress={() => router.push(`/project/${id}/nonstandard`)} disabled={ai.running} />
       </>}
     >
       {head(isPhoto ? '' : t('bd_text_title'), photoPill)}
@@ -347,9 +435,15 @@ export default function Breakdown() {
         ) : null}
       </View>
       <Card padded={false}>
-        {rows.length ? rows.map((r, i) => (
-          <FoundRow key={r.key} sure={r.sure} title={r.title} est={r.est} first={i === 0} fixLabel={t('rec_fix')} estLabel={t('rec_est')} onFix={() => setFix(r.el)} />
-        )) : (
+        {rows.length ? (
+          <View style={ai.running ? { opacity: 0.45 } : null} pointerEvents={ai.running ? 'none' : 'auto'}>
+            {questionRows(true)}
+            {rows.map((r, i) => (
+              <FoundRow key={r.key} sure={r.sure} title={r.title} est={r.est} first={!answered.length && !pendingQs.length && i === 0}
+                note={notes[r.key]?.text} fixLabel={t('rec_fix')} estLabel={t('rec_est')} onFix={() => openFix(r.el, r.key)} />
+            ))}
+          </View>
+        ) : (
           [0, 1, 2].map((i) => (
             <View key={i} style={[s.it, i > 0 && s.itLine]}>
               <Skeleton width={28} height={28} r={9} />
@@ -358,7 +452,7 @@ export default function Breakdown() {
           ))
         )}
       </Card>
-      {ai.running ? <T v="cap" center>{t('bd_working_hint')} · {t('bd_elapsed', { s: ai.elapsed })}</T> : null}
+      {ai.running ? <T v="cap" center>{keepRows ? t('bd_recalc_running') : t('bd_working_hint')} · {t('bd_elapsed', { s: ai.elapsed })}</T> : null}
       {d?.message && !ai.running ? <T v="cap" style={{ paddingHorizontal: 8 }}>{d.message}</T> : null}
       {fixSheet}
     </Screen>
@@ -441,9 +535,11 @@ function ScatterPins({ labels }: { labels: { label: string; q: boolean }[] }) {
 }
 
 /** Строка «Что я нашёл» (.it): знак ✓/?, название, «оценка»; справа карандаш (.fix) или «Ответить» (.ans). */
-function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer, onFix }: {
-  sure: boolean; title: string; est?: boolean; first: boolean; compact?: boolean; fixLabel?: string; estLabel?: string; answer?: string; onFix: () => void;
+function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer, note, onFix }: {
+  sure: boolean; title: string; est?: boolean; first: boolean; compact?: boolean; fixLabel?: string; estLabel?: string; answer?: string;
+  note?: string; onFix: () => void;
 }) {
+  if (note) sure = true;
   return (
     <Press feedback="row" onPress={onFix} accessibilityRole="button" accessibilityLabel={`${title}. ${answer ?? fixLabel ?? ''}`}
       style={[s.it, compact && { minHeight: 50 }, !first && s.itLine]}>
@@ -452,7 +548,8 @@ function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer
       </View>
       <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
         <T v="rt" style={compact ? { fontSize: 15, lineHeight: 20 } : null} numberOfLines={2}>{title}</T>
-        {est && estLabel ? <View style={s.est}><T style={s.estText}>{estLabel}</T></View> : null}
+        {est && estLabel && !note ? <View style={s.est}><T style={s.estText}>{estLabel}</T></View> : null}
+        {note ? <T style={s.noteText} numberOfLines={2}>{note}</T> : null}
       </View>
       {answer ? (
         <View style={s.ans}><T style={s.ansText}>{answer}</T></View>
@@ -460,6 +557,66 @@ function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer
         <View style={s.fix}><MaterialCommunityIcons name="pencil-outline" size={19} color={palette.ink} /></View>
       )}
     </Press>
+  );
+}
+
+/** Вопрос ИИ строкой: «?» → тап раскрывает варианты (+ «Не знаю», «Свой ответ»); выбран — ✓ и ответ под вопросом. */
+function QuestionRow({ q, first, open, value, dontKnow, customLabel, onToggle, onPick, onCustom }: {
+  q: DesignQuestion; first: boolean; open: boolean; value?: string; dontKnow: string; customLabel: string;
+  onToggle: () => void; onPick: (v: string) => void; onCustom: () => void;
+}) {
+  const done = !!value;
+  const shown = value === DONT_KNOW ? `${dontKnow}${q.default ? ` → ${q.default}` : ''}` : value;
+  const opts = [...q.options, DONT_KNOW];
+  return (
+    <View style={!first ? s.itLine : null}>
+      <Press feedback="row" onPress={onToggle} accessibilityRole="button" accessibilityState={{ expanded: open }}
+        accessibilityLabel={`${q.text}${shown ? `. ${shown}` : ''}`} style={[s.it, { alignItems: 'flex-start', paddingVertical: 12 }]}>
+        <View style={[s.mk, { backgroundColor: done ? palette.greenSoft : palette.amberSoft, marginTop: 1 }]}>
+          {done ? <MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} />
+            : <T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T>}
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <T v="rt">{q.text}</T>
+          {shown ? <T style={s.noteText}>{shown}</T> : null}
+        </View>
+        <View style={s.fix}>
+          <MaterialCommunityIcons name={open ? 'chevron-up' : done ? 'pencil-outline' : 'chevron-down'} size={20} color={palette.ink} />
+        </View>
+      </Press>
+      {open ? (
+        <View style={s.opts}>
+          {opts.map((o) => {
+            const on = value === o;
+            return (
+              <Press key={o} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={o}
+                onPress={() => onPick(o)} style={[s.op, on && { backgroundColor: palette.ink }]}>
+                <T style={[s.opText, on && { color: palette.white }]} numberOfLines={1}>{o === DONT_KNOW ? dontKnow : o}</T>
+              </Press>
+            );
+          })}
+          <Press accessibilityRole="button" accessibilityLabel={customLabel} onPress={onCustom}
+            style={[s.op, value && !opts.includes(value) && { backgroundColor: palette.ink }]}>
+            <T style={[s.opText, value && !opts.includes(value) ? { color: palette.white } : null]} numberOfLines={1}>{customLabel}…</T>
+          </Press>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Ответ прошлого раунда: ✓, вопрос и ответ — только для чтения. */
+function AnsweredRow({ title, value, first }: { title: string; value: string; first: boolean }) {
+  return (
+    <View style={[s.it, { alignItems: 'flex-start', paddingVertical: 12 }, !first && s.itLine]} accessibilityLabel={`${title}. ${value}`}>
+      <View style={[s.mk, { backgroundColor: palette.greenSoft, marginTop: 1 }]}>
+        <MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <T v="rt" style={{ color: palette.muted }}>{title}</T>
+        <T style={s.noteText}>{value}</T>
+      </View>
+    </View>
   );
 }
 
@@ -527,4 +684,8 @@ const s = StyleSheet.create({
   ck: { width: 28, height: 28, borderRadius: 9, borderWidth: 2, borderColor: palette.handle, alignItems: 'center', justifyContent: 'center' },
   ckOn: { backgroundColor: palette.green, borderColor: palette.green },
   note: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20, backgroundColor: palette.off },
+  noteText: { fontSize: 14, lineHeight: 19, fontWeight: '600', color: palette.greenDeep },
+  opts: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingLeft: 62, paddingRight: 20, paddingBottom: 14 },
+  op: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minHeight: 44, borderRadius: 14, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  opText: { fontSize: 14, lineHeight: 19, fontWeight: '500', textAlign: 'center' },
 });
