@@ -110,8 +110,9 @@ def _wardrobe_room(result: BuildResult) -> dict | None:
              zc + T, lean=lean_h),
     ]
     if nd:  # стена комнаты по бокам от проёма ниши (лицом к зрителю)
-        walls += [_box("wall_front_left", "wall_front", xl - T - EF, y_front - T, 0, xl, y_front, zc),
-                  _box("wall_front_right", "wall_front", xr, y_front - T, 0, xr + T + EF, y_front, zc)]
+        # лицо стены — ровно в плоскости проёма (y_front), тело стены — за ней: видно, утоплен шкаф или заподлицо
+        walls += [_box("wall_front_left", "wall_front", xl - T - EF, y_front, 0, xl, y_front + T, zc),
+                  _box("wall_front_right", "wall_front", xr, y_front, 0, xr + T + EF, y_front + T, zc)]
     return {
         "walls": walls,
         "niche": {"width": wmin, "width_max": max(widths) if widths else wmin,
