@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "uz.mebel.master",
       "infoPlist": {
         "NSCameraUsageDescription": "Камера нужна, чтобы сфотографировать мебель или замер / Kamera mebel yoki o‘lchovni suratga olish uchun kerak",

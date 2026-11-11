@@ -30,6 +30,8 @@ from .routers import (
     workshops,
 )
 from .routers import admin_platform, app_status, decor, staff, vendor
+from .routers import admin_insights
+from .routers import admin_ops
 from .services.ai import AiRunner
 from .services.app_status import install_maintenance_guard
 from .services.auth_codes import DevCodeSender, RoutingSender
@@ -91,6 +93,9 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
 
     install_error_handlers(app)
     install_maintenance_guard(app)  # техработы: 503 maintenance на изменения проектов (SCR-45)
+    from .services.action_log import RequestIpMiddleware
+
+    app.add_middleware(RequestIpMiddleware)  # IP запроса → журнал действий сотрудников
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -99,6 +104,9 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
         allow_headers=["*"],
         expose_headers=["Content-Disposition", "X-Model-Version"],
     )
+    # Рабочие экраны суперадмина — раньше admin_panel/admin_platform: /admin/workshops, /admin/orders (расширенные),
+    # /admin/workshops.csv, /admin/suppliers/performance не должны перехватываться маршрутами с {id}
+    app.include_router(admin_ops.router)
     for r in (auth, workshops, clients, projects, models, estimates, ai, files, catalog, orders, share, billing, tasks,
               devices, nonstandard, price_requests, admin, admin_panel, admin_catalog):
         app.include_router(r.router)
@@ -108,6 +116,7 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
     app.include_router(decor.router)  # /catalog/front-styles, /catalog/lighting-zones
     app.include_router(staff.router)  # /staff/* — сотрудники (docs/staff_vendor_contract.md)
     app.include_router(admin_platform.router)  # суперадмин: поставщики, деньги, споры, лимиты, журнал
+    app.include_router(admin_insights.router)  # сводка с динамикой, тревоги, поиск, журнал с фильтрами
     app.include_router(vendor.router)  # /vendor/* — кабинет поставщика
     if settings.price_source_scheduler:
         from .services.price_import import start_scheduler

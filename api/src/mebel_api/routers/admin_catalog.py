@@ -109,7 +109,14 @@ def patch_supplier(supplier_id: uuid.UUID, body: SupplierPatch, admin: Suppliers
     if "settings" in data:
         s.settings = {**(s.settings or {}), **(data.pop("settings") or {})}
     if "commission_percent" in data:
-        s.commission_bp = round(data.pop("commission_percent") * 100)
+        bp = round(data.pop("commission_percent") * 100)
+        if bp != s.commission_bp:
+            # История ставок главнее commission_bp (supplier_routes.commission_rate_bp): общая ставка с сегодня
+            from ..models import SupplierCommission
+
+            db.add(SupplierCommission(supplier_id=s.id, category=None, rate_bp=bp, effective_from=utcnow(),
+                                      reason=reason, created_by=admin.id))
+        s.commission_bp = bp
     for k, v in data.items():
         setattr(s, k, v)
     log_action(db, actor_type=admin.type, actor_id=admin.id, entity="supplier", entity_id=s.id, action="update",

@@ -1050,7 +1050,7 @@ export const ru = {
   order_repeat: 'Повторить заказ',
   os_created: 'Создан',
   os_paid: 'Оплачен',
-  os_accepted: 'Принят EMAN',
+  os_accepted: 'Принят поставщиком',
   os_cutting: 'В распиле',
   os_ready: 'Готов',
   os_issued: 'Выдан',

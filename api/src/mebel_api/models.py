@@ -386,6 +386,9 @@ class AiRequest(Base):
 
 class ActionLog(Base):
     __tablename__ = "action_log"
+    # Журнал в админке: фильтр по периоду, «объект + действие» (сработавшие лимиты, неудачные входы)
+    __table_args__ = (Index("ix_action_log_created_at", "created_at"),
+                      Index("ix_action_log_entity_action", "entity", "action"))
 
     id: Mapped[uuid.UUID] = _id()
     actor_type: Mapped[str] = mapped_column(String(20))  # user | admin | system
@@ -397,6 +400,8 @@ class ActionLog(Base):
     before: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
     after: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
     created_at: Mapped[datetime] = _created()
+    # IP запроса (как его видит uvicorn за Caddy) — только для действий сотрудников (actor_type = staff)
+    ip: Mapped[Optional[str]] = mapped_column(String(64))
 
 
 # --- ИИ: сессия проектирования и чат редактора (раздел 6, FR-43) ---

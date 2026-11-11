@@ -1,0 +1,111 @@
+/* Рабочие экраны суперадмина: цеха, заказы, споры, поставщики, деньги, сотрудники, «глазами мастера».
+   Все классы с префиксом ops- и внутри .adm — не пересекаются с каркасом и сводкой. */
+
+.adm .ops-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; }
+.adm .ops-head h1 { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.adm .ops-head .ops-sub { color: var(--a-muted); margin-top: 4px; font-size: 13px; }
+.adm .ops-back { display: inline-block; margin-bottom: 6px; font-size: 13px; }
+
+/* Цифры в шапке карточки и над таблицами */
+.adm .ops-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.adm .ops-stat { background: var(--a-surface); border: 1px solid var(--a-line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.adm .ops-stat .v { font-size: 20px; font-weight: 700; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm .ops-stat .l { color: var(--a-muted); font-size: 12px; }
+.adm .ops-stat .h { color: var(--a-muted); font-size: 11px; margin-top: 2px; }
+.adm .ops-stat.bad { border-color: #f0c2bd; background: var(--a-danger-soft); }
+.adm .ops-stat.bad .v { color: var(--a-danger); }
+.adm .ops-stat.warn { border-color: #ecd7a6; background: var(--a-warn-soft); }
+.adm button.ops-stat { font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.adm button.ops-stat:hover { border-color: var(--a-accent); }
+.adm button.ops-stat.on { outline: 2px solid var(--a-accent); outline-offset: -1px; }
+
+/* Фильтры */
+.adm .ops-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.adm .ops-filters input[type='search'] { min-width: 240px; flex: 1 1 240px; max-width: 360px; }
+.adm .ops-filters .grow { flex: 1; }
+.adm .ops-pills { display: inline-flex; border: 1px solid var(--a-line); border-radius: 8px; overflow: hidden; background: #fff; }
+.adm .ops-pills button { font: inherit; border: 0; background: none; padding: 6px 10px; cursor: pointer; color: var(--a-muted); white-space: nowrap; }
+.adm .ops-pills button + button { border-left: 1px solid var(--a-line); }
+.adm .ops-pills button.on { background: var(--a-accent-soft); color: #134a3d; font-weight: 600; }
+.adm .ops-clear { font: inherit; background: none; border: 0; color: var(--a-accent); cursor: pointer; padding: 6px 4px; }
+.adm .ops-count { color: var(--a-muted); font-size: 13px; }
+
+/* Таблицы */
+.adm th.ops-sort { padding: 0; }
+.adm th.ops-sort button { font: inherit; font-size: 12px; font-weight: 600; color: var(--a-muted); background: none; border: 0; padding: 7px 8px; cursor: pointer; width: 100%; text-align: inherit; white-space: nowrap; }
+.adm th.ops-sort button:hover { color: var(--a-text); }
+.adm th.ops-sort.on button { color: var(--a-text); }
+.adm th.ops-sort.num button { text-align: right; }
+.adm .ops-table td .sub { color: var(--a-muted); font-size: 12px; }
+.adm .ops-table tr.clickable td:first-child a { font-weight: 600; }
+.adm .ops-sla { white-space: nowrap; }
+.adm .ops-sla.overdue { color: var(--a-danger); font-weight: 700; }
+.adm .ops-sla.late { color: var(--a-warn); font-weight: 600; }
+.adm .ops-who { font-size: 11px; color: var(--a-muted); }
+.adm tr.ops-overdue td { background: #fff6f5; }
+.adm tr.ops-overdue td:first-child { box-shadow: inset 3px 0 0 var(--a-danger); }
+.adm tr.ops-late td:first-child { box-shadow: inset 3px 0 0 #d39a1c; }
+
+/* Вкладки с числами */
+.adm .tabs .ops-n { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 6px; border-radius: 9px; background: #eef0f2; color: var(--a-muted); font-size: 11px; line-height: 18px; text-align: center; font-weight: 600; }
+.adm .tabs button.on .ops-n { background: var(--a-accent-soft); color: #134a3d; }
+.adm .tabs .ops-n.hot { background: var(--a-danger); color: #fff; }
+
+/* Диалог действия с причиной */
+.adm .modal.ops-dialog { width: 560px; max-height: calc(100dvh - 32px); overflow-y: auto; }
+.adm .ops-dialog h2 { margin: 0; }
+.adm .ops-choice { display: grid; gap: 8px; }
+.adm .ops-choice label { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--a-line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.adm .ops-choice label.on { border-color: var(--a-accent); background: #f6fbf9; }
+.adm .ops-choice label.dis { opacity: .55; cursor: not-allowed; }
+.adm .ops-choice label b { display: block; }
+.adm .ops-choice label .muted { font-size: 12px; }
+.adm .ops-consequence { border-left: 3px solid #d39a1c; background: var(--a-warn-soft); color: #5e3d00; padding: 8px 10px; border-radius: 0 8px 8px 0; font-size: 13px; }
+.adm .ops-consequence.red { border-left-color: var(--a-danger); background: var(--a-danger-soft); color: var(--a-danger); }
+.adm .ops-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm .ops-actions .b { white-space: nowrap; }
+
+/* Мини-график расхода ИИ по дням */
+.adm .ops-bars { display: flex; align-items: flex-end; gap: 2px; height: 110px; padding: 6px 0 0; border-bottom: 1px solid var(--a-line); }
+.adm .ops-bars > div { flex: 1; min-width: 3px; background: var(--a-accent); border-radius: 2px 2px 0 0; min-height: 1px; opacity: .85; }
+.adm .ops-bars > div:hover { opacity: 1; }
+.adm .ops-bars > div.zero { background: var(--a-line); }
+.adm .ops-axis { display: flex; justify-content: space-between; color: var(--a-muted); font-size: 11px; margin-top: 4px; }
+
+/* Доказательства сторон спора */
+.adm .ops-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.adm .ops-side { border-top: 4px solid var(--a-line); }
+.adm .ops-side.master { border-top-color: #3b6fd1; }
+.adm .ops-side.vendor { border-top-color: var(--a-accent); }
+.adm .ops-quote { white-space: pre-wrap; background: #f6f7f8; border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.adm .ops-files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.adm .ops-files a.file { display: inline-block; border: 1px solid var(--a-line); border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+.adm .ops-msgs { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.adm .ops-msgs .m { border-left: 3px solid var(--a-line); padding: 4px 8px; }
+.adm .ops-msgs .m.master { border-left-color: #3b6fd1; }
+.adm .ops-msgs .m.vendor { border-left-color: var(--a-accent); }
+.adm .ops-msgs .m.platform { border-left-color: #d39a1c; }
+.adm .ops-msgs .meta { font-size: 11px; color: var(--a-muted); }
+.adm .ops-cap { font-size: 12px; color: var(--a-muted); margin-top: 4px; }
+.adm .ops-cap.err { color: var(--a-danger); }
+
+/* «Глазами мастера» */
+.adm .ops-imp-banner { position: sticky; top: 0; z-index: 30; margin: -20px -28px 16px; padding: 10px 28px; background: var(--a-danger); color: #fff; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; box-shadow: 0 2px 10px rgba(180, 35, 24, .35); }
+.adm .ops-imp-banner b { font-size: 15px; letter-spacing: .2px; }
+.adm .ops-imp-banner .grow { flex: 1; }
+.adm .ops-imp-banner button { font: inherit; background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.adm .ops-imp-banner button:hover { background: rgba(255,255,255,.24); }
+.adm .ops-imp-banner .timer { font-variant-numeric: tabular-nums; font-weight: 700; background: rgba(0,0,0,.18); padding: 2px 8px; border-radius: 6px; }
+.adm .ops-imp-layout { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+.adm .ops-imp-list { display: flex; flex-direction: column; gap: 6px; max-height: calc(100dvh - 200px); overflow-y: auto; }
+.adm .ops-imp-list button { font: inherit; text-align: left; background: var(--a-surface); border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; cursor: pointer; color: inherit; }
+.adm .ops-imp-list button.on { border-color: var(--a-accent); box-shadow: inset 3px 0 0 var(--a-accent); }
+.adm .ops-imp-list button .sub { color: var(--a-muted); font-size: 12px; }
+.adm .ops-expired { text-align: center; padding: 36px 16px; }
+
+@media (max-width: 800px) {
+  .adm .ops-imp-banner { margin: -16px -16px 12px; padding: 10px 16px; }
+  .adm .ops-imp-layout { grid-template-columns: 1fr; }
+  .adm .ops-imp-list { max-height: 260px; }
+  .adm .ops-filters input[type='search'] { max-width: none; }
+}

@@ -114,7 +114,7 @@ class AiValidation(StrEnum):
 ORDER_STATUS_LABELS = {
     "created": "Создан",
     "paid": "Оплачен",
-    "accepted": "Принят EMAN",
+    "accepted": "Принят поставщиком",
     "cutting": "В распиле",
     "ready": "Готов",
     "issued": "Выдан",

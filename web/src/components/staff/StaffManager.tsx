@@ -32,7 +32,7 @@ export interface StaffUser {
   created_at?: string | null;
 }
 
-interface Supplier {
+export interface Supplier {
   id: string;
   code: string;
   name: string;
@@ -211,7 +211,7 @@ export function StaffManager({ mode }: { mode: 'platform' | 'vendor' }) {
   );
 }
 
-function CreateForm({
+export function CreateForm({
   platform,
   roles,
   suppliers,

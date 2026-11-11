@@ -97,7 +97,8 @@ def _impersonation_guard(request: Request, payload: dict, workshop: Workshop) ->
     with request.app.state.db.sessionmaker() as s:  # отдельная сессия: запись остаётся, даже если ручка не коммитит
         s.add(ActionLog(actor_type="staff", actor_id=str(payload["imp"])[:64], workshop_id=workshop.id,
                         entity="impersonation", entity_id=str(workshop.id), action="request" if read_only else "denied",
-                        after={"method": request.method, "path": request.url.path[:300]}))
+                        after={"method": request.method, "path": request.url.path[:300]},
+                        ip=(request.client.host[:64] if request.client else None)))
         s.commit()
     if not read_only:
         raise ApiError(403, "impersonation_read_only", "Просмотр «глазами мастера» — только чтение")

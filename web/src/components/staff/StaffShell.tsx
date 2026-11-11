@@ -26,6 +26,18 @@ export interface NavItem {
   hidden?: boolean;
   /** Только для входа по почте (не для старого токена). */
   staffOnly?: boolean;
+  /** Заголовок группы в меню: печатается перед первым видимым пунктом группы. */
+  group?: string;
+}
+
+/** Обвязка кабинета поверх меню и страниц (админка: шапка с поиском, тревоги, баннер техработ). */
+export interface ShellChrome {
+  /** Обёртка всего каркаса (провайдеры контекста) — внутри сессии и клиента API. */
+  wrap?: (children: ReactNode) => ReactNode;
+  /** Шапка над содержимым страницы. */
+  topbar?: ReactNode;
+  /** Показывать ли имя, роль и «Выйти» в меню (если они есть в шапке — false). */
+  navUser?: boolean;
 }
 
 function matches(rel: string, item: NavItem): boolean {
@@ -44,6 +56,7 @@ export function StaffShell({
   wrongOrg,
   legacyMe,
   footer,
+  chrome,
   children,
 }: {
   client: StaffClient;
@@ -60,6 +73,7 @@ export function StaffShell({
   /** Профиль для входа по старому токену (только админка). */
   legacyMe?: StaffMe;
   footer?: ReactNode;
+  chrome?: ShellChrome;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -187,42 +201,73 @@ export function StaffShell({
     );
   }
 
-  return (
-    <SessionProvider value={value}>
-      <div className="adm">
-        <nav className="adm-nav">
-          <div className="brand">{brand(session.me)}</div>
+  const navUser = chrome?.navUser ?? true;
+  const shell = (
+    <div className="adm">
+      <nav className="adm-nav">
+        <div className="brand">{brand(session.me)}</div>
+        {navUser && (
           <div className="who">
             <b>{session.me.name}</b>
             {roleLabel(session.me.role)}
             {session.me.org.kind === 'supplier' && session.me.org.supplier_name ? ` · ${session.me.org.supplier_name}` : ''}
           </div>
-          {visible.map((n) => (
-            <Link
-              key={n.href}
-              href={linkFor(n.href)}
-              className={`${n.sub ? 'sub ' : ''}${current?.href === n.href ? 'active' : ''}`}
-            >
-              {n.label}
-            </Link>
-          ))}
+        )}
+        {visible.map((n, i) => (
+          <NavEntry
+            key={n.href}
+            item={n}
+            groupTitle={n.group && n.group !== visible[i - 1]?.group ? n.group : null}
+            href={linkFor(n.href)}
+            active={current?.href === n.href}
+          />
+        ))}
+        {navUser && (
           <button type="button" className="logout" onClick={() => void logout()}>
             Выйти
           </button>
-          {footer}
-        </nav>
-        <main className="adm-main">
-          {allowed ? (
-            content
-          ) : (
-            <div className="denied">
-              <h1>Нет доступа</h1>
-              <p className="muted">У вашей роли ({roleLabel(session.me.role)}) нет прав на этот раздел.</p>
-              {fallback && <Link href={linkFor(fallback.href)}>Перейти: {fallback.label} →</Link>}
-            </div>
-          )}
-        </main>
-      </div>
+        )}
+        {footer}
+      </nav>
+      <main className="adm-main">
+        {chrome?.topbar}
+        {allowed ? (
+          content
+        ) : (
+          <div className="denied">
+            <h1>Нет доступа</h1>
+            <p className="muted">У вашей роли ({roleLabel(session.me.role)}) нет прав на этот раздел.</p>
+            {fallback && <Link href={linkFor(fallback.href)}>Перейти: {fallback.label} →</Link>}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+
+  return (
+    <SessionProvider value={value}>
+      <ClientProvider client={client}>{chrome?.wrap ? chrome.wrap(shell) : shell}</ClientProvider>
     </SessionProvider>
+  );
+}
+
+function NavEntry({
+  item,
+  groupTitle,
+  href,
+  active,
+}: {
+  item: NavItem;
+  groupTitle: string | null;
+  href: string;
+  active: boolean;
+}) {
+  return (
+    <>
+      {groupTitle && <div className="grp">{groupTitle}</div>}
+      <Link href={href} className={`${item.sub ? 'sub ' : ''}${active ? 'active' : ''}`}>
+        {item.label}
+      </Link>
+    </>
   );
 }

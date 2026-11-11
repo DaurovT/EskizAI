@@ -1,11 +1,33 @@
 """Журнал действий: кто, когда, что было и что стало (цены, настройки, тарифы, оплаты)."""
 
 import uuid
+from contextvars import ContextVar
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from ..models import ActionLog
+
+# IP текущего запроса (request.client.host — за Caddy его подставляет uvicorn --proxy-headers, см. routers/staff.py).
+# Ставит RequestIpMiddleware; log_action пишет его в записи сотрудников.
+request_ip: ContextVar[str | None] = ContextVar("request_ip", default=None)
+
+
+class RequestIpMiddleware:
+    """ASGI-прослойка: IP запроса → request_ip (ручки в пуле потоков получают копию контекста)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        client = scope.get("client")
+        token = request_ip.set(str(client[0])[:64] if client and client[0] else None)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            request_ip.reset(token)
 
 
 def log_action(
@@ -19,6 +41,7 @@ def log_action(
     before: dict[str, Any] | None = None,
     after: dict[str, Any] | None = None,
     workshop_id: uuid.UUID | None = None,
+    ip: str | None = None,
 ) -> ActionLog | None:
     """Пишет запись, если что-то изменилось. Хранит только изменённые поля."""
     if before is not None and after is not None:
@@ -36,6 +59,8 @@ def log_action(
         action=action,
         before=before,
         after=after,
+        # IP — только у сотрудников (вход, опасные действия); у мастеров и системы не храним
+        ip=(ip or request_ip.get()) if actor_type == "staff" else None,
     )
     db.add(entry)
     return entry

@@ -198,6 +198,8 @@ def add_commission(supplier_id: uuid.UUID, body: CommissionIn, admin: SuppliersD
     c = SupplierCommission(supplier_id=s.id, category=body.category, rate_bp=round(body.rate_percent * 100),
                            effective_from=body.effective_from or utcnow(), reason=reason, created_by=admin.id)
     db.add(c)
+    if body.category is None and c.effective_from <= utcnow():  # общая ставка уже действует — она и есть ставка
+        s.commission_bp = c.rate_bp                             # по умолчанию (список, карточка, кабинет)
     db.flush()
     _log(db, admin, "supplier_commission", c.id, "create", after={**_commission_out(c), "supplier_id": str(s.id)})
     db.commit()
@@ -309,22 +311,49 @@ def _dispute_full(db, d: OrderDispute, settings) -> dict:
             "return": flow.return_out(ret, settings) if ret and o else None}
 
 
-@router.get("/disputes", summary="Очередь споров")
+@router.get("/disputes", summary="Очередь споров (open — старые сверху; resolved/all — новые сверху)")
 def disputes(admin: DisputesDep, db: DbDep, settings: SettingsDep,
-             status: Literal["open", "resolved"] | None = "open") -> dict:
-    stmt = select(OrderDispute).order_by(OrderDispute.created_at)
-    if status:
+             status: Literal["open", "resolved", "all"] | None = "open",
+             supplier_id: uuid.UUID | None = None, subject: Literal["return", "rejection"] | None = None,
+             workshop_id: uuid.UUID | None = None, q: str | None = None) -> dict:
+    stmt = select(OrderDispute).join(Order, OrderDispute.order_id == Order.id).join(
+        Project, Order.project_id == Project.id).join(Workshop, Project.workshop_id == Workshop.id)
+    if status and status != "all":
         stmt = stmt.where(OrderDispute.status == status)
-    return {"items": [_dispute_full(db, d, settings) for d in db.scalars(stmt.limit(500))]}
+    if supplier_id:
+        stmt = stmt.where(Order.supplier_id == supplier_id)
+    if subject:
+        stmt = stmt.where(OrderDispute.subject == subject)
+    if workshop_id:
+        stmt = stmt.where(Project.workshop_id == workshop_id)
+    if q and q.strip():
+        digits = "".join(ch for ch in q if ch.isdigit())
+        conds = [func.lower(Workshop.name).like(f"%{q.strip().lower()}%")]
+        if digits and len(digits) <= 9:
+            conds.append(Order.number == int(digits))
+        stmt = stmt.where(or_(*conds))
+    order = OrderDispute.created_at.asc() if status == "open" else OrderDispute.created_at.desc()
+    counts = dict(db.execute(select(OrderDispute.status, func.count(OrderDispute.id))
+                             .group_by(OrderDispute.status)).all())
+    return {"items": [_dispute_full(db, d, settings) for d in db.scalars(stmt.order_by(order).limit(500))],
+            "counts": {"open": counts.get("open", 0), "resolved": counts.get("resolved", 0),
+                       "all": sum(counts.values())}}
 
 
-@router.get("/disputes/{dispute_id}", summary="Спор: заказ, возврат, переписка")
+@router.get("/disputes/{dispute_id}", summary="Спор: заказ, возврат, переписка, предел возврата")
 def dispute(dispute_id: uuid.UUID, admin: DisputesDep, db: DbDep, settings: SettingsDep) -> dict:
     d = db.get(OrderDispute, dispute_id)
     if d is None:
         raise not_found("Спор")
     msgs = db.scalars(select(OrderMessage).where(OrderMessage.order_id == d.order_id).order_by(OrderMessage.created_at))
-    return {**_dispute_full(db, d, settings), "messages": [flow.message_out(m, settings) for m in msgs]}
+    o = db.get(Order, d.order_id)
+    committed = flow.refunds_committed(db, o, exclude_dispute_id=d.id) if o else 0
+    total = flow.order_total(o) if o else 0
+    return {**_dispute_full(db, d, settings), "messages": [flow.message_out(m, settings) for m in msgs],
+            # Решение с возвратом — не больше max_refund (сумма заказа минус уже обещанные возвраты), иначе 422
+            "refunds_committed": committed, "max_refund": max(total - committed, 0),
+            "order_paid_at": _iso(o.paid_at) if o else None,
+            "commission": {"accrued": o.commission_amount, "reversed": o.commission_reversed or 0} if o else None}
 
 
 class ResolveIn(BaseModel):
@@ -492,7 +521,9 @@ def impersonate(workshop_id: uuid.UUID, body: ImpersonateIn, admin: ImpersonateD
     _log(db, admin, "impersonation", w.id, "start", workshop_id=w.id, after={"user_id": str(u.id), "reason": reason})
     db.commit()
     return {"access_token": token, "token_type": "bearer", "expires_in": ttl * 60, "read_only": True,
-            "user_id": str(u.id), "workshop_id": str(w.id)}
+            "user_id": str(u.id), "workshop_id": str(w.id),
+            "expires_at": (now + timedelta(minutes=ttl)).isoformat(), "user_name": u.name, "user_phone": u.phone,
+            "user_role": u.role, "workshop_name": w.name}
 
 
 # --- Лимиты и режим обслуживания (ADM-12) ---

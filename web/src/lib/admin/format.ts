@@ -6,6 +6,16 @@ export function sum(n: number | null | undefined): string {
   return `${n < 0 ? '−' : ''}${s}${NBSP}сум`;
 }
 
+/** Для плиток: от миллиона — «12,5 млн сум», чтобы сумма помещалась. */
+export function sumShort(n: number | null | undefined): string {
+  if (n === null || n === undefined) return '—';
+  const a = Math.abs(n);
+  if (a < 1_000_000) return sum(n);
+  const v = a >= 1e9 ? a / 1e9 : a / 1e6;
+  const s = (v >= 100 ? Math.round(v).toString() : v.toFixed(1).replace(/\.0$/, '')).replace('.', ',');
+  return `${n < 0 ? '−' : ''}${s}${NBSP}${a >= 1e9 ? 'млрд' : 'млн'}${NBSP}сум`;
+}
+
 export function range(r: { from: number; to: number } | null | undefined): string {
   if (!r) return '—';
   return r.from === r.to ? sum(r.from) : `${sum(r.from).replace(`${NBSP}сум`, '')} – ${sum(r.to)}`;

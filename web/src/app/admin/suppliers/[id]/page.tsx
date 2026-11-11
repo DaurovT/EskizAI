@@ -7,16 +7,18 @@ import { useEffect, useState } from 'react';
 import { Box, Empty, Loading, Msg, Tag } from '@/components/admin/ui';
 import { TempPassword } from '@/components/staff/auth';
 import { useReason } from '@/components/staff/reason';
-import { dt, sum } from '@/lib/admin/format';
+import { dt, sum, sumShort } from '@/lib/admin/format';
 import { itemsOf, roleLabel } from '@/lib/staff/client';
 import { useAction, useApi, useClient } from '@/lib/staff/hooks';
+import { hoursLabel, Stat } from '@/components/admin/ops';
 import { CATEGORY_LABEL, fmtValue, PERFORMANCE_LABEL, SETTINGS_FIELDS, type Supplier } from '../shared';
 
-type Tab = 'requisites' | 'commission' | 'settlements' | 'performance' | 'staff';
+type Tab = 'requisites' | 'commission' | 'routes' | 'settlements' | 'performance' | 'staff';
 
 const TABS: [Tab, string][] = [
   ['requisites', 'Реквизиты и договор'],
   ['commission', 'Комиссия'],
+  ['routes', 'Маршруты'],
   ['settlements', 'Взаиморасчёты'],
   ['performance', 'Показатели'],
   ['staff', 'Сотрудники'],
@@ -78,6 +80,7 @@ export default function SupplierCard() {
         <Link href={`/admin/orders?supplier_id=${s.id}`}>Заказы поставщика →</Link>
       </div>
       <Msg message={act.message} />
+      <HeaderStats supplierId={s.id} onTab={setTab} />
       <div className="tabs">
         {TABS.map(([k, l]) => (
           <button key={k} type="button" className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
@@ -87,6 +90,7 @@ export default function SupplierCard() {
       </div>
       {tab === 'requisites' && <Requisites supplier={s} onSaved={reload} />}
       {tab === 'commission' && <Commission supplier={s} onSaved={reload} />}
+      {tab === 'routes' && <SupplierRoutes supplier={s} />}
       {tab === 'settlements' && <Settlements supplierId={s.id} />}
       {tab === 'performance' && <Performance supplier={s} />}
       {tab === 'staff' && <SupplierStaff supplier={s} onChanged={reload} />}
@@ -217,9 +221,10 @@ function Commission({ supplier, onSaved }: { supplier: Supplier; onSaved: () => 
     <Box title="Ставка комиссии платформы">
       {reasonDialog}
       <p className="muted">
-        Ставка по умолчанию:{' '}
+        Действующая общая ставка:{' '}
         <b>{data ? `${data.default_percent}%` : supplier.commission_percent != null ? `${supplier.commission_percent}%` : '—'}</b>.
-        Ставка по категории важнее общей. Смена ставки — с причиной, действует с указанной даты.
+        Ставка по категории важнее общей. Новая общая ставка с сегодняшнего дня сразу становится ставкой по умолчанию;
+        с будущей даты — помечается «запланирована». Заказы, оформленные раньше, считаются по старой ставке.
       </p>
       <Loading error={error} loading={loading && !data} />
       {data &&
@@ -237,9 +242,15 @@ function Commission({ supplier, onSaved }: { supplier: Supplier; onSaved: () => 
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.category ? (CATEGORY_LABEL[r.category] ?? r.category) : 'все категории'}</td>
+                {rows.map((r) => {
+                  const st = rateState(r, rows);
+                  return (
+                  <tr key={r.id} className={st === 'old' ? 'inactive' : ''}>
+                    <td>
+                      {r.category ? (CATEGORY_LABEL[r.category] ?? r.category) : 'все категории'}{' '}
+                      {st === 'active' && <Tag color="green">действует</Tag>}
+                      {st === 'scheduled' && <Tag color="yellow">запланирована</Tag>}
+                    </td>
                     <td className="num">{r.rate_percent}%</td>
                     <td>{dt(r.effective_from)}</td>
                     <td>
@@ -247,7 +258,8 @@ function Commission({ supplier, onSaved }: { supplier: Supplier; onSaved: () => 
                       {r.created_at && <div className="muted">{dt(r.created_at)}</div>}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -311,9 +323,20 @@ function Settlements({ supplierId }: { supplierId: string }) {
   const [paidAt, setPaidAt] = useState(today);
   const [comment, setComment] = useState('');
   const rows = itemsOf(data);
+  const fin = useApi<{ suppliers: { balance?: { due: number; settled: number; debt: number } }[] }>(
+    `/admin/finance?supplier_id=${supplierId}`,
+  );
+  const bal = fin.data?.suppliers[0]?.balance;
 
   return (
     <>
+      {bal && (
+        <div className="ops-stats">
+          <Stat label="Комиссия к оплате (всё время)" value={sumShort(bal.due)} hint="начислено минус сторно" />
+          <Stat label="Выплачено поставщиком" value={sumShort(bal.settled)} />
+          <Stat label="Долг на сегодня" value={sumShort(bal.debt)} tone={bal.debt > 0 ? 'warn' : undefined} />
+        </div>
+      )}
       <Box title="Выплаты поставщика платформе" extra={<Link href={`/admin/finance?supplier_id=${supplierId}`}>Взаиморасчёты за период →</Link>}>
         <Loading error={error} loading={loading && !data} />
         {data &&
@@ -391,6 +414,7 @@ function Settlements({ supplierId }: { supplierId: string }) {
                     setAmount('');
                     setComment('');
                     reload();
+                    fin.reload();
                   })
               }
             >
@@ -442,7 +466,10 @@ function SupplierStaff({ supplier, onChanged }: { supplier: Supplier; onChanged:
   const [temp, setTemp] = useState<{ email: string; password: string } | null>(null);
   const staff = supplier.staff ?? [];
   return (
-    <Box title="Сотрудники поставщика" extra={<Link href="/admin/staff">Все сотрудники →</Link>}>
+    <Box title="Сотрудники поставщика" extra={<Link href={`/admin/staff?supplier_id=${supplier.id}`}>Управлять (роль, пароль, сессии) →</Link>}>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Владельцев поставщика заводит и меняет только платформа. Конструкторов владелец добавляет сам в своём кабинете.
+      </p>
       {staff.length === 0 ? (
         <Empty>Сотрудников нет — создайте владельца, он заведёт конструкторов сам</Empty>
       ) : (
@@ -495,6 +522,145 @@ function SupplierStaff({ supplier, onChanged }: { supplier: Supplier; onChanged:
       </div>
       <Msg message={act.message} />
       {temp && <TempPassword email={temp.email} password={temp.password} onClose={() => setTemp(null)} />}
+    </Box>
+  );
+}
+
+/** Какая ставка действует: последняя по дате начала (не в будущем) для своей категории. */
+function rateState(r: CommissionRow, all: CommissionRow[]): 'active' | 'scheduled' | 'old' {
+  const now = Date.now();
+  if (new Date(r.effective_from).getTime() > now) return 'scheduled';
+  const current = all
+    .filter((x) => x.category === r.category && new Date(x.effective_from).getTime() <= now)
+    .sort((a, b) => new Date(b.effective_from).getTime() - new Date(a.effective_from).getTime() || (b.created_at ?? '').localeCompare(a.created_at ?? ''))[0];
+  return current?.id === r.id ? 'active' : 'old';
+}
+
+interface PerfRow {
+  id: string;
+  current_rate_percent: number;
+  queue: number;
+  overdue: number;
+  in_work: number;
+  median_accept_hours: number | null;
+  return_rate: number | null;
+  turnover: number;
+  commission: { due: number };
+  debt: number;
+}
+
+/** Цифры поставщика в шапке карточки (текущий месяц). */
+function HeaderStats({ supplierId, onTab }: { supplierId: string; onTab: (t: Tab) => void }) {
+  const { data } = useApi<{ items: PerfRow[]; overdue_hours: number }>('/admin/suppliers/performance');
+  const p = data?.items.find((x) => x.id === supplierId);
+  if (!p) return null;
+  return (
+    <div className="ops-stats">
+      <Stat label="Ставка комиссии" value={`${p.current_rate_percent}%`} onClick={() => onTab('commission')} />
+      <Stat label="Очередь" value={p.queue} hint={p.overdue ? `просрочено ${p.overdue}` : `в работе ${p.in_work}`} tone={p.overdue ? 'bad' : undefined} />
+      <Stat label="Принятие (медиана)" value={hoursLabel(p.median_accept_hours)} hint="за месяц" />
+      <Stat label="Возвраты" value={p.return_rate == null ? '—' : `${Math.round(p.return_rate * 100)}%`} hint="за месяц" />
+      <Stat label="Оборот за месяц" value={sumShort(p.turnover)} hint={`комиссия ${sum(p.commission.due)}`} />
+      <Stat label="Долг платформе" value={sumShort(p.debt)} tone={p.debt > 0 ? 'warn' : undefined} onClick={() => onTab('settlements')} />
+    </div>
+  );
+}
+
+interface RouteRow {
+  category: string;
+  supplier_id: string;
+  supplier_name: string;
+  active: boolean;
+}
+
+/** Маршруты этого поставщика: какие категории строк заказа уходят к нему. Сохраняется весь набор маршрутов. */
+function SupplierRoutes({ supplier }: { supplier: Supplier }) {
+  const client = useClient();
+  const act = useAction();
+  const { data, error, loading, reload } = useApi<{
+    routes: RouteRow[];
+    categories: string[];
+    default_supplier: { id: string; name: string } | null;
+  }>('/admin/supplier-routes');
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+  if (!data) return <Loading error={error} loading={loading} />;
+  const mine = new Set(data.routes.filter((r) => r.supplier_id === supplier.id && r.active).map((r) => r.category));
+  const sel = picked ?? mine;
+  const cats = Array.from(new Set([...data.categories, ...Object.keys(CATEGORY_LABEL), ...data.routes.map((r) => r.category)]));
+  const isDefault = data.default_supplier?.id === supplier.id;
+  const changed = cats.some((c) => sel.has(c) !== mine.has(c));
+
+  async function save() {
+    const moving = cats.filter((c) => sel.has(c) && !mine.has(c) && data!.routes.some((r) => r.category === c && r.supplier_id !== supplier.id));
+    if (moving.length && !window.confirm(`Категории ${moving.map((c) => CATEGORY_LABEL[c] ?? c).join(', ')} сейчас ведут к другому поставщику — перенести к ${supplier.name}?`)) return;
+    const keep = data!.routes.filter((r) => r.supplier_id !== supplier.id && !sel.has(r.category));
+    const routes = [
+      ...keep.map((r) => ({ category: r.category, supplier_id: r.supplier_id, active: r.active })),
+      ...cats.filter((c) => sel.has(c)).map((c) => ({ category: c, supplier_id: supplier.id, active: true })),
+    ];
+    const ok = await act.run(() => client.put('/admin/supplier-routes', { routes }), 'Маршруты сохранены');
+    if (ok) {
+      setPicked(null);
+      reload();
+    }
+  }
+
+  return (
+    <Box title="Какие категории заказа уходят этому поставщику">
+      <p className="muted" style={{ marginTop: 0 }}>
+        Строки состава заказа группируются по поставщику: по одному заказу на поставщика.{' '}
+        {isDefault
+          ? `${supplier.name} — поставщик по умолчанию: к нему уходит всё, для чего нет маршрута.`
+          : `Категории без маршрута уходят поставщику по умолчанию${data.default_supplier ? ` (${data.default_supplier.name})` : ''}.`}{' '}
+        Все маршруты сразу — в списке поставщиков.
+      </p>
+      <div className="scroll">
+        <table className="ops-table">
+          <tbody>
+            {cats.map((c) => {
+              const other = data.routes.find((r) => r.category === c && r.supplier_id !== supplier.id);
+              return (
+                <tr key={c}>
+                  <td style={{ width: 32 }}>
+                    <input
+                      type="checkbox"
+                      checked={sel.has(c)}
+                      aria-label={CATEGORY_LABEL[c] ?? c}
+                      onChange={(e) => {
+                        const n = new Set(sel);
+                        if (e.target.checked) n.add(c);
+                        else n.delete(c);
+                        setPicked(n);
+                      }}
+                    />
+                  </td>
+                  <td>
+                    {CATEGORY_LABEL[c] ?? c} <span className="muted">({c})</span>
+                  </td>
+                  <td className="muted">
+                    {sel.has(c)
+                      ? other && !mine.has(c)
+                        ? `перейдёт от ${other.supplier_name}`
+                        : 'сюда'
+                      : other
+                        ? `→ ${other.supplier_name}`
+                        : `→ по умолчанию${data.default_supplier ? ` (${data.default_supplier.name})` : ''}`}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="toolbar" style={{ marginTop: 10 }}>
+        <button type="button" className="b" disabled={!changed} onClick={() => setPicked(null)}>
+          Отменить изменения
+        </button>
+        <button type="button" className="b primary" disabled={!changed || act.busy} onClick={() => void save()}>
+          Сохранить маршруты
+        </button>
+      </div>
+      <Msg message={act.message} />
     </Box>
   );
 }

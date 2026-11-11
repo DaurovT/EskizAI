@@ -92,7 +92,7 @@ const iso = (msAgo = 0) => new Date(Date.now() - msAgo).toISOString();
 const DAY = 86_400_000;
 const T_ORDER_FLOW: T.OrderStatus[] = ['created', 'accepted', 'paid', 'cutting', 'ready', 'issued'];
 const ORDER_LABELS: Record<T.OrderStatus, string> = {
-  created: 'Создан', accepted: 'Принят EMAN', paid: 'Оплачен', cutting: 'В распиле', ready: 'Готов', issued: 'Выдан', cancelled: 'Отменён',
+  created: 'Создан', accepted: 'Принят поставщиком', paid: 'Оплачен', cutting: 'В распиле', ready: 'Готов', issued: 'Выдан', cancelled: 'Отменён',
   returned: 'Вернули на правку', awaiting_approval: 'Ждёт подтверждения', rejected: 'Отклонён',
 };
 

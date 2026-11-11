@@ -8,10 +8,10 @@ import { Box, Empty, Loading, Msg, Tag } from '@/components/admin/ui';
 import { OrderChat } from '@/components/staff/OrderChat';
 import { useReason } from '@/components/staff/reason';
 import { download, post } from '@/lib/admin/api';
-import { dt, ORDER_STATUSES, ORDER_STATUS_LABEL, orderStatusColor, sum } from '@/lib/admin/format';
+import { dt, ORDER_STATUS_LABEL, orderStatusColor, sum } from '@/lib/admin/format';
 import { useAction, useApi } from '@/lib/admin/useApi';
-import { itemsOf } from '@/lib/staff/client';
 import { useCan } from '@/lib/staff/hooks';
+import { CommissionBox, Intervene } from './intervene';
 
 interface Card {
   id: string;
@@ -21,6 +21,7 @@ interface Card {
   workshop_name: string | null;
   workshop_phone: string | null;
   version_number: number | null;
+  number?: number | null;
   supplier: string;
   supplier_id?: string | null;
   supplier_name?: string | null;
@@ -76,7 +77,7 @@ export default function OrderCard() {
   return (
     <>
       <h1>
-        Заказ #{o.id.slice(0, 8)} <Tag color={orderStatusColor(o.status)}>{o.status_label}</Tag>
+        Заказ №{o.number ?? o.id.slice(0, 8)} <Tag color={orderStatusColor(o.status)}>{o.status_label}</Tag>
       </h1>
       <Msg message={act.message} />
       <div className="grid2">
@@ -111,7 +112,7 @@ export default function OrderCard() {
             )}
             <dt>По смете</dt>
             <dd>{sum(o.estimate_total)}</dd>
-            <dt>По счёту EMAN</dt>
+            <dt>По счёту поставщика</dt>
             <dd>{sum(o.invoice_total)}</dd>
             <dt>Оплата</dt>
             <dd>
@@ -119,7 +120,7 @@ export default function OrderCard() {
             </dd>
             <dt>Комиссия</dt>
             <dd>{o.commission_status === 'accrued' ? 'начислена' : o.commission_status === 'reversed' ? 'сторнирована' : '—'}</dd>
-            <dt>Передан в EMAN</dt>
+            <dt>Передан поставщику вручную</dt>
             <dd>{o.handed_over_at ? `${dt(o.handed_over_at)} (${o.handed_over_by ?? ''})` : <Tag color="yellow">нет</Tag>}</dd>
             <dt>Заметки</dt>
             <dd>{o.notes ?? '—'}</dd>
@@ -128,7 +129,7 @@ export default function OrderCard() {
           </dl>
         </Box>
         <Box title="Действия менеджера">
-          <h3>1. Ручная передача в EMAN</h3>
+          <h3>1. Ручная передача поставщику (если он не работает в кабинете)</h3>
           <div className="toolbar">
             <button
               className="b"
@@ -150,7 +151,7 @@ export default function OrderCard() {
               Отметить «передан»
             </button>
           </div>
-          <h3>2. Оплата на мерчант EMAN</h3>
+          <h3>2. Оплата на мерчант поставщика</h3>
           {canPay ? (
             <div className="toolbar">
               <input type="number" placeholder="Сумма по счёту, сум" value={invoice} onChange={(e) => setInvoice(e.target.value)} />
@@ -267,7 +268,10 @@ export default function OrderCard() {
         )}
       </Box>
       {reasonDialog}
-      {can('*', 'orders.manage') && <Intervene order={o} onDone={reload} />}
+      <div className="grid2">
+        <Intervene order={o} onDone={reload} />
+        <CommissionBox orderId={o.id} />
+      </div>
       <Timeline orderId={o.id} />
       <Box title="Переписка мастера и поставщика">
         <OrderChat basePath={`/admin/orders/${o.id}/messages`} self="platform" canWrite={can('*')} />
@@ -279,96 +283,11 @@ export default function OrderCard() {
   );
 }
 
-/** Вмешательство суперадмина (§4a): сменить поставщика, назначить статус, отменить — только с причиной. */
-function Intervene({ order, onDone }: { order: Card; onDone: () => void }) {
-  const act = useAction();
-  const [reasonDialog, askReason] = useReason();
-  const [status, setStatus] = useState('');
-  const [supplierId, setSupplierId] = useState('');
-  const [comment, setComment] = useState('');
-  const suppliers = useApi<{ id: string; name: string }[] | { items: { id: string; name: string }[] }>('/admin/suppliers');
-  const list = itemsOf(suppliers.data as ({ id: string; name: string; active?: boolean }[] | null)).filter(
-    (s) => s.id !== order.supplier_id && s.active !== false,
-  );
-
-  async function run(action: 'set_status' | 'cancel' | 'change_supplier', title: string, extra: Record<string, unknown>) {
-    const paid = Boolean(order.paid_at);
-    const reason = await askReason(title, {
-      hint: action === 'cancel' && paid ? 'Заказ оплачен: отмена сторнирует комиссию, мастеру нужно вернуть деньги.' : undefined,
-      confirm: 'Выполнить',
-    });
-    if (!reason) return;
-    const ok = await act.run(
-      () => post(`/admin/orders/${order.id}/intervene`, { action, reason, ...extra, comment: comment.trim() || null }),
-      'Готово',
-    );
-    if (ok) {
-      setComment('');
-      onDone();
-    }
-  }
-
-  return (
-    <Box title="Вмешательство платформы">
-      {reasonDialog}
-      <p className="muted">Каждое действие требует причины и пишется в журнал; мастер и поставщик получают уведомление.</p>
-      <label className="f" style={{ marginBottom: 10 }}>
-        Сообщение в переписку заказа от платформы (необязательно)
-        <textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
-      </label>
-      <div className="toolbar">
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">Назначить статус…</option>
-          {ORDER_STATUSES.filter(([v]) => v !== order.status).map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="b"
-          disabled={act.busy || !status}
-          onClick={() => void run('set_status', `Статус → ${ORDER_STATUS_LABEL[status] ?? status}`, { status })}
-        >
-          Применить
-        </button>
-      </div>
-      <div className="toolbar">
-        <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-          <option value="">Передать другому поставщику…</option>
-          {list.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="b"
-          title={order.paid_at ? 'Оплаченный заказ к другому поставщику не переносится' : undefined}
-          disabled={act.busy || !supplierId || Boolean(order.paid_at)}
-          onClick={() => void run('change_supplier', 'Сменить поставщика заказа', { supplier_id: supplierId })}
-        >
-          Передать
-        </button>
-        <button
-          type="button"
-          className="b danger"
-          disabled={act.busy || order.status === 'cancelled'}
-          onClick={() => void run('cancel', order.paid_at ? 'Отменить ОПЛАЧЕННЫЙ заказ' : 'Отменить заказ', {})}
-        >
-          Отменить заказ
-        </button>
-      </div>
-      <Msg message={act.message} />
-    </Box>
-  );
-}
-
 interface TimelineEvent {
   id: string;
-  kind: string;
+  type?: string;
+  kind?: string;
+  status?: string | null;
   from_status?: string | null;
   to_status?: string | null;
   actor_type?: string | null;
@@ -377,9 +296,33 @@ interface TimelineEvent {
   created_at: string;
 }
 
+interface ReturnRow { id: string; number?: number | null; type: string; status: string; description?: string; decision_comment?: string | null; refund_amount?: number | null }
+interface DisputeRow { id: string; subject: string; status: string; comment?: string }
+const RETURN_TYPE: Record<string, string> = { defect: 'брак', cut_error: 'ошибка раскроя', shortage: 'недовложение', cancel_after_pay: 'отмена после оплаты', other: 'другое' };
+const RETURN_STATUS: Record<string, string> = { open: 'ждёт решения', awaiting_owner: 'ждёт владельца поставщика', resolved: 'решён' };
+const ACTOR_LABEL: Record<string, string> = { master: 'мастер', vendor: 'поставщик', platform: 'платформа', system: 'система' };
+const EVENT_LABEL: Record<string, string> = {
+  take: 'Конструктор взял заказ',
+  assign: 'Назначен конструктор',
+  message: 'Сообщение',
+  correction_created: 'Предложено исправление',
+  correction_approved: 'Мастер подтвердил исправление',
+  correction_declined: 'Мастер отклонил исправление',
+  resubmitted: 'Мастер отправил заказ заново',
+  return_opened: 'Открыт возврат',
+  return_decided: 'Решение по возврату',
+  refund_approved: 'Владелец подтвердил возврат денег',
+  dispute_opened: 'Открыт спор',
+  dispute_resolved: 'Спор решён',
+  intervene: 'Вмешательство платформы',
+  change_supplier: 'Сменён поставщик',
+  update: 'Изменены данные заказа (счёт, ссылка, заметки)',
+  paid: 'Оплата отмечена',
+};
+
 /** Лента заказа (order_events): статусы и действия мастера, поставщика, платформы. */
 function Timeline({ orderId }: { orderId: string }) {
-  const { data, error } = useApi<{ events: TimelineEvent[]; corrections?: unknown[]; returns?: unknown[]; disputes?: unknown[] }>(
+  const { data, error } = useApi<{ events: TimelineEvent[]; corrections?: unknown[]; returns?: ReturnRow[]; disputes?: DisputeRow[] }>(
     `/admin/orders/${orderId}/timeline`,
   );
   if (!data) {
@@ -398,6 +341,24 @@ function Timeline({ orderId }: { orderId: string }) {
         </span>
       }
     >
+      {(data.returns?.length ?? 0) + (data.disputes?.length ?? 0) > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          {data.returns?.map((r) => (
+            <div key={r.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--line, #eee)' }}>
+              <b>Возврат №{r.number ?? '—'}</b> · {RETURN_TYPE[r.type] ?? r.type} · <Tag color={r.status === 'resolved' ? 'green' : 'yellow'}>{RETURN_STATUS[r.status] ?? r.status}</Tag>
+              {r.refund_amount ? ` · к возврату ${sum(r.refund_amount)}` : ''}
+              <div className="muted">{r.description}{r.decision_comment ? ` — ответ: ${r.decision_comment}` : ''}</div>
+            </div>
+          ))}
+          {data.disputes?.map((d) => (
+            <div key={d.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--line, #eee)' }}>
+              <Link href={`/admin/disputes/${d.id}`}><b>Спор</b></Link> · {d.subject === 'rejection' ? 'по отклонению' : 'по возврату'} ·{' '}
+              <Tag color={d.status === 'resolved' ? 'green' : 'yellow'}>{d.status === 'resolved' ? 'решён' : 'открыт'}</Tag>
+              <div className="muted">{d.comment}</div>
+            </div>
+          ))}
+        </div>
+      )}
       {data.events.length === 0 ? (
         <Empty>Событий пока нет</Empty>
       ) : (
@@ -407,15 +368,15 @@ function Timeline({ orderId }: { orderId: string }) {
               {data.events.map((e) => (
                 <tr key={e.id}>
                   <td style={{ whiteSpace: 'nowrap' }}>{dt(e.created_at)}</td>
-                  <td>{e.actor_name ?? e.actor_type ?? '—'}</td>
+                  <td>{e.actor_name || ACTOR_LABEL[e.actor_type ?? ''] || e.actor_type || '—'}</td>
                   <td>
-                    {e.to_status ? (
+                    {(e.to_status ?? e.status) ? (
                       <>
                         {e.from_status ? `${ORDER_STATUS_LABEL[e.from_status] ?? e.from_status} → ` : ''}
-                        <b>{ORDER_STATUS_LABEL[e.to_status] ?? e.to_status}</b>
+                        <b>{ORDER_STATUS_LABEL[(e.to_status ?? e.status) as string] ?? e.to_status ?? e.status}</b>
                       </>
                     ) : (
-                      e.kind
+                      EVENT_LABEL[e.type ?? e.kind ?? ''] ?? e.type ?? e.kind
                     )}
                     {e.comment && <div className="muted">{e.comment}</div>}
                   </td>

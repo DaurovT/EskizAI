@@ -58,7 +58,7 @@ npx expo run:android                   # или: npx eas-cli build --profile dev
 
 **«Поделиться» из Telegram (SCR-04)** — пакет `expo-share-intent` 9 и его config plugin (настройки в `app.json`: `image/*` и `text/*`, несколько фото на Android через `androidMultiIntentFilters`, до 5 картинок на iOS). Когда мастер выбирает «Мебель Мастер» в меню «Поделиться», `app/_layout.tsx` (`ShareIntentBridge`) забирает картинки и текст и открывает «Новый проект» с ними. В Expo Go нативного модуля нет: провайдер отключается (`disabled`), запасной путь — кнопка «Галерея».
 
-На **iOS** расширение включено: prebuild создаёт цель `MebelMasterShare` (`uz.mebel.master.share-extension`) и App Group `group.uz.mebel.master` у приложения и расширения. Патч `xcode` через `patch-package` больше не нужен (config-plugins SDK 58 используют `xcode` 4). App Group Xcode регистрирует сам при сборке с `-allowProvisioningUpdates`.
+На **iOS** расширение включено: prebuild создаёт цель `EskizAIShare` (`uz.mebel.master.share-extension`) и App Group `group.uz.mebel.master` у приложения и расширения. Патч `xcode` через `patch-package` больше не нужен (config-plugins SDK 58 используют `xcode` 4). App Group Xcode регистрирует сам при сборке с `-allowProvisioningUpdates`.
 
 ## Сборка на iPhone без EAS
 
@@ -68,13 +68,15 @@ npx expo run:android                   # или: npx eas-cli build --profile dev
 cd viewer && npm ci && npm run build && cd ../app && npm ci
 APP_VARIANT=development npx expo prebuild -p ios --clean
 APP_VARIANT=development EXPO_PUBLIC_API_URL=http://192.168.1.54:8000 EXPO_PUBLIC_DIAG=1 \
-  xcodebuild -workspace ios/MebelMaster.xcworkspace -scheme MebelMaster -configuration Release \
+  xcodebuild -workspace ios/EskizAI.xcworkspace -scheme EskizAI -configuration Release \
   -destination 'id=<UDID>' -derivedDataPath ios/build -allowProvisioningUpdates build
-xcrun devicectl device install app --device <UDID> ios/build/Build/Products/Release-iphoneos/MebelMaster.app
+xcrun devicectl device install app --device <UDID> ios/build/Build/Products/Release-iphoneos/EskizAI.app
 xcrun devicectl device process launch --terminate-existing --device <UDID> uz.mebel.master
 ```
 
-Подпись — команда `XQ35SJRLQH` (`ios.appleTeamId`), автоматическая; push (`aps-environment`) и App Group попадают в entitlements сами. `EXPO_PUBLIC_*` подставляются при сборке JS внутри `xcodebuild` — задавайте их в той же команде. Проверить, что адрес попал в сборку: `LC_ALL=C grep -a -c "192.168.1.54:8000" ios/build/Build/Products/Release-iphoneos/MebelMaster.app/main.jsbundle` → 1.
+Сборка идёт и на iPhone, и на iPad (`ios.supportsTablet`). Новое устройство попадает в профиль подписи, только если собрать с `-destination 'id=<UDID>'` и `-allowProvisioningDeviceRegistration`; сборка под `generic/platform=iOS` на него не установится.
+
+Подпись — команда `XQ35SJRLQH` (`ios.appleTeamId`), автоматическая; push (`aps-environment`) и App Group попадают в entitlements сами. `EXPO_PUBLIC_*` подставляются при сборке JS внутри `xcodebuild` — задавайте их в той же команде. Проверить, что адрес попал в сборку: `LC_ALL=C grep -a -c "192.168.1.54:8000" ios/build/Build/Products/Release-iphoneos/EskizAI.app/main.jsbundle` → 1.
 
 ## Диагностика (DIAG)
 

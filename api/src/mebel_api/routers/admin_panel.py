@@ -188,35 +188,7 @@ def _owner(db, w: Workshop) -> User | None:
     return db.scalar(select(User).where(User.workshop_id == w.id, User.role == "owner").limit(1))
 
 
-@router.get("/workshops", summary="Цеха: список")
-def workshops(admin: WorkshopsViewDep, db: DbDep, settings: SettingsDep, q: str | None = None,
-              limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
-    stmt = select(Workshop)
-    if q:
-        like = f"%{q.strip().lower()}%"
-        digits = "".join(ch for ch in q if ch.isdigit())
-        conds = [func.lower(Workshop.name).like(like)]
-        if digits:
-            ids = select(User.workshop_id).where(User.phone.like(f"%{digits}%"))
-            conds += [Workshop.phone.like(f"%{digits}%"), Workshop.id.in_(ids)]
-        stmt = stmt.where(or_(*conds))
-    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    items = []
-    for w in db.scalars(stmt.order_by(Workshop.created_at.desc()).limit(limit).offset(offset)):
-        st = limit_state(db, settings, w)
-        owner = _owner(db, w)
-        items.append({
-            "id": str(w.id), "name": w.name, "city": w.city, "phone": w.phone or (owner.phone if owner else None),
-            "owner_name": owner.name if owner else None, "plan": w.plan, "blocked": w.blocked,
-            "free_left": st.free_left, "free_limit": st.free_limit, "pack_left": st.pack_left,
-            "unlimited": st.unlimited,
-            "projects": db.scalar(select(func.count(Project.id)).where(Project.workshop_id == w.id,
-                                                                       Project.deleted_at.is_(None))) or 0,
-            "orders": db.scalar(select(func.count(Order.id)).join(Project, Order.project_id == Project.id)
-                                .where(Project.workshop_id == w.id)) or 0,
-            "created_at": _iso(w.created_at),
-        })
-    return {"items": items, "total": total, "limit": limit, "offset": offset}
+# Список цехов (поиск, фильтры, сортировка, CSV) — GET /admin/workshops в routers/admin_ops.py
 
 
 @router.get("/workshops/{workshop_id}", summary="Карточка цеха")
@@ -437,21 +409,7 @@ def _get_order(db, order_id: uuid.UUID) -> Order:
     return o
 
 
-@router.get("/orders", summary="Заказы поставщикам")
-def orders(admin: OrdersDep, db: DbDep, status: Annotated[list[OrderStatus] | None, Query()] = None,
-           q: str | None = None, supplier_id: uuid.UUID | None = None,
-           limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)) -> dict:
-    stmt = select(Order).join(Project, Order.project_id == Project.id).join(Workshop, Project.workshop_id == Workshop.id)
-    if supplier_id:
-        stmt = stmt.where(Order.supplier_id == supplier_id)
-    if status:
-        stmt = stmt.where(Order.status.in_([s.value for s in status]))
-    if q:
-        like = f"%{q.strip().lower()}%"
-        stmt = stmt.where(or_(func.lower(Project.title).like(like), func.lower(Workshop.name).like(like)))
-    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    rows = db.scalars(stmt.order_by(Order.created_at.desc()).limit(limit).offset(offset))
-    return {"items": [_order_brief(db, o) for o in rows], "total": total, "limit": limit, "offset": offset}
+# Список заказов (фильтры, SLA, просрочка) — GET /admin/orders в routers/admin_ops.py
 
 
 @router.get("/orders/{order_id}", summary="Карточка заказа: состав, раскрой, CSV")

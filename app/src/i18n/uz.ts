@@ -1025,7 +1025,7 @@ export const uz: Dict = {
   order_repeat: 'Buyurtmani takrorlash',
   os_created: 'Yaratilgan',
   os_paid: 'Toʻlangan',
-  os_accepted: 'EMAN qabul qildi',
+  os_accepted: 'Yetkazib beruvchi qabul qildi',
   os_cutting: 'Bichilmoqda',
   os_ready: 'Tayyor',
   os_issued: 'Berildi',

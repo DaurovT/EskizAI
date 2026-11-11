@@ -2,58 +2,140 @@
 
 /** Поставщики (§4, §4a): список, создание с первым владельцем, маршруты категорий заказа. */
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { hoursLabel } from '@/components/admin/ops';
+import { defaultPeriod, PeriodFilter, type Period } from '@/components/admin/Period';
 import { Box, Empty, Loading, Msg, Tag } from '@/components/admin/ui';
+import { num, sum } from '@/lib/admin/format';
 import { TempPassword } from '@/components/staff/auth';
-import { itemsOf } from '@/lib/staff/client';
+import { itemsOf, qs } from '@/lib/staff/client';
 import { useAction, useApi, useClient } from '@/lib/staff/hooks';
 import { CATEGORY_LABEL, type Supplier } from './shared';
 
+interface Perf extends Omit<Supplier, 'staff'> {
+  current_rate_percent: number;
+  queue: number;
+  queue_oldest_hours: number | null;
+  overdue: number;
+  in_work: number;
+  orders_period: number;
+  paid_period: number;
+  median_accept_hours: number | null;
+  return_rate: number | null;
+  reject_rate: number | null;
+  turnover: number;
+  commission: { accrued: number; reversed: number; due: number };
+  settled: number;
+  debt: number;
+  staff: { total: number; active: number; owners: number };
+}
+
+const pct = (v: number | null) => (v === null ? '—' : `${(v * 100).toFixed(v < 0.1 && v > 0 ? 1 : 0)}%`);
+
 export default function SuppliersPage() {
-  const { data, error, loading, reload } = useApi<Supplier[] | { items: Supplier[] }>('/admin/suppliers');
+  const router = useRouter();
+  const [period, setPeriod] = useState<Period>(defaultPeriod(29));
+  const list = useApi<Supplier[] | { items: Supplier[] }>('/admin/suppliers');
+  const { data, error, loading, reload } = useApi<{ items: Perf[]; overdue_hours: number }>(
+    `/admin/suppliers/performance${qs({ from: period.from, to: period.to })}`,
+  );
   const [creating, setCreating] = useState(false);
-  const rows = itemsOf(data);
+  const rows = data?.items ?? [];
   return (
     <>
-      <h1>Поставщики</h1>
-      <div className="toolbar">
+      <div className="ops-head">
+        <div>
+          <h1>Поставщики</h1>
+          <div className="ops-sub">
+            Очередь, просрочки и долг — на сейчас; медиана принятия, возвраты, оборот и комиссия — за период.
+          </div>
+        </div>
         <button type="button" className="b primary" onClick={() => setCreating((v) => !v)}>
           {creating ? 'Скрыть форму' : '+ Поставщик'}
         </button>
       </div>
-      {creating && <CreateSupplier onCreated={reload} />}
+      {creating && (
+        <CreateSupplier
+          onCreated={() => {
+            reload();
+            list.reload();
+          }}
+        />
+      )}
+      <PeriodFilter value={period} onChange={setPeriod} />
       <Loading error={error} loading={loading && !data} />
       {data &&
         (rows.length === 0 ? (
           <Empty>Поставщиков пока нет</Empty>
         ) : (
-          <div className="scroll">
-            <table>
+          <div className="scroll" style={{ opacity: loading ? 0.6 : 1 }}>
+            <table className="ops-table">
               <thead>
                 <tr>
                   <th>Поставщик</th>
-                  <th>Код</th>
+                  <th className="num" title="Новые заказы без решения поставщика">Очередь</th>
+                  <th className="num" title={`В «Создан» дольше ${data.overdue_hours} ч`}>Просрочено</th>
+                  <th className="num" title="Медиана: от создания заказа до принятия поставщиком">Принятие (медиана)</th>
+                  <th className="num" title="Доля оплаченных заказов с возвратом">Возвраты</th>
+                  <th className="num" title="Доля отклонённых из созданных за период">Отклонения</th>
+                  <th className="num">Оборот</th>
                   <th className="num">Комиссия</th>
-                  <th>Способ заказа</th>
+                  <th className="num" title="Начислено минус сторно минус выплачено — за всё время">Долг</th>
                   <th>Статус</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((s) => (
-                  <tr key={s.id} className={s.active === false ? 'inactive' : ''}>
+                  <tr
+                    key={s.id}
+                    className={`clickable ${s.active === false ? 'inactive' : s.overdue ? 'ops-overdue' : ''}`}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('a')) return;
+                      router.push(`/admin/suppliers/${s.id}`);
+                    }}
+                  >
                     <td>
                       <Link href={`/admin/suppliers/${s.id}`}>{s.name}</Link>
+                      <div className="sub">
+                        <code>{s.code}</code> · ставка {s.current_rate_percent}% · сотрудников {s.staff.active}
+                        {s.staff.owners === 0 && <span className="ops-sla late"> · нет владельца</span>}
+                      </div>
                     </td>
-                    <td>
-                      <code>{s.code}</code>
+                    <td className="num">
+                      <Link href={`/admin/orders?supplier_id=${s.id}&status=created`}>{num(s.queue)}</Link>
+                      {s.queue_oldest_hours != null && <div className="sub">старейший {hoursLabel(s.queue_oldest_hours)}</div>}
                     </td>
-                    <td className="num">{s.commission_percent != null ? `${s.commission_percent}%` : '—'}</td>
-                    <td>{s.order_method ?? '—'}</td>
+                    <td className="num">
+                      {s.overdue ? (
+                        <Link className="ops-sla overdue" href={`/admin/orders?supplier_id=${s.id}&overdue=true&sort=status_age`}>
+                          {num(s.overdue)}
+                        </Link>
+                      ) : (
+                        <span className="muted">0</span>
+                      )}
+                    </td>
+                    <td className="num">{hoursLabel(s.median_accept_hours)}</td>
+                    <td className="num">
+                      <span className={s.return_rate && s.return_rate > 0.1 ? 'ops-sla late' : ''}>{pct(s.return_rate)}</span>
+                    </td>
+                    <td className="num">{pct(s.reject_rate)}</td>
+                    <td className="num">
+                      {sum(s.turnover)}
+                      <div className="sub">{s.paid_period} оплач.</div>
+                    </td>
+                    <td className="num">
+                      {sum(s.commission.due)}
+                      {s.commission.reversed > 0 && <div className="sub">сторно {sum(s.commission.reversed)}</div>}
+                    </td>
+                    <td className="num">
+                      <b className={s.debt > 0 ? 'ops-sla late' : ''}>{sum(s.debt)}</b>
+                    </td>
                     <td>
                       {s.active === false ? (
                         <>
                           <Tag color="red">заблокирован</Tag>
-                          {s.blocked_reason && <div className="muted">{s.blocked_reason}</div>}
+                          {s.blocked_reason && <div className="sub">{s.blocked_reason}</div>}
                         </>
                       ) : (
                         <Tag color="green">работает</Tag>
@@ -65,7 +147,7 @@ export default function SuppliersPage() {
             </table>
           </div>
         ))}
-      <RoutesEditor suppliers={rows} />
+      <RoutesEditor suppliers={itemsOf(list.data)} />
     </>
   );
 }
