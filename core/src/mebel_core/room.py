@@ -105,14 +105,14 @@ def _wardrobe_room(result: BuildResult) -> dict | None:
         _box("wall_left", "wall_left", xl - T, y_front, 0, xl, D + T, z_top, lean=lean_l),
         _box("wall_right", "wall_right", xr, y_front, 0, xr + T, D + T, z_top, lean=lean_r),
         _box("wall_back", "wall_back", xl - T, D, 0, xr + T, D + T, z_top),
-        _box("floor", "floor", xl - T - (EF if nd else E), y_front - E, -T, xr + T + (EF if nd else E), D + T, 0),
-        _box("ceiling", "ceiling", xl - T - (EF if nd else E), y_front - E, zc, xr + T + (EF if nd else E), D + T,
+        _box("floor", "floor", xl - T - EF, y_front - E, -T, xr + T + EF, D + T, 0),
+        _box("ceiling", "ceiling", xl - T - EF, y_front - E, zc, xr + T + EF, D + T,
              zc + T, lean=lean_h),
     ]
-    if nd:  # стена комнаты по бокам от проёма ниши (лицом к зрителю)
-        # лицо стены — ровно в плоскости проёма (y_front), тело стены — за ней: видно, утоплен шкаф или заподлицо
-        walls += [_box("wall_front_left", "wall_front", xl - T - EF, y_front, 0, xl, y_front + T, zc),
-                  _box("wall_front_right", "wall_front", xr, y_front, 0, xr + T + EF, y_front + T, zc)]
+    # стена комнаты по бокам от проёма ниши (лицом к зрителю); без замера ниши — заподлицо с фасадами
+    # лицо стены — ровно в плоскости проёма (y_front), тело стены — за ней: видно, утоплен шкаф или заподлицо
+    walls += [_box("wall_front_left", "wall_front", xl - T - EF, y_front, 0, xl, y_front + T, zc),
+              _box("wall_front_right", "wall_front", xr, y_front, 0, xr + T + EF, y_front + T, zc)]
     return {
         "walls": walls,
         "niche": {"width": wmin, "width_max": max(widths) if widths else wmin,
