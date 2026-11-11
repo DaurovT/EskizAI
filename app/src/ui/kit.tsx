@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Children, forwardRef, isValidElement, useEffect, useImperativeHandle, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import {
   ActivityIndicator, Animated, Image, Keyboard, LayoutAnimation, Platform, ScrollView, StyleSheet, Text, TextInput, View,
-  type RefreshControlProps, type StyleProp, type TextInputInstance, type ViewInstance, type TextInputProps, type TextStyle, type ViewStyle,
+  type RefreshControlProps, type ScrollViewInstance, type StyleProp, type TextInputInstance, type ViewInstance, type TextInputProps, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, palette, radius, space, statusTone, tagTones, bannerTones, tones, type, type BannerTone, type TagTone, type Tone } from './theme';
@@ -180,12 +180,39 @@ export function Screen({
 }) {
   const pad = [padded && st.body, { gap }, contentStyle];
   const box = useRef<ViewInstance>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const footRef = useRef<ViewInstance>(null);
+  const offset = useRef(0);
   const kb = useKeyboardOverlap(box);
   const bottomInset = useSafeAreaInsets().bottom;
+  // клавиатура открылась — прокрутить так, чтобы поле ввода (и строка под ним) было над футером/клавиатурой
+  useEffect(() => {
+    if (!kb || !scroll) return;
+    const id = setTimeout(() => {
+      const input = TextInput.State.currentlyFocusedInput?.() as unknown as ViewInstance | null;
+      if (!input?.measureInWindow) return;
+      input.measureInWindow((_x, iy, _w, ih) => {
+        const go = (limit: number) => {
+          const over = iy + ih + KB_ROOM - limit;
+          if (over > 0) scrollRef.current?.scrollTo({ y: offset.current + over, animated: true });
+        };
+        if (footRef.current) footRef.current.measureInWindow((_a, fy) => go(fy));
+        else box.current?.measureInWindow((_a, by, _b, bh) => go(by + bh - kb));
+      });
+    }, 260);
+    return () => clearTimeout(id);
+  }, [kb, scroll]);
   const body = scroll ? (
-    <ScrollView contentContainerStyle={[pad, { paddingBottom: footer ? space.m : space.xxl, flexGrow: 1 }]} keyboardShouldPersistTaps="handled" refreshControl={refreshControl}>
-      {children}
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[pad, { paddingBottom: footer ? space.m : space.xxl, flexGrow: 1 }]}
+        keyboardShouldPersistTaps="handled" refreshControl={refreshControl} scrollEventThrottle={32}
+        onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }}>
+        {children}
+      </ScrollView>
+      {/* с клавиатурой область прокрутки короткая — края растворяются в фоне, а не режутся */}
+      {kb ? <EdgeFade edge="top" /> : null}
+      {kb ? <EdgeFade edge="bottom" /> : null}
+    </View>
   ) : (
     <View style={[{ flex: 1 }, pad]}>{children}</View>
   );
@@ -198,9 +225,23 @@ export function Screen({
       {/* футер и поле у низа — ровно над клавиатурой (KeyboardAvoidingView ошибался на высоту шапки стека) */}
       <View ref={box} style={{ flex: 1, paddingBottom: footer && kb ? Math.max(0, kb - bottomInset + 8) : kb }}>
         {body}
-        {footer ? <Footer bar={footerBar} style={footerStyle}>{footer}</Footer> : null}
+        {footer ? <View ref={footRef}><Footer bar={footerBar} style={footerStyle}>{footer}</Footer></View> : null}
       </View>
     </SafeAreaView>
+  );
+}
+
+/** Запас под полем ввода при прокрутке к нему (строка чипов/подсказок под полем). */
+const KB_ROOM = 64;
+const FADE_STEPS = [0.92, 0.75, 0.55, 0.35, 0.18, 0.06];
+
+/** Мягкий край прокрутки цвета фона (без градиентной библиотеки — полосы по 3 pt). */
+function EdgeFade({ edge }: { edge: 'top' | 'bottom' }) {
+  const bands = edge === 'top' ? FADE_STEPS : [...FADE_STEPS].reverse();
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, [edge]: 0 }}>
+      {bands.map((o, i) => <View key={i} style={{ height: 3, backgroundColor: palette.ground, opacity: o }} />)}
+    </View>
   );
 }
 
