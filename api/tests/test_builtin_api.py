@@ -142,6 +142,36 @@ def test_empty_niche_photo_room_colors_and_manual_override(api, client, owner, f
         {"wall": "#D0D8E0", "floor": "#555555", "source": "manual", "view_only": True}
 
 
+def test_room_colors_survive_answer_round(api, client, owner, fake):
+    """Цвет стен с фото сохраняется, когда ИИ пересобирает дерево после ответов на вопросы."""
+    pid = api.project(owner, tree=None)
+    ph = client.post(f"/projects/{pid}/photos", files={"file": ("n.png", _niche_photo(), "image/png")},
+                     headers=owner).json()
+    tree = {"type": "wardrobe", "width": 1700, "height": 2650, "depth": 600, "installation": "niche",
+            "builtin": {"niche": {"width": 1800, "height": 2700}, "fillers": ["left", "right", "top"]},
+            "sections": [{"fill": [{"kind": "rod"}], "doors": {"count": 2}},
+                         {"fill": [{"kind": "shelves", "count": 5}], "doors": {"count": 2}}]}
+    room = {"photo": 0, "wall_region": [0.0, 0.0, 0.5, 0.5], "floor_region": [0.0, 0.8, 1.0, 1.0],
+            "wall_color_hint": "#FFFFFF", "floor_color_hint": "#777777"}
+    q = [{"id": "access", "text": "Нужен доступ к двери в нише?", "options": ["Да", "Нет"], "default": "Да",
+          "affects": "/builtin"}]
+    first = design(tree=tree, room=room, questions=q, product_kind="встроенный шкаф")
+    first["tree_json"] = json.dumps(tree)
+    again = design(tree=tree, product_kind="встроенный шкаф")  # после ответов — без room и без room_colors
+    again["tree_json"] = json.dumps(tree)
+    fake.replies += [response(first), response(again)]
+    r = client.post(f"/projects/{pid}/ai/design", json={"text": "сюда шкаф", "photo_ids": [ph["id"]]}, headers=owner)
+    res = client.get(f"/tasks/{r.json()['task_id']}", headers=owner).json()["result"]
+    assert res["questions"], res
+    before = client.get(f"/projects/{pid}/model", headers=owner).json()["version"]["tree"]["room_colors"]
+    r = client.post(f"/projects/{pid}/ai/answer", json={"answers": {"access": "Нет"}}, headers=owner)
+    assert r.status_code == 202, r.text
+    out = client.get(f"/tasks/{r.json()['task_id']}", headers=owner).json()["result"]
+    v = client.get(f"/projects/{pid}/model", headers=owner).json()["version"]
+    assert v["id"] == out["version_id"] and v["tree"]["room_colors"] == before
+    assert v["viewer"]["room"]["colors"]["wall"] == before["wall"]
+
+
 def test_room_colors_keep_manual_and_fallback_to_hint():
     from types import SimpleNamespace
 

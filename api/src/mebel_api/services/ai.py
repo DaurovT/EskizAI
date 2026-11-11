@@ -404,6 +404,12 @@ class AiRunner:
 
                     shots = photos if photos is not None else self._photos(db, project, None)
                     tree = with_room_colors(tree, r.room, [ph.data for ph in shots])
+                # ИИ пересобирает дерево целиком (ответы, уточнения) и не знает про цвет комнаты, снятый сервером
+                # с фото: переносим его из текущей версии, иначе стены после «Пересчитать» теряют цвет
+                if not tree.get("room_colors") and project.current_version_id:
+                    prev = db.get(ModelVersion, project.current_version_id)
+                    if prev is not None and isinstance(prev.tree, dict) and prev.tree.get("room_colors"):
+                        tree = {**tree, "room_colors": prev.tree["room_colors"]}
                 try:
                     v = create_version(db, project, tree, author_id=user_id, source=VersionSource.ai,
                                        label_text=f"ИИ: {r.product_kind}"[:200] if r else "ИИ",

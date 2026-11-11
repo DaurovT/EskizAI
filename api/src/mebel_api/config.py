@@ -109,9 +109,10 @@ class Settings(BaseSettings):
     # платформе, без Pro и без оплаченных заказов. Дневной лимит цеха — не больше ai_workshop_max_share
     # от общего; при расходе ai_daily_usd_global × (1 − ai_paying_reserve_share) ИИ закрывается новым цехам,
     # остаток — запас платящим. Перед постановкой задачи резервируется ai_task_reserve_usd
-    ai_new_workshop_daily_usd: float = 1.0
-    ai_workshop_hourly_usd: float = 2.0
-    ai_new_workshop_hourly_usd: float = 0.5
+    ai_new_workshop_daily_usd: float = 5.0
+    # почасовой потолок выключен (0): основная мера — бюджет проекта (перерасход списывает ещё проект)
+    ai_workshop_hourly_usd: float = 0.0
+    ai_new_workshop_hourly_usd: float = 0.0
     ai_workshop_max_share: float = 0.2
     ai_paying_reserve_share: float = 0.3
     ai_task_reserve_usd: float = 0.05

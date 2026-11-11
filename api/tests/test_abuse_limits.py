@@ -268,7 +268,21 @@ def test_reserved_queue_cost_counts_toward_caps(app, api, client, owner, fake, s
     assert r.status_code == 429 and r.json()["error"]["code"] == "ai_workshop_daily_limit"
 
 
+def test_no_hourly_cap_by_default(app, api, client, owner, fake, settings):
+    """По умолчанию почасового потолка нет — мерой служит бюджет проекта."""
+    assert settings.ai_workshop_hourly_usd == 0 and settings.ai_new_workshop_hourly_usd == 0
+    pid = api.project(owner)
+    _spend(app, _workshop(app), 2.0)
+    from .fake_anthropic import edit_reply
+
+    fake.replies.append(response(edit_reply([{"op": "replace", "path": "/width", "value_json": "1300"}])))
+    assert client.post(f"/projects/{pid}/ai/edit", json={"instruction": "шире"}, headers=owner).status_code == 202
+
+
 def test_hourly_cap_and_paying_workshops(app, api, client, owner, fake, settings):
+    # почасовой потолок выключен по умолчанию; если включить настройкой — работает
+    settings.ai_new_workshop_hourly_usd = 0.5
+    settings.ai_workshop_hourly_usd = 2.0
     pid = api.project(owner)
     ws = _workshop(app)
     _spend(app, ws, settings.ai_new_workshop_hourly_usd)

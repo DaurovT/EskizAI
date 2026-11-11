@@ -60,12 +60,12 @@ def test_design_ready_and_request_shape() -> None:
     assert rec.validation == "ok" and rec.cost_usd > 0
 
 
-def test_questions_capped_at_three_and_answer_appends_history() -> None:
-    qs = [{"id": f"q{i}", "text": "?", "options": ["а", "б"], "default": "а", "affects": "/width"} for i in range(5)]
+def test_questions_capped_at_six_and_answer_appends_history() -> None:
+    qs = [{"id": f"q{i}", "text": "?", "options": ["а", "б"], "default": "а", "affects": "/width"} for i in range(8)]
     client = FakeClient([response(design(questions=qs)), response(design())])
     s = DesignSession(llm=LLM(client=client))
     r = s.start("шкаф")
-    assert r.status == "questions" and len(r.questions) == 3
+    assert r.status == "questions" and len(r.questions) == 6
     before = copy.deepcopy(s.messages)
     r2 = s.answer({"q0": "а"})
     assert r2.status == "ready"

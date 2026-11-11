@@ -38,7 +38,7 @@ export default function Questions() {
   const answered = meta.answered ?? [];
   const done = new Set([...answered.map((a) => a.id), ...Object.keys(meta.design?.answers ?? {})]);
   // отвеченное в прошлых раундах не спрашиваем снова
-  const qs = (meta.design?.status === 'questions' || shot ? meta.design?.questions ?? [] : []).filter((q) => !done.has(q.id)).slice(0, 3);
+  const qs = (meta.design?.status === 'questions' || shot ? meta.design?.questions ?? [] : []).filter((q) => !done.has(q.id)).slice(0, 6);
   const answers = meta.answers;
   // тап — только выбор (повторный тап по выбранному снимает выбор); отправка — одной кнопкой
   const setAnswer = (qid: string, v: string) => updateMeta(id, (m) => {

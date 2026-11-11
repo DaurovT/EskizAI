@@ -167,7 +167,7 @@ class DesignSession:
     def _result(self, parsed: DesignResponse, tree: dict, result: BuildResult) -> DesignResult:
         self.last = parsed
         # отвеченное не переспрашиваем, даже если модель вернула тот же вопрос
-        questions = [q for q in parsed.questions if q.id not in self.answers][:3]
+        questions = [q for q in parsed.questions if q.id not in self.answers][:6]
         if parsed.confidence < LOW_CONFIDENCE:
             status = "choose_type"
         elif questions:

@@ -1001,8 +1001,9 @@ export class ProductScene {
         return new Color(fallback);
       }
     };
-    const wallC = safe(colors.wall, '#e4e2de');
-    const floorC = safe(colors.floor, '#cbc6be');
+    // цвет по умолчанию заметно темнее фона экрана (#F2F1EE): ниша видна, даже если цвет с фото не снят
+    const wallC = safe(colors.wall, '#d3cdc3');
+    const floorC = safe(colors.floor, '#b9b0a2');
     const ceilC = colors.ceiling ? safe(colors.ceiling, '#f2f1ee') : wallC.clone().lerp(new Color('#ffffff'), 0.4);
     const center = this.closedBounds.getCenter(new Vector3());
     const pos: number[] = [];
