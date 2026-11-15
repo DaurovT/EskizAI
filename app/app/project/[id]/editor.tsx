@@ -472,7 +472,8 @@ export default function Editor() {
         <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
         <KitchenView id={id} tree={draft} busy={saving || ai.running} disabled={offline}
           title={[card.data?.title, card.data?.client?.name].filter(Boolean).join(' · ') || t('ed_title')}
-          price={noCurrency(formatRange(price, lang))} onSend={kitchenSend}
+          price={price ? noCurrency(formatRange(price, lang)) : null} onSend={kitchenSend}
+          materialName={(mid) => v.viewer?.materials?.[mid]?.name}
           onWidth={(ptr, val) => editField(widthField(ptr), val)} onCornerSize={(ptr, val) => editField(widthField(ptr), val)}
           onModel={(m) => { applyState(m); chat.reload(); }} onError={(e) => showError(e, lang)} />
       </>

@@ -32,8 +32,13 @@ const LABEL: Record<string, { ru: string; uz: string }> = {
 };
 const isAppliance = (k: string) => /appliance|oven|hob|sink|dishwasher|hood|fridge/.test(k);
 
-export function KitchenView({ id, tree, title, sub, price, onWidth, onSend, busy, disabled, onCornerSize, onModel, onError }: {
-  id: string; tree: ProductTree; title: string; sub?: string; price: string; busy: boolean; disabled: boolean;
+export function KitchenView({ id, tree, title, sub, price, materialName, onWidth, onSend, busy, disabled, onCornerSize, onModel, onError }: {
+  id: string; tree: ProductTree; title: string; sub?: string;
+  /** Цена «до замера»; null — не показывать (цену пока убрали из редактора, как у шкафа). */
+  price?: string | null;
+  /** Название материала по id из 3D-модели (МДФ под покраску и т. п. — не декоры EMAN). */
+  materialName?: (id: string) => string | undefined;
+  busy: boolean; disabled: boolean;
   onWidth: (pointer: string, value: number) => void; onSend: (text: string) => void; onCornerSize: (pointer: string, mm: number) => void;
   /** Замена наполнения угла (фурнитура corner_fill) вернула новую версию модели. */
   onModel: (s: ModelStateOut) => void; onError: (e: unknown) => void;
@@ -71,7 +76,8 @@ export function KitchenView({ id, tree, title, sub, price, onWidth, onSend, busy
   const site = tree.site as KitchenSite | undefined;
   const diffs = site && typeof site.wall_a === 'number' ? wallDiffs(tree, site) : null;
   const wallA = typeof tree.wall_a === 'number' ? tree.wall_a : typeof tree.width === 'number' ? tree.width : null;
-  const decorName = (id?: string | null) => (id ? (decors.data ?? []).find((d) => d.id === id)?.[lang === 'uz' ? 'name_uz' : 'name'] ?? id : '—');
+  const decorName = (id?: string | null) => (id ? (decors.data ?? []).find((d) => d.id === id)?.[lang === 'uz' ? 'name_uz' : 'name'] ?? materialName?.(id) ?? id : '—');
+  const paintCode = (tree.fronts as { style?: { paint?: { code?: string | null } | null } | null } | undefined)?.style?.paint?.code;
   const fillOf = (m: Mod, upper: boolean) =>
     m.kind === 'drawers' ? t('kit_fill_drawers', { n: m.drawers ?? 3 })
       : m.kind === 'doors' ? (upper ? t('kit_fill_shelves', { n: m.shelves ?? 2 }) : t('kit_fill_door'))
@@ -150,7 +156,7 @@ export function KitchenView({ id, tree, title, sub, price, onWidth, onSend, busy
                   onChange={(v) => onWidth(`/${sel.row}/${sel.i}/width`, v)} />
                 <View>
                   {corner ? <KV k={t('kit_wall')} v={sel.row === 'base' || sel.row === 'wall' ? `${t('kit_a')}, ${sumA} ${t('mm')}` : `${t('kit_b')}, ${sumB} ${t('mm')}`} /> : <KV k={t('kit_fill')} v={fillOf(cur, sel.row === 'wall')} />}
-                  <KV k={t('kit_front')} v={decorName(tree.fronts?.material)} onPress={() => router.push({ pathname: '/project/[id]/materials', params: { id: id } })} line />
+                  <KV k={t('kit_front')} v={[decorName(tree.fronts?.material), paintCode].filter(Boolean).join(' · ')} onPress={() => router.push({ pathname: '/project/[id]/materials', params: { id: id } })} line />
                 </View>
                 {!corner ? (
                   wallA != null && sumA !== wallA ? (
@@ -245,10 +251,12 @@ export function KitchenView({ id, tree, title, sub, price, onWidth, onSend, busy
             </View>
           </View>
           <View style={[s.cbar, { paddingBottom: Math.max(insets.bottom - 10, 24) }]}>
-            <Press onPress={() => router.push({ pathname: '/project/[id]/estimate', params: { id: id } })} style={s.pr} accessibilityRole="button">
-              <T v="cap" style={{ fontSize: 13, lineHeight: 16 }}>{t('ed_before_measure')}</T>
-              <T num style={{ fontSize: 16, lineHeight: 20, fontWeight: '700' }}>{price}</T>
-            </Press>
+            {price && price !== '—' ? (
+              <Press onPress={() => router.push({ pathname: '/project/[id]/estimate', params: { id: id } })} style={s.pr} accessibilityRole="button">
+                <T v="cap" style={{ fontSize: 13, lineHeight: 16 }}>{t('ed_before_measure')}</T>
+                <T num style={{ fontSize: 16, lineHeight: 20, fontWeight: '700' }}>{price}</T>
+              </Press>
+            ) : null}
             <Press onPress={() => router.push({ pathname: '/project/[id]/send', params: { id: id } })} style={s.cta} accessibilityRole="button">
               <T style={{ fontSize: 17, fontWeight: '600', color: palette.white }}>{t('ed_to_client')}</T>
               <Ionicons name="paper-plane-outline" size={18} color={palette.white} />
