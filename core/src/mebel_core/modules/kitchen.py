@@ -379,32 +379,46 @@ def _build_run(ctx: BuildContext, k: Kitchen, base: list, wall: list, *, run: st
     if wall and mm(k.wall_bottom) - (legs + bh + ct_t) < mm(450):
         ctx.warn("wall_too_low", "Между столешницей и верхними модулями меньше 450 мм — неудобно работать", "wall")
     rail = 0
+    col_tops = [wall_top]  # верх колонок верхних модулей (ярус до потолка — выше ряда)
+    bottoms: list[tuple[int, int, int]] = []  # x0, x1, низ модуля — под полки на столешнице
+    from .kitchen_wall import extended
+
     for j, cab in enumerate(wall):
         w, path = mm(cab.width), f"wall{run}[{j}]"
         if cab.kind == "gap":  # пустое место (окно, вентканал) — без корпуса
             wx += w
             continue
-        if segments and segments[-1][1] == wx:
-            segments[-1] = (segments[-1][0], wx + w, wall_y - tf, "wall", wall_top)
-        else:
-            segments.append((wx, wx + w, wall_y - tf, "wall", wall_top))
         rail += w
         h = mm(cab.height) if cab.height else (r.hood_height if cab.kind == "hood" else mm(k.wall_height))
         z0 = wall_top - h
-        slot = _carcass(ctx, path=path, x=wx, w=w, z=z0, h=h, d=wd, kind="wall", back=True, y0=wall_y)
-        if cab.shelves and cab.kind != "hood":
-            ctx.run("shelf", slot, slot.box, ShelvesFill(count=cab.shelves), f"{path}.fill[0]")
-        if cab.kind != "open":
-            last = j == len(wall) - 1
-            hinge = cab.hinge if cab.doors or not last else "right"
-            _doors(ctx, slot, [wx, wx + w], z0, wall_top, _door_count(ctx, w, cab.doors), hinge, f"{path}.doors",
-                   tall=False)
+        last = j == len(wall) - 1
+        col_top = wall_top
+        if extended(cab):  # подъёмные фасады, ниша под технику, ярус — kitchen_wall.py
+            idx = len(wall) - 1 - j if run == "2" and k.corner_side == "left" else j
+            z0, col_top = ctx.run("kitchen_wall_ext", cab, path=path, ptr=f"/wall{run}/{idx}", x=wx, w=w, z0=z0,
+                                  z1=wall_top, d=wd, y0=wall_y, last=last)
+        else:
+            slot = _carcass(ctx, path=path, x=wx, w=w, z=z0, h=h, d=wd, kind="wall", back=True, y0=wall_y)
+            if cab.shelves and cab.kind != "hood":
+                ctx.run("shelf", slot, slot.box, ShelvesFill(count=cab.shelves), f"{path}.fill[0]")
+            if cab.kind != "open":
+                hinge = cab.hinge if cab.doors or not last else "right"
+                _doors(ctx, slot, [wx, wx + w], z0, wall_top, _door_count(ctx, w, cab.doors), hinge,
+                       f"{path}.doors", tall=False)
+        if segments and segments[-1][1] == wx and segments[-1][4] == col_top:
+            segments[-1] = (segments[-1][0], wx + w, wall_y - tf, "wall", col_top)
+        else:
+            segments.append((wx, wx + w, wall_y - tf, "wall", col_top))
+        col_tops.append(col_top)
+        bottoms.append((wx, wx + w, z0))
         ctx.add_hardware("hanger", "Навес мебельный регулируемый", 2, path)
         wx += w
     ctx.front_y = 0
     if rail:
         ctx.add_hardware("mount_rail", f"Шина монтажная {round(to_mm(rail))} мм", 1, f"wall{run}", length=rail)
-    height = wall_top if rail else legs + bh + ct_t
+    if run == "" and k.mid:
+        ctx.run("kitchen_mid", base_len=base_len, ct_top=legs + bh + ct_t, bottoms=bottoms, back_t=back_t)
+    height = max(col_tops) if rail else legs + bh + ct_t
     if fridges:
         height = max(height, fridge_top)
     if k.top_filler:

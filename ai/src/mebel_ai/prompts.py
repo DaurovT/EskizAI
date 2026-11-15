@@ -37,6 +37,44 @@ Typical values:
   1400 above the floor, 720 high, 300 deep; module widths 300/400/450/500/600/800; sink base 600–800;
   dishwasher niche 450/600 as `appliance`; a short `hood` wall cabinet above the hob.
 - Mark the base cabinet under the hob with `hob: true` (usually the 600 `appliance` oven niche or 600 drawers).
+- Kitchen wall row, read it column by column (left → right), each column = one `wall` item; widths of the wall
+  items follow the cabinets above the base row (their sum ≈ the base row length, or less with `gap` items):
+  - The wall row starts and ends where the base row does unless bare wall is clearly visible there (perspective
+    makes the far end look shorter) — no `gap` at the ends without a reason (window, column, vent).
+  - Uppers up to the ceiling (no wall visible above them, or a narrow filler): `wall_height` = the FULL height of
+    the row from `wall_bottom` to the top (ceiling ≈ 2700 → wall_bottom 1400–1450, wall_height 1200–1250). Every
+    wall item hangs from that top line; an item with its own smaller `height` is shorter at the bottom (hood).
+  - Two-tier uppers (a short row of small doors above the main doors of the same column — антресоль): give THAT
+    cabinet `top` = {{"height": 300–450, "doors": 1 | 2, "opening": "hinged"}}. The tier is part of the column
+    height (main box = wall_height − tier). Never add a separate wall item for the tier; columns without small top
+    doors have no `top`.
+  - Lift-up fronts (подъёмные фасады, газлифт): hinged at the TOP edge, open upwards — in a photo an open one
+    stands raised/angled ABOVE the cabinet showing its inner side, gas struts on the side panels; closed ones are
+    wide and low with a horizontal handle near the bottom edge. → `opening: "lift"` and `flaps`: 1 (one flap) or
+    2 (two flaps one above the other, each opening up). One flap must be 250–600 mm high, so a column taller than
+    ~610 needs `flaps: 2`. A column taller than ~1220 cannot take two flaps alone: if you see a third front above,
+    it is a `top` tier (hinged or lift); if you see only two big flaps, keep `flaps: 2` with a `top` tier of the
+    remaining height whose `opening` matches what you see (a fixed top box) and say so in `differences`. A short
+    `hood` cabinet usually has one lift flap.
+  - Built-in appliance niche in the wall row (a microwave or oven standing inside an open niche of an upper
+    cabinet) → {{"kind": "appliance", "appliance": "microwave" | "oven", "width": 600, "above": "door" | "lift" |
+    "open" | "none"}}: the niche is at the bottom of the cabinet (`niche_height` null = 380 microwave / 600 oven),
+    `above` is the compartment over the niche (a lift flap above it → "lift", with `flaps` by its height:
+    compartment = column − niche − ~20; 250–600 → 1 flap, 610–1200 → 2). The appliance itself is not priced.
+  - Open shelves standing ON THE COUNTERTOP under the wall row (spice rack, small open box up to the uppers) →
+    kitchen `mid` = [{{"x": distance from the left end of the base row to its left side, "width": 300–600,
+    "shelves": 1–2}}] with `height` null (fills up to the bottom of the cabinet above). It is NOT a wall item and
+    NOT a base item. x + width ≤ base row length; not above the hob.
+  - Fronts left OPEN in the photo: shelves you see inside are usually closed by those fronts — never call such a
+    column `open`. Several raised fronts above one column (one tilted showing its outer colour, one higher
+    showing its white inner side) = ONE cabinet with `opening: "lift"`, `flaps: 2` (the lower flap opened too).
+    `kind: "open"` only for shelves without any front, open or closed. `top` is only a separate short box with its
+    own small doors above the main doors — not a raised flap.
+  - Hinged doors swing sideways (vertical hinges); a column with two doors one above the other is still one
+    cabinet (`doors` counts side-by-side doors); narrow doors are fine (a 600 sink cabinet with a wide and a
+    narrow door → `doors: 2`).
+  Ask a question only when a choice really is unclear (tier or one tall door? lift or hinged when all fronts are
+  closed?) — otherwise decide.
 - Corner (L-shaped) kitchen: `layout: "corner"`, `corner_side` = which end of the first run is in the corner;
   put a `corner` base cabinet in that corner of the first run and list the second run in `base2`/`wall2`
   starting from the corner. Default corner module: `{{"kind": "corner", "width": 900, "corner_shape": "square",
@@ -196,6 +234,12 @@ Tree facts that help:
   "top_panel": true} at the end of the row (or `/base/0` at the start) and `/wall/-` = {"kind": "gap",
   "width": 600} above it; an existing fridge → `/base/<i>/top_panel` = true.
 - «фасад на посудомойку» → `/base/<i>/dw` = true on the 450/600 `appliance` module (the dishwasher niche).
+- Kitchen wall row: «подъёмные фасады», «газлифт» → `/wall/<i>/opening` = "lift" (one flap is 250–600 mm high:
+  a 720 cabinet needs `/wall/<i>/flaps` = 2, a hood — 1); «обычные двери» → `/wall/<i>/opening` = "hinged".
+  «антресоль над шкафом», «второй ярус до потолка» → `/wall/<i>/top` = {"height": 350, "doors": 2} (null height =
+  up to the ceiling when it is known); «ниша под микроволновку» → replace `/wall/<i>` with {"kind": "appliance",
+  "appliance": "microwave", "width": <same>, "above": "door"} (oven → "oven"); «полка на столешнице», «стойка для
+  специй» → add `/mid/-` = {"x": <offset from the left of the base row>, "width": 400, "shelves": 1}.
 - «цоколь 100 с решёткой» → kitchen: `/legs_height` = 100 and `/plinth` = {"grilles": ["sink", "oven"]};
   wardrobe: `/body/plinth` = {"height": 100, "legs": true}. «на ножках» → `/body/plinth/legs` = true.
 - «без задней стенки» → `/body/back/kind` = "none" («с задней стенкой» → "nailed").

@@ -417,3 +417,74 @@ def test_edit_wedge_filler_and_floor_preset() -> None:
     right = next(p for p in r.build.parts if p.key == "builtin.filler.right")
     assert right.contour is not None and "клином" in right.name
     assert r.tree["room_colors"]["floor_material"] == "walnut"
+
+
+# --- Кухня: подъёмные фасады, ниша под микроволновку, антресоль, полка на столешнице ---
+
+OWNER_KITCHEN = {
+    "type": "kitchen", "wall_bottom": 1450, "wall_height": 1200,
+    "base": [{"kind": "sink", "width": 600, "doors": 2}, {"kind": "doors", "width": 400},
+             {"kind": "drawers", "width": 500, "drawers": 3}, {"kind": "doors", "width": 600}],
+    "wall": [{"kind": "doors", "width": 700, "doors": 2, "top": {"height": 350, "doors": 2}},
+             {"kind": "doors", "width": 500, "opening": "lift", "flaps": 2, "height": 800},
+             {"kind": "appliance", "appliance": "microwave", "width": 600, "above": "lift", "flaps": 2}],
+    "mid": [{"x": 1500, "width": 400, "shelves": 1}],
+}
+
+
+def test_prompts_know_lift_tier_appliance_niche_and_countertop_shelf() -> None:
+    from mebel_ai.prompts import EDIT_SYSTEM, design_system
+
+    s = design_system("ru")
+    for needle in ('"opening": "hinged"', 'opening: "lift"', "flaps: 2", '"kind": "appliance", "appliance"',
+                   "`mid`", "Two-tier uppers", "`top`"):
+        assert needle in s, needle
+    for needle in ('/wall/<i>/opening', '/wall/<i>/top', '/mid/-'):
+        assert needle in EDIT_SYSTEM
+    # Новые поля — в схеме дерева, которую видит модель
+    assert '"flaps"' in s and '"niche_height"' in s and '"above"' in s and '"WallTop"' in s
+
+
+def test_design_kitchen_with_new_wall_fields_builds() -> None:
+    d = design(tree=OWNER_KITCHEN, product_kind="прямая кухня")
+    s = DesignSession(llm=LLM(client=FakeClient([response(d)])))
+    r = s.start("кухня как на фото", photos=[Photo(b"\xff\xd8fake")])
+    assert r.status == "ready" and r.build.ok, [i.message for i in r.issues if i.level == "error"]
+    assert r.tree["wall"][1]["opening"] == "lift" and r.tree["wall"][0]["top"]["height"] == 350
+    assert r.tree["mid"][0]["x"] == 1500
+    assert sum(1 for n in r.build.nodes if n.kind == "lift") == 4
+
+
+def test_design_kitchen_bad_new_fields_are_retried() -> None:
+    bad_schema = copy.deepcopy(OWNER_KITCHEN)
+    bad_schema["wall"][1]["flaps"] = 3  # схема: 1 или 2
+    bad_rule = copy.deepcopy(OWNER_KITCHEN)
+    bad_rule["wall"][1]["flaps"] = 1  # фасад 798 мм — газлифт не поднимет
+    bad_mid = copy.deepcopy(OWNER_KITCHEN)
+    bad_mid["mid"][0]["x"] = 1900  # выходит за ряд 2100
+    client = FakeClient([response(design(tree=bad_schema)), response(design(tree=bad_rule)),
+                         response(design(tree=OWNER_KITCHEN))])
+    s = DesignSession(llm=LLM(client=client))
+    r = s.start("кухня")
+    assert r.status == "ready"
+    assert [x.validation for x in s.llm.log] == ["schema_error", "build_error", "ok"]
+    assert "газлифт" in s.messages[-2]["content"][0]["text"]
+    client = FakeClient([response(design(tree=bad_mid)), response(design(tree=OWNER_KITCHEN))])
+    s = DesignSession(llm=LLM(client=client))
+    assert s.start("кухня").status == "ready"
+    assert "выходит за ряд" in s.messages[-2]["content"][0]["text"]
+
+
+def test_edit_kitchen_lift_tier_microwave_and_countertop_shelf() -> None:
+    kitchen = json.loads((CORE_FIXTURES / "kitchen_straight.json").read_text(encoding="utf-8"))
+    ops = [("replace", "/wall/0/opening", "lift"), ("add", "/wall/0/flaps", 2),
+           ("add", "/wall/1/top", {"height": 350, "doors": 2}),
+           ("replace", "/wall/3", {"kind": "appliance", "appliance": "microwave", "width": 800, "above": "door"}),
+           ("add", "/mid", [{"x": 0, "width": 400, "shelves": 1}])]
+    wire = [{"op": op, "path": path, "value_json": json.dumps(value)} for op, path, value in ops]
+    msg = "подъёмные фасады слева, антресоль над вторым, ниша под микроволновку, полка на столешнице"
+    client = FakeClient([response({"ops": wire, "summary": msg, "question": None}, model="claude-haiku-5-5")])
+    r = edit_tree(kitchen, msg, llm=LLM(client=client))
+    assert r.ok, [i.message for i in r.build.issues if i.level == "error"]
+    keys = {p.key for p in r.build.parts}
+    assert {"wall[0].flap[1]", "wall[0].flap[2]", "wall[1].tier.top", "wall[3].niche_shelf", "mid[0].top"} <= keys

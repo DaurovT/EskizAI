@@ -154,6 +154,30 @@ export const SAMPLES: Record<SampleKey, Sample> = {
   },
 };
 
+/**
+ * Демо редактора кухни (SCR-37): подъёмные фасады в два ряда, ниша под микроволновку, антресоли, полка на столешнице,
+ * холодильник с пустым местом над ним; стена по замеру 3000 при модулях 3050 — видна подгонка суммы.
+ * 3D в моке — образец kitchen_straight (без ядра дерево не пересобрать).
+ */
+export const KITCHEN_EDITOR_DEMO: ProductTree = {
+  schema_version: '0.2', type: 'kitchen', installation: 'niche',
+  body: { material: 'ldsp_16_white' }, fronts: { material: 'ldsp_18_oak' },
+  countertop: { material: 'countertop_38_stone', depth: 600 },
+  site: { wall_a: 3000, utilities: [] },
+  base: [
+    { kind: 'drawers', width: 450, drawers: 3 }, { kind: 'doors', width: 600, hinge: 'right' },
+    { kind: 'appliance', width: 600, hob: true }, { kind: 'sink', width: 800, doors: 2 }, { kind: 'fridge', width: 600 },
+  ],
+  wall: [
+    { kind: 'doors', width: 450, opening: 'lift', flaps: 2, shelves: 1, top: { height: 350, opening: 'lift' } },
+    { kind: 'appliance', width: 600, appliance: 'microwave', above: 'lift', shelves: 0 },
+    { kind: 'hood', width: 600, shelves: 0 },
+    { kind: 'doors', width: 800, shelves: 2, top: { doors: 2, opening: 'hinged' } },
+    { kind: 'gap', width: 600 },
+  ],
+  mid: [{ kind: 'open', x: 1700, width: 300, height: null, shelves: 2, depth: null }],
+};
+
 /** Мок без ядра: дерево с декором/встройкой рисуем по похожему образцу ядра (та же сетка секций/модулей). */
 export function sampleFor(sample: SampleKey, tree: ProductTree, hasDecor: boolean, hasBuiltin: boolean): SampleKey {
   if (tree.type === 'kitchen') {

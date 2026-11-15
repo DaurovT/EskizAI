@@ -417,6 +417,73 @@ def _corner_mechanisms(result: BuildResult, parts: list[Part], out: list[HwItem]
                 out += [item, post]
 
 
+# ---------- Кухня: газлифты подъёмных фасадов и техника в нишах верхнего ряда ----------
+
+_FLAP = re.compile(r"^(.*)\.flap\[\d+\]$")
+
+
+def _gas_lifts(result: BuildResult, parts: list[Part], out: list[HwItem]) -> None:
+    """Газлифт — цилиндр на внутренней стороне боковины за подъёмным фасадом (на корпусе, не двигается)."""
+    by_key = {p.key: p for p in parts}
+    for p in parts:
+        m = _FLAP.match(p.key)
+        if p.role != "door" or not m:
+            continue
+        cab = m.group(1)
+        b = p.aabb()
+        y = b.max.y + mm(60)
+        z0, z1 = b.min.z + (b.max.z - b.min.z) * 0.35, b.max.z - mm(30)
+        name = _hw_name(result, "gas_lift", cab, "Подъёмный механизм (газлифт)")
+        sides = [("left", 1)] + ([("right", -1)] if b.max.x - b.min.x > mm(600) else [])
+        for side, s in sides:
+            panel = by_key.get(f"{cab}.side.{side}")
+            if panel is None:
+                continue
+            pb = panel.aabb()
+            x = (pb.max.x if s > 0 else pb.min.x) + s * mm(12)
+            item = HwItem(id=f"{p.key}.gas_lift.{side}", kind="gas_lift", part=panel.key, finish="steel", name=name)
+            item.cyl("Z", (x, y, (z0 + z1) / 2), mm(9), z1 - z0)  # корпус газлифта
+            item.cyl("Z", (x, y, z1 - (z1 - z0) * 0.2), mm(4), (z1 - z0) * 0.4)  # шток
+            item.box((x - s * mm(10), y - mm(15), z0 - mm(20)), (x + s * mm(2), y + mm(15), z0))  # кронштейн
+            out.append(item)
+
+
+_APPLIANCE_BOX = {"microwave": (mm(500), mm(290), mm(360)), "oven": (mm(595), mm(595), mm(560))}  # ширина, высота, глубина
+
+
+def _wall_appliances(result: BuildResult, parts: list[Part], out: list[HwItem]) -> None:
+    """Техника клиента в нише верхнего модуля — для наглядности (в смете её нет)."""
+    k = result.product
+    if getattr(k, "type", None) != "kitchen":
+        return
+    by_key = {p.key: p for p in parts}
+    for row in ("wall", "wall2"):
+        cabs = getattr(k, row)
+        for i, cab in enumerate(cabs):
+            if cab.kind != "appliance":
+                continue
+            built = len(cabs) - 1 - i if row == "wall2" and k.corner_side == "left" else i
+            path = f"{row}[{built}]"
+            bottom = by_key.get(f"{path}.bottom")
+            ceiling = by_key.get(f"{path}.niche_shelf") or by_key.get(f"{path}.top")
+            if bottom is None or ceiling is None:
+                continue
+            b, c = bottom.aabb(), ceiling.aabb()
+            app = cab.appliance or "microwave"
+            w, h, d = _APPLIANCE_BOX[app]
+            w, h = min(w, b.max.x - b.min.x - mm(20)), min(h, c.min.z - b.max.z - mm(10))
+            cx, z = (b.min.x + b.max.x) / 2, b.max.z
+            # Передняя панель техники — заподлицо с фасадами (−толщина фасада), глубже корпуса — к стене
+            y0 = b.min.y - mm(18)
+            name = "Микроволновка (клиента)" if app == "microwave" else "Духовка (клиента)"
+            body = HwItem(id=f"{path}.appliance", kind="appliance", part=bottom.key, finish="plastic_black", name=name)
+            body.box((cx - w / 2, y0, z), (cx + w / 2, y0 + min(d, b.max.y - y0 - mm(5)), z + h))
+            out.append(body)
+            door = HwItem(id=f"{path}.appliance.glass", kind="appliance", part=bottom.key, finish="steel", name=name)
+            door.box((cx - w / 2 + mm(15), y0 - mm(2), z + mm(15)), (cx + w / 2 - mm(110), y0, z + h - mm(15)))
+            out.append(door)
+
+
 # ---------- Сборка списка ----------
 
 
@@ -439,6 +506,8 @@ def hardware_visuals(result: BuildResult) -> list[HwItem]:
         _wardrobe_legs(result, parts, out)
     _sliding(result, parts, out)
     _corner_mechanisms(result, parts, out)
+    _gas_lifts(result, parts, out)
+    _wall_appliances(result, parts, out)
     return out
 
 

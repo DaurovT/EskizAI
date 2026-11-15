@@ -452,19 +452,61 @@ class BaseCabinet(_Strict):
     style: Optional[FrontStyle] = Field(None, description="Стиль фасадов модуля; null — как у кухни")
 
 
+class WallTop(_Strict):
+    """Антресольный ярус верхнего модуля: отдельный короб со своими фасадами сверху модуля."""
+
+    height: Optional[float] = Field(
+        None, ge=250, le=600,
+        description="Высота яруса, мм. Входит в высоту модуля: ярус — верхняя часть, под ним короб модуля, низ — "
+                    "на одной линии с соседями. null — до потолка над рядом (если потолок известен, ярус встаёт "
+                    "над верхом ряда), иначе 350 внутри высоты модуля")
+    doors: Optional[Literal[1, 2]] = Field(None, description="Дверей яруса; null — по ширине (до 600 мм — одна)")
+    opening: Literal["hinged", "lift"] = Field("hinged", description="hinged — распашные, lift — подъёмный фасад")
+
+
 class WallCabinet(_Strict):
     """Верхний модуль кухни."""
 
-    kind: Literal["doors", "open", "hood", "gap"] = Field(
+    kind: Literal["doors", "open", "hood", "gap", "appliance"] = Field(
         description="doors — с дверями, open — открытые полки, hood — короткий шкаф над вытяжкой, "
-                    "gap — пустое место на стене (окно, вентканал), без корпуса"
+                    "gap — пустое место на стене (окно, вентканал), без корпуса, appliance — ниша под встроенную "
+                    "технику в верхнем ряду (микроволновка, духовка): открытая ниша внизу модуля, над ней — "
+                    "отделение с фасадом (above)"
     )
     width: float = Field(ge=150, le=1200)
     doors: Optional[Literal[1, 2]] = None
     hinge: Literal["left", "right"] = "left"
     shelves: int = Field(1, ge=0, le=4)
-    height: Optional[float] = Field(None, ge=200, le=1000, description="Высота; null — как у верхних (hood — 360)")
+    height: Optional[float] = Field(None, ge=200, le=1400,
+                                    description="Высота; null — как у верхних (hood — 360)")
     style: Optional[FrontStyle] = Field(None, description="Стиль фасадов модуля; null — как у кухни")
+    opening: Optional[Literal["hinged", "lift"]] = Field(
+        None, description="Для doors и hood: hinged (null) — распашные двери, lift — подъёмные фасады "
+                          "(петли сверху, газлифт, открываются вверх)")
+    flaps: Optional[Literal[1, 2]] = Field(
+        None, description="Для opening=lift: 1 — один подъёмный фасад, 2 — два друг над другом, каждый "
+                          "открывается вверх; null — по высоте проёма (до 600 мм — один). Высота одного фасада 250–600 мм")
+    appliance: Optional[Literal["microwave", "oven"]] = Field(
+        None, description="Для kind=appliance: microwave (null) — микроволновка, oven — духовка")
+    niche_height: Optional[float] = Field(
+        None, ge=300, le=700,
+        description="Для kind=appliance: высота ниши в свету, мм; null — микроволновка 380, духовка 600")
+    above: Optional[Literal["door", "lift", "open", "none"]] = Field(
+        None, description="Для kind=appliance: что над нишей — door (null) — распашная дверь, lift — подъёмный "
+                          "фасад, open — открытая полка, none — ничего (модуль высотой с нишу)")
+    top: Optional[WallTop] = Field(None, description="Антресольный ярус сверху модуля (свой короб и фасады)")
+
+
+class CountertopUnit(_Strict):
+    """Открытая полка на столешнице под верхними модулями (специи): короб без фасадов."""
+
+    kind: Literal["open"] = "open"
+    x: float = Field(ge=0, le=20000, description="От левого края первого ряда до левой боковины, мм")
+    width: float = Field(ge=150, le=900, description="Ширина, мм")
+    height: Optional[float] = Field(None, ge=150, le=900,
+                                    description="Высота; null — от столешницы до низа верхних модулей")
+    shelves: int = Field(1, ge=0, le=4, description="Полок внутри (без дна и крыши)")
+    depth: Optional[float] = Field(None, ge=100, le=400, description="Глубина; null — как у верхних модулей")
 
 
 class Countertop(_Strict):
@@ -564,6 +606,9 @@ class Kitchen(_Strict):
     wall2: list[WallCabinet] = Field(
         default_factory=list, max_length=12, description="Верхние модули второго ряда, от угла"
     )
+    mid: list[CountertopUnit] = Field(
+        default_factory=list, max_length=6,
+        description="Открытые полки на столешнице первого ряда под верхними модулями (стойка для специй)")
     site: Optional[KitchenSite] = Field(
         None, description="Стены, окно и коммуникации с замера (заполняет приложение, не ИИ)"
     )

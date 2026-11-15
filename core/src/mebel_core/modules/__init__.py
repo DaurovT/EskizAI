@@ -33,4 +33,4 @@ def module(name: str, version: str, title: str):
 
 def load_all() -> None:
     """Импортирует модули, чтобы они зарегистрировались."""
-    from . import body, builtin, fill, fronts, kitchen, partition  # noqa: F401
+    from . import body, builtin, fill, fronts, kitchen, kitchen_wall, partition  # noqa: F401

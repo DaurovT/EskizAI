@@ -100,7 +100,7 @@ const SHOT_QS: DesignQuestion[] = [
 ];
 
 export default function Editor() {
-  const { id, shot, ask, part: devPart, evening: devEvening, hint: devHint } = useLocalSearchParams<{ id: string; shot?: string; ask?: string; part?: string; evening?: string; hint?: string }>();
+  const { id, shot, ask, part: devPart, evening: devEvening, hint: devHint, view: viewParam } = useLocalSearchParams<{ id: string; shot?: string; ask?: string; part?: string; evening?: string; hint?: string; view?: string }>();
   const { t, td, lang } = useT();
   const offline = useOffline();
   const meta = useMeta(id);
@@ -459,22 +459,19 @@ export default function Editor() {
   const v = state.version;
   // SCR-37/37b: кухня — свой экран (схема модулей вместо 3D-шторки)
   if (draft.type === 'kitchen') {
-    const kitchenSend = async (text: string) => {
-      const r = await ai.run<EditOut>((c) => api.aiEdit(id, text, c));
-      chat.reload();
-      if (r?.version_id || r?.ok) { const m = await api.getModel(id).catch(() => null); if (m) applyState(m); }
-      const msg = r?.summary ?? r?.question ?? r?.error;
-      if (msg) toast.show({ text: msg, tone: r?.ok ? 'success' : 'default' });
-    };
-    const widthField = (pointer: string): ParamField => ({ pointer, label: 'p_width', value: null, min: 150, max: 1200, step: 50 });
+    // правка схемы: значение — любой JSON (ряд модулей целиком, null — снять поле); путь сохранения — тот же, что у размеров
+    const kitchenField = (pointer: string): ParamField => ({ pointer, label: 'p_width', value: null, min: 0, max: 0, step: 1 });
     return (
       <>
         <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
-        <KitchenView id={id} tree={draft} busy={saving || ai.running} disabled={offline}
+        <KitchenView id={id} tree={draft} busy={saving || ai.running} disabled={offline} viewer={v.viewer} initialView={viewParam === '3d' ? '3d' : undefined}
           title={[card.data?.title, card.data?.client?.name].filter(Boolean).join(' · ') || t('ed_title')}
-          price={price ? noCurrency(formatRange(price, lang)) : null} onSend={kitchenSend}
+          price={price ? noCurrency(formatRange(price, lang)) : null} onSend={sendAi}
           materialName={(mid) => v.viewer?.materials?.[mid]?.name}
-          onWidth={(ptr, val) => editField(widthField(ptr), val)} onCornerSize={(ptr, val) => editField(widthField(ptr), val)}
+          onField={(ptr, val) => editField(kitchenField(ptr), val as number | null)}
+          chat={{ messages: [...(chat.data?.messages ?? []), ...localMsgs], questions: chat.data?.questions ?? [], running: ai.running, elapsed: ai.elapsed,
+            canUndo: state.can_undo, canRedo: state.can_redo, busy: saving, disabled: offline, aiLimited,
+            onUndo: () => run(() => api.undo(id)), onRedo: () => run(() => api.redo(id)), onAnswers: sendAnswers }}
           onModel={(m) => { applyState(m); chat.reload(); }} onError={(e) => showError(e, lang)} />
       </>
     );

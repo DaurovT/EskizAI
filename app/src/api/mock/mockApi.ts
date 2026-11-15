@@ -14,7 +14,7 @@ import { nestingFromViewer, partsCsv } from '../../lib/cutting';
 import { DECORS } from '../../lib/catalog';
 import { MOCK_EMAN_DECORS } from './emanSamples';
 import { formatRange } from '../../lib/format';
-import { SAMPLES, kindToSample, sampleFor, type SampleKey } from './data';
+import { KITCHEN_EDITOR_DEMO, SAMPLES, kindToSample, sampleFor, type SampleKey } from './data';
 import { builtinOptions, decorateViewer, decorIssues, frontStyles, hasBuiltin, hasDecor, lightingZones, withNiche } from './decorMock';
 import { fitToNiche, nicheHeights, nicheWidths } from '../../lib/decorStyle';
 import { clientEstimate, masterEstimate, pricingK, staffEstimate } from './estimate';
@@ -505,6 +505,8 @@ export function createMockApi(opts: MockOptions = {}): Api {
   seed('Кухня зелёная, Gola', 'kitchen_decor', 'sketch', 'c-2', 8 * 3600_000, { id: 'p-kitchen-decor' });
   seed('Встроенный шкаф в нишу', 'wardrobe_builtin', 'sent', 'c-1', 10 * 3600_000, { id: 'p-builtin' });
   seed('Кухня до потолка', 'kitchen_builtin', 'sketch', null, 12 * 3600_000, { id: 'p-kitchen-builtin' });
+  // редактор кухни: подъёмные, ниша СВЧ, антресоли, полка на столешнице (KITCHEN_EDITOR_DEMO)
+  createVersion(seed('Кухня с антресолями', 'kitchen_straight', 'sketch', 'c-3', 13 * 3600_000, { id: 'p-kitchen-new' }), KITCHEN_EDITOR_DEMO, 'manual', 'Схема кухни');
   seed('Шкаф для Азизы', 'wardrobe_full', 'sent', 'c-1', 2 * DAY, { id: 'p-aziza' });
   const kupe = seed('Купе в прихожую', 'kupe_3doors', 'measured', 'c-2', 5 * DAY, { id: 'p-kupe', client_agreed_at: iso(3 * 3600_000) });
   priceRequests.push(
