@@ -147,6 +147,10 @@ TEMPLATES: dict[str, dict[str, tuple[str, str]]] = {
         "ru": ("Клиент согласовал", "Клиент согласовал «{title}»"),
         "uz": ("Mijoz rozi bo‘ldi", "Mijoz «{title}» loyihasiga rozi bo‘ldi"),
     },
+    "client_change_request": {
+        "ru": ("Клиент просит изменить", "«{title}»: {text}"),
+        "uz": ("Mijoz o‘zgartirishni so‘rayapti", "«{title}»: {text}"),
+    },
     "ar_started": {
         "ru": ("Примерка в AR", "Клиент примерил «{title}» у себя в комнате"),
         "uz": ("AR orqali sinash", "Mijoz «{title}»ni o‘z xonasida sinab ko‘rdi"),

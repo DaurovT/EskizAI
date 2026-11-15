@@ -85,6 +85,7 @@ class ShareEventKind(StrEnum):
     ar_started = "ar_started"
     ar_failed = "ar_failed"
     agreed = "agreed"
+    change_request = "change_request"  # клиент просит изменить (POST /share/{token}/feedback, текст — в meta)
 
 
 class PhotoKind(StrEnum):

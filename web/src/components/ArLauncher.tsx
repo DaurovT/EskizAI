@@ -6,7 +6,7 @@ import { formatSize } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { track } from '@/lib/track';
 import type { Lang, ShareGlb } from '@/lib/share-types';
-import { IconCamera, IconCube, IconInfo } from './icons';
+import { IconCamera, IconChevron, IconCube } from './icons';
 
 /** Нужная нам часть API <model-viewer>. */
 interface ModelViewerEl extends HTMLElement {
@@ -37,6 +37,8 @@ interface Props {
   onAgree: () => void;
   /** AR не запустился — показать «Открыть в браузере». */
   onFailed: () => void;
+  /** «Хочу изменить» из шторки после AR — шторка «Что изменить?». */
+  onWantChange?: () => void;
   dev?: ArDevForce;
 }
 
@@ -55,9 +57,9 @@ interface Progress {
 /**
  * Кнопка «Примерить у себя дома (AR)» и шторка WEB-4. AR запускает <model-viewer>
  * (webxr / Scene Viewer / Quick Look; USDZ для iOS — готовый с сервера, glb.closedUsdz). Если AR на
- * устройстве нет — вместо кнопки плашка «Телефон не поддерживает примерку» (Misc).
+ * устройстве нет (компьютер, старый телефон) — вместо кнопки тихая строка «Примерка в комнате — с телефона».
  */
-export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed, onAgree, onFailed, dev }: Props) {
+export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed, onAgree, onFailed, onWantChange, dev }: Props) {
   const [available, setAvailable] = useState<boolean | null>(dev?.available ?? null);
   const [mobile, setMobile] = useState(false);
   const [step, setStep] = useState<ArStep | null>(dev?.step ?? null);
@@ -284,18 +286,23 @@ export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed
     <>
       <div ref={parkRef} className="ar-park" aria-hidden="true" />
       {showButton && (
-        <button type="button" className="ar" onClick={() => setStep('intro')}>
-          <IconCube />
-          {t(lang, 'arButton')}
+        <button type="button" className="ar2" onClick={() => setStep('intro')}>
+          <span className="ar2-ic">
+            <IconCube size={22} />
+          </span>
+          <span className="ar2-tx">
+            <span className="ar2-t">{t(lang, 'arButton')}</span>
+            <span className="ar2-s">{t(lang, 'arSub')}</span>
+          </span>
+          <IconChevron />
         </button>
       )}
+      {/* Компьютер или телефон без AR: без плашки — одна тихая строка */}
       {available === false && (
-        <div className="ban info" role="note">
-          <span style={{ flex: 'none', marginTop: 1 }}>
-            <IconInfo />
-          </span>
-          <div className="bd">{t(lang, 'noAr')}</div>
-        </div>
+        <p className="ar-note">
+          <IconCube size={16} sw={2} />
+          {t(lang, 'noArQuiet')}
+        </p>
       )}
 
       {step && (
@@ -376,7 +383,14 @@ export function ArLauncher({ token, glb, title, sizeMm, lang, inTelegram, agreed
                     {t(lang, 'agree')}
                   </button>
                 )}
-                <button type="button" className="soft" onClick={close}>
+                <button
+                  type="button"
+                  className="soft"
+                  onClick={() => {
+                    close();
+                    onWantChange?.();
+                  }}
+                >
                   {t(lang, 'wantChange')}
                 </button>
                 <button type="button" className="txt" onClick={launch}>

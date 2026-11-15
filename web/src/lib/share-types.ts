@@ -160,3 +160,15 @@ export interface ShareEventBody {
 export interface AgreeResponse {
   agreedAt: string;
 }
+
+/** POST /api/share/{token}/feedback — «Хочу изменить…»: свободный текст клиента, 1–1000 знаков. */
+export interface ShareFeedbackBody {
+  text: string;
+}
+
+/** → 201 */
+export interface ShareFeedbackResponse {
+  sentAt: string;
+}
+
+export const FEEDBACK_MAX_CHARS = 1000;

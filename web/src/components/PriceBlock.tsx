@@ -1,6 +1,7 @@
 import { formatAmount, formatDay } from '@/lib/format';
 import { coreName, t } from '@/lib/i18n';
 import type { ClientEstimate, Lang, SumRange } from '@/lib/share-types';
+import { IconClock } from './icons';
 
 function Line({ name, value, exact, lang }: { name: string; value: SumRange; exact: boolean; lang: Lang }) {
   return (
@@ -24,7 +25,18 @@ export function TotalAmount({ value, exact, lang }: { value: SumRange; exact: bo
  * Смета для клиента в виде, который выбрал мастер (итог / кратко / подробно).
  * Показываем только то, что пришло с сервера: наценки, поставщика и комиссии в данных нет.
  */
-export function PriceBlock({ estimate, priceDate, lang }: { estimate: ClientEstimate | null; priceDate: string | null; lang: Lang }) {
+export function PriceBlock({
+  estimate,
+  priceDate,
+  expiresAt,
+  lang,
+}: {
+  estimate: ClientEstimate | null;
+  priceDate: string | null;
+  /** Срок ссылки — «Предложение действует до …». */
+  expiresAt?: string | null;
+  lang: Lang;
+}) {
   if (!estimate) {
     return (
       <section className="sheet est">
@@ -74,6 +86,12 @@ export function PriceBlock({ estimate, priceDate, lang }: { estimate: ClientEsti
         <div className="cap" style={{ marginTop: 2 }}>{t(lang, 'priceOn', { date: formatDay(priceDate, lang) })}</div>
       )}
       {requests.length > 0 && <div className="cap" style={{ marginTop: 2 }}>{t(lang, 'pendingNote')}</div>}
+      {expiresAt && (
+        <div className="valid">
+          <IconClock size={16} sw={2.2} />
+          {t(lang, 'validUntil', { date: formatDay(expiresAt, lang) })}
+        </div>
+      )}
     </section>
   );
 }

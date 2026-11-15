@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from ..domain import Language, ShareEventKind
 
@@ -77,3 +77,26 @@ class ShareEventIn(BaseModel):
     @property
     def event_kind(self) -> ShareEventKind | None:
         return self.event or self.kind
+
+
+FEEDBACK_MAX_CHARS = 1000
+
+
+class ShareFeedbackIn(BaseModel):
+    """«Хочу изменить…» со страницы клиента: свободный текст до 1000 знаков."""
+
+    text: str = Field(description="Что клиент хочет изменить, 1–1000 знаков")
+
+    @field_validator("text")
+    @classmethod
+    def _text(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Напишите, что хотите изменить")
+        if len(v) > FEEDBACK_MAX_CHARS:
+            raise ValueError(f"Не больше {FEEDBACK_MAX_CHARS} знаков")
+        return v
+
+
+class ShareFeedbackOut(BaseModel):
+    sentAt: str

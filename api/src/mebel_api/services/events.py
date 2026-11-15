@@ -37,6 +37,18 @@ def share_event(db: Session, link: ShareLink, kind: str) -> None:
            dedupe_key=f"{push_kind}:{link.id}", window=None if push_kind == "client_agreed" else SHARE_WINDOW)
 
 
+def share_change_request(db: Session, link: ShareLink, event_id, text: str) -> None:
+    """Клиент со страницы ссылки просит изменить проект — мастеру push с текстом (каждая просьба — свой push)."""
+    project = db.get(Project, link.project_id)
+    if project is None:
+        return
+    short = " ".join(text.split())
+    short = short if len(short) <= 160 else short[:159].rstrip() + "…"
+    notify(db, project_author(db, project), "client_change_request", {"text": short}, project=project,
+           data={"share_link_id": str(link.id), "share_event_id": str(event_id)},
+           dedupe_key=f"client_change_request:{event_id}")
+
+
 COMMENT_STATUSES = {"returned": "return_comment", "rejected": "vendor_status_note"}
 _STATUS_PUSHED = "order_status_pushed"
 

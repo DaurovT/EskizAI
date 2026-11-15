@@ -92,6 +92,68 @@ export function IconSearch({ size = 22, sw = 2.2 }: P) {
   );
 }
 
+export function IconDoor({ size = 20, sw = 2.1 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M6 20V4.5A.5.5 0 0 1 6.5 4H14l4 2v14" />
+      <path d="M4 20h16M14 4v16" />
+      <path d="M11 12.5v.5" />
+    </svg>
+  );
+}
+
+export function IconRuler({ size = 20, sw = 2.1 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M3.5 15.5l12-12 5 5-12 12z" />
+      <path d="M7.5 11.5l2 2M10.5 8.5l2 2M13.5 5.5l2 2" />
+    </svg>
+  );
+}
+
+export function IconExpand({ size = 20, sw = 2.2 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M4.5 9.5v-5h5M19.5 9.5v-5h-5M4.5 14.5v5h5M19.5 14.5v5h-5" />
+    </svg>
+  );
+}
+
+export function IconClose({ size = 22, sw = 2.3 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+    </svg>
+  );
+}
+
+export function IconRotate({ size = 22, sw = 2.1 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M3.5 12a8.5 4 0 0 0 15.6 2.2" />
+      <path d="M20.5 12a8.5 4 0 0 0-15.6-2.2" />
+      <path d="M17.2 16.7l1.9-2.5 2.6 1.6M6.8 7.3 4.9 9.8 2.3 8.2" />
+    </svg>
+  );
+}
+
+export function IconEdit({ size = 18, sw = 2.1 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M4.5 19.5l1-4L16 5a2.1 2.1 0 0 1 3 3L8.5 18.5z" />
+      <path d="M14 7l3 3" />
+    </svg>
+  );
+}
+
+export function IconChevron({ size = 20, sw = 2.2 }: P) {
+  return (
+    <svg {...base(size, sw)}>
+      <path d="M9.5 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 /** Знак Eskiz AI (как в макете ClientExpired). */
 export function EskizMark({ size = 20 }: { size?: number }) {
   return (

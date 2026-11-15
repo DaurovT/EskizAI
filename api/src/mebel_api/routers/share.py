@@ -4,7 +4,7 @@ import uuid
 from datetime import timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Header, Request
 from fastapi.responses import Response
 from sqlalchemy import select
 
@@ -15,8 +15,10 @@ from ..errors import ERROR_RESPONSES, ApiError, forbidden, not_found
 from ..models import ModelVersion, Project, ShareEvent, ShareLink, User, Workshop
 from ..schemas.common import Ok
 from ..schemas.projects import ShareLinkIn, ShareLinkOut
-from ..schemas.share import AgreeOut, ShareEventIn, ShareGlb, ShareMaster, SharePayload, ShareProject
+from ..schemas.share import (AgreeOut, ShareEventIn, ShareFeedbackIn, ShareFeedbackOut, ShareGlb, ShareMaster,
+                             SharePayload, ShareProject)
 from ..services import ar_files, lifecycle
+from ..services import staff_auth as sa
 from ..services.estimate import client_estimate, compute_range, is_measured, remember
 from ..services.visibility import for_client
 from .projects import get_project
@@ -24,6 +26,9 @@ from .projects import get_project
 router = APIRouter(tags=["share"], responses=ERROR_RESPONSES)
 
 MAX_META_BYTES = 2000
+# «Хочу изменить…» без входа: не больше стольких просьб в час на ссылку и на IP (против спама мастеру)
+FEEDBACK_PER_TOKEN_HOUR = 10
+FEEDBACK_PER_IP_HOUR = 30
 
 
 def link_out(link: ShareLink, settings) -> ShareLinkOut:
@@ -222,6 +227,8 @@ def share_event(
     kind = body.event_kind
     if kind is None:
         raise ApiError(422, "validation_error", "Нужно поле event")
+    if kind == ShareEventKind.change_request:  # только через POST /share/{token}/feedback (с текстом и лимитом)
+        raise ApiError(422, "validation_error", "Просьбу об изменении отправляйте через /share/{token}/feedback")
     if len(json.dumps(body.meta, ensure_ascii=False)) > MAX_META_BYTES:
         raise ApiError(422, "meta_too_large", "Слишком много данных в событии")
     link = _active_link(db, token)
@@ -238,3 +245,29 @@ def share_agree(token: str, db: DbDep, user_agent: Annotated[str | None, Header(
         _record_event(db, link, ShareEventKind.agreed, {}, user_agent)
         db.commit()
     return AgreeOut(agreedAt=link.agreed_at.isoformat())
+
+
+@router.post("/share/{token}/feedback", response_model=ShareFeedbackOut, status_code=201,
+             summary="Клиент просит изменить проект (без входа)")
+def share_feedback(token: str, body: ShareFeedbackIn, request: Request, db: DbDep, settings: SettingsDep,
+                   user_agent: Annotated[str | None, Header()] = None) -> ShareFeedbackOut:
+    """`{text}` (1–1000 знаков) → 201 `{sentAt}`. Пишется событие ссылки `change_request` (текст — в meta),
+    мастеру уходит push «Клиент просит изменить: …». В чат редактора текст не попадает: чат — это переписка
+    мастера с ИИ, и чужой текст не должен уходить в подсказку модели.
+    Не больше 10 просьб в час на ссылку и 30 — с одного IP (429 `too_many_requests`)."""
+    link = _active_link(db, token)
+    ip = request.client.host if request.client else None
+    for kind, part, limit in (("share-fb-token", link.token, FEEDBACK_PER_TOKEN_HOUR),
+                              ("share-fb-ip", ip, FEEDBACK_PER_IP_HOUR)):
+        if sa.rate_hit(db, sa.guard_key(settings, kind, part), limit=limit, window_seconds=3600) > limit:
+            raise ApiError(429, "too_many_requests", "Слишком много сообщений. Попробуйте через час или позвоните мастеру")
+    now = utcnow()
+    ev = ShareEvent(share_link_id=link.id, project_id=link.project_id, kind=ShareEventKind.change_request,
+                    user_agent=(user_agent or "")[:500] or None, meta={"text": body.text})
+    db.add(ev)
+    db.flush()
+    from ..services import events
+
+    events.share_change_request(db, link, ev.id, body.text)
+    db.commit()
+    return ShareFeedbackOut(sentAt=now.isoformat())

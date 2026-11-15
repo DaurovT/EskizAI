@@ -264,3 +264,72 @@ def test_expired_link_returns_master_contacts(api, client, db, owner):
     r = client.get(f"/share/{link['token']}")
     assert r.status_code == 410 and r.json()["error"]["code"] == "share_expired"
     assert {"name", "phone", "city"} <= set(r.json()["error"]["details"]["master"])
+
+
+def test_share_feedback_records_event_and_pushes_master(api, client, owner, app, db):
+    """«Хочу изменить…»: событие change_request с текстом + push мастеру; чат редактора не трогаем."""
+    from mebel_api.models import ChatMessage, Notification
+
+    push = app.state.test_push
+    r = client.post("/devices", json={"push_token": "ExponentPushToken[fb-1]", "platform": "android",
+                                      "device_id": "fb-phone"}, headers=owner)
+    assert r.status_code == 200, r.text
+    pid, link = make_link(api, client, owner)
+    t = link["token"]
+    sent_before = len(push.sent)
+    r = client.post(f"/share/{t}/feedback", json={"text": "  Сделайте, пожалуйста, ручки чёрные\nи на 10 см ниже  "},
+                    headers={"user-agent": "Telegram iPhone"})
+    assert r.status_code == 201, r.text
+    assert r.json()["sentAt"]
+    ev = db.scalars(select(ShareEvent).where(ShareEvent.kind == "change_request")).one()
+    assert ev.meta == {"text": "Сделайте, пожалуйста, ручки чёрные\nи на 10 см ниже"}
+    assert ev.user_agent == "Telegram iPhone" and str(ev.project_id) == pid
+    n = db.scalars(select(Notification).where(Notification.kind == "client_change_request")).one()
+    assert n.title == "Клиент просит изменить"
+    assert "ручки чёрные и на 10 см ниже" in n.body and str(n.project_id) == pid
+    assert len(push.sent) == sent_before + 1 and push.sent[-1].data["kind"] == "client_change_request"
+    assert db.scalars(select(ChatMessage)).all() == []
+    # вторая просьба — второй push (без «склейки» по ссылке)
+    assert client.post(f"/share/{t}/feedback", json={"text": "И ещё зеркало"}).status_code == 201
+    assert len(push.sent) == sent_before + 2
+
+
+def test_share_feedback_validation_and_dead_links(api, client, owner, db):
+    pid, link = make_link(api, client, owner)
+    t = link["token"]
+    assert client.post(f"/share/{t}/feedback", json={"text": "   "}).status_code == 422
+    assert client.post(f"/share/{t}/feedback", json={"text": "a" * 1001}).status_code == 422
+    assert client.post(f"/share/{t}/feedback", json={}).status_code == 422
+    assert client.post(f"/share/{t}/feedback", json={"text": "a" * 1000}).status_code == 201
+    # через /events change_request без текста и лимита не пройдёт
+    assert client.post(f"/share/{t}/events", json={"event": "change_request"}).status_code == 422
+    assert client.post("/share/nope/feedback", json={"text": "x"}).status_code == 404
+    r = client.post(f"/projects/{pid}/share-links", json={}, headers=owner).json()
+    assert client.delete(f"/projects/{pid}/share-links/{r['id']}", headers=owner).status_code == 200
+    assert client.post(f"/share/{r['token']}/feedback", json={"text": "x"}).status_code == 410
+    assert len(db.scalars(select(ShareEvent).where(ShareEvent.kind == "change_request")).all()) == 1
+
+
+def test_share_feedback_is_rate_limited_per_link(api, client, owner):
+    from mebel_api.routers.share import FEEDBACK_PER_TOKEN_HOUR
+
+    _, link = make_link(api, client, owner)
+    for i in range(FEEDBACK_PER_TOKEN_HOUR):
+        assert client.post(f"/share/{link['token']}/feedback", json={"text": f"просьба {i}"}).status_code == 201
+    r = client.post(f"/share/{link['token']}/feedback", json={"text": "ещё"})
+    assert r.status_code == 429 and r.json()["error"]["code"] == "too_many_requests"
+    # другая ссылка того же клиента (тот же IP) — свой лимит ссылки
+    _, other = make_link(api, client, owner)
+    assert client.post(f"/share/{other['token']}/feedback", json={"text": "другая"}).status_code == 201
+
+
+def test_share_feedback_push_in_uzbek(api, client, owner, db):
+    from mebel_api.models import Notification
+    from mebel_api.services.notify import render
+
+    client.patch("/auth/me", json={"language": "uz"}, headers=owner)
+    _, link = make_link(api, client, owner)
+    assert client.post(f"/share/{link['token']}/feedback", json={"text": "x" * 400}).status_code == 201
+    n = db.scalars(select(Notification).where(Notification.kind == "client_change_request")).one()
+    assert n.title == "Mijoz o‘zgartirishni so‘rayapti" and n.body.endswith("…") and len(n.body) < 220
+    assert render("client_change_request", "ru", {"title": "Шкаф", "text": "ниже"})[1] == "«Шкаф»: ниже"
