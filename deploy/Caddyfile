@@ -46,3 +46,12 @@
 	header X-Frame-Options "DENY"
 	reverse_proxy web:3000
 }
+
+# DGN Eskiz — отдельный compose-проект /opt/dgn; API в сети mebel_default под именем dgn-api
+api.dgn.eskizai.uz {
+	import common
+	request_body {
+		max_size 60MB
+	}
+	reverse_proxy dgn-api:8000
+}
