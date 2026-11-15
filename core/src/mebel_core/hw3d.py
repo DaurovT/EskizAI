@@ -473,15 +473,49 @@ def _wall_appliances(result: BuildResult, parts: list[Part], out: list[HwItem]) 
             w, h, d = _APPLIANCE_BOX[app]
             w, h = min(w, b.max.x - b.min.x - mm(20)), min(h, c.min.z - b.max.z - mm(10))
             cx, z = (b.min.x + b.max.x) / 2, b.max.z
-            # Передняя панель техники — заподлицо с фасадами (−толщина фасада), глубже корпуса — к стене
-            y0 = b.min.y - mm(18)
+            # Передняя панель техники — заподлицо с фасадами (−толщина фасада), в рамке — за рамкой (по корпусу);
+            # глубже корпуса — к стене
+            framed = f"{path}.niche_frame" in by_key
+            y0 = b.min.y + (mm(2) if framed else -mm(18))
             name = "Микроволновка (клиента)" if app == "microwave" else "Духовка (клиента)"
+            # Одна позиция на нишу: корпус и стекло дверцы — формы одного элемента
             body = HwItem(id=f"{path}.appliance", kind="appliance", part=bottom.key, finish="plastic_black", name=name)
             body.box((cx - w / 2, y0, z), (cx + w / 2, y0 + min(d, b.max.y - y0 - mm(5)), z + h))
+            body.box((cx - w / 2 + mm(15), y0 - mm(2), z + mm(15)), (cx + w / 2 - mm(110), y0, z + h - mm(15)))
             out.append(body)
-            door = HwItem(id=f"{path}.appliance.glass", kind="appliance", part=bottom.key, finish="steel", name=name)
-            door.box((cx - w / 2 + mm(15), y0 - mm(2), z + mm(15)), (cx + w / 2 - mm(110), y0, z + h - mm(15)))
-            out.append(door)
+
+
+# ---------- Кухня: бутылочница (карго) ----------
+
+_CARGO = re.compile(r"^(base2?\[\d+\])\.cargo\.front$")
+
+
+def _cargo(result: BuildResult, parts: list[Part], out: list[HwItem]) -> None:
+    """Корзина бутылочницы: рама за фасадом и 2 уровня корзин с бортиками — едут вместе с фасадом."""
+    by_key = {p.key: p for p in parts}
+    for p in parts:
+        m = _CARGO.match(p.key)
+        if not m:
+            continue
+        cab = m.group(1)
+        bottom, left, right = (by_key.get(f"{cab}.{k}") for k in ("bottom", "side.left", "side.right"))
+        if bottom is None or left is None or right is None:
+            continue
+        bb, lb, rb = bottom.aabb(), left.aabb(), right.aabb()
+        x0, x1 = lb.max.x + mm(8), rb.min.x - mm(8)
+        y0, y1 = bb.min.y + mm(20), bb.max.y - mm(20)
+        z_lo, z_hi = bb.max.z, lb.max.z - mm(40)
+        name = _hw_name(result, "cargo", cab, "Бутылочница (карго)")
+        item = HwItem(id=f"{cab}.cargo.basket", kind="cargo", part=bottom.key, node=p.node, finish="chrome",
+                      name=name)
+        item.box((x0, y0, z_lo + mm(20)), (x0 + mm(10), y0 + mm(12), z_hi))  # стойка рамы у фасада
+        item.box((x0, y1 - mm(12), z_lo + mm(20)), (x0 + mm(10), y1, z_hi))  # задняя стойка
+        for z in (z_lo + mm(60), z_lo + (z_hi - z_lo) * 0.55):
+            item.box((x0, y0, z), (x1, y1, z + mm(4)))  # дно корзины
+            for (a, b_) in (((x0, y0), (x1, y0 + mm(3))), ((x0, y1 - mm(3)), (x1, y1)),
+                            ((x0, y0), (x0 + mm(3), y1)), ((x1 - mm(3), y0), (x1, y1))):
+                item.box((a[0], a[1], z + mm(60)), (b_[0], b_[1], z + mm(64)))  # бортик
+        out.append(item)
 
 
 # ---------- Сборка списка ----------
@@ -508,6 +542,8 @@ def hardware_visuals(result: BuildResult) -> list[HwItem]:
     _corner_mechanisms(result, parts, out)
     _gas_lifts(result, parts, out)
     _wall_appliances(result, parts, out)
+    if getattr(result.product, "type", None) == "kitchen":
+        _cargo(result, parts, out)
     return out
 
 

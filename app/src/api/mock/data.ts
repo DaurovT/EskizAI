@@ -178,6 +178,27 @@ export const KITCHEN_EDITOR_DEMO: ProductTree = {
   mid: [{ kind: 'open', x: 1700, width: 300, height: null, shelves: 2, depth: null }],
 };
 
+/**
+ * Кухня с фото владельца (14.jpg): мойка с одной дверью, бутылочница 150, ящики 1+2; сверху — два ряда дверей
+ * с антресолью, подъёмный фасад над открытой нишей, микроволновка в рамке под подъёмным фасадом; полка на столешнице.
+ */
+export const KITCHEN_PHOTO_DEMO: ProductTree = {
+  schema_version: '0.2', type: 'kitchen', installation: 'niche',
+  body: { material: 'ldsp_16_white' }, fronts: { material: 'ldsp_18_white' },
+  countertop: { material: 'countertop_38_stone', depth: 600 },
+  wall_bottom: 1450, wall_height: 1200,
+  base: [
+    { kind: 'sink', width: 600, doors: 1 }, { kind: 'cargo', width: 150 }, { kind: 'doors', width: 450 },
+    { kind: 'drawers', width: 450, drawers: 3, drawer_layout: 'small_top' }, { kind: 'doors', width: 600, hinge: 'right' },
+  ],
+  wall: [
+    { kind: 'doors', width: 1200, doors: 2, rows: 2, shelves: 3, top: { height: 350, doors: 2 } },
+    { kind: 'doors', width: 450, opening: 'lift', flaps: 1, open_bottom: 480, shelves: 2 },
+    { kind: 'appliance', width: 600, appliance: 'microwave', niche_height: 480, niche_frame: true, above: 'lift', flaps: 1, shelves: 1 },
+  ],
+  mid: [{ kind: 'open', x: 1650, width: 600, height: null, shelves: 1, depth: null }],
+};
+
 /** Мок без ядра: дерево с декором/встройкой рисуем по похожему образцу ядра (та же сетка секций/модулей). */
 export function sampleFor(sample: SampleKey, tree: ProductTree, hasDecor: boolean, hasBuiltin: boolean): SampleKey {
   if (tree.type === 'kitchen') {

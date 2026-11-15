@@ -426,15 +426,20 @@ class Product(_Strict):
 class BaseCabinet(_Strict):
     """Нижний модуль кухни."""
 
-    kind: Literal["doors", "drawers", "sink", "appliance", "corner", "fridge"] = Field(
+    kind: Literal["doors", "drawers", "sink", "appliance", "corner", "fridge", "cargo"] = Field(
         description="doors — с дверями и полкой, drawers — ящики, sink — под мойку, appliance — ниша под технику, "
                     "corner — угловой модуль в углу Г-образной кухни (см. corner_shape), fridge — ниша под "
-                    "холодильник от пола до верха верхних (с края ряда; без столешницы и цоколя)"
+                    "холодильник от пола до верха верхних (с края ряда; без столешницы и цоколя), cargo — "
+                    "бутылочница (карго) 150–300 мм: узкий фасад на выдвижной корзине полного выдвижения, "
+                    "обычно с вертикальной ручкой"
     )
     width: float = Field(ge=150, le=1200, description="Ширина модуля, мм")
     doors: Optional[Literal[1, 2]] = Field(None, description="Сколько дверей; null — по ширине (до 600 мм — одна)")
     hinge: Literal["left", "right"] = "left"
     drawers: int = Field(3, ge=1, le=5, description="Ящиков (для kind=drawers)")
+    drawer_layout: Literal["equal", "small_top"] = Field(
+        "equal", description="Для kind=drawers: equal — фасады ящиков равные, small_top — верхний ящик низкий "
+                             "(≈1/5 высоты, под приборы), остальные равные и глубокие (1+2)")
     shelf: bool = Field(True, description="Полка внутри (для kind=doors и глухого угла)")
     corner_shape: Literal["square", "long"] = Field(
         "long", description="Для kind=corner: square — Г-образный модуль width×width (900 или 1000) на обе стены, "
@@ -476,7 +481,9 @@ class WallCabinet(_Strict):
     width: float = Field(ge=150, le=1200)
     doors: Optional[Literal[1, 2]] = None
     hinge: Literal["left", "right"] = "left"
-    shelves: int = Field(1, ge=0, le=4)
+    shelves: int = Field(1, ge=0, le=4, description="Полок внутри; при flaps=2 и rows=2 — вместе с неподвижной "
+                                                    "полкой посередине; с open_bottom — делятся между нишей и "
+                                                    "отделением над ней")
     height: Optional[float] = Field(None, ge=200, le=1400,
                                     description="Высота; null — как у верхних (hood — 360)")
     style: Optional[FrontStyle] = Field(None, description="Стиль фасадов модуля; null — как у кухни")
@@ -485,7 +492,15 @@ class WallCabinet(_Strict):
                           "(петли сверху, газлифт, открываются вверх)")
     flaps: Optional[Literal[1, 2]] = Field(
         None, description="Для opening=lift: 1 — один подъёмный фасад, 2 — два друг над другом, каждый "
-                          "открывается вверх; null — по высоте проёма (до 600 мм — один). Высота одного фасада 250–600 мм")
+                          "открывается вверх; null — по высоте проёма (до 700 мм — один). Высота одного фасада "
+                          "250–700 мм (выше — предупреждение, больше 900 — нельзя)")
+    rows: Optional[Literal[1, 2]] = Field(
+        None, description="Для doors с распашными дверями: 2 — два ряда дверей друг над другом (неподвижная полка "
+                          "посередине, у каждого ряда свои двери и ручки); null — один ряд")
+    open_bottom: Optional[float] = Field(
+        None, ge=150, le=900,
+        description="Для doors: открытая ниша без фасада внизу модуля высотой в свету, мм (полки, банки); над ней "
+                    "неподвижная полка и фасады (распашные или подъёмные) на остальную высоту")
     appliance: Optional[Literal["microwave", "oven"]] = Field(
         None, description="Для kind=appliance: microwave (null) — микроволновка, oven — духовка")
     niche_height: Optional[float] = Field(
@@ -494,6 +509,9 @@ class WallCabinet(_Strict):
     above: Optional[Literal["door", "lift", "open", "none"]] = Field(
         None, description="Для kind=appliance: что над нишей — door (null) — распашная дверь, lift — подъёмный "
                           "фасад, open — открытая полка, none — ничего (модуль высотой с нишу)")
+    niche_frame: bool = Field(
+        False, description="Для kind=appliance: рамка из материала фасадов вокруг ниши (панель с вырезом под "
+                           "технику) — ниша не открытым корпусом, а в обрамлении")
     top: Optional[WallTop] = Field(None, description="Антресольный ярус сверху модуля (свой короб и фасады)")
 
 

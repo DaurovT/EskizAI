@@ -2,7 +2,7 @@
   "ok": true,
   "module_versions": {
     "drawer": "0.3.0",
-    "kitchen": "0.3.0",
+    "kitchen": "0.4.0",
     "kitchen_dw_front": "0.1.0",
     "kitchen_fridge": "0.1.0",
     "kitchen_plinth": "0.1.0",

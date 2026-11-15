@@ -160,7 +160,9 @@ def build_rod(ctx: BuildContext, box: Box, path: str) -> None:
 
 
 @module("drawer", "0.3.0", "Ящик")
-def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, path: str, doors=None) -> None:
+def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, path: str, doors=None,
+                  ratios: list[float] | None = None) -> None:
+    """ratios — доли высоты места под ящики снизу вверх (кухня 1+2); None — поровну."""
     r, t = ctx.rules, ctx.t
     # Внутренний ящик за распашной дверью задевает петли — направляющие ставим на проставку
     spacer_sides: set[str] = set()
@@ -181,14 +183,15 @@ def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, pa
     gap = r.slide_side_gap if hw.slides == "ball" else r.hidden_slide_side_gap
     width = inner_x1 - inner_x0 - 2 * gap
     x0 = inner_x0 + gap
-    place_h = box.height / fill.count
-    box_h = int(min(max(place_h - r.drawer_box_clearance, r.drawer_box_min_height), r.drawer_box_max_height))
-    if place_h - r.drawer_box_clearance < r.drawer_box_min_height:
-        ctx.warn("drawers_too_dense", f"На ящик приходится {to_mm(round(place_h))} мм — мало", path)
+    places = [box.height * f for f in ratios] if ratios else [box.height / fill.count] * fill.count
+    if min(places) - r.drawer_box_clearance < r.drawer_box_min_height:
+        ctx.warn("drawers_too_dense", f"На ящик приходится {to_mm(round(min(places)))} мм — мало", path)
 
     for i in range(fill.count):
         node = f"{path}.drawer[{i + 1}]"
-        bz = round(box.z0 + i * place_h) + mm(5)
+        place_h = places[i]
+        box_h = int(min(max(place_h - r.drawer_box_clearance, r.drawer_box_min_height), r.drawer_box_max_height))
+        bz = round(box.z0 + (sum(places[:i]) if ratios else i * place_h)) + mm(5)
         sz = bz + hdf_t  # стенки стоят на дне
         common = dict(module=path, material_id=body_mat, node=node)
         for side, sx in (("left", x0), ("right", x0 + width - t)):

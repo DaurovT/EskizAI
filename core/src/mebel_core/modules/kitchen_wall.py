@@ -9,7 +9,11 @@
 другим, между ними неподвижная полка.
 
 Ниша под технику (kind=appliance): открытая ниша внизу модуля, над ней — неподвижная полка и отделение
-с фасадом (above). Технику покупает клиент — в смете только корпус и полки.
+с фасадом (above). Технику покупает клиент — в смете только корпус и полки. niche_frame — рамка из материала
+фасадов вокруг ниши: одна панель с прямоугольным вырезом под технику («Рамка ниши»).
+
+Открытая ниша без техники (doors + open_bottom): то же, но в нише полки; над ней — распашные двери или
+подъёмный фасад. Два ряда дверей (rows=2): неподвижная полка посередине, у каждого ряда свои двери.
 
 Ярус (top): отдельный короб со своими фасадами на крыше модуля; высота яруса входит в высоту модуля
 (низ модулей ряда — на одной линии). Без высоты и с известным потолком ярус встаёт над верхом ряда
@@ -29,16 +33,20 @@ from .fronts import _cup, _doors, _front_part, handle_name, HARDWARE_CLASS_NAMES
 from .kitchen import _carcass, _door_count
 
 LIFT_ANGLE = 100  # подъёмный фасад открывается на ~100°
-LIFT_MIN, LIFT_MAX = mm(250), mm(600)  # высота одного подъёмного фасада
+LIFT_MIN, LIFT_MAX = mm(250), mm(700)  # высота одного подъёмного фасада на обычном газлифте
+LIFT_HARD_MAX = mm(900)  # выше — только два фасада; 700–900 — предупреждение (усиленный газлифт)
 LIFT_MAX_WIDTH = mm(1200)
 NICHE = {"microwave": (mm(380), mm(360), "микроволновку", "Микроволновка"),
          "oven": (mm(600), mm(585), "духовку", "Духовка")}  # по умолчанию, минимум в свету, кого, название
 TIER_DEFAULT = mm(350)
+FRAME_BORDER = mm(45)  # ширина рамки ниши от края панели до выреза
+FRAME_MIN_OPENING = {"microwave": (mm(460), mm(280)), "oven": (mm(560), mm(560))}  # вырез рамки: ширина, высота
 
 
 def extended(cab) -> bool:
     """Нужен ли этот модуль: поля, которых нет у обычного верхнего модуля."""
-    return cab.kind == "appliance" or cab.opening == "lift" or cab.top is not None
+    return (cab.kind == "appliance" or cab.opening == "lift" or cab.top is not None or (cab.rows or 1) > 1
+            or cab.open_bottom is not None)
 
 
 def wall_ceiling(k) -> int | None:
@@ -62,7 +70,7 @@ def tier_height(ctx: BuildContext, cab, row_top: int) -> tuple[int, bool]:
     return TIER_DEFAULT, False
 
 
-@module("kitchen_wall_ext", "0.1.0", "Верхний модуль кухни: подъёмные фасады, ниша под технику, ярус")
+@module("kitchen_wall_ext", "0.2.0", "Верхний модуль кухни: подъёмные фасады, ниша под технику, ярус")
 def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: int, z0: int, z1: int, d: int,
                    y0: int, last: bool) -> tuple[int, int]:
     """Модуль в колонке [z0, z1] (z1 — верх ряда). Возвращает (низ модуля, верх колонки с ярусом)."""
@@ -84,13 +92,31 @@ def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: in
     elif kind == "open":
         if cab.shelves:
             ctx.run("shelf", slot, slot.box, ShelvesFill(count=cab.shelves), f"{path}.fill[0]")
+    elif kind == "doors" and cab.open_bottom is not None:
+        if (cab.rows or 1) > 1:
+            ctx.warn("wall_rows_ignored", "С открытой нишей внизу двери — одним рядом над нишей", path)
+        niche = mm(cab.open_bottom)
+        above = "lift" if cab.opening == "lift" else "door"
+        niche_box, boxes, _ = _niche_split(
+            ctx, cab, slot, niche, above, path=path, ptr=ptr, x=x, w=w, z1=main_top, last=last,
+            low=("open_bottom_tall", f"Модуль {to_mm(main_top - z0):g} мм: над открытой нишей {to_mm(niche):g} мм "
+                                     "почти не остаётся места фасадам — уменьшите нишу"),
+            fix_field="opening=hinged")
+        _shelves_by_height(ctx, slot, [b for b in [niche_box] + boxes if b.height >= mm(250)],
+                           cab.shelves - (len(boxes) - 1), path)
     elif cab.opening == "lift":
+        if (cab.rows or 1) > 1:
+            ctx.warn("wall_rows_ignored", "Два ряда — у распашных дверей; у подъёмных — flaps", path)
         flaps = auto_flaps(cab.flaps, main_top - z0)
         boxes = lift_flaps(ctx, slot, x, x + w, z0, main_top, flaps, path, ptr=ptr, has_flaps=True,
                            fix_field="opening=hinged")
         if kind != "hood":
             _shelves_split(ctx, slot, boxes, cab.shelves - (flaps - 1), path)
+    elif kind == "doors" and (cab.rows or 1) == 2:
+        _door_rows(ctx, cab, slot, path=path, x=x, w=w, z0=z0, z1=main_top, last=last)
     else:  # распашные двери, как в kitchen.py (сюда попадает только модуль с ярусом)
+        if (cab.rows or 1) > 1:
+            ctx.warn("wall_rows_ignored", "Два ряда дверей — только у модуля с распашными дверями", path)
         if cab.shelves and kind != "hood":
             ctx.run("shelf", slot, slot.box, ShelvesFill(count=cab.shelves), f"{path}.fill[0]")
         hinge = cab.hinge if cab.doors or not last else "right"
@@ -101,12 +127,47 @@ def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: in
     return z0, main_top + tier_h
 
 
+def _door_rows(ctx: BuildContext, cab, slot: Slot, *, path: str, x: int, w: int, z0: int, z1: int,
+               last: bool) -> None:
+    """Два ряда распашных дверей: неподвижная полка посередине, у каждого ряда свои двери и ручки."""
+    t = ctx.t
+    box = slot.box
+    zs = (box.z0 + box.z1 - t) // 2
+    _fixed_shelf(ctx, slot, zs, f"{path}.row_shelf", "Полка неподвижная", path)
+    boxes = [Box(x0=box.x0, x1=box.x1, y0=box.y0, y1=box.y1, z0=box.z0, z1=zs),
+             Box(x0=box.x0, x1=box.x1, y0=box.y0, y1=box.y1, z0=zs + t, z1=box.z1)]
+    if cab.kind != "hood":
+        _shelves_split(ctx, slot, boxes, cab.shelves - 1, path)
+    line = zs + t // 2  # стык рядов — по середине полки
+    if min(line - z0, z1 - line) < mm(250):
+        ctx.warn("wall_rows_low", f"Ряд дверей ниже 250 мм ({to_mm(min(line - z0, z1 - line)):g} мм) — "
+                                  "проще один ряд", path)
+    hinge = cab.hinge if cab.doors or not last else "right"
+    n = _door_count(ctx, w, cab.doors)
+    for lo, hi in ((z0, line), (line, z1)):  # нижний ряд — группа 1, верхний — группа 2
+        _doors(ctx, slot, [x, x + w], lo, hi, n, hinge, f"{path}.doors", tall=False)
+
+
 def _shelves_split(ctx: BuildContext, slot: Slot, boxes: list[Box], count: int, path: str) -> None:
     """Полки по отделениям между неподвижными полками (снизу вверх), поровну, остаток — нижним."""
     count = max(0, count)
     n = len(boxes)
     for i, box in enumerate(boxes):
         c = count // n + (1 if i < count % n else 0)
+        if c:
+            ctx.run("shelf", slot, box, ShelvesFill(count=c), f"{path}.fill[{i}]")
+
+
+def _shelves_by_height(ctx: BuildContext, slot: Slot, boxes: list[Box], count: int, path: str) -> None:
+    """Полки по отделениям пропорционально высоте (открытая ниша внизу и отделение за фасадом над ней)."""
+    count, total = max(0, count), sum(b.height for b in boxes)
+    if not count or not total:
+        return
+    share = [count * b.height / total for b in boxes]
+    n = [int(x) for x in share]
+    for i in sorted(range(len(boxes)), key=lambda i: share[i] - n[i], reverse=True)[:count - sum(n)]:
+        n[i] += 1
+    for i, (box, c) in enumerate(zip(boxes, n)):
         if c:
             ctx.run("shelf", slot, box, ShelvesFill(count=c), f"{path}.fill[{i}]")
 
@@ -195,6 +256,12 @@ def _check_flap(ctx: BuildContext, width: int, heights: list[int], flaps: int, p
             field, value = fix_field.split("=")
             fixes.append(Fix(description="Распашная дверь вместо подъёмной",
                              patch=[PatchOp(op="replace", path=f"{ptr}/{field}", value=value)]))
+        if LIFT_MAX < h <= LIFT_HARD_MAX:  # бывает: усиленный газлифт, но фасад тяжёлый и высоко открывается
+            ctx.issues.append(Issue(
+                level="warning", code="lift_flap_height",
+                message=f"Подъёмный фасад высотой {to_mm(h):g} мм — выше {to_mm(LIFT_MAX):g} мм: нужен усиленный "
+                        "газлифт по весу фасада, открытый фасад поднимается высоко", path=path, fixes=fixes))
+            break
         ctx.issues.append(Issue(
             level="error", code="lift_flap_height",
             message=f"Подъёмный фасад высотой {to_mm(h):g} мм — газлифт рассчитан на "
@@ -226,7 +293,6 @@ def _flap_handle(ctx: BuildContext, flap, path: str) -> None:
 def _appliance(ctx: BuildContext, cab, slot: Slot, *, path: str, ptr: str, x: int, w: int, z0: int, z1: int,
                last: bool) -> None:
     """Открытая ниша внизу модуля, над ней неподвижная полка и отделение с фасадом."""
-    t = ctx.t
     k = ctx.product
     app = cab.appliance or "microwave"
     default, least, whom, title = NICHE[app]
@@ -251,31 +317,62 @@ def _appliance(ctx: BuildContext, cab, slot: Slot, *, path: str, ptr: str, x: in
     if above == "none":
         if box.height != niche:
             ctx.warn("appliance_niche_size", f"Модуль задан высотой — ниша {to_mm(box.height):g} мм в свету", path)
-        return
-    rest = box.height - niche - t
-    if rest < mm(150):
-        raise BuildError("appliance_cabinet_low",
-                         f"Модуль {to_mm(z1 - z0):g} мм: над нишей {to_mm(niche):g} мм остаётся {to_mm(max(rest, 0)):g} мм "
-                         "— увеличьте высоту модуля или выберите «ничего над нишей»", path)
+        line = z1
+    else:
+        _, boxes, line = _niche_split(
+            ctx, cab, slot, niche, above, path=path, ptr=ptr, x=x, w=w, z1=z1, last=last,
+            low=("appliance_cabinet_low", f"Модуль {to_mm(z1 - z0):g} мм: над нишей {to_mm(niche):g} мм остаётся "
+                                          f"{to_mm(max(box.height - niche - ctx.t, 0)):g} мм — увеличьте высоту "
+                                          "модуля или выберите «ничего над нишей»"),
+            fix_field="above=door")
+        if all(b.height >= mm(300) for b in boxes):
+            _shelves_split(ctx, slot, boxes, cab.shelves - (len(boxes) - 1), path)
+    if cab.niche_frame:
+        _niche_frame(ctx, app, path=path, x=x, w=w, z0=z0, z1=line)
+
+
+def _niche_split(ctx: BuildContext, cab, slot: Slot, niche: int, above: str, *, path: str, ptr: str, x: int, w: int,
+                 z1: int, last: bool, low: tuple[str, str], fix_field: str) -> tuple[Box, list[Box], int]:
+    """Ниша внизу корпуса высотой niche в свету, над ней неподвижная полка и фасады above (door, lift, open).
+    Возвращает (ниша, отделения над ней снизу вверх, линия стыка фасадов)."""
+    t = ctx.t
+    box = slot.box
+    if box.height - niche - t < mm(150):
+        raise BuildError(low[0], low[1], path)
     zs = box.z0 + niche
     _fixed_shelf(ctx, slot, zs, f"{path}.niche_shelf", "Полка над нишей", path)
+    niche_box = Box(x0=box.x0, x1=box.x1, y0=box.y0, y1=box.y1, z0=box.z0, z1=zs)
     upper = Box(x0=box.x0, x1=box.x1, y0=box.y0, y1=box.y1, z0=zs + t, z1=box.z1)
     line = zs + t // 2  # линия фасадов — по середине полки
+    boxes = [upper]
     if above == "lift":
-        boxes = lift_flaps(ctx, slot, x, x + w, line, z1, auto_flaps(cab.flaps, z1 - line), path, ptr=ptr, has_flaps=True,
-                           fix_field="above=door")
-        if boxes != [slot.box]:
-            boxes = [Box(x0=b.x0, x1=b.x1, y0=b.y0, y1=b.y1, z0=max(b.z0, upper.z0), z1=b.z1) for b in boxes]
-        else:
-            boxes = [upper]
-    else:
-        boxes = [upper]
-        if above == "door":
-            hinge = cab.hinge if cab.doors or not last else "right"
-            _doors(ctx, slot, [x, x + w], line, z1, _door_count(ctx, w, cab.doors), hinge, f"{path}.doors",
-                   tall=False)
-    if all(b.height >= mm(300) for b in boxes):
-        _shelves_split(ctx, slot, boxes, cab.shelves - (len(boxes) - 1), path)
+        got = lift_flaps(ctx, slot, x, x + w, line, z1, auto_flaps(cab.flaps, z1 - line), path, ptr=ptr,
+                         has_flaps=True, fix_field=fix_field)
+        if got != [slot.box]:
+            boxes = [Box(x0=b.x0, x1=b.x1, y0=b.y0, y1=b.y1, z0=max(b.z0, upper.z0), z1=b.z1) for b in got]
+    elif above == "door":
+        hinge = cab.hinge if cab.doors or not last else "right"
+        _doors(ctx, slot, [x, x + w], line, z1, _door_count(ctx, w, cab.doors), hinge, f"{path}.doors",
+               tall=False)
+    return niche_box, boxes, line
+
+
+def _niche_frame(ctx: BuildContext, app: str, *, path: str, x: int, w: int, z0: int, z1: int) -> None:
+    """Рамка ниши: панель из материала фасадов на всю нишу (до стыка с фасадами над ней) с прямоугольным
+    вырезом под технику; крепится к корпусу саморезами изнутри."""
+    from .kitchen import _rect
+
+    g, b = ctx.rules.front_gap, FRAME_BORDER
+    xa, xb, za, zb = x + g // 2, x + w - g // 2, z0 + g // 2, z1 - g // 2
+    frame = _front_part(ctx, f"{path}.niche_frame", "Рамка ниши", "false_panel", xa, xb, za, zb, None, door=True)
+    ow, oh = frame.width - 2 * b, frame.length - 2 * b  # вырез: ширина поперёк, высота вдоль детали
+    need_w, need_h = FRAME_MIN_OPENING[app]
+    if ow < need_w or oh < need_h:
+        ctx.warn("niche_frame_tight", f"Вырез рамки {to_mm(ow):g}×{to_mm(oh):g} мм — проверьте по размерам "
+                                      "техники (нужно около " f"{to_mm(need_w):g}×{to_mm(need_h):g})", path)
+    if ow > mm(100) and oh > mm(100):
+        frame.cutouts.append(_rect(b, b, oh, ow))  # локальная x — по высоте, y — по ширине
+    ctx.add_hardware("screw", "Саморез 4×30 (крепление рамки ниши)", 6, path)
 
 
 def _tier(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: int, z: int, h: int, d: int, y0: int,

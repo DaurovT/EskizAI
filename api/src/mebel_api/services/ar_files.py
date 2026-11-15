@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 Format = Literal["glb", "usdz"]
 State = Literal["closed", "open"]
 
-CACHE_REV = "2"
+CACHE_REV = "3"
 LINK_TTL = timedelta(hours=1)
 CONTENT_TYPES: dict[str, str] = {"glb": "model/gltf-binary", "usdz": "model/vnd.usdz+zip"}
 

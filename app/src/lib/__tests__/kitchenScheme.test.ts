@@ -1,8 +1,9 @@
 import type { ChatMessage, ProductTree } from '../../api/types';
-import { KITCHEN_EDITOR_DEMO, SAMPLES } from '../../api/mock/data';
+import { KITCHEN_EDITOR_DEMO, KITCHEN_PHOTO_DEMO, SAMPLES } from '../../api/mock/data';
 import { chatView } from '../chatView';
 import {
-  doorCount, duplicateAt, labelCode, moveAt, newModule, removeAt, schemeLayout, selFromPartKey, sumFixes, wallKindOf, wallModHeight, withKind,
+  BASE_KINDS, doorCount, drawerLines, duplicateAt, hasOpenBottom, labelCode, moveAt, newModule, removeAt, schemeLayout, selFromPartKey, sumFixes,
+  wallKindOf, wallModHeight, withKind,
 } from '../kitchenScheme';
 
 const straight = SAMPLES.kitchen_straight.tree;
@@ -141,5 +142,53 @@ describe('chatView: переписка как у шкафа', () => {
     expect(v.designQs.map((x) => x.id)).toEqual(['q1']);
     expect(v.question).toBeNull();
     expect(v.history).toEqual([]);
+  });
+});
+
+describe('kitchenScheme: кухня с фото — карго, ящики 1+2, два ряда дверей, ниша под подъёмным, рамка СВЧ', () => {
+  const base = KITCHEN_PHOTO_DEMO.base as never[];
+  const wall = KITCHEN_PHOTO_DEMO.wall as never[];
+  it('подписи: бутылочница, 2 ряда дверей, подъёмный + ниша, двери + ниша', () => {
+    expect(labelCode(base[1], 'base')).toBe('cargo');
+    expect(labelCode(base[3], 'base')).toBe('drawers');
+    expect(labelCode(wall[0], 'wall')).toBe('rows');
+    expect(labelCode(wall[1], 'wall')).toBe('niche_lift');
+    expect(labelCode({ kind: 'doors', width: 600, open_bottom: 300 }, 'wall')).toBe('niche_door');
+    expect(labelCode(wall[2], 'wall')).toBe('micro');
+    expect(labelCode({ kind: 'doors', width: 600, rows: 2, opening: 'lift' }, 'wall')).toBe('lift'); // ряды — только у распашных
+    expect(BASE_KINDS).toContain('cargo');
+  });
+  it('ящики 1+2: верхний — 1/5, остальные поровну; по умолчанию — поровну', () => {
+    const lines = drawerLines(base[3]);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBeCloseTo(0.2);
+    expect(lines[1]).toBeCloseTo(0.6);
+    expect(drawerLines({ kind: 'drawers', width: 450, drawers: 3 })).toEqual([1 / 3, 2 / 3]);
+    expect(drawerLines({ kind: 'drawers', width: 450, drawers: 1, drawer_layout: 'small_top' })).toEqual([]);
+  });
+  it('раскладка: ряды по 2250, ниша снизу распознаётся', () => {
+    const l = schemeLayout(KITCHEN_PHOTO_DEMO);
+    expect(l.baseLen).toBe(2250);
+    expect(l.wallLen).toBe(2250);
+    expect(l.wall.map((b) => b.x)).toEqual([0, 1200, 1650]);
+    expect(hasOpenBottom(wall[1])).toBe(true);
+    expect(hasOpenBottom(wall[0])).toBe(false);
+  });
+  it('смена вида: карго сужается до 150–300; ниша снизу и ряды сохраняются при смене дверей/подъёмных', () => {
+    expect(withKind({ kind: 'doors', width: 600 }, 'base', 'cargo')).toEqual({ kind: 'cargo', width: 300 });
+    expect(withKind({ kind: 'doors', width: 150 }, 'base', 'cargo')).toEqual({ kind: 'cargo', width: 150 });
+    expect(withKind(wall[1], 'wall', 'doors')).toMatchObject({ kind: 'doors', open_bottom: 480 });
+    expect(withKind(wall[0], 'wall', 'lift')).not.toHaveProperty('rows');
+    expect(withKind({ ...(wall[0] as object), opening: 'lift' } as never, 'wall', 'doors')).toMatchObject({ rows: 2 });
+  });
+  it('подгонка суммы: бутылочница — только в пределах 150–300', () => {
+    const mods = [{ kind: 'doors', width: 600 }, { kind: 'cargo', width: 150 }];
+    expect(sumFixes(mods, 100, 0)).toEqual([{ kind: 'neighbour', i: 1, from: 150, to: 250 }]);
+    expect(sumFixes(mods, 300, 0)[0]).toEqual({ kind: 'add', width: 300 }); // карго до 450 не растягиваем
+  });
+  it('деталь 3D бутылочницы → модуль схемы', () => {
+    expect(selFromPartKey('base[1].cargo.front', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'base', i: 1 });
+    expect(selFromPartKey('wall[2].niche_frame', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'wall', i: 2 });
+    expect(selFromPartKey('wall[0].doors[2].door[1]', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'wall', i: 0 });
   });
 });

@@ -459,7 +459,7 @@ def test_design_kitchen_bad_new_fields_are_retried() -> None:
     bad_schema = copy.deepcopy(OWNER_KITCHEN)
     bad_schema["wall"][1]["flaps"] = 3  # схема: 1 или 2
     bad_rule = copy.deepcopy(OWNER_KITCHEN)
-    bad_rule["wall"][1]["flaps"] = 1  # фасад 798 мм — газлифт не поднимет
+    bad_rule["wall"][1].update(flaps=1, height=1100)  # фасад 1098 мм — газлифт не поднимет (700–900 — предупреждение)
     bad_mid = copy.deepcopy(OWNER_KITCHEN)
     bad_mid["mid"][0]["x"] = 1900  # выходит за ряд 2100
     client = FakeClient([response(design(tree=bad_schema)), response(design(tree=bad_rule)),
@@ -488,3 +488,69 @@ def test_edit_kitchen_lift_tier_microwave_and_countertop_shelf() -> None:
     assert r.ok, [i.message for i in r.build.issues if i.level == "error"]
     keys = {p.key for p in r.build.parts}
     assert {"wall[0].flap[1]", "wall[0].flap[2]", "wall[1].tier.top", "wall[3].niche_shelf", "mid[0].top"} <= keys
+
+
+# Фото кухни владельца (14.jpg): карго, ящики 1+2, два ряда дверей, ниша под подъёмным фасадом, рамка микроволновки
+PHOTO_KITCHEN = {
+    "type": "kitchen", "wall_bottom": 1450, "wall_height": 1200,
+    "base": [{"kind": "sink", "width": 600, "doors": 1}, {"kind": "cargo", "width": 150},
+             {"kind": "doors", "width": 450}, {"kind": "drawers", "width": 450, "drawers": 3,
+                                                "drawer_layout": "small_top"},
+             {"kind": "doors", "width": 600}],
+    "wall": [{"kind": "doors", "width": 1200, "doors": 2, "rows": 2, "shelves": 3, "top": {"height": 350, "doors": 2}},
+             {"kind": "doors", "width": 450, "opening": "lift", "flaps": 1, "open_bottom": 480, "shelves": 2},
+             {"kind": "appliance", "appliance": "microwave", "width": 600, "niche_height": 480, "niche_frame": True,
+              "above": "lift", "flaps": 1}],
+    "mid": [{"x": 1650, "width": 600, "shelves": 1}],
+}
+
+
+def test_prompts_know_cargo_drawers_rows_open_niche_and_frame() -> None:
+    from mebel_ai.prompts import EDIT_SYSTEM, design_system
+
+    s = design_system("ru")
+    for needle in ('"kind": "cargo"', 'drawer_layout: "small_top"', "rows: 2", '"open_bottom"', "niche_frame: true",
+                   "VERTICAL centred handle"):
+        assert needle in s, needle
+    # Видимое — как есть: один фасад → flaps 1, ярус не выдумываем
+    assert "flaps: 1` even if it is tall" in s and "Never invent a `top` tier" in s
+    assert "610" not in s and "1220" not in s and "250–600" not in s
+    for needle in ("/wall/<i>/rows", "/wall/<i>/open_bottom", "/wall/<i>/niche_frame", '"kind": "cargo"',
+                   "drawer_layout"):
+        assert needle in EDIT_SYSTEM, needle
+    # Новые поля — в схеме дерева, которую видит модель
+    for field in ('"rows"', '"open_bottom"', '"niche_frame"', '"drawer_layout"', '"cargo"'):
+        assert field in s, field
+
+
+def test_design_photo_kitchen_new_fields_build_and_tall_flap_is_not_retried() -> None:
+    d = design(tree=PHOTO_KITCHEN, product_kind="прямая кухня")
+    s = DesignSession(llm=LLM(client=FakeClient([response(d)])))
+    r = s.start("кухня как на фото", photos=[Photo(b"\xff\xd8fake")])
+    assert r.status == "ready" and r.build.ok, [i.message for i in r.issues if i.level == "error"]
+    keys = {p.key for p in r.build.parts}
+    assert {"base[1].cargo.front", "wall[0].row_shelf", "wall[0].doors[2].door[1]", "wall[1].niche_shelf",
+            "wall[2].niche_frame", "wall[0].tier.top"} <= keys
+    assert sum(1 for n in r.build.nodes if n.kind == "lift") == 2  # по одному фасаду, как на фото
+    tall = copy.deepcopy(PHOTO_KITCHEN)
+    tall["wall_height"] = 1250  # одиночный фасад ~745 мм — предупреждение, а не повтор запроса
+    s = DesignSession(llm=LLM(client=FakeClient([response(design(tree=tall))])))
+    r = s.start("кухня")
+    assert r.status == "ready" and [x.validation for x in s.llm.log] == ["ok"]
+    assert any(i.code == "lift_flap_height" and i.level == "warning" for i in r.issues)
+    assert r.tree["wall"][1]["flaps"] == 1
+
+
+def test_edit_kitchen_cargo_rows_open_niche_frame() -> None:
+    kitchen = copy.deepcopy(OWNER_KITCHEN)
+    ops = [("replace", "/base/1", {"kind": "cargo", "width": 150}), ("add", "/base/2", {"kind": "doors", "width": 250}),
+           ("add", "/base/3/drawer_layout", "small_top"), ("add", "/wall/0/rows", 2),
+           ("replace", "/wall/1", {"kind": "doors", "width": 500, "opening": "lift", "flaps": 1, "open_bottom": 400}),
+           ("add", "/wall/2/niche_frame", True)]
+    wire = [{"op": op, "path": path, "value_json": json.dumps(value)} for op, path, value in ops]
+    msg = "бутылочница, ящики 1+2, два ряда дверей, открытая ниша снизу, рамка вокруг микроволновки"
+    client = FakeClient([response({"ops": wire, "summary": msg, "question": None}, model="claude-haiku-5-5")])
+    r = edit_tree(kitchen, msg, llm=LLM(client=client))
+    assert r.ok, [i.message for i in r.build.issues if i.level == "error"]
+    keys = {p.key for p in r.build.parts}
+    assert {"base[1].cargo.front", "wall[0].row_shelf", "wall[1].niche_shelf", "wall[2].niche_frame"} <= keys

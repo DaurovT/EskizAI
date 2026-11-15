@@ -2,7 +2,7 @@
   "ok": true,
   "module_versions": {
     "drawer": "0.3.0",
-    "kitchen": "0.3.0",
+    "kitchen": "0.4.0",
     "shelf": "0.2.0"
   },
   "rules_version": "2026.11-draft",

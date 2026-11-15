@@ -559,7 +559,7 @@ def _scaled_tree(tree: dict, factor: float) -> dict:
     if t.get("type") == "kitchen":
         for row in ("base", "wall", "base2", "wall2"):
             for cab in t.get(row, []):
-                if cab.get("kind") in ("corner", "gap", "fridge"):  # угловой модуль, холодильник — стандартные
+                if cab.get("kind") in ("corner", "gap", "fridge", "cargo"):  # угловой, холодильник, карго — стандартные
                     continue
                 cab["width"] = min(round(cab["width"] * factor, 1), 1200)
         return t

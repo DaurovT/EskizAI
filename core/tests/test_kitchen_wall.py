@@ -103,12 +103,20 @@ def test_lift_two_flaps_stacked() -> None:
 def test_lift_flap_height_rule_and_fix() -> None:
     auto = build(kitchen([{"kind": "doors", "width": 600, "opening": "lift"}]))  # 720, число не задано → 2
     assert auto.ok and len([p for p in auto.parts if p.key.startswith("wall[0].flap")]) == 2
+    one = build(kitchen([{"kind": "doors", "width": 600, "opening": "lift"}], wall_height=700))  # до 700 — один
+    assert one.ok and len([p for p in one.parts if p.key.startswith("wall[0].flap")]) == 1
+    assert "lift_flap_height" not in codes(one)
     t = kitchen([{"kind": "doors", "width": 600, "opening": "lift", "flaps": 1}])  # 720 одним фасадом
     r = build(t)
     issue = next(i for i in r.issues if i.code == "lift_flap_height")
-    assert issue.level == "error" and not r.ok
+    assert issue.level == "warning" and r.ok  # 700–900 — бывает на усиленном газлифте
     fixed = apply_fix(t, issue.fixes[0])
     assert fixed["wall"][0]["flaps"] == 2 and build(fixed).ok
+    tall = kitchen([{"kind": "doors", "width": 600, "opening": "lift", "flaps": 1}], wall_height=1000)
+    r = build(tall)
+    issue = next(i for i in r.issues if i.code == "lift_flap_height")
+    assert issue.level == "error" and not r.ok
+    assert build(apply_fix(tall, issue.fixes[0])).ok
     low = kitchen([{"kind": "hood", "width": 600, "opening": "lift", "flaps": 2}])  # 2 × 178 мм
     r = build(low)
     issue = next(i for i in r.issues if i.code == "lift_flap_height")
@@ -150,6 +158,91 @@ def test_appliance_above_variants_and_rules() -> None:
     assert "appliance_cabinet_low" in codes(short)
     oven = build(kitchen([{"kind": "appliance", "width": 600, "appliance": "oven", "height": 1000}]))
     assert oven.ok and "appliance_niche_shallow" in codes(oven)
+
+
+def test_microwave_niche_frame() -> None:
+    t = kitchen([{"kind": "appliance", "width": 600, "niche_frame": True}])
+    r = build(t)
+    assert r.ok, errors(r)
+    frame = next(p for p in r.parts if p.key == "wall[0].niche_frame")
+    assert frame.name == "Рамка ниши" and frame.role == "false_panel" and frame.material == "ldsp_18_oak"
+    shelf = next(p for p in r.parts if p.key == "wall[0].niche_shelf").aabb()
+    door = next(p for p in r.parts if p.role == "door" and p.key.startswith("wall[0].")).aabb()
+    fb = frame.aabb()
+    assert fb.min.z == mm(1400 + 1) and fb.max.z == door.min.z - mm(2)  # от низа модуля до стыка с фасадом
+    assert fb.min.y == door.min.y  # в плоскости фасадов
+    assert shelf.min.z < fb.max.z < shelf.max.z
+    assert len(frame.cutouts) == 1  # вырез под технику — контур для ЧПУ
+    xs = [s.x for s in frame.cutouts[0].segments]
+    assert min(xs) == mm(45) and max(xs) == frame.length - mm(45)
+    vis = [h for h in hardware_visuals(r) if h.kind == "appliance"]
+    assert len(vis) == 1 and vis[0].name == "Микроволновка (клиента)"  # одна позиция на нишу
+    assert vis[0].shapes[0]["min"][1] > fb.max.y  # техника — за рамкой
+    e = estimate(r)
+    assert not [ln for ln in e.lines if "икроволнов" in ln.name]
+    fronts = next(ln for ln in e.lines if ln.key == "sheet:ldsp_18_oak")
+    assert fronts.category == "fronts"  # рамка — из фасадного материала, считается с фасадами
+    assert export_glb(r)[:4] == b"glTF"
+    assert "Рамка ниши" in export_csv(r).decode("utf-8-sig")
+    plain = build(kitchen([{"kind": "appliance", "width": 600}]))
+    assert not [p for p in plain.parts if p.key.endswith("niche_frame")]
+    tight = build(kitchen([{"kind": "appliance", "width": 500, "niche_frame": True}]))
+    assert "niche_frame_tight" in codes(tight)
+
+
+def test_wall_doors_two_rows() -> None:
+    t = kitchen([{"kind": "doors", "width": 800, "doors": 2, "rows": 2, "shelves": 3,
+                  "top": {"height": 350, "doors": 2}}], wall_height=1200)
+    r = build(t)
+    assert r.ok, errors(r)
+    doors = sorted((p for p in r.parts if p.role == "door" and p.key.startswith("wall[0].")
+                    and not p.key.startswith("wall[0].tier")), key=lambda p: (p.aabb().min.z, p.aabb().min.x))
+    assert [p.key for p in doors] == ["wall[0].doors.door[1]", "wall[0].doors.door[2]",
+                                      "wall[0].doors[2].door[1]", "wall[0].doors[2].door[2]"]
+    lo, hi = doors[0].aabb(), doors[2].aabb()
+    assert lo.max.z < hi.min.z and abs((lo.max.z - lo.min.z) - (hi.max.z - hi.min.z)) <= mm(1)  # пополам
+    shelf = next(p for p in r.parts if p.key == "wall[0].row_shelf").aabb()
+    assert shelf.min.z < lo.max.z + mm(1) <= hi.min.z - mm(1) < shelf.max.z  # стык рядов — по полке
+    loose = [p for p in r.parts if p.role == "shelf" and ".fill[" in p.key and p.key.startswith("wall[0].")
+             and not p.key.startswith("wall[0].tier")]
+    assert len(loose) == 2  # 3 полки = неподвижная + по одной в ряду
+    for d in doors:  # ручки — у нижней кромки каждой двери (модуль высоко)
+        handle = [h for h in d.holes if h.purpose == "ручка"]
+        assert handle and max(h.x for h in handle) < d.length / 2
+    rotate = [n for n in r.nodes if n.kind == "rotate" and n.module.startswith("wall[0]")]
+    assert len(rotate) == 6  # 2 ряда × 2 + ярус 2
+    assert hw(r, "handle", "wall[0]") == 6
+    one = build(kitchen([{"kind": "doors", "width": 600}]))
+    assert "kitchen_wall_ext" not in one.module_versions  # без rows — как раньше
+    low = build(kitchen([{"kind": "doors", "width": 600, "rows": 2, "height": 400}]))
+    assert "wall_rows_low" in codes(low)
+    lift = build(kitchen([{"kind": "doors", "width": 600, "rows": 2, "opening": "lift"}]))
+    assert "wall_rows_ignored" in codes(lift)
+
+
+def test_open_niche_below_lift_flap() -> None:
+    t = kitchen([{"kind": "doors", "width": 450, "opening": "lift", "flaps": 1, "open_bottom": 480,
+                  "shelves": 2}], wall_height=1200)
+    r = build(t)
+    assert r.ok, errors(r)
+    flaps = [p for p in r.parts if ".flap[" in p.key]
+    assert len(flaps) == 1 and not [p for p in r.parts if p.role == "door" and p.key.startswith("wall[0].doors")]
+    bottom = next(p for p in r.parts if p.key == "wall[0].bottom").aabb()
+    shelf = next(p for p in r.parts if p.key == "wall[0].niche_shelf").aabb()
+    assert shelf.min.z - bottom.max.z == mm(480)  # открытая ниша в свету
+    f = flaps[0].aabb()
+    assert shelf.min.z < f.min.z < shelf.max.z and f.max.z == mm(1400 + 1200 - 1)  # фасад — над нишей
+    assert mm(250) <= flaps[0].length <= mm(700) and "lift_flap_height" not in codes(r)
+    loose = [p for p in r.parts if p.role == "shelf" and p.key.startswith("wall[0].fill[")]
+    assert len(loose) == 2
+    zs = sorted(p.aabb().min.z for p in loose)
+    assert bottom.max.z < zs[0] < shelf.min.z < zs[1]  # полка в нише и полка за фасадом
+    assert sum(1 for n in r.nodes if n.kind == "lift") == 1
+    assert not [i for i in r.issues if i.code.startswith("appliance") and i.path.startswith("wall")]  # не техника
+    hinged = build(kitchen([{"kind": "doors", "width": 600, "open_bottom": 300}], wall_height=900))
+    assert hinged.ok and [p for p in hinged.parts if p.role == "door" and p.key.startswith("wall[0].doors")]
+    big = build(kitchen([{"kind": "doors", "width": 600, "open_bottom": 700}]))
+    assert "open_bottom_tall" in codes(big)
 
 
 # --- Антресольный ярус ---

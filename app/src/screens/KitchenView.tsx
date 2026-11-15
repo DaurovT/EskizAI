@@ -20,7 +20,7 @@ import type { KitchenSite, ModelStateOut, ProductTree } from '../api/types';
 import { groupDigits } from '../lib/format';
 import { moduleLengths, wallDiffs } from '../lib/kitchenMeasure';
 import {
-  BASE_KINDS, KDEF, KLIM, WALL_KINDS, clamp, doorCount, duplicateAt, fridgeSpans, hasTier, insertAt, isUpper, labelCode, moveAt, newModule,
+  BASE_KINDS, KDEF, KLIM, WALL_KINDS, clamp, doorCount, drawerLines, duplicateAt, fridgeSpans, hasOpenBottom, hasTier, insertAt, isUpper, labelCode, moveAt, newModule,
   nicheHeight, num, removeAt, replaceAt, rowMods, schemeLayout, wallOverFridge, selFromPartKey, sumFixes, wallKindOf, wallModHeight, withKind,
   type KLayout, type KMod, type KRow, type KSel, type SumFix,
 } from '../lib/kitchenScheme';
@@ -314,7 +314,7 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
         </>
       );
     }
-    const widthLim = row === 'mid' ? KLIM.mid_width : KLIM.width;
+    const widthLim = row === 'mid' ? KLIM.mid_width : cur.kind === 'cargo' ? KLIM.cargo_width : KLIM.width;
     const sumErr = !!sumRow && sumRow === row;
     const kindChips = row === 'mid' || cur.kind === 'corner' ? null : (
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginHorizontal: -16 }} contentContainerStyle={{ gap: 6, paddingHorizontal: 16 }} keyboardShouldPersistTaps="handled">
@@ -351,6 +351,25 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
             <MiniSeg value={cur.flaps === 2 ? '2' : '1'} disabled={lock} onChange={(v) => patchMod(row, i, { flaps: v === '2' ? 2 : null })} options={[{ v: '1', l: '1' }, { v: '2', l: '2' }]} />
           </FRow>
         ) : <>{doorsRow()}{hingeRow}</>}
+        {cur.opening !== 'lift' && cur.kind === 'doors' && !hasOpenBottom(cur) ? (
+          <FRow label={t('kit_f_rows')} line>
+            <MiniSeg value={cur.rows === 2 ? '2' : '1'} disabled={lock} onChange={(v) => patchMod(row, i, { rows: v === '2' ? 2 : null })} options={[{ v: '1', l: '1' }, { v: '2', l: '2' }]} />
+          </FRow>
+        ) : null}
+      </>
+    );
+    // открытая ниша без фасада внизу (банки, специи), фасады — над ней
+    const openBottomRows = (
+      <>
+        <FRow label={t('kit_f_open_bottom')} line>
+          <Toggle value={hasOpenBottom(cur)} disabled={lock} accessibilityLabel={t('kit_f_open_bottom')}
+            onValueChange={(on) => patchMod(row, i, on ? { open_bottom: 400, rows: null } : { open_bottom: null })} />
+        </FRow>
+        {hasOpenBottom(cur) ? (
+          <FRow label={t('kit_f_niche')} line>
+            <Stepper value={num(cur.open_bottom, 400)} step={10} lim={KLIM.open_bottom} disabled={lock} onChange={(v) => patchMod(row, i, { open_bottom: v ?? 400 })} />
+          </FRow>
+        ) : null}
       </>
     );
     const shelvesRow = (
@@ -385,7 +404,7 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
       );
     } else if (up) {
       const wk = wallKindOf(cur);
-      if (wk === 'doors' || wk === 'lift') fields = <>{openingRows}{shelvesRow}{heightRow}{tierRow}</>;
+      if (wk === 'doors' || wk === 'lift') fields = <>{openingRows}{openBottomRows}{shelvesRow}{heightRow}{tierRow}</>;
       else if (wk === 'open') fields = <>{shelvesRow}{heightRow}{tierRow}</>;
       else if (wk === 'hood') fields = <>{openingRows}{heightRow}{tierRow}</>;
       else if (wk === 'appliance') {
@@ -403,6 +422,9 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
               <MiniSeg value={typeof cur.above === 'string' ? cur.above : 'door'} disabled={lock} onChange={(v) => patchMod(row, i, { above: v === 'door' ? null : v })}
                 options={(['door', 'lift', 'open', 'none'] as const).map((v) => ({ v, l: t(`kit_f_above_${v}`) }))} />
             </FRow>
+            <FRow label={t('kit_f_niche_frame')} line>
+              <Toggle value={cur.niche_frame === true} disabled={lock} accessibilityLabel={t('kit_f_niche_frame')} onValueChange={(on) => patchMod(row, i, { niche_frame: on ? true : null })} />
+            </FRow>
             {tierRow}
           </>
         );
@@ -417,8 +439,19 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
           </>
         );
       } else if (k === 'drawers') {
-        fields = <FRow label={t('kit_f_drawers')} line><Stepper value={num(cur.drawers, 3)} step={1} lim={KLIM.drawers} disabled={lock} onChange={(v) => patchMod(row, i, { drawers: v ?? 3 })} /></FRow>;
+        fields = (
+          <>
+            <FRow label={t('kit_f_drawers')} line><Stepper value={num(cur.drawers, 3)} step={1} lim={KLIM.drawers} disabled={lock} onChange={(v) => patchMod(row, i, { drawers: v ?? 3 })} /></FRow>
+            {num(cur.drawers, 3) >= 2 ? (
+              <FRow label={t('kit_f_drawer_layout')} line>
+                <MiniSeg value={cur.drawer_layout === 'small_top' ? 'small_top' : 'equal'} disabled={lock} onChange={(v) => patchMod(row, i, { drawer_layout: v === 'small_top' ? 'small_top' : null })}
+                  options={[{ v: 'equal', l: t('kit_f_dl_equal') }, { v: 'small_top', l: t('kit_f_dl_small_top') }]} />
+              </FRow>
+            ) : null}
+          </>
+        );
       } else if (k === 'sink') fields = <>{doorsRow()}{hingeRow}</>;
+      else if (k === 'cargo') fields = <T v="cap" style={{ paddingVertical: 8 }}>{t('kit_cargo_note')}</T>;
       else if (k === 'appliance') {
         fields = (
           <>
@@ -787,12 +820,21 @@ function Facade({ tree, layout, run, sel, onPick, onAdd, lbl, shortLbl, W, y0, a
         const wpx = px(b.x + b.w) - px(b.x);
         const lines: ReactNode[] = [];
         if (m.kind === 'doors' || m.kind === 'hood') {
-          if (m.opening === 'lift' && m.flaps === 2) lines.push(<View key="f" style={[s.hl, { top: (h - 6) / 2 }]} />);
-          else if (m.opening !== 'lift' && doorCount(m) === 2) lines.push(<View key="d" style={[s.vl, { left: wpx / 2 - 1 }]} />);
+          // открытая ниша внизу (полка внутри), фасады — над ней
+          const ob = hasOpenBottom(m) ? Math.min(h - 14, Math.round((num(m.open_bottom, 400) / wallModHeight(m, tree)) * (h - 6))) : 0;
+          if (ob) {
+            lines.push(<View key="ob" style={[s.niche, { height: ob, backgroundColor: '#FBFAF8', borderWidth: 1, borderColor: palette.chev }]} />);
+            lines.push(<View key="obs" style={[s.hl, { top: h - 6 - 3 - ob / 2, left: 6, right: 6, backgroundColor: palette.handle }]} />);
+          }
+          const fh = h - 6 - (ob ? ob + 3 : 0); // высота фасадной части
+          if (m.opening === 'lift' && m.flaps === 2) lines.push(<View key="f" style={[s.hl, { top: fh / 2 }]} />);
+          else if (m.opening !== 'lift' && m.rows === 2 && !ob) lines.push(<View key="r" style={[s.hl, { top: fh / 2 }]} />);
+          if (m.opening !== 'lift' && doorCount(m) === 2) lines.push(<View key="d" style={[s.vl, ob ? { top: 3, bottom: ob + 6 } : null, { left: wpx / 2 - 1 }]} />);
           if (m.opening === 'lift') lines.push(<Ionicons key="u" name="chevron-up" size={11} color={palette.chev} style={{ position: 'absolute', right: 3, top: 2 }} />);
         } else if (m.kind === 'appliance') {
           const nh = m.above === 'none' ? h - 6 : Math.min(h - 10, Math.round((nicheHeight(m) / wallModHeight(m, tree)) * (h - 6)));
-          lines.push(<View key="n" style={[s.niche, { height: nh }]} />);
+          // в рамке — проём меньше, вокруг — полоса цвета фасадов
+          lines.push(<View key="n" style={[s.niche, { height: nh }, m.niche_frame === true && [s.nicheFramed, { height: Math.max(6, nh - 8) }]]} />);
         } else if (m.kind === 'open') {
           const n = num(m.shelves, 2);
           for (let j = 1; j <= n; j++) lines.push(<View key={`s${j}`} style={[s.hl, { top: ((h - 6) * j) / (n + 1), backgroundColor: palette.handle }]} />);
@@ -837,8 +879,9 @@ function Facade({ tree, layout, run, sel, onPick, onAdd, lbl, shortLbl, W, y0, a
         const wpx = px(b.x + b.w) - px(b.x);
         const lines: ReactNode[] = [];
         if (m.kind === 'drawers') {
-          const n = num(m.drawers, 3);
-          for (let j = 1; j < n; j++) lines.push(<View key={`d${j}`} style={[s.hl, { top: ((B.base - 6) * j) / n }]} />);
+          drawerLines(m).forEach((f, j) => lines.push(<View key={`d${j}`} style={[s.hl, { top: (B.base - 6) * f }]} />));
+        } else if (m.kind === 'cargo') {
+          lines.push(<View key="c" style={[s.cargoH, { left: wpx / 2 - 3 }]} />); // вертикальная ручка
         } else if ((m.kind === 'doors' || m.kind === 'sink') && doorCount(m) === 2) lines.push(<View key="v" style={[s.vl, { left: wpx / 2 - 1 }]} />);
         else if (m.kind === 'corner') lines.push(<Hatch key="h" />);
         return cell(b, baseRow, yBase, B.base, m.kind === 'corner' ? '#ECE6DA' : '#F4F2EC', <>{lines}</>);
@@ -1057,6 +1100,8 @@ const s = StyleSheet.create({
   hl: { position: 'absolute', left: 3, right: 3, height: 1, backgroundColor: palette.chev },
   vl: { position: 'absolute', top: 16, bottom: 22, width: 1, backgroundColor: palette.chev },
   niche: { position: 'absolute', left: 4, right: 4, bottom: 3, backgroundColor: '#E2E0DA', borderRadius: 2 },
+  nicheFramed: { left: 9, right: 9, bottom: 7, borderWidth: 1, borderColor: palette.chev },
+  cargoH: { position: 'absolute', top: 14, height: 18, width: 3, borderRadius: 1.5, backgroundColor: palette.chev },
   ct: { position: 'absolute', height: 10, backgroundColor: '#8D8778', borderWidth: 3, borderBottomWidth: 0, borderColor: palette.ink },
   plus: { position: 'absolute', backgroundColor: palette.white, alignItems: 'center', justifyContent: 'center', ...{ shadowColor: palette.ink, shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 } },
   wall: { position: 'absolute', backgroundColor: palette.ink, borderRadius: 3 },

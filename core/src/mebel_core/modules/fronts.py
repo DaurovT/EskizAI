@@ -269,18 +269,21 @@ def _door_handle_center(r, s: int, z0: int, z1: int) -> int:
     return height // 2 if lo > hi else max(lo, min(center, hi))
 
 
-def _drawer_fronts(ctx: BuildContext, slot: Slot, xs: list[int], z_lo: int, z_hi: int, zone) -> None:
+def _drawer_fronts(ctx: BuildContext, slot: Slot, xs: list[int], z_lo: int, z_hi: int, zone,
+                   ratios: list[float] | None = None) -> None:
+    """ratios — доли высоты фасадов снизу вверх (кухня 1+2); None — поровну."""
     r = ctx.rules
     g = r.front_gap
     n = zone.external_drawers
     x0, x1 = xs[slot.index] + g // 2, xs[slot.index + 1] - g // 2
-    h = (z_hi - z_lo - n * g) / n
+    total = z_hi - z_lo - n * g
+    hs = [total * f for f in ratios] if ratios else [total / n] * n
     hk = ctx.product.fronts.handles
     from ..parts import Hole
 
     for i in range(n):
-        z0 = round(z_lo + g / 2 + i * (h + g))
-        z1 = round(z0 + h)
+        z0 = round(z_lo + g / 2 + (sum(hs[:i]) if ratios else i * hs[0]) + i * g)
+        z1 = round(z0 + hs[i])
         node = f"{zone.path}.drawer[{i + 1}]"
         front = _front_part(ctx, f"{node}.front", "Фасад ящика", "drawer_front", x0, x1, z0, z1, node, door=False)
         # Горизонтально по центру, ближе к верхнему краю (на низком фасаде — посередине)

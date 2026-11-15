@@ -22,6 +22,7 @@ export const KLIM = {
   wall_height: [300, 1400], wall_depth: [200, 400], ct_depth: [400, 900],
   width: [150, 1200], mid_width: [150, 900], mid_height: [150, 900], mid_x: [0, 20000], mod_height: [200, 1400],
   tier_height: [250, 600], niche_height: [300, 700], fridge_height: [1000, 2300], drawers: [1, 5], shelves: [0, 4],
+  cargo_width: [150, 300], open_bottom: [150, 900],
 } as const satisfies Record<string, readonly [number, number]>;
 
 export const clamp = (v: number, [lo, hi]: readonly [number, number]) => Math.max(lo, Math.min(hi, v));
@@ -34,14 +35,17 @@ export const num = (v: unknown, d: number) => (typeof v === 'number' && Number.i
 export const doorCount = (m: KMod) => (m.doors === 1 || m.doors === 2 ? m.doors : (m.width ?? 600) <= 600 ? 1 : 2);
 
 /**
- * Код подписи модуля (ключ i18n — kit_k_<код>). Верхние: двери — «Дверь» / «2 двери», подъёмные — «Подъёмный» /
- * «Подъёмные ×2», ниша техники — «Микроволновка» / «Духовка». Нижние: ниша под технику с варкой — «Варка»,
- * посудомойка — «ПММ», иначе «Техника».
+ * Код подписи модуля (ключ i18n — kit_k_<код>). Верхние: двери — «Дверь» / «2 двери», два ряда — «2 ряда дверей»,
+ * подъёмные — «Подъёмный» / «Подъёмные ×2», с открытой нишей внизу — «Подъёмный + ниша» / «Двери + ниша», ниша
+ * техники — «Микроволновка» / «Духовка». Нижние: ниша под технику с варкой — «Варка», посудомойка — «ПММ», иначе
+ * «Техника»; бутылочница — «Бутылочница».
  */
 export function labelCode(m: KMod, row: KRow): string {
   if (row === 'mid') return 'mid';
   const k = m.kind;
   if (isUpper(row)) {
+    if (k === 'doors' && hasOpenBottom(m)) return m.opening === 'lift' ? 'niche_lift' : 'niche_door';
+    if (k === 'doors' && m.opening !== 'lift' && m.rows === 2) return 'rows';
     if (k === 'doors') return m.opening === 'lift' ? (m.flaps === 2 ? 'lift2' : 'lift') : doorCount(m) === 1 ? 'door' : 'doors2';
     if (k === 'appliance') return m.appliance === 'oven' ? 'oven' : 'micro';
     if (k === 'open' || k === 'hood' || k === 'gap') return k;
@@ -49,7 +53,7 @@ export function labelCode(m: KMod, row: KRow): string {
   }
   if (k === 'doors') return doorCount(m) === 1 ? 'door' : 'doors2';
   if (k === 'appliance') return m.hob ? 'hob' : m.dw || (m.width ?? 600) <= 450 ? 'dw' : 'tech';
-  if (k === 'drawers' || k === 'sink' || k === 'corner' || k === 'fridge') return k;
+  if (k === 'drawers' || k === 'sink' || k === 'corner' || k === 'fridge' || k === 'cargo') return k;
   return k;
 }
 
@@ -64,6 +68,22 @@ export const nicheHeight = (m: KMod) => num(m.niche_height, m.appliance === 'ove
 /** Высота антресольного яруса для рисунка: своя или 350 (null — «до потолка / 350»). */
 export const tierHeight = (m: KMod) => num((m.top as { height?: number } | null | undefined)?.height, KDEF.tier_auto);
 export const hasTier = (m: KMod) => m.top != null && typeof m.top === 'object' && m.kind !== 'gap';
+/** Открытая ниша без фасада внизу верхнего модуля с дверями (open_bottom, мм в свету). */
+export const hasOpenBottom = (m: KMod) => m.kind === 'doors' && typeof m.open_bottom === 'number';
+
+/**
+ * Линии между фасадами ящиков для рисунка — доли высоты сверху вниз (как ядро: drawer_ratios). small_top (1+2) —
+ * верхний ящик 1/5 высоты, остальные поровну; иначе — поровну.
+ */
+export function drawerLines(m: KMod): number[] {
+  const n = Math.max(1, Math.round(num(m.drawers, 3)));
+  if (m.drawer_layout === 'small_top' && n >= 2) {
+    const rest = (1 - SMALL_TOP) / (n - 1);
+    return Array.from({ length: n - 1 }, (_, j) => SMALL_TOP + j * rest);
+  }
+  return Array.from({ length: n - 1 }, (_, j) => (j + 1) / n);
+}
+export const SMALL_TOP = 0.2;
 
 // ---------- раскладка ----------
 
@@ -169,8 +189,8 @@ export function newModule(row: KRow, tree: ProductTree, width?: number): KMod {
   return { kind: 'doors', width: clamp(width ?? 600, KLIM.width) };
 }
 
-/** Варианты вида: нижний — двери / ящики / мойка / техника / холодильник; верхний — двери / подъёмные / открытые / вытяжка / техника / пусто. */
-export const BASE_KINDS = ['doors', 'drawers', 'sink', 'appliance', 'fridge'] as const;
+/** Варианты вида: нижний — двери / ящики / мойка / бутылочница / техника / холодильник; верхний — двери / подъёмные / открытые / вытяжка / техника / пусто. */
+export const BASE_KINDS = ['doors', 'drawers', 'sink', 'cargo', 'appliance', 'fridge'] as const;
 export const WALL_KINDS = ['doors', 'lift', 'open', 'hood', 'appliance', 'gap'] as const;
 export type WallKindChoice = (typeof WALL_KINDS)[number];
 
@@ -187,9 +207,10 @@ export function withKind(m: KMod, row: KRow, choice: string): KMod {
   if (isUpper(row)) {
     const tier = m.top != null && choice !== 'gap' ? { top: m.top } : {};
     const h = typeof m.height === 'number' && (choice === 'doors' || choice === 'lift' || choice === 'open') ? { height: m.height } : {};
+    const ob = hasOpenBottom(m) ? { open_bottom: m.open_bottom } : {};
     switch (choice) {
-      case 'doors': return { ...keep, kind: 'doors', shelves: num(m.shelves, 1), ...(m.doors ? { doors: m.doors } : {}), ...(m.hinge ? { hinge: m.hinge } : {}), ...h, ...tier };
-      case 'lift': return { ...keep, kind: 'doors', opening: 'lift', flaps: m.flaps === 2 ? 2 : null, shelves: num(m.shelves, 1), ...h, ...tier };
+      case 'doors': return { ...keep, kind: 'doors', shelves: num(m.shelves, 1), ...(m.doors ? { doors: m.doors } : {}), ...(m.hinge ? { hinge: m.hinge } : {}), ...(m.rows === 2 ? { rows: 2 } : {}), ...ob, ...h, ...tier };
+      case 'lift': return { ...keep, kind: 'doors', opening: 'lift', flaps: m.flaps === 2 ? 2 : null, shelves: num(m.shelves, 1), ...ob, ...h, ...tier };
       case 'open': return { ...keep, kind: 'open', shelves: m.kind === 'open' ? num(m.shelves, 2) : 2, ...h, ...tier };
       case 'hood': return { ...keep, kind: 'hood', shelves: 0, ...tier };
       case 'appliance': return { ...keep, kind: 'appliance', appliance: m.appliance === 'oven' ? 'oven' : 'microwave', shelves: 0, ...tier };
@@ -201,6 +222,8 @@ export function withKind(m: KMod, row: KRow, choice: string): KMod {
     case 'doors': return { ...keep, kind: 'doors', ...(m.doors ? { doors: m.doors } : {}), ...(m.hinge ? { hinge: m.hinge } : {}) };
     case 'drawers': return { ...keep, kind: 'drawers', drawers: typeof m.drawers === 'number' ? m.drawers : 3 };
     case 'sink': return { ...keep, kind: 'sink' };
+    // механизм карго — 150–300 мм: шире — сужаем (сумму ряда сводит подсказка «подогнать соседний»)
+    case 'cargo': return { ...keep, kind: 'cargo', width: clamp(num(m.width, 150), KLIM.cargo_width) };
     case 'appliance': return { ...keep, kind: 'appliance' };
     case 'fridge': return { ...keep, kind: 'fridge', width: Math.max(600, num(m.width, 600)) };
     default: return { ...keep, kind: choice };
@@ -213,8 +236,8 @@ export type SumFix = { kind: 'neighbour'; i: number; from: number; to: number } 
 
 /**
  * Как свести сумму ряда со стеной (diff = стена − сумма): подогнать соседний модуль выбранного (справа, потом слева,
- * потом крайние) — если новая ширина в пределах 150–1200; добор — новый модуль на остаток (от 150 мм).
- * Угловой модуль и холодильник не трогаем.
+ * потом крайние) — если новая ширина в пределах 150–1200 (у бутылочницы 150–300); добор — новый модуль на остаток
+ * (от 150 мм). Угловой модуль и холодильник не трогаем.
  */
 export function sumFixes(mods: KMod[], diff: number, sel: number | null): SumFix[] {
   if (!diff) return [];
@@ -230,7 +253,8 @@ export function sumFixes(mods: KMod[], diff: number, sel: number | null): SumFix
     if (m.kind === 'corner' || m.kind === 'fridge') continue;
     const from = num(m.width, 0);
     const to = from + diff;
-    if (to >= KLIM.width[0] && to <= KLIM.width[1]) { out.push({ kind: 'neighbour', i, from, to }); break; }
+    const lim = m.kind === 'cargo' ? KLIM.cargo_width : KLIM.width;
+    if (to >= lim[0] && to <= lim[1]) { out.push({ kind: 'neighbour', i, from, to }); break; }
   }
   if (diff >= KLIM.width[0] && diff <= KLIM.width[1]) out.push({ kind: 'add', width: diff });
   return out;

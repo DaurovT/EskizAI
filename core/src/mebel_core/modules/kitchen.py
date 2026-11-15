@@ -3,6 +3,9 @@
 Угловой модуль: long — длинный глухой вдоль первого ряда; square — Г-образный w×w на обе стены
 (основная часть в первом ряду, крыло — в начале второго). Наполнение угла: полка, карусель, поворотная полка.
 
+Бутылочница (cargo, 150–300 мм): корпус и один высокий фасад на выдвижной корзине полного выдвижения
+(механизм — одна позиция фурнитуры, узел «slide» для 3D). Ящики: равные или 1+2 (низкий верхний).
+
 Каждый модуль — свой корпус. Нижние стоят на ножках, сверху у них
 царги вместо крыши (сверху столешница). Верхние висят на навесах на
 монтажной шине и выровнены по верху.
@@ -91,7 +94,7 @@ def _split_run(bounds: list[int], max_len: int) -> list[tuple[int, int]]:
     return pieces
 
 
-@module("kitchen", "0.3.0", "Кухня: прямая и угловая")
+@module("kitchen", "0.4.0", "Кухня: прямая и угловая")
 def build_kitchen(ctx: BuildContext) -> tuple[int, int, int]:
     k: Kitchen = ctx.product
     r = ctx.rules
@@ -259,9 +262,12 @@ def _build_run(ctx: BuildContext, k: Kitchen, base: list, wall: list, *, run: st
             elif cab.kind == "drawers":
                 fill = DrawersFill(count=cab.drawers, external=True)
                 fpath = f"{path}.fill[0]"
-                ctx.run("drawer", slot, slot.box, fill, fpath, None)
+                ratios = drawer_ratios(cab.drawers, cab.drawer_layout)
+                ctx.run("drawer", slot, slot.box, fill, fpath, None, ratios=ratios)
                 zone = Zone(z0=slot.box.z0, z1=slot.box.z1, kind="drawers", external_drawers=cab.drawers, path=fpath)
-                _drawer_fronts(ctx, slot, xs, legs, legs + bh, zone)
+                _drawer_fronts(ctx, slot, xs, legs, legs + bh, zone, ratios=ratios)
+            elif cab.kind == "cargo":
+                _cargo(ctx, cab, slot, path=path, ptr=f"/base{run}/{i}", x=x, w=w, z0=legs, z1=legs + bh)
             ctx.add_hardware("leg", "Ножка кухонная регулируемая", 4, path)
         x += w
         bounds.append(x)
@@ -488,6 +494,55 @@ def _rotate_run(ctx: BuildContext, first: int, first_node: int, k: Kitchen, len1
         nx, ny = move(n.origin[0], n.origin[1], n.module.startswith("wall2"))
         n.origin = (nx, ny, n.origin[2])
         n.axis = rot[n.axis]
+
+
+SMALL_TOP = 0.2  # верхний ящик в раскладке 1+2 — доля высоты фасадов
+CARGO_MIN, CARGO_MAX = mm(150), mm(300)
+
+
+def drawer_ratios(n: int, layout: str) -> list[float] | None:
+    """Доли высоты фасадов ящиков снизу вверх; None — поровну."""
+    if layout != "small_top" or n < 2:
+        return None
+    rest = (1 - SMALL_TOP) / (n - 1)
+    return [rest] * (n - 1) + [SMALL_TOP]
+
+
+def _cargo(ctx: BuildContext, cab, slot: Slot, *, path: str, ptr: str, x: int, w: int, z0: int, z1: int) -> None:
+    """Бутылочница: высокий фасад на раме выдвижной корзины полного выдвижения; ручка вертикальная у верха."""
+    from ..parts import Fix, Hole, Issue, MovingNode, PatchOp
+    from .fronts import _door_handle_center, _front_part, handle_name
+
+    r = ctx.rules
+    if not CARGO_MIN <= w <= CARGO_MAX:
+        fixes = [Fix(description="Ширина 300 мм" if w > CARGO_MAX else "Ширина 150 мм",
+                     patch=[PatchOp(op="replace", path=f"{ptr}/width", value=300 if w > CARGO_MAX else 150)]),
+                 Fix(description="Модуль с дверью вместо бутылочницы",
+                     patch=[PatchOp(op="replace", path=f"{ptr}/kind", value="doors")])]
+        ctx.issues.append(Issue(level="error", code="cargo_width",
+                                message=f"Бутылочница шириной {to_mm(w):g} мм — механизмы карго бывают "
+                                        f"{to_mm(CARGO_MIN):g}–{to_mm(CARGO_MAX):g} мм", path=path, fixes=fixes))
+    g = r.front_gap
+    xa, xb, za, zb = x + g // 2, x + w - g // 2, z0 + g // 2, z1 - g // 2
+    node = f"{path}.cargo"
+    front = _front_part(ctx, f"{node}.front", "Фасад бутылочницы", "drawer_front", xa, xb, za, zb, node, door=True)
+    hk = ctx.product.fronts.handles
+    if hk.kind == "bar":  # вертикальная скоба по центру фасада, у верхнего края
+        s = mm(hk.spacing)
+        cz = _door_handle_center(r, s, za, zb)
+        for dz in (-s // 2, s // 2):
+            front.holes.append(Hole(x=cz + dz, y=front.width // 2, diameter=mm(5), depth=0, face="B", purpose="ручка"))
+        ctx.add_hardware("handle", handle_name(hk), 1, path, finish=hk.finish)
+    elif hk.kind == "knob":
+        cz = _door_handle_center(r, 0, za, zb)
+        front.holes.append(Hole(x=cz, y=front.width // 2, diameter=mm(5), depth=0, face="B", purpose="ручка"))
+        ctx.add_hardware("knob", handle_name(hk), 1, path, finish=hk.finish)
+    box = slot.box
+    run = r.slide_length_for(box.depth - mm(10)) or box.depth
+    ctx.add_hardware("cargo", f"Бутылочница (карго) {round(to_mm(w))} мм", 1, path, width=w, length=run)
+    ctx.add_hardware("screw", "Саморез 4×16 (крепление фасада)", 4, path)
+    ctx.nodes.append(MovingNode(id=node, kind="slide", module=path, origin=(box.x0, box.y0, box.z0), axis="-Y",
+                                range=run))
 
 
 def _rect(x: int, y: int, w: int, h: int) -> Contour:

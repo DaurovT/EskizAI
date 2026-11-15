@@ -253,3 +253,76 @@ def test_apply_measurements_with_kitchen_site() -> None:
     assert sum(c["width"] for c in new["base"]) == 2900 and new["site"]["wall_a"] == 2900
     with pytest.raises(ValueError):
         apply_measurements(copy.deepcopy(t), kitchen={"wall_a": 1500})
+
+
+# --- Бутылочница (карго) и ящики 1+2 ---
+
+
+def straight(base: list[dict]) -> dict:
+    t = load("kitchen_straight")
+    t["base"] = base
+    t["wall"] = []
+    return t
+
+
+def test_cargo_bottle_pullout() -> None:
+    from mebel_core import viewer_model
+    from mebel_core.hw3d import hardware_visuals
+
+    r = build(straight([{"kind": "sink", "width": 600, "doors": 1}, {"kind": "cargo", "width": 150},
+                        {"kind": "doors", "width": 450}]))
+    assert r.ok, errors(r)
+    front = next(p for p in r.parts if p.key == "base[1].cargo.front")
+    assert front.name == "Фасад бутылочницы" and front.role == "drawer_front" and front.node == "base[1].cargo"
+    b = front.aabb()
+    assert b.max.x - b.min.x == mm(148) and b.max.z - b.min.z == mm(718)  # один фасад на весь модуль
+    handle = [h for h in front.holes if h.purpose == "ручка"]
+    assert len(handle) == 2 and handle[0].y == handle[1].y and handle[0].x != handle[1].x  # вертикальная скоба
+    assert min(h.x for h in handle) > front.length / 2  # у верхнего края
+    node = next(n for n in r.nodes if n.id == "base[1].cargo")
+    assert node.kind == "slide" and node.axis == "-Y" and node.range >= mm(450)
+    assert {p.role for p in r.parts if p.module == "base[1]"} >= {"side", "bottom", "rail", "back"}
+    item = next(h for h in r.hardware if h.kind == "cargo")
+    assert item.name == "Бутылочница (карго) 150 мм" and item.qty == 1 and item.module == "base[1]"
+    e = estimate(r)
+    line = next(ln for ln in e.lines if ln.name == "Бутылочница (карго) 150 мм")
+    assert line.unit_price == 480_000 and line.status == "analog"
+    vis = [h for h in hardware_visuals(r) if h.kind == "cargo"]
+    assert len(vis) == 1 and vis[0].node == "base[1].cargo"  # корзины едут с фасадом
+    assert any(n["id"] == "base[1].cargo" for n in viewer_model(r)["nodes"])
+    assert len(zipfile.ZipFile(io.BytesIO(export_dxf_zip(r))).namelist()) > 0
+
+
+def test_cargo_width_rule_and_fixes() -> None:
+    from mebel_core import apply_fix
+
+    t = straight([{"kind": "cargo", "width": 400}, {"kind": "doors", "width": 600}])
+    r = build(t)
+    issue = next(i for i in r.issues if i.code == "cargo_width")
+    assert issue.level == "error" and not r.ok
+    assert apply_fix(t, issue.fixes[0])["base"][0]["width"] == 300 and build(apply_fix(t, issue.fixes[0])).ok
+    as_door = apply_fix(t, issue.fixes[1])
+    assert as_door["base"][0]["kind"] == "doors" and build(as_door).ok
+    assert build(straight([{"kind": "cargo", "width": 300}])).ok
+    rng = _scaled_tree(straight([{"kind": "cargo", "width": 300}]), 1.1)
+    assert rng["base"][0]["width"] == 300  # механизм стандартный — не растягиваем
+
+
+def test_drawers_small_top_layout() -> None:
+    r = build(straight([{"kind": "drawers", "width": 450, "drawers": 3, "drawer_layout": "small_top"}]))
+    assert r.ok, errors(r)
+    fronts = sorted((p for p in r.parts if p.role == "drawer_front"), key=lambda p: p.aabb().min.z)
+    hs = [p.aabb().max.z - p.aabb().min.z for p in fronts]
+    assert len(hs) == 3 and abs(hs[0] - hs[1]) <= 1 and hs[2] < hs[0] / 1.5  # 1 низкий сверху + 2 равных
+    assert mm(120) <= hs[2] <= mm(180)
+    sides = {}
+    for p in r.parts:
+        if p.role == "drawer_side" and p.key.endswith(".side.left"):
+            sides[p.node] = p
+    boxes = [sides[f"base[0].fill[0].drawer[{i}]"] for i in (1, 2, 3)]
+    assert boxes[2].width < boxes[0].width == boxes[1].width  # ящик под низким фасадом ниже
+    for i, f in enumerate(fronts):  # ящик за своим фасадом
+        assert f.aabb().min.z - mm(10) <= boxes[i].aabb().min.z < f.aabb().max.z
+    eq = build(straight([{"kind": "drawers", "width": 450, "drawers": 3}]))
+    hs = sorted({p.aabb().max.z - p.aabb().min.z for p in eq.parts if p.role == "drawer_front"})
+    assert hs[-1] - hs[0] <= 1  # по умолчанию — равные
