@@ -193,3 +193,18 @@ def test_usdz_uses_decor_textures(api, client, owner, settings, tmp_path):
         tex = [n for n in z.namelist() if n.startswith("textures/")]
         assert len(tex) == 1
         assert max(Image.open(io.BytesIO(z.read(tex[0]))).size) <= 1024
+
+
+def test_prune_local_cache_removes_stale_files(api, client, owner, app, settings, db):
+    _, link, d = _share(api, client, owner)
+    assert client.get(d["glb"]["closedUsdz"].removeprefix(BASE)).status_code == 200
+    root = settings.media_dir / "private" / "ar-cache"
+    vdir = next(root.iterdir())
+    (vdir / "0-closed.usdz").write_bytes(b"old rev")                 # прошлый CACHE_REV
+    ghost = root / str(uuid.uuid4())
+    ghost.mkdir()
+    (ghost / f"{ar_files.CACHE_REV}-closed.glb").write_bytes(b"x")     # версии нет в базе
+    stats = ar_files.prune_local_cache(db, settings.media_dir)
+    assert stats["removed"] == 2
+    assert not ghost.exists() and not (vdir / "0-closed.usdz").exists()
+    assert (vdir / f"{ar_files.CACHE_REV}-closed.usdz").exists()       # текущая версия остаётся

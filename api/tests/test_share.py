@@ -333,3 +333,17 @@ def test_share_feedback_push_in_uzbek(api, client, owner, db):
     n = db.scalars(select(Notification).where(Notification.kind == "client_change_request")).one()
     assert n.title == "Mijoz o‘zgartirishni so‘rayapti" and n.body.endswith("…") and len(n.body) < 220
     assert render("client_change_request", "ru", {"title": "Шкаф", "text": "ниже"})[1] == "«Шкаф»: ниже"
+
+
+def test_client_requests_listed_for_master_only(api, client, owner):
+    pid, link = make_link(api, client, owner)
+    t = link["token"]
+    client.post(f"/share/{t}/feedback", json={"text": "Ручки чёрные"})
+    client.post(f"/share/{t}/feedback", json={"text": "И зеркало"})
+    r = client.get(f"/projects/{pid}/client-requests", headers=owner)
+    assert r.status_code == 200, r.text
+    assert [x["text"] for x in r.json()] == ["И зеркало", "Ручки чёрные"]
+    assert r.json()[0]["link_id"] == link["id"]
+    other = api.login("+998935551122")
+    assert client.get(f"/projects/{pid}/client-requests", headers=other).status_code == 404
+    assert client.get(f"/projects/{pid}/client-requests").status_code == 401

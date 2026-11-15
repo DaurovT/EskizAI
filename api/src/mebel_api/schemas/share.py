@@ -100,3 +100,12 @@ class ShareFeedbackIn(BaseModel):
 
 class ShareFeedbackOut(BaseModel):
     sentAt: str
+
+
+class ClientRequestOut(BaseModel):
+    """Просьба клиента «Хочу изменить…» со страницы ссылки (для карточки проекта у мастера)."""
+
+    id: str
+    text: str
+    created_at: str
+    link_id: str

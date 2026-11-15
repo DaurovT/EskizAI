@@ -117,3 +117,37 @@ def read_link(settings: Settings, token: str, ext: str) -> tuple[uuid.UUID, str,
     if m is None or m["fmt"] != ext:
         raise ApiError(404, "not_found", "Файл не найден")
     return uuid.UUID(m["vid"]), m["state"], m["fmt"]
+
+
+def prune_local_cache(db, media_dir: Path, *, older_than_days: int = 30) -> dict[str, int]:
+    """Чистка кэша AR на локальном диске (STORAGE_BACKEND=local): файлы прошлых CACHE_REV, файлы версий,
+    которых больше нет, и файлы старых (не текущих) версий, не тронутые дольше `older_than_days` —
+    их при запросе построят заново."""
+    from sqlalchemy import select
+
+    from ..models import Project
+
+    root = media_dir / "private" / "ar-cache"
+    stats = {"files": 0, "removed": 0, "bytes": 0}
+    if not root.is_dir():
+        return stats
+    current = {str(v) for v in db.scalars(select(Project.current_version_id)) if v}
+    cutoff = utcnow().timestamp() - older_than_days * 86400
+    for vdir in root.iterdir():
+        if not vdir.is_dir():
+            continue
+        try:
+            version = db.get(ModelVersion, uuid.UUID(vdir.name))
+        except ValueError:
+            version = None
+        for f in vdir.iterdir():
+            stats["files"] += 1
+            stale = (version is None or not f.name.startswith(f"{CACHE_REV}-")
+                     or (vdir.name not in current and f.stat().st_mtime < cutoff))
+            if stale:
+                stats["bytes"] += f.stat().st_size
+                f.unlink(missing_ok=True)
+                stats["removed"] += 1
+        if not any(vdir.iterdir()):
+            vdir.rmdir()
+    return stats

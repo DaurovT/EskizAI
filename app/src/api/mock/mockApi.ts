@@ -1086,6 +1086,9 @@ export function createMockApi(opts: MockOptions = {}): Api {
       return link;
     }),
     listShareLinks: (id) => wait(() => [...getP(id).links]),
+    listClientRequests: (id) => wait(() => (getP(id).links.length
+      ? [{ id: 'cr1', text: 'Можно ручки чёрные и на 10 см ниже?', created_at: iso(3_600_000), link_id: getP(id).links[0].id }]
+      : [])),
     getProjectAr: (id) => wait(() => {
       const p = getP(id);
       const v = curVersion(p);

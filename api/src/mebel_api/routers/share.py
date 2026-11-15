@@ -15,7 +15,7 @@ from ..errors import ERROR_RESPONSES, ApiError, forbidden, not_found
 from ..models import ModelVersion, Project, ShareEvent, ShareLink, User, Workshop
 from ..schemas.common import Ok
 from ..schemas.projects import ShareLinkIn, ShareLinkOut
-from ..schemas.share import (AgreeOut, ShareEventIn, ShareFeedbackIn, ShareFeedbackOut, ShareGlb, ShareMaster,
+from ..schemas.share import (AgreeOut, ClientRequestOut, ShareEventIn, ShareFeedbackIn, ShareFeedbackOut, ShareGlb, ShareMaster,
                              SharePayload, ShareProject)
 from ..services import ar_files, lifecycle
 from ..services import staff_auth as sa
@@ -91,6 +91,17 @@ def list_links(project_id: uuid.UUID, current: CurrentDep, db: DbDep, settings: 
     p = get_project(db, current, project_id)
     rows = db.scalars(select(ShareLink).where(ShareLink.project_id == p.id).order_by(ShareLink.created_at.desc()))
     return [link_out(link, settings) for link in rows]
+
+
+@router.get("/projects/{project_id}/client-requests", response_model=list[ClientRequestOut],
+            summary="Просьбы клиента «Хочу изменить…» по проекту (новые сверху)")
+def list_client_requests(project_id: uuid.UUID, current: CurrentDep, db: DbDep) -> list[ClientRequestOut]:
+    p = get_project(db, current, project_id)
+    rows = db.scalars(select(ShareEvent).where(ShareEvent.project_id == p.id,
+                                               ShareEvent.kind == ShareEventKind.change_request)
+                      .order_by(ShareEvent.created_at.desc()).limit(100))
+    return [ClientRequestOut(id=str(e.id), text=str((e.meta or {}).get("text", "")), link_id=str(e.share_link_id),
+                             created_at=e.created_at.isoformat()) for e in rows]
 
 
 @router.delete("/projects/{project_id}/share-links/{link_id}", response_model=Ok, summary="Отозвать ссылку")

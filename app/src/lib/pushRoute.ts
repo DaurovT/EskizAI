@@ -40,6 +40,7 @@ export function routeForPush(data: PushData | null | undefined, canOrder = true)
     case 'price_requests': return `/project/${p}/price-requests`;
     case 'nonstandard': return `/project/${p}/nonstandard`;
     case 'estimate': return `/project/${p}/estimate`;
-    default: return data.kind === 'model_ready' ? `/project/${p}/editor` : `/project/${p}`;
+    default: return data.kind === 'model_ready' ? `/project/${p}/editor`
+      : data.kind === 'client_change_request' ? `/project/${p}/client-requests` : `/project/${p}`;
   }
 }

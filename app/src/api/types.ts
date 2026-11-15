@@ -141,6 +141,8 @@ export const isMasterEstimate = (e: ProjectEstimate | null | undefined): e is Ma
 
 // --- projects ---
 export interface ClientBrief { id: string; name: string; phone: string | null }
+/** Просьба клиента «Хочу изменить…» со страницы ссылки. */
+export interface ClientRequestOut { id: string; text: string; created_at: string; link_id: string }
 export interface PhotoOut { id: string; kind: 'source' | 'measurement' | 'result'; url: string; content_type: string; size_bytes: number; created_at: string }
 export type ActionCode =
   | 'sketch' | 'share' | 'measure' | 'contract' | 'order' | 'deliver' | 'deliver_self_bought' | 'cancel' | 'unarchive';
