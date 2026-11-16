@@ -27,6 +27,7 @@ from ..schemas.projects import (
 from ..schemas.inbox import SourceDrawingOut
 from ..services import examples, inbox, lifecycle, titles
 from ..services.activity import activities
+from ..services.sketch import sketch_from_tree
 from ..services.estimate import compute_range, is_measured, master_estimate, remember, staff_estimate
 from ..services.limits import charge_project
 from ..services.visibility import for_employee
@@ -59,20 +60,40 @@ def _price(cache: dict | None) -> dict | None:
     return {"from": cache["from"], "to": cache["to"]}
 
 
-def list_item(p: Project, price_cache: dict | None = None, activity: dict | None = None) -> ProjectListItem:
+def list_item(p: Project, price_cache: dict | None = None, activity: dict | None = None,
+              sketch: dict | None = None) -> ProjectListItem:
     return ProjectListItem.model_validate(
-        {**{k: getattr(p, k) for k in ProjectListItem.model_fields if hasattr(p, k) and k not in ("price", "activity")},
+        {**{k: getattr(p, k) for k in ProjectListItem.model_fields
+            if hasattr(p, k) and k not in ("price", "activity", "sketch")},
          "status_label": lifecycle.label(p.status), "client": p.client, "price": _price(price_cache),
-         "activity": activity, "short_date": titles.short_date(p), "title_source": p.title_source or titles.USER}
+         "activity": activity, "sketch": sketch, "short_date": titles.short_date(p),
+         "title_source": p.title_source or titles.USER}
     )
 
 
-def price_caches(db, projects: list[Project]) -> dict:
-    """Кэш цены текущих версий одним запросом — список проектов без пересчёта сметы."""
+def version_briefs(db, projects: list[Project]) -> dict:
+    """Кэш цены и эскиз текущих версий одним запросом — список проектов без пересчёта сметы и без сборки модели.
+
+    Эскиз хранится в summary.sketch (считается при сохранении версии); у версий до него — из дерева (обход словаря).
+    """
     ids = [p.current_version_id for p in projects if p.current_version_id]
     if not ids:
         return {}
-    return dict(db.execute(select(ModelVersion.id, ModelVersion.price_cache).where(ModelVersion.id.in_(ids))).all())
+    rows = db.execute(select(ModelVersion.id, ModelVersion.price_cache, ModelVersion.summary["sketch"])
+                      .where(ModelVersion.id.in_(ids))).all()
+    out = {vid: (cache, sk if isinstance(sk, dict) else None) for vid, cache, sk in rows}
+    old = [vid for vid, (_, sk) in out.items() if sk is None]
+    if old:
+        for vid, tree in db.execute(select(ModelVersion.id, ModelVersion.tree).where(ModelVersion.id.in_(old))).all():
+            out[vid] = (out[vid][0], sketch_from_tree(tree))
+    return out
+
+
+def version_sketch(version: ModelVersion | None) -> dict | None:
+    if version is None:
+        return None
+    sk = (version.summary or {}).get("sketch") if isinstance(version.summary, dict) else None
+    return sk if isinstance(sk, dict) else sketch_from_tree(version.tree)
 
 
 def project_estimate(db, current: CurrentUser, p: Project):
@@ -102,7 +123,8 @@ def project_card(db, current: CurrentUser, p: Project, with_estimate: bool = Fal
     version = lifecycle.current_version(db, p)
     estimate = project_estimate(db, current, p) if with_estimate else None
     card = ProjectCardOut(
-        **list_item(p, version.price_cache if version else None).model_dump(by_alias=True),
+        **list_item(p, version.price_cache if version else None,
+                    sketch=version_sketch(version)).model_dump(by_alias=True),
         source_text=p.source_text,
         frozen_version_id=p.frozen_version_id,
         charged=p.charged_at is not None,
@@ -227,9 +249,13 @@ def list_projects(
     rows = list(db.scalars(
         stmt.options(selectinload(Project.client)).order_by(Project.updated_at.desc()).limit(limit).offset(offset)
     ))
-    caches = price_caches(db, rows)
+    briefs = version_briefs(db, rows)
     hints = activities(db, rows, current.user.language)
-    return Page(items=[list_item(p, caches.get(p.current_version_id), hints.get(p.id)) for p in rows], total=total,
+    items = []
+    for p in rows:
+        cache, sketch = briefs.get(p.current_version_id, (None, None))
+        items.append(list_item(p, cache, hints.get(p.id), sketch))
+    return Page(items=items, total=total,
                 limit=limit, offset=offset)
 
 

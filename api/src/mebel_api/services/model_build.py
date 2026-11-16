@@ -15,6 +15,7 @@ from mebel_core.viewer import viewer_model
 from pydantic import ValidationError
 
 from ..errors import ApiError
+from .sketch import sketch_from_tree
 
 
 @dataclass
@@ -58,8 +59,8 @@ def _sections_count(product: Product | Kitchen) -> int:
     return len(product.sections)
 
 
-def summarize(result: BuildResult, viewer: dict[str, Any]) -> dict[str, Any]:
-    """Короткая сводка для списка версий и карточки проекта. Без цен."""
+def summarize(result: BuildResult, viewer: dict[str, Any], tree: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Короткая сводка для списка версий и карточки проекта. Без цен. sketch — миниатюра для списка проектов."""
     errors = sum(1 for i in result.issues if i.level == "error")
     hardware: Counter[tuple[str, str]] = Counter()
     for h in result.hardware:
@@ -78,6 +79,7 @@ def summarize(result: BuildResult, viewer: dict[str, Any]) -> dict[str, Any]:
         "moving_nodes": len(result.nodes),
         "errors": errors,
         "warnings": len(result.issues) - errors,
+        "sketch": sketch_from_tree(tree if tree is not None else result.product.model_dump(mode="json")),
     }
 
 
@@ -91,13 +93,14 @@ def build_tree(tree: dict[str, Any]) -> Built:
         raise ApiError(422, "build_failed", f"Не удалось собрать модель: {e}") from e
     build_ms = int((time.perf_counter() - started) * 1000)
     issues = [i.model_dump() for i in result.issues]
+    normalized = product.model_dump(mode="json")
     return Built(
         product=product,
         result=result,
-        tree=product.model_dump(mode="json"),
+        tree=normalized,
         viewer=viewer,
         issues=issues,
-        summary=summarize(result, viewer),
+        summary=summarize(result, viewer, normalized),
         ok=result.ok,
         build_ms=build_ms,
     )

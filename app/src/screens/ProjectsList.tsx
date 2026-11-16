@@ -1,12 +1,12 @@
 /**
  * SCR-03 Проекты (Projects.dc.html) и пустой список (EmptyProjects.dc.html):
- * плитки «Новый по фото / По описанию / Архив», поиск, фильтр-чипы с количеством, строки проектов, плашка лимита.
- * Архив (archived) — тот же список без плиток и плашки.
+ * плитки «Новый по фото / По описанию / Архив», поиск, прилипающие фильтр-чипы с количеством, карточки проектов
+ * с эскизом изделия, плашка лимита. Архив (archived) — тот же список без плиток и плашки.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { router, Tabs, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState, type ReactNode } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { memo, useMemo, useState, type ReactNode } from 'react';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { api } from '../api';
 import { STATUS_FLOW, type ProjectListItem, type ProjectStatus } from '../api/types';
 import { useResource } from '../hooks/useResource';
@@ -20,9 +20,10 @@ import { useSession } from '../state/session';
 import { showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Wood } from '../ui/Illus';
-import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass, useTabBarSpace } from '../ui/kit';
+import { Avatar, Badge, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass, useTabBarSpace } from '../ui/kit';
 import { CenterColumn, Embedded, useLayout } from '../ui/layout';
-import { Pane, SplitEmpty, SplitView, splitRow } from '../ui/SplitView';
+import { SplitEmpty, SplitView } from '../ui/SplitView';
+import { SketchThumb } from '../ui/ProductSketch';
 import { palette, tones } from '../ui/theme';
 import { ProjectCardView } from './ProjectCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,56 +32,49 @@ const ORDER: ProjectStatus[] = [...STATUS_FLOW.filter((s) => s !== 'delivered'),
 /** «9,2–10,5 млн» — в строке списка без «сум» (как в макете). */
 const shortRange = (r: Parameters<typeof formatRange>[0], lang: Parameters<typeof formatRange>[1]) => formatRange(r, lang).replace(/ (сум|so‘m)$/, '');
 
-/** Миниатюра .thumb: схематичный шкаф / кухня / стеллаж (у списка нет фото). */
-function ProjectThumb({ kind }: { kind: string | null }) {
-  const k = kind ?? '';
-  if (k.includes('kitchen')) {
-    return (
-      <View style={[s.thumb, { backgroundColor: '#EEF0EF' }]}>
-        <View style={[s.mini, { width: 40, height: 26, flexDirection: 'row' }]}>{[0, 1, 2, 3].map((i) => <View key={i} style={{ flex: 1, backgroundColor: '#D6DCD9' }} />)}</View>
-      </View>
-    );
-  }
-  if (k.includes('rack') || k.includes('shel')) {
-    return (
-      <View style={s.thumb}>
-        <View style={[s.mini, { width: 24, height: 38 }]}>{[0, 1, 2, 3].map((i) => <View key={i} style={{ flex: 1, backgroundColor: '#E6D3B1' }} />)}</View>
-      </View>
-    );
-  }
-  return (
-    <View style={s.thumb}>
-      <View style={[s.mini, { width: 30, height: 36, flexDirection: 'row' }]}>{[0, 1, 2].map((i) => <View key={i} style={{ flex: 1, backgroundColor: '#E6D3B1' }} />)}</View>
-    </View>
-  );
+/** Цена «9,2–10,5» + мелкое « млн» (.pp / .pp small); меньше миллиона — суммой без «сум». */
+function priceParts(r: Parameters<typeof formatRange>[0], lang: Parameters<typeof formatRange>[1]): [string, string] {
+  const txt = shortRange(r, lang);
+  const m = /^(.*?) (млн|mln)$/.exec(txt);
+  return m ? [m[1], ` ${m[2]}`] : [txt, ''];
 }
 
-function ProjectRow({ p, selected, onSelect }: { p: ProjectListItem; selected?: boolean; onSelect?: () => void }) {
+/**
+ * .pc — карточка проекта: белая r20, отступы 6/16/6/6; слева эскиз изделия .pi 86 на «миллиметровке», справа
+ * название 17/22 600, клиент 13/18 #8E8B85, внизу статус и цена. На планшете выбранная — с рамкой 2 #21201F.
+ */
+const ProjectItem = memo(function ProjectItem({ p, selected, onSelect }: { p: ProjectListItem; selected?: boolean; onSelect?: (id: string) => void }) {
   const { t, td, lang } = useT();
-  // старые «Новый проект 03.11.2026» — типом изделия; дата — мелко во второй строке
+  // старые «Новый проект 03.11.2026» — типом изделия
   const title = displayTitle(p.title, p.product_type ? td(`pk_${p.product_type}`, t('new_title_sketch')) : t('new_title_sketch'));
   const cached = priceStore.use((st) => st[p.id]);
   const price = p.price ?? cached ?? null;
+  // клиент; если он уже в названии («Пенал · Азиза») или его нет — дата создания
+  const sub = p.client?.name && !title.includes(p.client.name) ? p.client.name : formatDayMonth(p.created_at, lang);
+  const status = p.archived_at ? t('st_archived') : td(`st_${p.status}`, p.status);
+  const [num, unit] = price ? priceParts(price, lang) : ['', ''];
+  const a11y = [title, p.client?.name ?? t('projects_no_client'), p.is_example ? t('pl_example_free') : status,
+    price ? formatRange(price, lang) : null, p.activity?.text].filter(Boolean).join(', ');
   return (
-    <Press feedback="row" onPress={onSelect ?? (() => router.push(`/project/${p.id}`))} style={[s.row, onSelect && splitRow.row, onSelect && { paddingHorizontal: 16, paddingVertical: 12 }, selected && splitRow.sel]}
-      accessibilityRole="button" accessibilityLabel={title} accessibilityState={onSelect ? { selected: !!selected } : undefined}>
-      <ProjectThumb kind={p.product_type} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={s.l1}>
-          <T v="rt" numberOfLines={1} style={{ flex: 1 }}>{title}</T>
-          {price ? <T v="rv">{shortRange(price, lang)}</T> : null}
-        </View>
-        {/* клиент (если его нет в названии) и дата создания — мелко */}
-        <T v="rs" numberOfLines={1}>{[p.client?.name && title.includes(p.client.name) ? null : p.client?.name ?? t('projects_no_client'), formatDayMonth(p.created_at, lang)].filter(Boolean).join(' · ')}</T>
-        <View style={s.l3}>
-          <StatusBadge status={p.status} archived={!!p.archived_at} />
-          {p.is_example ? <T style={s.hint} color={tones.amber.fg}>{t('pl_example_free')}</T>
-            : p.activity ? <T style={s.hint} numberOfLines={1} color={tones[p.activity.tone].fg}>{p.activity.text}</T> : null}
+    <Press onPress={onSelect ? () => onSelect(p.id) : () => router.push(`/project/${p.id}`)} style={[s.pc, selected && s.pcSel]}
+      accessibilityRole="button" accessibilityLabel={a11y} accessibilityState={onSelect ? { selected: !!selected } : undefined}>
+      <SketchThumb sketch={p.sketch} kind={p.product_type} />
+      <View style={s.pt}>
+        <T style={s.pn} color={palette.ink} numberOfLines={1}>{title}</T>
+        <T style={s.pk} color={palette.faint} numberOfLines={1}>{sub}</T>
+        <View style={s.pb}>
+          {p.is_example ? <Badge label={t('pl_example_free')} tone="amber" style={{ flexShrink: 1 }} />
+            : <StatusBadge status={p.status} archived={!!p.archived_at} style={{ flexShrink: 1 }} />}
+          {num ? (
+            <T style={s.pp} color={palette.ink} numberOfLines={1}>
+              {num}{unit ? <T style={s.ppUnit} color={palette.faint}>{unit}</T> : null}
+            </T>
+          ) : null}
         </View>
       </View>
     </Press>
   );
-}
+});
 
 /** .svc — плитка действия 118 r24; основная («Новый по фото») — стекло GLASS-GREEN. */
 function Svc({ title, sub, icon, green, onPress, children, style }: {
@@ -232,8 +226,9 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
     </ChipRow>
   ) : null;
   const limitBanner = !archived && limits && !limits.unlimited ? (
-    <Banner tone="ok" title={t(leftKey, { n: left })} text={t('pl_left_files')} action={{ label: t('pl_tariffs'), onPress: () => router.push('/paywall') }} />
+    <Banner tone="ok" title={t(leftKey, { n: left })} text={t('pl_left_files')} action={{ label: t('pl_tariffs'), onPress: () => router.push('/paywall') }} style={{ alignItems: 'center' }} />
   ) : null;
+  const onRefresh = () => { refresh(); lim.reload(); inbox.reload(); };
 
   if (split) {
     const cur = items.find((p) => p.id === sel) ?? items[0] ?? null;
@@ -250,14 +245,20 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
           {inboxBanner}
           <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
           {chipRow}
-          <Pane style={{ marginBottom: Math.max(insets.bottom, 20) }}>
-            <ScrollView contentContainerStyle={{ paddingVertical: 8, gap: 2 }} keyboardShouldPersistTaps="handled"
-              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); }} />}>
-              {items.length ? items.map((p) => <ProjectRow key={p.id} p={p} selected={p.id === cur?.id} onSelect={() => setSel(p.id)} />)
-                : <EmptyState icon="search-outline" title={t('projects_none_found')} compact />}
-              {limitBanner ? <View style={{ paddingHorizontal: 8, paddingTop: 8 }}>{limitBanner}</View> : null}
-            </ScrollView>
-          </Pane>
+          {/* карточки .pc на фоне колонки (как на телефоне), выбранная — с рамкой */}
+          <FlatList
+            data={items}
+            keyExtractor={(p) => p.id}
+            renderItem={({ item }) => <ProjectItem p={item} selected={item.id === cur?.id} onSelect={setSel} />}
+            ItemSeparatorComponent={CardGap}
+            style={{ flex: 1, marginHorizontal: -4 }}
+            contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: Math.max(insets.bottom, 20) }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListEmptyComponent={<EmptyState icon="search-outline" title={t('projects_none_found')} compact />}
+            ListFooterComponent={limitBanner ? <View style={{ paddingTop: 10 }}>{limitBanner}</View> : undefined}
+          />
         </>}
         detail={cur ? (
           <Embedded key={cur.id} params={{ id: cur.id }} onChange={refresh} onGone={() => { setSel(null); refresh(); }}>
@@ -268,36 +269,67 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
     );
   }
 
+  /*
+   * Одна прокрутка (Projects.dc.html): плитки, плашка «Входящих» и поиск уезжают наверх, строка этапов прилипает
+   * под заголовком «Проекты» (sticky, фон #F2F1EE), под ней листаются карточки; в конце — плашка тарифа,
+   * снизу — запас под стеклянное меню.
+   */
+  type Row = { k: 'top' } | { k: 'chips' } | { k: 'p'; p: ProjectListItem } | { k: 'tail' };
+  const rows: Row[] = [{ k: 'top' }, ...(chipRow ? [{ k: 'chips' } as Row] : []), ...items.map((p): Row => ({ k: 'p', p })), { k: 'tail' }];
+  const renderRow = ({ item, index }: { item: Row; index: number }) => {
+    switch (item.k) {
+      case 'top':
+        return (
+          <View style={[s.top, !chipRow && { marginBottom: 10 }]}>
+            {!archived ? (
+              <View style={s.tiles}>
+                <Svc green title={t('pl_new_photo')} sub={t('pl_new_photo_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>
+                <Svc title={t('pl_by_text')} sub={t('pl_by_text_sub')} icon="reorder-three-outline" onPress={() => router.push('/project/new?mode=text')} style={{ flex: 1 }} />
+                <Svc title={t('projects_archive')} sub={t('pl_archive_sub')} icon="archive-outline" onPress={() => router.push('/archive')} style={{ flex: 1 }} />
+              </View>
+            ) : null}
+            {inboxBanner}
+            <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
+          </View>
+        );
+      case 'chips':
+        return <View style={s.chips}>{chipRow}</View>;
+      case 'p':
+        return <View style={rows[index + 1]?.k === 'p' ? s.gap : null}><ProjectItem p={item.p} /></View>;
+      default:
+        return (
+          <View style={s.tail}>
+            {items.length ? null : <EmptyState icon="search-outline" title={t('projects_none_found')} />}
+            {limitBanner}
+          </View>
+        );
+    }
+  };
+
   return (
     <View style={s.root}>
       {header}
       <OfflineBanner />
-      <ScrollView contentContainerStyle={[s.body, { paddingBottom: 12 + navSpace }]} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); inbox.reload(); }} />}>
-        {!archived ? (
-          <View style={s.tiles}>
-            <Svc green title={t('pl_new_photo')} sub={t('pl_new_photo_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>
-            <Svc title={t('pl_by_text')} sub={t('pl_by_text_sub')} icon="reorder-three-outline" onPress={() => router.push('/project/new?mode=text')} style={{ flex: 1 }} />
-            <Svc title={t('projects_archive')} sub={t('pl_archive_sub')} icon="archive-outline" onPress={() => router.push('/archive')} style={{ flex: 1 }} />
-          </View>
-        ) : null}
-        {inboxBanner}
-        <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
-        {chipRow}
-        {items.length ? (
-          <Card padded={false}>
-            {items.map((p, i) => (
-              <View key={p.id}>
-                {i ? <Hairline /> : null}
-                <ProjectRow p={p} />
-              </View>
-            ))}
-          </Card>
-        ) : <EmptyState icon="search-outline" title={t('projects_none_found')} />}
-        {limitBanner}
-      </ScrollView>
+      <FlatList
+        // dev: снимки прокрутки через DevNav — eval globalThis.__projectsList.scrollToOffset({ offset: 600 })
+        ref={__DEV__ ? (r) => { (globalThis as { __projectsList?: unknown }).__projectsList = r; } : undefined}
+        data={rows}
+        keyExtractor={(r) => (r.k === 'p' ? r.p.id : r.k)}
+        renderItem={renderRow}
+        stickyHeaderIndices={chipRow ? [1] : undefined}
+        contentContainerStyle={[s.list, { paddingBottom: navSpace || 12 }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={8}
+        windowSize={7}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      />
     </View>
   );
 }
+
+const CardGap = () => <View style={{ height: 4 }} />;
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.ground },
@@ -318,11 +350,21 @@ const s = StyleSheet.create({
   stText: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
   pill: { position: 'absolute', right: 12, bottom: 12, height: 40, borderRadius: 20, backgroundColor: palette.white, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 },
   demoRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingVertical: 10, paddingHorizontal: 20 },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingVertical: 14, paddingHorizontal: 20 },
-  l1: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  l3: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  hint: { flexShrink: 1, fontSize: 13, lineHeight: 19, fontWeight: '500' },
-  thumb: { width: 56, height: 56, borderRadius: 16, backgroundColor: palette.wood, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  // без gap у контейнера: отступы между блоками задают сами строки (у FlatList gap лёг бы и между карточками)
+  list: { paddingTop: 6, paddingHorizontal: 12 },
+  top: { gap: 10, marginBottom: 18 },
+  // sticky: при прилипании — сразу под заголовком; 8 сверху из макета (.chips padding 8 12 6) — отступом блока выше
+  chips: { backgroundColor: palette.ground, marginHorizontal: -12, paddingHorizontal: 12, paddingBottom: 6, marginBottom: 10 },
+  gap: { marginBottom: 4 },
+  tail: { gap: 10, paddingTop: 10 },
+  pc: { flexDirection: 'row', gap: 12, alignItems: 'stretch', backgroundColor: palette.white, borderRadius: 20, paddingTop: 6, paddingBottom: 6, paddingLeft: 6, paddingRight: 16 },
+  pcSel: { borderWidth: 2, borderColor: palette.ink, paddingTop: 4, paddingBottom: 4, paddingLeft: 4, paddingRight: 14 },
+  pt: { flex: 1, minWidth: 0, paddingTop: 6, paddingBottom: 2 },
+  pn: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
+  pk: { fontSize: 13, lineHeight: 18, marginTop: 1 },
+  pb: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 'auto' },
+  pp: { flexShrink: 0, fontSize: 16, lineHeight: 21, fontWeight: '600', letterSpacing: -0.24, fontVariant: ['tabular-nums'] },
+  ppUnit: { fontSize: 12, fontWeight: '500', letterSpacing: 0 },
   mini: { backgroundColor: palette.ink, borderWidth: 2, borderColor: palette.ink, padding: 2, gap: 2 },
 });
 

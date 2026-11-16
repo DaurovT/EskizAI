@@ -78,6 +78,9 @@ class ProjectListItem(Out):
     price: PriceRange | None = Field(
         None, description="Цена клиенту по последней посчитанной смете текущей версии (кэш); null — ещё не считали")
     activity: Activity | None = Field(None, description="Подсказка в списке: ссылка клиента, заказ EMAN, цена пришла")
+    sketch: dict[str, Any] | None = Field(
+        None, description="Эскиз изделия для миниатюры списка (services/sketch.py): размеры, секции и фасады шкафа "
+                          "или ряды модулей кухни; null — модели ещё нет")
 
 
 class ProjectCardOut(ProjectListItem):

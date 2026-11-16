@@ -155,12 +155,30 @@ export interface ProjectListItem {
   price?: PriceRange | null;
   /** Подсказка в списке (Projects.dc.html): «открыл 2 раза», «не открыла 3 дня», «готов — забрать в EMAN». Текст — с сервера. */
   activity?: { text: string; tone: 'green' | 'amber' | 'gray' } | null;
+  /** Эскиз изделия для миниатюры списка (api services/sketch.py); null — модели ещё нет. Старый сервер — нет поля. */
+  sketch?: ProductSketch | null;
 }
+/** Зона секции шкафа снизу вверх: полки, ящики, штанга, пусто; h — высота (мм) или делится поровну. */
+export interface SketchZone { t: 'shelves' | 'drawers' | 'rod' | 'empty'; n?: number; h?: number; ext?: boolean; doors?: number }
+/** Секция шкафа: ширина (относительная, мм в свету), распашные двери 0/1/2, зоны. */
+export interface SketchCol { w: number; doors: number; hinge?: 'left' | 'right'; zones: SketchZone[] }
+/** Модуль кухни: kind ядра (doors, drawers, sink, appliance, corner, fridge, cargo / open, hood, gap), ширина, двери/ящики/полки. */
+export interface SketchModule { t: string; w: number; n?: number; h?: number; rows?: number; lift?: boolean; shape?: 'square' | 'long' }
+export interface WardrobeSketch {
+  kind: 'wardrobe'; w: number; h: number; d: number; plinth: number; mezz: number; sliding: number; cols: SketchCol[];
+}
+export interface KitchenSketch {
+  kind: 'kitchen'; w: number; h: number; d: number; legs: number; base_h: number; base_d: number; top_d: number; top_t: number;
+  wall_z: number; wall_h: number; wall_d: number; layout: 'straight' | 'corner'; corner_side?: 'left' | 'right';
+  base: SketchModule[]; wall: SketchModule[]; base2?: SketchModule[]; wall2?: SketchModule[];
+}
+export type ProductSketch = WardrobeSketch | KitchenSketch;
 export interface ModelSummary {
   product_type?: string; size_mm?: [number, number, number]; sections?: number; parts_count?: number;
   materials?: { id: string; name: string; parts: number }[];
   hardware?: { kind: string; name: string; qty: number }[];
   moving_nodes?: number; errors?: number; warnings?: number;
+  sketch?: ProductSketch | null;
 }
 export interface ProjectCardOut extends ProjectListItem {
   source_text: string | null; frozen_version_id: string | null; charged: boolean; charge_period: string | null;

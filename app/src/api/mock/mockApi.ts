@@ -14,6 +14,7 @@ import { nestingFromViewer, partsCsv } from '../../lib/cutting';
 import { DECORS } from '../../lib/catalog';
 import { MOCK_EMAN_DECORS } from './emanSamples';
 import { formatRange } from '../../lib/format';
+import { sketchFromTree } from '../../lib/sketch';
 import { KITCHEN_EDITOR_DEMO, SAMPLES, kindToSample, sampleFor, type SampleKey } from './data';
 import { builtinOptions, decorateViewer, decorIssues, frontStyles, hasBuiltin, hasDecor, lightingZones, withNiche } from './decorMock';
 import { fitToNiche, nicheHeights, nicheWidths } from '../../lib/decorStyle';
@@ -230,6 +231,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
     materials: Object.entries(viewer.materials).map(([id, m]) => ({ id, name: m.name, parts: viewer.parts.filter((p) => p.material === id).length })),
     hardware: [], moving_nodes: viewer.nodes.length,
     errors: issues.filter((i) => i.level === 'error').length, warnings: issues.filter((i) => i.level !== 'error').length,
+    sketch: sketchFromTree(tree),
   });
 
   const curVersion = (p: MProject) => p.versions.find((v) => v.id === p.current) ?? null;
@@ -300,6 +302,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
     id: p.id, title: p.title, status: p.status, status_label: STATUS_LABELS[p.status], product_type: p.sample ? SAMPLES[p.sample].productKind : null,
     is_example: p.is_example, client: clientBrief(p.client_id), current_version_id: p.current, client_agreed_at: p.client_agreed_at,
     archived_at: p.archived_at, created_at: p.created_at, updated_at: p.updated_at, price: totalOf(p), activity: activityOf(p),
+    sketch: (() => { const v = curVersion(p); return v ? v.summary.sketch ?? sketchFromTree(v.tree) : null; })(),
   });
   const card = (p: MProject): T.ProjectCardOut => {
     const actions = p.archived_at ? [{ code: 'unarchive', label: 'Вернуть из архива', to_status: null }] : [...ACTIONS[p.status]];
