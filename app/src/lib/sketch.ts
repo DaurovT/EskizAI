@@ -183,7 +183,7 @@ function wardrobe(sk: WardrobeSketch): SketchGeometry {
           hline(u0 + w * 0.36, u0 + w * 0.64, m, 'handle');
         }
       };
-      if (plinth > 0) hline(0, W, plinth);
+      // линию цоколя не рисуем — как в макете (двери и полки всё равно начинаются над цоколем)
       // колонки: относительные ширины → доли общей ширины
       const sum = sk.cols.reduce((s, c) => s + Math.max(c.w, 1), 0) || 1;
       const xs: number[] = [0];
@@ -293,7 +293,12 @@ function runs(mods: SketchModule[], z0: number, z1: number, row: 'base' | 'wall'
   return out;
 }
 
-function kitchen(sk: KitchenSketch): SketchGeometry {
+function kitchen(input: KitchenSketch): SketchGeometry {
+  // угол справа: с этой точки второй ряд виден со спины — рисуем зеркально (угол слева, ряды в обратном порядке),
+  // чтобы на миниатюре были фасады обоих рядов
+  const sk: KitchenSketch = input.layout === 'corner' && input.corner_side !== 'left' && (input.base2?.length || input.wall2?.length)
+    ? { ...input, corner_side: 'left', base: [...input.base].reverse(), wall: [...input.wall].reverse() }
+    : input;
   const sc = new Scene();
   const baseTop = sk.legs + sk.base_h;
   const wallTop = sk.wall_z + sk.wall_h;

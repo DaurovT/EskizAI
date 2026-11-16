@@ -11,7 +11,7 @@ import { api } from '../api';
 import { STATUS_FLOW, type ProjectListItem, type ProjectStatus } from '../api/types';
 import { useResource } from '../hooks/useResource';
 import { useT } from '../i18n';
-import { formatDayMonth, formatRange } from '../lib/format';
+import { formatRange } from '../lib/format';
 import { displayTitle } from '../lib/projectTitle';
 import { drawingTitle } from '../lib/inbox';
 import { openExample } from '../services/example';
@@ -50,7 +50,8 @@ const ProjectItem = memo(function ProjectItem({ p, selected, onSelect }: { p: Pr
   const cached = priceStore.use((st) => st[p.id]);
   const price = p.price ?? cached ?? null;
   // клиент; если он уже в названии («Пенал · Азиза») или его нет — дата создания
-  const sub = p.client?.name && !title.includes(p.client.name) ? p.client.name : formatDayMonth(p.created_at, lang);
+  // вторая строка — всегда клиент (как в макете); без клиента — «без клиента»
+  const sub = p.client?.name || t('projects_no_client');
   const status = p.archived_at ? t('st_archived') : td(`st_${p.status}`, p.status);
   const [num, unit] = price ? priceParts(price, lang) : ['', ''];
   const a11y = [title, p.client?.name ?? t('projects_no_client'), p.is_example ? t('pl_example_free') : status,
