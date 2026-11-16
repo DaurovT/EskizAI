@@ -19,8 +19,12 @@ import { useSession } from '../state/session';
 import { showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Wood } from '../ui/Illus';
-import { Avatar, Banner, Card, Chip, ChipRow, EmptyState, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T } from '../ui/kit';
+import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T } from '../ui/kit';
+import { CenterColumn, Embedded, useLayout } from '../ui/layout';
+import { Pane, SplitEmpty, SplitView, splitRow } from '../ui/SplitView';
 import { palette, tones } from '../ui/theme';
+import { ProjectCardView } from './ProjectCard';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ORDER: ProjectStatus[] = [...STATUS_FLOW.filter((s) => s !== 'delivered'), 'delivered', 'cancelled'];
 /** «9,2–10,5 млн» — в строке списка без «сум» (как в макете). */
@@ -50,14 +54,15 @@ function ProjectThumb({ kind }: { kind: string | null }) {
   );
 }
 
-function ProjectRow({ p }: { p: ProjectListItem }) {
+function ProjectRow({ p, selected, onSelect }: { p: ProjectListItem; selected?: boolean; onSelect?: () => void }) {
   const { t, td, lang } = useT();
   // старые «Новый проект 03.11.2026» — типом изделия; дата — мелко во второй строке
   const title = displayTitle(p.title, p.product_type ? td(`pk_${p.product_type}`, t('new_title_sketch')) : t('new_title_sketch'));
   const cached = priceStore.use((st) => st[p.id]);
   const price = p.price ?? cached ?? null;
   return (
-    <Press feedback="row" onPress={() => router.push(`/project/${p.id}`)} style={s.row} accessibilityRole="button" accessibilityLabel={title}>
+    <Press feedback="row" onPress={onSelect ?? (() => router.push(`/project/${p.id}`))} style={[s.row, onSelect && splitRow.row, onSelect && { paddingHorizontal: 16, paddingVertical: 12 }, selected && splitRow.sel]}
+      accessibilityRole="button" accessibilityLabel={title} accessibilityState={onSelect ? { selected: !!selected } : undefined}>
       <ProjectThumb kind={p.product_type} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={s.l1}>
@@ -100,6 +105,11 @@ const SvcArt = () => (
 export function ProjectsList({ archived = false }: { archived?: boolean }) {
   const { t, lang, td } = useT();
   const { workshop, user } = useSession();
+  // широкий планшет: список слева, выбранный проект справа (TProjects.dc.html)
+  const { wide, tablet: onTablet } = useLayout();
+  const split = wide && !archived;
+  const insets = useSafeAreaInsets();
+  const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<ProjectStatus | 'all'>('all');
   const [busy, setBusy] = useState(false);
@@ -132,7 +142,8 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
 
   const header = archived ? null : (
     <Tabs.Screen options={{
-      headerLeft: () => (
+      // на планшете профиль — в рейке слева
+      headerLeft: onTablet ? undefined : () => (
         <IconButton dark label={t('pl_profile')} onPress={() => router.push('/profile')}>
           <Avatar dark name={workshop?.name || user?.name} />
         </IconButton>
@@ -146,8 +157,10 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
 
   if (empty) {
     return (
-      <View style={s.root}>
+      <View style={[s.root, split && { paddingTop: insets.top + 20 }]}>
         {header}
+        <CenterColumn>
+        {split ? <BigTitle size="root" inset={20}>{t('projects_title')}</BigTitle> : null}
         <OfflineBanner />
         <ScrollView contentContainerStyle={[s.body, { flexGrow: 1 }]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
           <View style={s.tiles}>
@@ -177,11 +190,55 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
           <View style={{ flex: 1 }} />
           <Banner tone="ok" icon="sparkles-outline" text={t('pl_free_banner', { n: limits?.free_limit ?? 3 })} style={{ alignItems: 'center' }} />
         </ScrollView>
+        </CenterColumn>
       </View>
     );
   }
 
   const chips: (ProjectStatus | 'all')[] = ['all', ...ORDER.filter((st) => counts[st])];
+  const chipRow = chips.length > 2 ? (
+    <ChipRow>
+      {chips.map((f) => (
+        <Chip key={f} label={f === 'all' ? t('all') : td(`st_${f}`, f)} count={f === 'all' ? all.length : counts[f]} selected={filter === f}
+          onPress={() => setFilter(f)} style={{ paddingHorizontal: 13 }} />
+      ))}
+    </ChipRow>
+  ) : null;
+  const limitBanner = !archived && limits && !limits.unlimited ? (
+    <Banner tone="ok" title={t(leftKey, { n: left })} text={t('pl_left_files')} action={{ label: t('pl_tariffs'), onPress: () => router.push('/paywall') }} />
+  ) : null;
+
+  if (split) {
+    const cur = items.find((p) => p.id === sel) ?? items[0] ?? null;
+    return (
+      <SplitView
+        title={t('projects_title')}
+        right={<>
+          <IconButton icon="archive-outline" label={t('projects_archive')} onPress={() => router.push('/archive')} />
+          <IconButton icon="notifications-outline" badge={unread} label={t('pl_notifications')} onPress={() => router.push('/notifications')} />
+        </>}
+        list={<>
+          <OfflineBanner />
+          <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
+          {chipRow}
+          <Pane style={{ marginBottom: Math.max(insets.bottom, 20) }}>
+            <ScrollView contentContainerStyle={{ paddingVertical: 8, gap: 2 }} keyboardShouldPersistTaps="handled"
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); }} />}>
+              {items.length ? items.map((p) => <ProjectRow key={p.id} p={p} selected={p.id === cur?.id} onSelect={() => setSel(p.id)} />)
+                : <EmptyState icon="search-outline" title={t('projects_none_found')} compact />}
+              {limitBanner ? <View style={{ paddingHorizontal: 8, paddingTop: 8 }}>{limitBanner}</View> : null}
+            </ScrollView>
+          </Pane>
+        </>}
+        detail={cur ? (
+          <Embedded key={cur.id} params={{ id: cur.id }} onChange={refresh} onGone={() => { setSel(null); refresh(); }}>
+            <ProjectCardView />
+          </Embedded>
+        ) : <SplitEmpty icon="folder-outline" />}
+      />
+    );
+  }
+
   return (
     <View style={s.root}>
       {header}
@@ -195,14 +252,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
           </View>
         ) : null}
         <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
-        {chips.length > 2 ? (
-          <ChipRow>
-            {chips.map((f) => (
-              <Chip key={f} label={f === 'all' ? t('all') : td(`st_${f}`, f)} count={f === 'all' ? all.length : counts[f]} selected={filter === f}
-                onPress={() => setFilter(f)} style={{ paddingHorizontal: 13 }} />
-            ))}
-          </ChipRow>
-        ) : null}
+        {chipRow}
         {items.length ? (
           <Card padded={false}>
             {items.map((p, i) => (
@@ -213,9 +263,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
             ))}
           </Card>
         ) : <EmptyState icon="search-outline" title={t('projects_none_found')} />}
-        {!archived && limits && !limits.unlimited ? (
-          <Banner tone="ok" title={t(leftKey, { n: left })} text={t('pl_left_files')} action={{ label: t('pl_tariffs'), onPress: () => router.push('/paywall') }} />
-        ) : null}
+        {limitBanner}
       </ScrollView>
     </View>
   );

@@ -35,7 +35,7 @@ export function ImageViewer({ uri, onClose }: { uri: string | null; onClose: () 
   const insets = useSafeAreaInsets();
   const { t } = useT();
   return (
-    <Modal visible={!!uri} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={!!uri} transparent animationType="fade" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <Pressable style={st.viewer} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('close')}>
         {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="contain" /> : null}
         <View style={[st.viewerClose, { top: insets.top + 8 }]}><Ionicons name="close" size={24} color={palette.white} /></View>

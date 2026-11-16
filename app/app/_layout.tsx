@@ -28,6 +28,7 @@ import { syncPushToken } from '../src/services/push';
 import { routeForPush, type PushData } from '../src/lib/pushRoute';
 import { orderEvents } from '../src/state/orderEvents';
 import { DialogHost, Loading, ToastHost } from '../src/ui/kit';
+import { RouteColumn } from '../src/ui/layout';
 import { StackHeader } from '../src/ui/navigation';
 import { SystemScreen } from '../src/ui/SystemScreen';
 import { colors } from '../src/ui/theme';
@@ -134,6 +135,8 @@ function Gate() {
   return (
     <>
     <Stack
+      // планшет: экраны без своей планшетной раскладки — колонкой по центру (src/ui/layout.tsx)
+      screenLayout={({ children, route }) => <RouteColumn route={route.name}>{children}</RouteColumn>}
       screenOptions={{
         // шапка V3 (круглая «назад» + большой заголовок): экраны задают title/headerRight как раньше
         header: (p) => <StackHeader {...p} />,

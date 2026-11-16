@@ -10,10 +10,19 @@ import { callPhone, openTelegramPhone } from '../../src/lib/contact';
 import { formatRange, plural } from '../../src/lib/format';
 import { ErrorState } from '../../src/ui/ErrorState';
 import { Avatar, Button, Card, EmptyState, Loading, OfflineBanner, Press, Search, T } from '../../src/ui/kit';
+import { Embedded, useLayout } from '../../src/ui/layout';
+import { Pane, SplitEmpty, SplitView, splitRow } from '../../src/ui/SplitView';
+import { ClientCardView } from '../../src/screens/ClientCard';
 import { palette } from '../../src/ui/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ClientOut } from '../../src/api/types';
 
 export default function Clients() {
   const { t, lang } = useT();
+  // широкий планшет: список слева, карточка клиента справа (TClients.dc.html)
+  const split = useLayout().wide;
+  const insets = useSafeAreaInsets();
+  const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const { data, error, loading, refreshing, reload, refresh } = useResource(() => api.listClients(q.trim() || undefined), [q]);
   const projects = useResource(() => api.listProjects({ limit: 200 }).then((p) => p.items).catch(() => []), []);
@@ -30,17 +39,70 @@ export default function Clients() {
   }, [projects.data]);
 
   const add = () => router.push('/client/new');
-  const header = (
-    <Tabs.Screen options={{
-      headerRight: () => (
-        <Press onPress={add} accessibilityRole="button" accessibilityLabel={t('clients_add')} style={st.addb}>
-          <Ionicons name="add" size={20} color={palette.ink} />
-          <T style={st.addT}>{t('cls_add')}</T>
-        </Press>
-      ),
-    }} />
+  const addButton = (
+    <Press onPress={add} accessibilityRole="button" accessibilityLabel={t('clients_add')} style={st.addb}>
+      <Ionicons name="add" size={20} color={palette.ink} />
+      <T style={st.addT}>{t('cls_add')}</T>
+    </Press>
   );
+  const header = <Tabs.Screen options={{ headerRight: () => addButton }} />;
   const items = data?.items ?? [];
+
+  /** Строка клиента: имя, район и число проектов, сумма; на телефоне — звонок и Telegram. */
+  const row = (c: ClientOut, i: number) => {
+    const s = stats.get(c.id);
+    const area = c.address?.split(',')[0]?.trim();
+    const sub = [area, s ? `${s.n} ${plural(s.n, t('cls_projects_n'))}` : null].filter(Boolean).join(' · ');
+    const sum = s?.sum ? formatRange({ from: s.sum, to: s.sum }, lang) : null;
+    const cur = sum?.match(/\s(сум|so‘m)$/)?.[1];
+    const first = c.name.split(' ')[0];
+    const selected = split && c.id === (sel ?? items[0]?.id);
+    return (
+      <View key={c.id} style={[st.cl, i > 0 && !split && st.sep, split && splitRow.row, split && { paddingLeft: 14 }, selected && splitRow.sel]}>
+        <Press feedback="none" onPress={() => (split ? setSel(c.id) : router.push(`/client/${c.id}`))} accessibilityRole="button" accessibilityLabel={c.name}
+          accessibilityState={split ? { selected } : undefined} style={st.main}>
+          <Avatar name={c.name} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <T v="rt" numberOfLines={1}>{c.name}</T>
+            {sub ? <T v="rs" numberOfLines={1}>{sub}</T> : null}
+            {sum ? <T num style={st.sum}>{sum.replace(/\s(сум|so‘m)$/, '')}<T style={st.cur}>{cur ? ` ${cur}` : ''}</T></T> : null}
+          </View>
+        </Press>
+        {c.phone && !split ? (
+          <>
+            <Press onPress={() => callPhone(c.phone!)} accessibilityRole="button" accessibilityLabel={t('cls_call', { name: first })} style={st.act}>
+              <Ionicons name="call-outline" size={19} color={palette.ink} />
+            </Press>
+            <Press onPress={() => openTelegramPhone(c.phone!)} accessibilityRole="button" accessibilityLabel={t('cls_tg', { name: first })} style={st.act}>
+              <Ionicons name="paper-plane-outline" size={19} color={palette.ink} />
+            </Press>
+          </>
+        ) : null}
+      </View>
+    );
+  };
+
+  if (split) {
+    const cur = items.find((c) => c.id === sel) ?? items[0] ?? null;
+    return (
+      <SplitView
+        title={t('tab_clients')}
+        right={addButton}
+        list={<>
+          <OfflineBanner />
+          <Search value={q} onChangeText={setQ} placeholder={t('cls_search')} />
+          <Pane style={{ marginBottom: Math.max(insets.bottom, 20) }}>
+            {loading && !data ? <Loading /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
+              <ScrollView contentContainerStyle={{ paddingVertical: 8, gap: 2 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+                {items.length ? items.map(row) : <EmptyState icon="people-outline" title={t('clients_empty_title')} compact actions={<Button title={t('clients_add')} icon="person-add-outline" onPress={add} />} />}
+              </ScrollView>
+            )}
+          </Pane>
+        </>}
+        detail={cur ? <Embedded key={cur.id} params={{ id: cur.id }} onChange={refresh}><ClientCardView /></Embedded> : <SplitEmpty icon="people-outline" />}
+      />
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.ground }}>
@@ -52,36 +114,7 @@ export default function Clients() {
           <EmptyState icon="people-outline" title={t('clients_empty_title')} actions={<Button title={t('clients_add')} icon="person-add-outline" onPress={add} />} />
         ) : (
           <Card padded={false}>
-            {items.map((c, i) => {
-              const s = stats.get(c.id);
-              const area = c.address?.split(',')[0]?.trim();
-              const sub = [area, s ? `${s.n} ${plural(s.n, t('cls_projects_n'))}` : null].filter(Boolean).join(' · ');
-              const sum = s?.sum ? formatRange({ from: s.sum, to: s.sum }, lang) : null;
-              const cur = sum?.match(/\s(сум|so‘m)$/)?.[1];
-              const first = c.name.split(' ')[0];
-              return (
-                <View key={c.id} style={[st.cl, i > 0 && st.sep]}>
-                  <Press feedback="none" onPress={() => router.push(`/client/${c.id}`)} accessibilityRole="button" accessibilityLabel={c.name} style={st.main}>
-                    <Avatar name={c.name} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <T v="rt" numberOfLines={1}>{c.name}</T>
-                      {sub ? <T v="rs" numberOfLines={1}>{sub}</T> : null}
-                      {sum ? <T num style={st.sum}>{sum.replace(/\s(сум|so‘m)$/, '')}<T style={st.cur}>{cur ? ` ${cur}` : ''}</T></T> : null}
-                    </View>
-                  </Press>
-                  {c.phone ? (
-                    <>
-                      <Press onPress={() => callPhone(c.phone!)} accessibilityRole="button" accessibilityLabel={t('cls_call', { name: first })} style={st.act}>
-                        <Ionicons name="call-outline" size={19} color={palette.ink} />
-                      </Press>
-                      <Press onPress={() => openTelegramPhone(c.phone!)} accessibilityRole="button" accessibilityLabel={t('cls_tg', { name: first })} style={st.act}>
-                        <Ionicons name="paper-plane-outline" size={19} color={palette.ink} />
-                      </Press>
-                    </>
-                  ) : null}
-                </View>
-              );
-            })}
+            {items.map(row)}
           </Card>
         )}
       </ScrollView>

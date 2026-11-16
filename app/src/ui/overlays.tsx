@@ -13,7 +13,11 @@ import { useT } from '../i18n';
 import { createStore } from '../state/store';
 import { Button, Press, SurfaceProvider, T, ease, exitEase, resolveFont, sheetEase, useReduceMotion, useSeparator, type IconName } from './base';
 import { haptics } from './haptics';
+import { tablet as tab, useLayout } from './layout';
 import { motion, palette, radius, type } from './theme';
+
+/** Без этого открытый Modal на iPad в горизонтальном положении поворачивает приложение в портрет. */
+const ORIENTATIONS = ['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right'] as const;
 
 // ---------- шторка ----------
 /**
@@ -29,6 +33,8 @@ export function Sheet({ visible, onClose, title, children, variant = 'white', fo
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const reduce = useReduceMotion();
+  // планшет (TPrinciples.dc.html): шторка становится окном 560 по центру
+  const { tablet } = useLayout();
   const [mounted, setMounted] = useState(visible);
   const shown = useRef(new Animated.Value(0)).current; // 0 — скрыта, 1 — открыта
   const drag = useRef(new Animated.Value(0)).current; // смещение пальцем
@@ -59,12 +65,33 @@ export function Sheet({ visible, onClose, title, children, variant = 'white', fo
 
   if (!mounted) return null;
   const white = variant === 'white';
+  if (tablet) {
+    const scale = reduce ? 1 : shown.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] });
+    return (
+      <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent supportedOrientations={ORIENTATIONS}>
+        <KeyboardAvoidingView style={st.winWrap} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: palette.scrim, opacity: shown }]}>
+            <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('close')} />
+          </Animated.View>
+          <Animated.View accessibilityViewIsModal style={[st.win, { backgroundColor: white ? palette.white : palette.ground, opacity: shown, transform: [{ scale }] }]}>
+            <SurfaceProvider value={white ? 'white' : 'ground'}>
+              {title ? <T v="title" style={[st.sheetTitle, { paddingTop: 6 }]}>{title}</T> : null}
+              {scroll
+                ? <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: h * 0.7 }} contentContainerStyle={[st.sheetBody, contentStyle]}>{children}</ScrollView>
+                : <View style={[st.sheetBody, contentStyle]}>{children}</View>}
+              {footer ? <View style={st.sheetFoot}>{footer}</View> : null}
+            </SurfaceProvider>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </Modal>
+    );
+  }
   const translateY = reduce ? drag : Animated.add(shown.interpolate({ inputRange: [0, 1], outputRange: [h, 0] }), drag);
   const body = scroll
     ? <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: h * 0.72 }} contentContainerStyle={[st.sheetBody, contentStyle]}>{children}</ScrollView>
     : <View style={[st.sheetBody, contentStyle]}>{children}</View>;
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent supportedOrientations={ORIENTATIONS}>
       <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: palette.scrim, opacity: shown }]}>
           <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('close')} />
@@ -109,6 +136,7 @@ export function Dialog({ visible, onClose, title, text, children, actions, confi
 }) {
   const { t } = useT();
   const reduce = useReduceMotion();
+  const { tablet } = useLayout();
   const [mounted, setMounted] = useState(visible);
   const a = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -123,12 +151,12 @@ export function Dialog({ visible, onClose, title, text, children, actions, confi
   if (!mounted) return null;
   const scale = reduce ? 1 : a.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] });
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent navigationBarTranslucent supportedOrientations={ORIENTATIONS}>
       <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33,32,31,0.40)', opacity: a }]}>
         <Pressable style={{ flex: 1 }} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('close')} />
       </Animated.View>
       <View style={st.dlgWrap} pointerEvents="box-none">
-        <Animated.View accessibilityViewIsModal accessibilityRole="alert" style={[st.dlg, { opacity: a, transform: [{ scale }] }]}>
+        <Animated.View accessibilityViewIsModal accessibilityRole="alert" style={[st.dlg, tablet && st.capped, { opacity: a, transform: [{ scale }] }]}>
           <SurfaceProvider value="white">
             <T v="title">{title}</T>
             {text ? <T v="sub" color={palette.muted2}>{text}</T> : null}
@@ -211,6 +239,7 @@ export const toast = {
 export function ToastHost() {
   const cur = toastStore.use((s) => s.cur);
   const insets = useSafeAreaInsets();
+  const { tablet } = useLayout();
   const reduce = useReduceMotion();
   const a = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState<ToastState['cur']>(null);
@@ -228,7 +257,7 @@ export function ToastHost() {
   const translateY = reduce ? 0 : a.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
   return (
     <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end' }]}>
-      <Animated.View accessibilityLiveRegion="polite" style={[st.toast, { marginBottom: insets.bottom + (shown.bottom ?? 96), opacity: a, transform: [{ translateY }] }]}>
+      <Animated.View accessibilityLiveRegion="polite" style={[st.toast, tablet && st.capped, { marginBottom: insets.bottom + (shown.bottom ?? 96), opacity: a, transform: [{ translateY }] }]}>
         {icon ? <Ionicons name={icon} size={20} color={shown.tone === 'error' ? '#FF8A80' : palette.greenOnDark} /> : null}
         <Text style={resolveFont([type.toast, { flex: 1, paddingVertical: 10 }])}>{shown.text}</Text>
         {shown.action ? (
@@ -255,6 +284,13 @@ const st = StyleSheet.create({
   mi: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, paddingHorizontal: 20 },
   sep: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: palette.hair },
   dlgWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center' },
+  /** Окно и тост на планшете — не шире tablet.modal, по центру (на телефоне ширина экрана меньше — не влияет). */
+  capped: { alignSelf: 'center', width: tab.modal, marginHorizontal: 0 },
+  winWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  win: {
+    width: '100%', maxWidth: tab.modal, borderRadius: radius.sheet, paddingTop: 18, paddingHorizontal: 16, paddingBottom: 20,
+    shadowColor: palette.ink, shadowOpacity: 0.18, shadowRadius: 40, shadowOffset: { width: 0, height: 12 }, elevation: 16,
+  },
   dlg: {
     marginHorizontal: 12, backgroundColor: palette.white, borderRadius: radius.dlg, paddingTop: 24, paddingHorizontal: 20, paddingBottom: 20, gap: 12,
     shadowColor: palette.ink, shadowOpacity: 0.12, shadowRadius: 32, shadowOffset: { width: 0, height: 12 }, elevation: 16,

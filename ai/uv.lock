@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -566,6 +566,7 @@ dependencies = [
     { name = "mapbox-earcut" },
     { name = "numpy" },
     { name = "openpyxl" },
+    { name = "pillow" },
     { name = "pydantic" },
     { name = "rectpack" },
     { name = "reportlab" },
@@ -579,6 +580,7 @@ requires-dist = [
     { name = "mapbox-earcut", specifier = ">=2.1.0" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "pillow", specifier = ">=10" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "rectpack", specifier = ">=0.2.2" },
     { name = "reportlab", specifier = ">=5.1.0" },
@@ -587,7 +589,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8" }]
+dev = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "usd-core", specifier = ">=25.5" },
+]
 
 [[package]]
 name = "numpy"

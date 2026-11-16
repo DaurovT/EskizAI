@@ -46,6 +46,7 @@ import { confirm, errorInfo, showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { haptics } from '../../../src/ui/haptics';
 import { Button, IconButton, Loading, OfflineBanner, Press, SurfaceProvider, T, Tag, Toggle, resolveFont, toast, useReduceMotion } from '../../../src/ui/kit';
+import { tablet, useLayout } from '../../../src/ui/layout';
 import { palette, type as ty } from '../../../src/ui/theme';
 
 const SAVE_DEBOUNCE = 700;
@@ -110,6 +111,8 @@ export default function Editor() {
   const ai = useAiTask();
   const insets = useSafeAreaInsets();
   const { height: H } = useWindowDimensions();
+  // широкий планшет (TEditor.dc.html): чат — панелью справа, всегда открыт; инструменты — колонкой слева
+  const side = useLayout().wide;
   const reduce = useReduceMotion();
 
   const model = useResource(() => api.getModel(id), [id]);
@@ -509,20 +512,23 @@ export default function Editor() {
   // линии оценённых размеров — янтарные, как и подписи; замеренные — синие (по умолчанию)
   const dimColors = Object.fromEntries((['width', 'height', 'depth'] as const).filter(dimEst).map((k) => [k, DIM_ESTIMATED_COLOR]));
   const anyEst = (['width', 'height', 'depth'] as DimKey[]).some((k) => dimVal(k) && dimEst(k));
-  const sheetH = keys ? KEYS_H + extra : snapH(snap);
+  const sheetH = side ? 0 : keys ? KEYS_H + extra : snapH(snap);
   // 3D — от верха экрана до шторки / клавиатуры цифр (под шапкой модель видна при вращении); изделие вписывается
   // в свободную область под строкой «Вид · AR» (в полном чате и при вводе размера — под шапкой).
   // Поля под размерные линии канвас добавляет сам; в тесной области (половина с вопросом, ввод размера) отступ меньше.
   // Высота канваса постоянна (до самой низкой шторки), шторка и клавиатура — отступ снизу свободной области: смена
   // размера GL-канваса пересоздаёт буфер кадра и сбивает анимацию камеры (рывок при открытии клавиатуры / смене шторки).
-  const full = mode === 'full' && !keys;
+  // на планшете шторки нет: панель чата всегда «половина» (размеры и строка «Вид» видны)
+  const vmode: Snap = side ? 'half' : mode;
+  const full = vmode === 'full' && !keys;
   const showRow = !full && !keys;
   const canvasTop = insets.top + (showRow ? ROW_TOP + ROW_H : HDR_H);
-  const canvasH = Math.max(60, H - sheetH - kbH - canvasTop);
-  const canvasFullH = Math.max(canvasTop + canvasH, H - snapH('min'));
-  const freeArea = { top: canvasTop, bottom: canvasFullH - canvasTop - canvasH, left: 0, right: 0 };
+  const canvasH = side ? Math.max(60, H - canvasTop - pb - 16) : Math.max(60, H - sheetH - kbH - canvasTop);
+  const canvasFullH = side ? H : Math.max(canvasTop + canvasH, H - snapH('min'));
+  // планшет: слева от модели — колонка инструментов (16 + 76)
+  const freeArea = { top: canvasTop, bottom: canvasFullH - canvasTop - canvasH, left: side ? SIDE_TOOLS_W : 0, right: 0 };
   const freePad = canvasH < 300 ? 12 : 28;
-  const showTools = mode !== 'full' && !kbH;
+  const showTools = !side && vmode !== 'full' && !kbH;
   const fieldFor = (k: DimKey) => paramFields(draft).find((f) => f.pointer === `/${k}`) ?? null;
   const limitsFor = (k: DimKey) => dimLimits(draft, kind, k);
   const openKeys = (k: DimKey) => {
@@ -617,13 +623,13 @@ export default function Editor() {
       ) : null}
       {/* 3D на весь экран: модель — в свободной области, при вводе размера — чертёж (ортогональ) на этот размер;
           первое вращение / щипок / тап прячет подсказку */}
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, height: canvasFullH }}>
+      <View style={{ position: 'absolute', left: 0, right: side ? SIDE_W : 0, top: 0, height: canvasFullH }}>
         <ProductCanvas ref={canvas} model={v.viewer} onPartTap={(p) => { hideHint(); tapPart(p); }} onHardwareTap={tapHardware} selectedPart={selected?.number ?? null} showDims={false} busy={saving || ai.running}
           fallbackText={t('ed_3d_unavailable')} transparent freeArea={freeArea} freeAreaPadding={freePad} focusDimension={keys} dimensionLines={!full}
           dimensions={dimsOn ? undefined : keys ? [keys] : []} dimensionColors={dimColors} renderDimensionLabel={renderDim} partDimensions onFirstGesture={hideHint} />
       </View>
       {hint && !keys ? (
-        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: canvasTop + 4, alignItems: 'center' }}>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: side ? SIDE_W : 0, top: canvasTop + 4, alignItems: 'center' }}>
           <View style={[s.hintPill, s.lift]}>
             <Ionicons name="hand-left-outline" size={15} color={palette.muted} />
             <T v="cap" style={{ fontSize: 13 }}>{t('ed_hint_min')}</T>
@@ -632,7 +638,7 @@ export default function Editor() {
       ) : null}
 
       {/* шапка */}
-      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: insets.top }}>
+      <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: side ? SIDE_W : 0, top: insets.top }}>
         <OfflineBanner />
         <View style={s.hdr} pointerEvents="box-none">
           <IconButton icon="chevron-back" label={t('ed_to_project')} onPress={() => (router.canGoBack() ? router.back() : router.replace(`/project/${id}`))} style={s.lift} />
@@ -649,7 +655,7 @@ export default function Editor() {
         </View>
       </View>
       {showRow ? (
-        <View style={[s.viewRow, { top: insets.top + ROW_TOP }]} pointerEvents="box-none">
+        <View style={[s.viewRow, { top: insets.top + ROW_TOP }, side && { right: SIDE_W + 12 }]} pointerEvents="box-none">
           <Press onPress={() => { hideHint(); setViewMenu(!viewMenu); }} accessibilityRole="button" accessibilityState={{ expanded: viewMenu }} style={[s.vb, viewMenu && { backgroundColor: palette.ink }]}>
             <Ionicons name={exploded ? 'apps-outline' : evening ? 'moon-outline' : 'eye-outline'} size={17} color={viewMenu ? palette.white : palette.ink} />
             <T style={[s.vbText, viewMenu && { color: palette.white }]}>{t('ed_view')}</T>
@@ -663,13 +669,33 @@ export default function Editor() {
       ) : null}
 
       {/* шторка чата */}
+      {/* планшет: инструменты колонкой слева, по центру модели */}
+      {side && !keys ? (
+        <View style={[s.toolRail, s.lift, { top: canvasTop + canvasH / 2 - (tools.length * 64 + 8) / 2 }]}>
+          {tools.map(([k, fn], i) => (
+            <Press key={k} onPress={fn} accessibilityRole="button" accessibilityLabel={t(k)} style={s.tb}>
+              <Ionicons name={TOOL_ICONS[i]} size={22} color={palette.ink} />
+              <T style={s.tbT} numberOfLines={1}>{t(k)}</T>
+            </Press>
+          ))}
+        </View>
+      ) : null}
+
       {!keys ? (
-        <Animated.View style={[s.chat, { height: h, bottom: kb }, kbH ? { maxHeight: H - insets.top - 80 - kbH } : null]}>
+        <Animated.View style={side
+          ? [s.side, { top: 0, bottom: kb, width: SIDE_W, paddingTop: insets.top + 6 }]
+          : [s.chat, { height: h, bottom: kb }, kbH ? { maxHeight: H - insets.top - 80 - kbH } : null]}>
           <SurfaceProvider value="white">
-            <View {...pan.panHandlers}>
-              <Pressable onPress={toggleSheet} accessibilityRole="button" accessibilityLabel={t('ed_expand_chat')} style={s.hdl}><View style={s.hdlBar} /></Pressable>
-            </View>
-            {mode !== 'min' && (selected || hw) ? (
+            {side ? (
+              <View style={s.sideHdr}>
+                <T style={{ flex: 1, fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{selected || hw ? t('ed_tool_part') : t('ed_side_chat')}</T>
+              </View>
+            ) : (
+              <View {...pan.panHandlers}>
+                <Pressable onPress={toggleSheet} accessibilityRole="button" accessibilityLabel={t('ed_expand_chat')} style={s.hdl}><View style={s.hdlBar} /></Pressable>
+              </View>
+            )}
+            {vmode !== 'min' && (selected || hw) ? (
               // выбранная деталь / фурнитура — её параметры вместо переписки (тап по пустому месту 3D — назад к чату)
               <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
                 {hw ? (
@@ -682,7 +708,7 @@ export default function Editor() {
                     onBuiltin={BUILTIN_ROLES.includes(selected.role) ? () => router.push(`/project/${id}/builtin`) : undefined} />
                 ) : null}
               </ScrollView>
-            ) : mode !== 'min' ? (
+            ) : vmode !== 'min' ? (
               <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', paddingBottom: 4 }} keyboardShouldPersistTaps="handled"
                 ref={chatScroll} onContentSizeChange={() => { if (!userScrolled.current) chatScroll.current?.scrollToEnd({ animated: false }); }}
                 onScrollBeginDrag={() => { userScrolled.current = true; }}>
@@ -838,7 +864,7 @@ export default function Editor() {
                 ) : null}
               </ScrollView>
             ) : <View style={{ flex: 1 }} />}
-            {mode !== 'min' && !aiLimited && !sheetEmpty && !selected && !hw && budget.data ? (
+            {vmode !== 'min' && !aiLimited && !sheetEmpty && !selected && !hw && budget.data ? (
               <View style={s.budget}>
                 <View style={[s.dot, { marginTop: 0, backgroundColor: budget.data.warning ? palette.red : palette.amber }]} />
                 <T v="cap" style={{ flex: 1 }} numberOfLines={1}>{t('ed_budget_line', { p: budget.data.percent })}</T>
@@ -847,7 +873,7 @@ export default function Editor() {
             ) : null}
             {/* инструменты — чипами над вводом, слева, через 8 (без иконок: все четыре помещаются в ширину 390 без прокрутки) */}
             {showTools ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: mode === 'min' ? 0 : 8 }} contentContainerStyle={s.tools} keyboardShouldPersistTaps="handled">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: vmode === 'min' ? 0 : 8 }} contentContainerStyle={s.tools} keyboardShouldPersistTaps="handled">
                 {tools.map(([k, fn]) => (
                   <Press key={k} onPress={fn} accessibilityRole="button" style={s.tl}>
                     <T style={s.tlText}>{t(k)}</T>
@@ -872,12 +898,16 @@ export default function Editor() {
             </View>
           </SurfaceProvider>
         </Animated.View>
-      ) : (
-        <Keypad title={t(`ed_kb_${keys}`)} entry={entry} setEntry={setEntry}
-          quick={quickValues(kind, keys, dimVal(keys) ?? 0, keyLim!)} unit={t('mm')} pb={pb}
-          range={t('dim_range', { min: keyLim!.min, max: keyLim!.max })} error={keyErr} est={dimEst(keys)} estLabel={t('estimate_mark')}
-          onCancel={() => setKeys(null)} onApply={applyKeys} cancelLabel={t('cancel')} applyLabel={t('ed_apply')} />
-      )}
+      ) : (() => {
+        const pad = (
+          <Keypad title={t(`ed_kb_${keys}`)} entry={entry} setEntry={setEntry}
+            quick={quickValues(kind, keys, dimVal(keys) ?? 0, keyLim!)} unit={t('mm')} pb={pb}
+            range={t('dim_range', { min: keyLim!.min, max: keyLim!.max })} error={keyErr} est={dimEst(keys)} estLabel={t('estimate_mark')}
+            onCancel={() => setKeys(null)} onApply={applyKeys} cancelLabel={t('cancel')} applyLabel={t('ed_apply')} />
+        );
+        // планшет: ввод размера — в той же панели справа, модель остаётся видна целиком
+        return side ? <View style={[s.side, { top: 0, bottom: 0, width: SIDE_W }]}>{pad}</View> : pad;
+      })()}
 
       {/* меню «Вид»: двери, разобрать, день/вечер, подсветка, стены */}
       {viewMenu && showRow ? (
@@ -1038,6 +1068,11 @@ function Keypad({ title, entry, setEntry, quick, unit, pb, range, error, est, es
   );
 }
 
+/** Планшет: ширина панели чата и колонки инструментов слева. */
+const SIDE_W = tablet.list;
+const SIDE_TOOLS_W = 96;
+const TOOL_ICONS = ['cube-outline', 'color-palette-outline', 'hardware-chip-outline', 'cut-outline'] as const;
+
 const shadow = { shadowColor: palette.ink, shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 3 };
 const s = StyleSheet.create({
   lift: shadow,
@@ -1074,6 +1109,16 @@ const s = StyleSheet.create({
     shadowColor: palette.ink, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: -12 }, elevation: 12,
   },
   hdl: { height: 22, alignItems: 'center', justifyContent: 'center' },
+  // .side (TEditor.dc.html): белая панель справа, скругление 28 слева
+  side: {
+    position: 'absolute', right: 0, backgroundColor: palette.white, borderTopLeftRadius: 28, borderBottomLeftRadius: 28, overflow: 'hidden',
+    shadowColor: palette.ink, shadowOpacity: 0.06, shadowRadius: 30, shadowOffset: { width: -8, height: 0 }, elevation: 12,
+  },
+  sideHdr: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 12, paddingHorizontal: 18, paddingBottom: 8 },
+  // .tools: колонка инструментов слева от модели
+  toolRail: { position: 'absolute', left: 16, gap: 6, padding: 6, borderRadius: 22, backgroundColor: palette.white },
+  tb: { width: 72, minHeight: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  tbT: { fontSize: 12, lineHeight: 15, fontWeight: '500' },
   hdlBar: { width: 40, height: 5, borderRadius: 3, backgroundColor: palette.handle },
   chg: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 16 },
   ok28: { width: 32, height: 32, borderRadius: 10, backgroundColor: palette.greenSoft, alignItems: 'center', justifyContent: 'center' },

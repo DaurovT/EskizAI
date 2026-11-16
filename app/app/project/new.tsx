@@ -255,7 +255,7 @@ function PhotoTips({ visible, onClose, onShoot }: { visible: boolean; onClose: (
     AsyncStorage.setItem(TIPS_OFF, v ? '1' : '0').catch(() => undefined);
   };
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose} supportedOrientations={['portrait', 'landscape']}>
       <Screen edges={[]} scroll header={<TipsHeader onClose={onClose} />} contentStyle={{ paddingTop: 0 }}
         footerStyle={{ paddingBottom: insets.bottom ? Math.max(30, insets.bottom - 4) : 16 }}
         footer={<Button icon="camera-outline" title={t('tips_go')} onPress={onShoot} />}>

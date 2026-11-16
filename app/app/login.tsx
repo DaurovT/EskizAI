@@ -18,6 +18,7 @@ import { maskPhone, normalizePhone } from '../src/lib/format';
 import { Banner, Button, Footer, Group, IconButton, ListItem, T, Tile, resolveFont } from '../src/ui/kit';
 import { Carcass } from '../src/ui/Illus';
 import { LangSwitch } from '../src/ui/LangSwitch';
+import { AuthFrame } from '../src/ui/AuthFrame';
 import { palette, type as ty } from '../src/ui/theme';
 
 /** 901234567 → «90 123 45 67». */
@@ -104,6 +105,7 @@ export default function Login() {
     };
     const sub = t('code_sub_pre', { n: codeLen });
     return (
+      <AuthFrame>
       <SafeAreaView style={s.root} edges={['top']}>
         <View style={s.hdr}>
           <IconButton icon="chevron-back" label={t('back')} onPress={() => { setStep('phone'); setCode(''); setCodeErr(null); }} />
@@ -166,10 +168,12 @@ export default function Login() {
           <Button v="ghost" title={t('code_change')} onPress={() => { setStep('phone'); setCode(''); setCodeErr(null); }} />
         </Footer>
       </SafeAreaView>
+      </AuthFrame>
     );
   }
 
   return (
+    <AuthFrame>
     <SafeAreaView style={s.root} edges={['top']}>
       <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
         <View style={s.hdr}>
@@ -229,6 +233,7 @@ export default function Login() {
         </Text>
       </Footer>
     </SafeAreaView>
+    </AuthFrame>
   );
 }
 

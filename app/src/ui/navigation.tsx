@@ -9,7 +9,9 @@ import type { BottomTabBarProps, BottomTabHeaderProps } from 'expo-router/tabs';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
+import { BrandLogo } from './Illus';
 import { BigTitle, Header, Press, resolveFont, type IconName } from './kit';
+import { HeaderColumn, tablet, useLayout } from './layout';
 import { palette, radius, type } from './theme';
 
 const titleOf = (o: { title?: string; headerTitle?: unknown }) => (typeof o.headerTitle === 'string' ? o.headerTitle : o.title) ?? '';
@@ -19,7 +21,7 @@ const titleOf = (o: { title?: string; headerTitle?: unknown }) => (typeof o.head
  * headerLargeTitle: false — заголовок в строке шапки (.ht), как в редакторе; headerBackVisible: false — без «назад»;
  * headerLeft — своё содержимое вместо «назад»; title: '' — без заголовка.
  */
-export function StackHeader({ options, back, navigation }: NativeStackHeaderProps) {
+export function StackHeader({ options, back, navigation, route }: NativeStackHeaderProps) {
   const insets = useSafeAreaInsets();
   const modal = options.presentation === 'modal' || options.presentation === 'formSheet' || options.presentation === 'pageSheet';
   // модальное окно на iOS — карточка ниже статус-бара: верхний отступ не нужен
@@ -30,6 +32,7 @@ export function StackHeader({ options, back, navigation }: NativeStackHeaderProp
   const left = options.headerLeft?.({ canGoBack: canBack, tintColor: palette.ink });
   const right = options.headerRight?.({ canGoBack: canBack, tintColor: palette.ink });
   return (
+    <HeaderColumn route={route.name} bg={palette.ground}>
     <Header
       topInset={top}
       back={canBack}
@@ -42,6 +45,7 @@ export function StackHeader({ options, back, navigation }: NativeStackHeaderProp
       bigSize="push"
       style={{ backgroundColor: palette.ground }}
     />
+    </HeaderColumn>
   );
 }
 
@@ -52,6 +56,7 @@ export function TabHeader({ options }: BottomTabHeaderProps) {
   const left = options.headerLeft?.({ tintColor: palette.ink, canGoBack: false });
   const right = options.headerRight?.({ tintColor: palette.ink, canGoBack: false });
   return (
+    <HeaderColumn bg={palette.ground}>
     <Header
       topInset={insets.top}
       left={left ?? undefined}
@@ -60,6 +65,7 @@ export function TabHeader({ options }: BottomTabHeaderProps) {
       bigSize="root"
       style={{ backgroundColor: palette.ground }}
     />
+    </HeaderColumn>
   );
 }
 
@@ -71,8 +77,14 @@ const TAB_ICONS: Record<string, [IconName, IconName]> = {
   profile: ['person-outline', 'person-outline'],
 };
 
-/** .nav — белая панель r24 сверху, 84 с безопасной зоной; активная вкладка — зелёная «таблетка» под иконкой; в центре .plus. */
-export function TabBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
+/** .nav — белая панель r24 сверху, 84 с безопасной зоной; активная вкладка — зелёная «таблетка» под иконкой; в центре .plus.
+ *  На планшете — рейка слева (RailBar). */
+export function TabBar(props: BottomTabBarProps) {
+  const { tablet: tab } = useLayout();
+  return tab ? <RailBar {...props} /> : <BottomBar {...props} />;
+}
+
+function BottomBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   return (
@@ -112,7 +124,47 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: BottomTab
   );
 }
 
+/**
+ * .rail (TProjects.dc.html) — белая рейка 92 слева: знак, «＋» новый проект, разделы.
+ * Порядок как у нижнего меню, только «＋» — сверху.
+ */
+function RailBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { t } = useT();
+  return (
+    <View style={[st.rail, { paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 20) }]} accessibilityRole="tablist">
+      <View style={st.logo} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><BrandLogo size={48} /></View>
+      <Press accessibilityRole="button" accessibilityLabel={t('new_title')} onPress={() => router.push('/project/new')} style={st.railNew}>
+        <Ionicons name="add" size={30} color={palette.white} />
+      </Press>
+      {state.routes.map((route, i) => {
+        if (route.name === 'new') return null;
+        const { options } = descriptors[route.key];
+        const focused = i === state.index;
+        const label = typeof options.tabBarLabel === 'string' ? options.tabBarLabel : options.title ?? route.name;
+        const [off, on] = TAB_ICONS[route.name] ?? ['ellipse-outline', 'ellipse'];
+        const onPress = () => {
+          const ev = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!focused && !ev.defaultPrevented) navigateToTab(route.key);
+        };
+        return (
+          <Press key={route.key} feedback="opacity" onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={label} style={st.rv}>
+            <View style={[st.ni, focused && { backgroundColor: palette.greenSoft }]}>
+              <Ionicons name={focused ? on : off} size={24} color={focused ? palette.greenDeep : palette.faint} />
+            </View>
+            <Text style={resolveFont([type.nav, { color: focused ? palette.ink : palette.faint }])} numberOfLines={1}>{label}</Text>
+          </Press>
+        );
+      })}
+    </View>
+  );
+}
+
 const st = StyleSheet.create({
+  rail: { width: tablet.rail, backgroundColor: palette.white, alignItems: 'center', gap: 6 },
+  logo: { width: 48, height: 48, borderRadius: 14, overflow: 'hidden', marginBottom: 10 },
+  railNew: { width: 56, height: 56, borderRadius: 18, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  rv: { width: 76, minHeight: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 4 },
   nav: {
     backgroundColor: palette.white, borderTopLeftRadius: radius.nav, borderTopRightRadius: radius.nav,
     flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-around', paddingTop: 8, paddingHorizontal: 4,
@@ -127,14 +179,14 @@ const st = StyleSheet.create({
  * справа headerRight (плашка «Фото 1 из 2»), title — большой заголовок 30/36 (.big padding 4 20 8). Подключение:
  * `<Stack.Screen options={{ title, headerRight, header: (p) => <StackHeader14 {...p} /> }} />`.
  */
-export function StackHeader14({ options, navigation }: NativeStackHeaderProps) {
+export function StackHeader14({ options, navigation, route }: NativeStackHeaderProps) {
   const insets = useSafeAreaInsets();
   const right = options.headerRight?.({ canGoBack: true, tintColor: palette.ink });
   const title = titleOf(options);
   return (
-    <View style={{ backgroundColor: palette.ground }}>
+    <HeaderColumn route={route.name} bg={palette.ground}>
       <Header topInset={insets.top + 2} back onBack={() => (navigation.canGoBack() ? navigation.goBack() : router.back())} right={right ?? undefined} />
       {title ? <BigTitle size="root" inset={20} style={{ paddingTop: 3, paddingBottom: 10 }}>{title}</BigTitle> : null}
-    </View>
+    </HeaderColumn>
   );
 }
