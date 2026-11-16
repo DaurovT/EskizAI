@@ -371,3 +371,48 @@ describe('«взрыв» и выбор детали', () => {
     s.dispose();
   });
 });
+
+describe('вложенные узлы: складной подъёмник', () => {
+  // Как ядро: верхний фасад — lift вокруг −X по верхней кромке, нижний — lift +X 180° по стыку внутри верхнего
+  const door = (key: string, z: number, number: number) =>
+    part({ number, key, role: 'door', thickness: 18, length: 358, width: 898, node: key,
+      placement: { origin: [1, 242, z], u: '+Z', v: '+X', n: '+Y' } });
+  const fold = () => model([door('w.fold[1]', 1761, 1), door('w.fold[2]', 1401, 2)], [
+    { id: 'w.fold[1]', kind: 'lift', origin: [1, 260, 2119], axis: '-X', range: 100, parent: null },
+    { id: 'w.fold[2]', kind: 'lift', origin: [1, 260, 1760], axis: '+X', range: 180, parent: 'w.fold[1]' },
+  ]);
+  const boxOf = (s: ProductScene, key: string) => {
+    s.root.updateMatrixWorld(true);
+    const p = s.parts.find((x) => x.part.key === key)!;
+    return p.mesh.geometry.boundingBox!.clone().applyMatrix4(p.mesh.matrixWorld);
+  };
+
+  it('нижний фасад — в группе верхнего; закрыто — на месте, открыто — оба сложены над модулем', () => {
+    const s = new ProductScene(fold(), { units: 'mm' });
+    const up = s.nodes.get('w.fold[1]')!;
+    const low = s.nodes.get('w.fold[2]')!;
+    expect(low.pivot.parent).toBe(up.pivot);
+    expectBox(boxOf(s, 'w.fold[2]'), [1, 1401, -260], [899, 1759, -242], 3);
+    s.setAllOpen(1);
+    for (const key of ['w.fold[1]', 'w.fold[2]']) {
+      const b = boxOf(s, key);
+      expect(b.min.y).toBeGreaterThan(2119 - 19); // над верхом модуля (минус толщина фасада у петли)
+      expect(b.max.y - b.min.y).toBeLessThan(100); // лежат почти горизонтально
+      expect(b.max.z).toBeGreaterThan(-260 + 300); // вынесены к нам
+    }
+    s.setAllOpen(0);
+    expectBox(boxOf(s, 'w.fold[2]'), [1, 1401, -260], [899, 1759, -242], 3);
+    s.dispose();
+  });
+
+  it('клик по любому фасаду складного открывает и закрывает оба', () => {
+    const s = new ProductScene(fold(), { units: 'mm' });
+    s.toggleNode('w.fold[2]');
+    expect(s.isNodeOpen('w.fold[1]') && s.isNodeOpen('w.fold[2]')).toBe(true);
+    s.update(10);
+    expect(boxOf(s, 'w.fold[2]').min.y).toBeGreaterThan(2100);
+    s.toggleNode('w.fold[1]');
+    expect(s.isNodeOpen('w.fold[1]') || s.isNodeOpen('w.fold[2]')).toBe(false);
+    s.dispose();
+  });
+});

@@ -169,6 +169,11 @@ export interface ViewerNode {
   axis: Axis;
   /** Градусы для rotate/lift, мм для slide/sliding_door. */
   range: number;
+  /**
+   * Узел, внутри которого двигается этот: его ход — поверх хода родителя (origin и axis — в положении «закрыто»).
+   * lift внутри lift — нижний фасад складного подъёмника: открывается и закрывается вместе с родителем.
+   */
+  parent?: string | null;
 }
 
 export interface ViewerIssue {

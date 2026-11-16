@@ -554,3 +554,93 @@ def test_edit_kitchen_cargo_rows_open_niche_frame() -> None:
     assert r.ok, [i.message for i in r.build.issues if i.level == "error"]
     keys = {p.key for p in r.build.parts}
     assert {"base[1].cargo.front", "wall[0].row_shelf", "wall[1].niche_shelf", "wall[2].niche_frame"} <= keys
+
+
+# --- Складной подъёмник (Aventos HF) и выравнивание верхних по нижним ---
+
+
+def test_prompts_know_bifold_lift_and_alignment() -> None:
+    from mebel_ai.prompts import EDIT_SYSTEM, design_system
+
+    s = design_system("ru")
+    assert '"lift_type": "fold"' in s and "NO\n    shelf/carcass line between them" in s
+    assert '"lift_type"' in s  # поле — в схеме дерева, которую видит модель
+    for phrase in ("«складной подъёмник»", "«фасад складывается»", "«Aventos HF»", "«бифолд»"):
+        assert phrase in EDIT_SYSTEM, phrase
+    assert '/wall/<i>/lift_type` = "fold"' in EDIT_SYSTEM
+    # Верхние — по границам нижних, ниши соседей — на одной линии
+    assert "SUM of the base widths under it" in s and "1200 / 450 / 600, not 900 / 550 / 800" in s
+    assert "(`open_bottom` = `niche_height`)" in s
+
+
+def test_design_kitchen_bifold_builds() -> None:
+    fold = copy.deepcopy(OWNER_KITCHEN)
+    fold["wall"][1] = {"kind": "doors", "width": 500, "opening": "lift", "lift_type": "fold", "height": 800}
+    s = DesignSession(llm=LLM(client=FakeClient([response(design(tree=fold))])))
+    r = s.start("кухня как на фото", photos=[Photo(b"\xff\xd8fake")])
+    assert r.status == "ready" and r.build.ok, [i.message for i in r.issues if i.level == "error"]
+    keys = {p.key for p in r.build.parts}
+    assert {"wall[1].fold[1]", "wall[1].fold[2]"} <= keys and "wall[1].lift_shelf" not in keys
+    low = next(n for n in r.build.nodes if n.id == "wall[1].fold[2]")
+    assert low.parent == "wall[1].fold[1]"
+
+
+def test_edit_kitchen_bifold_by_words() -> None:
+    kitchen = json.loads((CORE_FIXTURES / "kitchen_straight.json").read_text(encoding="utf-8"))
+    ops = [("replace", "/wall/0/opening", "lift"), ("add", "/wall/0/lift_type", "fold")]
+    wire = [{"op": op, "path": path, "value_json": json.dumps(value)} for op, path, value in ops]
+    msg = "слева складной подъёмник"
+    client = FakeClient([response({"ops": wire, "summary": msg, "question": None}, model="claude-haiku-5-5")])
+    r = edit_tree(kitchen, msg, llm=LLM(client=client))
+    assert r.ok, [i.message for i in r.build.issues if i.level == "error"]
+    assert {"wall[0].fold[1]", "wall[0].fold[2]"} <= {p.key for p in r.build.parts}
+    assert any(h.kind == "fold_lift" for h in r.build.hardware)
+
+
+def test_align_wall_columns_to_base_joints() -> None:
+    from mebel_ai.align import align_kitchen
+
+    t = copy.deepcopy(PHOTO_KITCHEN)
+    assert align_kitchen(t) == (t, [])  # уже ровно — без изменений
+    near = copy.deepcopy(PHOTO_KITCHEN)
+    for c, w in zip(near["wall"], (1180, 470, 600)):
+        c["width"] = w
+    out, notes = align_kitchen(near)
+    assert [c["width"] for c in out["wall"]] == [1200, 450, 600] and notes
+    assert [c["width"] for c in near["wall"]] == [1180, 470, 600]  # исходное дерево не трогаем
+    far = copy.deepcopy(PHOTO_KITCHEN)
+    for c, w in zip(far["wall"], (900, 550, 800)):  # границы далеко от нижних — решает ИИ, не подгонка
+        c["width"] = w
+    assert align_kitchen(far)[0]["wall"] == far["wall"]
+    short = copy.deepcopy(PHOTO_KITCHEN)
+    short["wall"][-1]["width"] = 450  # ряд верхних короче нижнего — не выравниваем
+    assert align_kitchen(short)[1] == []
+    wardrobe = {"type": "wardrobe", "width": 1200}
+    assert align_kitchen(wardrobe) == (wardrobe, [])
+
+
+def test_align_neighbour_niches_on_one_line() -> None:
+    from mebel_ai.align import align_kitchen
+
+    t = copy.deepcopy(PHOTO_KITCHEN)
+    t["wall"][1]["open_bottom"] = 420
+    del t["wall"][2]["niche_height"]  # микроволновка по умолчанию 380
+    out, notes = align_kitchen(t)
+    assert out["wall"][1]["open_bottom"] == 420 and out["wall"][2]["niche_height"] == 420 and notes
+    t["wall"][1]["open_bottom"] = 500  # 500 и 380 — разные ниши, не трогаем
+    assert align_kitchen(t)[1] == []
+    t["wall"][1]["open_bottom"] = 420
+    t["wall"][1]["height"] = 900  # низ модулей на разной высоте — не на одной линии
+    assert align_kitchen(t)[1] == []
+
+
+def test_design_applies_alignment_before_build() -> None:
+    near = copy.deepcopy(PHOTO_KITCHEN)
+    for c, w in zip(near["wall"], (1180, 470, 600)):
+        c["width"] = w
+    near["wall"][1]["open_bottom"] = 450
+    s = DesignSession(llm=LLM(client=FakeClient([response(design(tree=near))])))
+    r = s.start("кухня как на фото", photos=[Photo(b"\xff\xd8fake")])
+    assert r.status == "ready" and r.build.ok
+    assert [c["width"] for c in r.tree["wall"]] == [1200, 450, 600]
+    assert r.tree["wall"][1]["open_bottom"] == r.tree["wall"][2]["niche_height"] == 480

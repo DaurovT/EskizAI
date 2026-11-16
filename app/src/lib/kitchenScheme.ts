@@ -36,7 +36,7 @@ export const doorCount = (m: KMod) => (m.doors === 1 || m.doors === 2 ? m.doors 
 
 /**
  * Код подписи модуля (ключ i18n — kit_k_<код>). Верхние: двери — «Дверь» / «2 двери», два ряда — «2 ряда дверей»,
- * подъёмные — «Подъёмный» / «Подъёмные ×2», с открытой нишей внизу — «Подъёмный + ниша» / «Двери + ниша», ниша
+ * подъёмные — «Подъёмный» / «Подъёмные ×2» / «Складной» (складной подъёмник), с открытой нишей внизу — «Подъёмный + ниша» / «Двери + ниша», ниша
  * техники — «Микроволновка» / «Духовка». Нижние: ниша под технику с варкой — «Варка», посудомойка — «ПММ», иначе
  * «Техника»; бутылочница — «Бутылочница».
  */
@@ -46,6 +46,7 @@ export function labelCode(m: KMod, row: KRow): string {
   if (isUpper(row)) {
     if (k === 'doors' && hasOpenBottom(m)) return m.opening === 'lift' ? 'niche_lift' : 'niche_door';
     if (k === 'doors' && m.opening !== 'lift' && m.rows === 2) return 'rows';
+    if (k === 'doors' && isFold(m)) return 'fold';
     if (k === 'doors') return m.opening === 'lift' ? (m.flaps === 2 ? 'lift2' : 'lift') : doorCount(m) === 1 ? 'door' : 'doors2';
     if (k === 'appliance') return m.appliance === 'oven' ? 'oven' : 'micro';
     if (k === 'open' || k === 'hood' || k === 'gap') return k;
@@ -68,6 +69,14 @@ export const nicheHeight = (m: KMod) => num(m.niche_height, m.appliance === 'ove
 /** Высота антресольного яруса для рисунка: своя или 350 (null — «до потолка / 350»). */
 export const tierHeight = (m: KMod) => num((m.top as { height?: number } | null | undefined)?.height, KDEF.tier_auto);
 export const hasTier = (m: KMod) => m.top != null && typeof m.top === 'object' && m.kind !== 'gap';
+/**
+ * Складной подъёмник (lift_type fold, как ядро is_fold): два фасада на петлях складываются и уходят вверх — у
+ * подъёмных фасадов (doors/hood с opening lift) и над нишей техники (above lift). flaps у него не учитывается.
+ */
+export const isFold = (m: KMod) =>
+  m.lift_type === 'fold' && (m.kind === 'appliance' ? m.above === 'lift' : (m.kind === 'doors' || m.kind === 'hood') && m.opening === 'lift');
+/** Есть ли у верхнего модуля подъёмные фасады (выбор механизма: отдельные / складной). */
+export const hasLift = (m: KMod) => (m.kind === 'appliance' ? m.above === 'lift' : (m.kind === 'doors' || m.kind === 'hood') && m.opening === 'lift');
 /** Открытая ниша без фасада внизу верхнего модуля с дверями (open_bottom, мм в свету). */
 export const hasOpenBottom = (m: KMod) => m.kind === 'doors' && typeof m.open_bottom === 'number';
 
@@ -210,7 +219,7 @@ export function withKind(m: KMod, row: KRow, choice: string): KMod {
     const ob = hasOpenBottom(m) ? { open_bottom: m.open_bottom } : {};
     switch (choice) {
       case 'doors': return { ...keep, kind: 'doors', shelves: num(m.shelves, 1), ...(m.doors ? { doors: m.doors } : {}), ...(m.hinge ? { hinge: m.hinge } : {}), ...(m.rows === 2 ? { rows: 2 } : {}), ...ob, ...h, ...tier };
-      case 'lift': return { ...keep, kind: 'doors', opening: 'lift', flaps: m.flaps === 2 ? 2 : null, shelves: num(m.shelves, 1), ...ob, ...h, ...tier };
+      case 'lift': return { ...keep, kind: 'doors', opening: 'lift', flaps: m.flaps === 2 && m.lift_type !== 'fold' ? 2 : null, ...(m.lift_type === 'fold' ? { lift_type: 'fold' } : {}), shelves: num(m.shelves, 1), ...ob, ...h, ...tier };
       case 'open': return { ...keep, kind: 'open', shelves: m.kind === 'open' ? num(m.shelves, 2) : 2, ...h, ...tier };
       case 'hood': return { ...keep, kind: 'hood', shelves: 0, ...tier };
       case 'appliance': return { ...keep, kind: 'appliance', appliance: m.appliance === 'oven' ? 'oven' : 'microwave', shelves: 0, ...tier };

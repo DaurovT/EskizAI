@@ -2,7 +2,7 @@ import type { ChatMessage, ProductTree } from '../../api/types';
 import { KITCHEN_EDITOR_DEMO, KITCHEN_PHOTO_DEMO, SAMPLES } from '../../api/mock/data';
 import { chatView } from '../chatView';
 import {
-  BASE_KINDS, doorCount, drawerLines, duplicateAt, hasOpenBottom, labelCode, moveAt, newModule, removeAt, schemeLayout, selFromPartKey, sumFixes,
+  BASE_KINDS, doorCount, drawerLines, duplicateAt, hasLift, hasOpenBottom, isFold, labelCode, moveAt, newModule, removeAt, schemeLayout, selFromPartKey, sumFixes,
   wallKindOf, wallModHeight, withKind,
 } from '../kitchenScheme';
 
@@ -190,5 +190,29 @@ describe('kitchenScheme: кухня с фото — карго, ящики 1+2, 
     expect(selFromPartKey('base[1].cargo.front', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'base', i: 1 });
     expect(selFromPartKey('wall[2].niche_frame', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'wall', i: 2 });
     expect(selFromPartKey('wall[0].doors[2].door[1]', KITCHEN_PHOTO_DEMO)).toEqual({ row: 'wall', i: 0 });
+  });
+});
+
+describe('kitchenScheme: складной подъёмник (lift_type fold)', () => {
+  const fold = { kind: 'doors', width: 900, opening: 'lift', lift_type: 'fold' };
+  it('подпись «Складной», а не «Подъёмные ×2»; flaps не учитывается', () => {
+    expect(labelCode(fold, 'wall')).toBe('fold');
+    expect(labelCode({ ...fold, flaps: 2 }, 'wall')).toBe('fold');
+    expect(labelCode({ ...fold, opening: null }, 'wall')).toBe('doors2'); // без opening lift — обычные двери
+    expect(labelCode({ ...fold, open_bottom: 300 }, 'wall')).toBe('niche_lift');
+  });
+  it('складной — только у подъёмных: двери/вытяжка с opening lift и ниша техники с above lift', () => {
+    expect(isFold(fold)).toBe(true);
+    expect(isFold({ ...fold, opening: 'hinged' })).toBe(false);
+    expect(isFold({ kind: 'appliance', width: 600, above: 'lift', lift_type: 'fold' })).toBe(true);
+    expect(isFold({ kind: 'appliance', width: 600, above: 'door', lift_type: 'fold' })).toBe(false);
+    expect(hasLift({ kind: 'hood', width: 600, opening: 'lift' })).toBe(true);
+    expect(hasLift({ kind: 'open', width: 600 })).toBe(false);
+  });
+  it('смена вида: «Подъёмные» сохраняет складной механизм, «Двери» — убирает', () => {
+    expect(withKind(fold, 'wall', 'lift')).toMatchObject({ kind: 'doors', opening: 'lift', lift_type: 'fold', flaps: null });
+    expect(withKind({ ...fold, flaps: 2 }, 'wall', 'lift').flaps).toBeNull();
+    expect(withKind(fold, 'wall', 'doors').lift_type).toBeUndefined();
+    expect(withKind({ kind: 'doors', width: 600, opening: 'lift', flaps: 2 }, 'wall', 'lift').lift_type).toBeUndefined();
   });
 });

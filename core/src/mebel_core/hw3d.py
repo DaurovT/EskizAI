@@ -448,6 +448,50 @@ def _gas_lifts(result: BuildResult, parts: list[Part], out: list[HwItem]) -> Non
             out.append(item)
 
 
+_FOLD = re.compile(r"^(.*)\.fold\[1\]$")
+
+
+def _fold_lifts(result: BuildResult, parts: list[Part], out: list[HwItem]) -> None:
+    """Складной подъёмник: корпуса механизма на боковинах (на корпусе, рычаги не рисуем — они в открытом
+    положении идут от корпуса к фасаду и одним телом с фасадом не двигаются), соединительные петли — чашка в верхнем фасаде, плечо на нижнем (каждая часть двигается со своим фасадом).
+    Всё — в локальных координатах верхнего фасада (локальная z > T — внутрь корпуса), поэтому ряд 2 угловой
+    кухни тоже верно."""
+    by_key = {p.key: p for p in parts}
+    r = DEFAULT_RULES
+    for up in parts:
+        m = _FOLD.match(up.key)
+        if not m:
+            continue
+        cab = m.group(1)
+        low = by_key.get(f"{cab}.fold[2]")
+        side = by_key.get(f"{cab}.side.left")
+        if low is None or side is None:
+            continue
+        L, W, T = up.length, up.width, up.thickness
+        t = side.thickness
+        name = _hw_name(result, "fold_lift", cab, "Подъёмник складной (2 фасада)")
+        for k, (y0, y1) in enumerate(((t + mm(1), t + mm(19)), (W - t - mm(19), W - t - mm(1)))):
+            box = HwItem(id=f"{up.key}.fold_lift[{k + 1}]", kind="fold_lift", part=side.key, finish="plastic_light",
+                         name=name)
+            _lbox(box, up, L - mm(260), L - mm(30), y0, y1, T + mm(25), T + mm(145))
+            out.append(box)
+        hname = _hw_name(result, "hinge", cab, "Петля соединительная")
+        for h in result.hardware:
+            if h.kind == "hinge" and h.module == cab and h.name.startswith("Петля соединительная"):
+                hname = h.name
+        cups = [h for h in up.holes if h.purpose == "чашка петли соединительной"]
+        for k, c in enumerate(cups, start=1):
+            cup = HwItem(id=f"{up.key}.joint[{k}]", kind="hinge", part=up.key, node=up.node, finish="steel",
+                         name=hname)
+            _lcyl(cup, up, "z", c.x, c.y, T + mm(1), r.hinge_cup_diameter / 2, mm(2))
+            _lbox(cup, up, c.x - mm(8), c.x + mm(8), c.y - mm(7), c.y + mm(7), T, T + mm(9))
+            out.append(cup)
+            arm = HwItem(id=f"{up.key}.joint[{k}].arm", kind="hinge", part=low.key, node=low.node, finish="steel",
+                         name=hname)
+            _lbox(arm, low, low.length - mm(52), low.length - mm(2), c.y - mm(7), c.y + mm(7), T, T + mm(9))
+            out.append(arm)
+
+
 _APPLIANCE_BOX = {"microwave": (mm(500), mm(290), mm(360)), "oven": (mm(595), mm(595), mm(560))}  # ширина, высота, глубина
 
 
@@ -541,6 +585,7 @@ def hardware_visuals(result: BuildResult) -> list[HwItem]:
     _sliding(result, parts, out)
     _corner_mechanisms(result, parts, out)
     _gas_lifts(result, parts, out)
+    _fold_lifts(result, parts, out)
     _wall_appliances(result, parts, out)
     if getattr(result.product, "type", None) == "kitchen":
         _cargo(result, parts, out)

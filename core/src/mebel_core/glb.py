@@ -45,13 +45,24 @@ def _part_matrix(part) -> np.ndarray:
     return m
 
 
-def _node_matrix(node) -> np.ndarray:
-    """Положение «открыто» для подвижного узла."""
+def _own_matrix(node) -> np.ndarray:
     direction = np.array(_AXES[node.axis], dtype=float)
     if node.kind in ("rotate", "lift"):
         # Поворот на +range° вокруг оси по правилу правой руки
         return rotation_matrix(np.radians(node.range), direction, point=node.origin)
     return translation_matrix(direction * node.range)
+
+
+def _node_matrix(node, nodes: dict | None = None) -> np.ndarray:
+    """Положение «открыто» для подвижного узла. Узел с parent (нижний фасад складного подъёмника) двигается
+    внутри родителя: сначала свой ход (ось и точка — в положении «закрыто»), потом ход родителя и выше."""
+    m = _own_matrix(node)
+    seen = {node.id}
+    while nodes is not None and node.parent and node.parent in nodes and node.parent not in seen:
+        node = nodes[node.parent]
+        seen.add(node.id)
+        m = _own_matrix(node) @ m
+    return m
 
 
 def _contour_points(contour, arc_step_deg: float = 10) -> list[tuple[float, float]]:
@@ -145,7 +156,7 @@ def _hardware_meshes(result: BuildResult, nodes: dict, opened: bool):
         mesh = trimesh.util.concatenate([_shape_mesh(s) for s in item.shapes])
         matrix = np.eye(4)
         if opened and item.node and item.node in nodes:
-            matrix = _node_matrix(nodes[item.node])
+            matrix = _node_matrix(nodes[item.node], nodes)
         mesh.apply_transform(_TO_GLTF @ matrix)
         f = FINISHES[item.finish]
         mesh.visual = trimesh.visual.TextureVisuals(
@@ -280,7 +291,7 @@ def scene_items(result: BuildResult, opened: bool = False, uv: bool = False):
         mesh = _part_mesh(p)
         matrix = _part_matrix(p)
         if opened and p.node and p.node in nodes:
-            matrix = _node_matrix(nodes[p.node]) @ matrix
+            matrix = _node_matrix(nodes[p.node], nodes) @ matrix
         mat = material(p.material)
         paint = p.decor.paint if p.decor is not None else None
         color = paint["color"] if paint else mat.color

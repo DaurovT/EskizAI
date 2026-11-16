@@ -55,7 +55,8 @@ def test_existing_kitchens_unchanged(name: str) -> None:
     r = build(t)
     assert "kitchen_wall_ext" not in r.module_versions and "kitchen_mid" not in r.module_versions
     dumped = parse_tree(t).model_dump(mode="json", exclude_none=True)
-    assert all(k not in c for c in dumped.get("wall", []) for k in ("opening", "flaps", "appliance", "above", "top"))
+    assert all(k not in c for c in dumped.get("wall", [])
+               for k in ("opening", "flaps", "appliance", "above", "top", "lift_type"))
     again = build(dumped)
     assert [p.model_dump() for p in again.parts] == [p.model_dump() for p in r.parts]
     assert [n.model_dump() for n in again.nodes] == [n.model_dump() for n in r.nodes]
@@ -366,3 +367,113 @@ def test_corner_kitchen_lift_on_second_run() -> None:
     assert r.ok, errors(r)
     node = next(n for n in r.nodes if n.kind == "lift")
     assert node.axis in ("+Y", "-Y")  # ряд повернут — ось вдоль второй стены
+
+
+# --- Складной подъёмник (lift_type=fold, Aventos HF) ---
+
+
+def _fold(**kw) -> dict:
+    return {"kind": "doors", "width": 900, "opening": "lift", "lift_type": "fold", "shelves": 2, **kw}
+
+
+def test_fold_lift_parts_nodes_hardware() -> None:
+    r = build(kitchen([_fold()]))
+    assert r.ok, errors(r)
+    up = next(p for p in r.parts if p.key == "wall[0].fold[1]")
+    low = next(p for p in r.parts if p.key == "wall[0].fold[2]")
+    assert up.role == low.role == "door" and up.length == low.length and up.width == low.width == mm(898)
+    assert low.aabb().max.z + mm(2) == up.aabb().min.z  # стык — зазор фасадов, без полки
+    assert not [p for p in r.parts if p.key.startswith("wall[0].") and ("lift_shelf" in p.key or ".flap[" in p.key)]
+    shelves = [p for p in r.parts if p.role == "shelf" and p.module.startswith("wall[0]")]
+    assert len(shelves) == 2  # обе полки — съёмные, как заданы
+    nodes = {n.id: n for n in r.nodes if n.module == "wall[0]"}
+    nu, nl = nodes["wall[0].fold[1]"], nodes["wall[0].fold[2]"]
+    assert (nu.kind, nu.axis, nu.range, nu.parent) == ("lift", "-X", 100, None)
+    assert nu.origin[2] == up.aabb().max.z and nu.origin[1] == up.aabb().max.y  # верхняя кромка, внутренняя сторона
+    assert (nl.kind, nl.axis, nl.range, nl.parent) == ("lift", "+X", 180, "wall[0].fold[1]")
+    assert nl.origin[2] == (up.aabb().min.z + low.aabb().max.z) // 2 and nl.origin[1] == nu.origin[1]
+    # Петли: верхний — по верхней кромке и соединительные у стыка; ручка — только на нижнем
+    assert len([h for h in up.holes if h.purpose == "чашка петли"]) == 2
+    assert len([h for h in up.holes if h.purpose == "чашка петли соединительной"]) == 2
+    assert not [h for h in up.holes if h.purpose == "ручка"] and [h for h in low.holes if h.purpose == "ручка"]
+    assert hw(r, "fold_lift", "wall[0]") == 1 and hw(r, "gas_lift", "wall[0]") == 0
+    assert hw(r, "hinge", "wall[0]") == 4
+    assert any(h.name.startswith("Петля соединительная") and h.qty == 2 for h in r.hardware)
+    wide = build(kitchen([_fold(width=1200)]))
+    assert wide.ok and hw(wide, "hinge", "wall[0]") == 6  # шире 900 — по 3 петли
+    e = estimate(r)
+    line = next(ln for ln in e.lines if ln.name == "Подъёмник складной (2 фасада)")
+    assert line.qty == 1 and line.unit_price == 1_200_000 and line.status == "analog"
+    joint = next(ln for ln in e.lines if ln.name.startswith("Петля соединительная"))
+    assert joint.qty == 2 and joint.unit_price > 0
+    vis = hardware_visuals(r)
+    assert len([v for v in vis if v.kind == "fold_lift"]) == 2  # механизм на обеих боковинах
+    cups = [v for v in vis if v.id.startswith("wall[0].fold[1].joint[")]
+    assert {v.node for v in cups} == {"wall[0].fold[1]", "wall[0].fold[2]"}  # чашка и плечо — каждый со своим
+    vm = viewer_model(r)
+    assert next(n for n in vm["nodes"] if n["id"] == "wall[0].fold[2]")["parent"] == "wall[0].fold[1]"
+
+
+def test_fold_lift_opened_glb_folds_above_cabinet() -> None:
+    import numpy as np
+
+    from mebel_core.glb import scene_items
+
+    r = build(kitchen([_fold()]))
+    top = next(p for p in r.parts if p.key == "wall[0].top").aabb().max.z
+    front_t = next(p for p in r.parts if p.key == "wall[0].fold[1]").thickness
+    closed = {n: m.bounds for n, _, m, _, _ in scene_items(r) if ".fold[" in n and not n.startswith("hw:")}
+    opened = {n: m.bounds for n, _, m, _, _ in scene_items(r, opened=True) if ".fold[" in n and not n.startswith("hw:")}
+    assert len(opened) == 2
+    for name, b in opened.items():
+        lo_z, hi_z = b[0][1] * 1e4, b[1][1] * 1e4  # glTF: y — высота, м → dmm
+        assert lo_z >= top - front_t - mm(1), name  # сложенный пакет — над модулем
+        assert hi_z > top
+        assert b[1][1] - b[0][1] < 0.2  # лежит, а не висит
+    # Без учёта родителя нижний фасад повернулся бы на 180° сам по себе — ушёл бы в корпус
+    lo = next(b for n, b in opened.items() if n.endswith("fold[2]"))
+    hi = next(b for n, b in opened.items() if n.endswith("fold[1]"))
+    assert np.allclose(lo[1][2], hi[1][2], atol=0.01)  # оба выдвинуты к нам одинаково
+    assert export_glb(r, opened=True)[:4] == b"glTF"
+    assert closed and all(b[0][1] * 1e4 < top for b in closed.values())
+
+
+def test_fold_lift_rules_and_fixes() -> None:
+    low = kitchen([{"kind": "hood", "width": 600, "opening": "lift", "lift_type": "fold"}])  # 360 мм
+    r = build(low)
+    issue = next(i for i in r.issues if i.code == "lift_fold_height")
+    assert issue.level == "error" and not r.ok
+    assert [f.description for f in issue.fixes] == ["Один подъёмный фасад вместо складного",
+                                                    "Распашная дверь вместо подъёмной"]
+    fixed = apply_fix(low, issue.fixes[0])
+    assert fixed["wall"][0]["lift_type"] is None and build(fixed).ok
+    assert build(apply_fix(low, issue.fixes[1])).ok
+    tall = kitchen([_fold()], wall_height=1200)
+    r = build(tall)
+    issue = next(i for i in r.issues if i.code == "lift_fold_height")
+    assert not r.ok and issue.fixes[0].description == "Два отдельных подъёмных фасада друг над другом"
+    fixed = apply_fix(tall, issue.fixes[0])
+    assert fixed["wall"][0]["flaps"] == 2 and build(fixed).ok
+    ok = build(kitchen([_fold()], wall_height=1000))  # до 1040 вместе — можно
+    assert ok.ok and "lift_fold_height" not in codes(ok)
+    hinged = build(kitchen([{"kind": "doors", "width": 600, "lift_type": "fold"}]))  # без opening=lift
+    assert hinged.ok and "wall_fold_ignored" in codes(hinged)
+    assert not [p for p in hinged.parts if ".fold[" in p.key] and [p for p in hinged.parts if ".door[" in p.key]
+    flaps = build(kitchen([_fold(flaps=1)]))  # flaps у складного не учитывается
+    assert flaps.ok and len([p for p in flaps.parts if ".fold[" in p.key]) == 2
+
+
+def test_fold_lift_over_niches_and_on_second_run() -> None:
+    t = kitchen([_fold(open_bottom=300, height=1000, shelves=2),
+                 {"kind": "appliance", "width": 600, "above": "lift", "lift_type": "fold", "height": 1000}])
+    r = build(t)
+    assert r.ok, errors(r)
+    for i in (0, 1):
+        assert {f"wall[{i}].fold[1]", f"wall[{i}].fold[2]", f"wall[{i}].niche_shelf"} <= {p.key for p in r.parts}
+    c = load("kitchen_corner")
+    c["wall2"] = [{"kind": "doors", "width": 800, "opening": "lift", "lift_type": "fold"}] + c.get("wall2", [])[1:]
+    r = build(c)
+    assert r.ok, errors(r)
+    up, low = (next(n for n in r.nodes if n.id == f"wall2[0].fold[{k}]") for k in (1, 2))
+    assert up.axis in ("+Y", "-Y") and low.axis in ("+Y", "-Y") and up.axis != low.axis
+    assert export_glb(r, opened=True)[:4] == b"glTF"

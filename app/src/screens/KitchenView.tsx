@@ -20,7 +20,7 @@ import type { KitchenSite, ModelStateOut, ProductTree } from '../api/types';
 import { groupDigits } from '../lib/format';
 import { moduleLengths, wallDiffs } from '../lib/kitchenMeasure';
 import {
-  BASE_KINDS, KDEF, KLIM, WALL_KINDS, clamp, doorCount, drawerLines, duplicateAt, fridgeSpans, hasOpenBottom, hasTier, insertAt, isUpper, labelCode, moveAt, newModule,
+  BASE_KINDS, KDEF, KLIM, WALL_KINDS, clamp, doorCount, drawerLines, duplicateAt, fridgeSpans, hasLift, hasOpenBottom, hasTier, insertAt, isFold, isUpper, labelCode, moveAt, newModule,
   nicheHeight, num, removeAt, replaceAt, rowMods, schemeLayout, wallOverFridge, selFromPartKey, sumFixes, wallKindOf, wallModHeight, withKind,
   type KLayout, type KMod, type KRow, type KSel, type SumFix,
 } from '../lib/kitchenScheme';
@@ -340,16 +340,28 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
           options={[{ v: 'left', l: t('kit_f_left') }, { v: 'right', l: t('kit_f_right') }]} />
       </FRow>
     ) : null;
+    // механизм подъёмных фасадов: отдельные (газлифт на каждый) или складной подъёмник (два фасада на петлях)
+    const mechRow = hasLift(cur) ? (
+      <FRow label={t('kit_f_mech')} line>
+        <MiniSeg value={isFold(cur) ? 'fold' : 'flap'} disabled={lock} onChange={(v) => patchMod(row, i, v === 'fold' ? { lift_type: 'fold', flaps: null } : { lift_type: null })}
+          options={[{ v: 'flap', l: t('kit_f_mech_flap') }, { v: 'fold', l: t('kit_f_mech_fold') }]} />
+      </FRow>
+    ) : null;
     const openingRows = (
       <>
         <FRow label={t('kit_f_opening')} line>
-          <MiniSeg value={cur.opening === 'lift' ? 'lift' : 'hinged'} disabled={lock} onChange={(v) => patchMod(row, i, v === 'lift' ? { opening: 'lift' } : { opening: null, flaps: null })}
+          <MiniSeg value={cur.opening === 'lift' ? 'lift' : 'hinged'} disabled={lock} onChange={(v) => patchMod(row, i, v === 'lift' ? { opening: 'lift' } : { opening: null, flaps: null, lift_type: null })}
             options={[{ v: 'hinged', l: t('kit_f_hinged') }, { v: 'lift', l: t('kit_f_lift') }]} />
         </FRow>
         {cur.opening === 'lift' ? (
-          <FRow label={t('kit_f_flaps')} line>
-            <MiniSeg value={cur.flaps === 2 ? '2' : '1'} disabled={lock} onChange={(v) => patchMod(row, i, { flaps: v === '2' ? 2 : null })} options={[{ v: '1', l: '1' }, { v: '2', l: '2' }]} />
-          </FRow>
+          <>
+            {mechRow}
+            {!isFold(cur) ? (
+              <FRow label={t('kit_f_flaps')} line>
+                <MiniSeg value={cur.flaps === 2 ? '2' : '1'} disabled={lock} onChange={(v) => patchMod(row, i, { flaps: v === '2' ? 2 : null })} options={[{ v: '1', l: '1' }, { v: '2', l: '2' }]} />
+              </FRow>
+            ) : null}
+          </>
         ) : <>{doorsRow()}{hingeRow}</>}
         {cur.opening !== 'lift' && cur.kind === 'doors' && !hasOpenBottom(cur) ? (
           <FRow label={t('kit_f_rows')} line>
@@ -419,9 +431,10 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
                 onChange={(v) => patchMod(row, i, { niche_height: v })} />
             </FRow>
             <FRow label={t('kit_f_above')} line>
-              <MiniSeg value={typeof cur.above === 'string' ? cur.above : 'door'} disabled={lock} onChange={(v) => patchMod(row, i, { above: v === 'door' ? null : v })}
+              <MiniSeg value={typeof cur.above === 'string' ? cur.above : 'door'} disabled={lock} onChange={(v) => patchMod(row, i, v === 'lift' ? { above: v } : { above: v === 'door' ? null : v, lift_type: null })}
                 options={(['door', 'lift', 'open', 'none'] as const).map((v) => ({ v, l: t(`kit_f_above_${v}`) }))} />
             </FRow>
+            {mechRow}
             <FRow label={t('kit_f_niche_frame')} line>
               <Toggle value={cur.niche_frame === true} disabled={lock} accessibilityLabel={t('kit_f_niche_frame')} onValueChange={(on) => patchMod(row, i, { niche_frame: on ? true : null })} />
             </FRow>
@@ -827,7 +840,9 @@ function Facade({ tree, layout, run, sel, onPick, onAdd, lbl, shortLbl, W, y0, a
             lines.push(<View key="obs" style={[s.hl, { top: h - 6 - 3 - ob / 2, left: 6, right: 6, backgroundColor: palette.handle }]} />);
           }
           const fh = h - 6 - (ob ? ob + 3 : 0); // высота фасадной части
-          if (m.opening === 'lift' && m.flaps === 2) lines.push(<View key="f" style={[s.hl, { top: fh / 2 }]} />);
+          // складной — стык фасадов пунктиром (петли, без полки), два отдельных — сплошной линией (полка)
+          if (isFold(m)) lines.push(<View key="f" style={[s.foldLine, { top: fh / 2 }]} />);
+          else if (m.opening === 'lift' && m.flaps === 2) lines.push(<View key="f" style={[s.hl, { top: fh / 2 }]} />);
           else if (m.opening !== 'lift' && m.rows === 2 && !ob) lines.push(<View key="r" style={[s.hl, { top: fh / 2 }]} />);
           if (m.opening !== 'lift' && doorCount(m) === 2) lines.push(<View key="d" style={[s.vl, ob ? { top: 3, bottom: ob + 6 } : null, { left: wpx / 2 - 1 }]} />);
           if (m.opening === 'lift') lines.push(<Ionicons key="u" name="chevron-up" size={11} color={palette.chev} style={{ position: 'absolute', right: 3, top: 2 }} />);
@@ -1098,6 +1113,7 @@ const s = StyleSheet.create({
   tierT: { fontSize: 10, lineHeight: 12, fontWeight: '600', color: palette.muted2, paddingHorizontal: 2 },
   midBox: { position: 'absolute', borderWidth: 2, borderColor: palette.ink, backgroundColor: '#FBFAF8', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   hl: { position: 'absolute', left: 3, right: 3, height: 1, backgroundColor: palette.chev },
+  foldLine: { position: 'absolute', left: 3, right: 3, height: 0, borderTopWidth: 1, borderStyle: 'dashed', borderColor: palette.chev },
   vl: { position: 'absolute', top: 16, bottom: 22, width: 1, backgroundColor: palette.chev },
   niche: { position: 'absolute', left: 4, right: 4, bottom: 3, backgroundColor: '#E2E0DA', borderRadius: 2 },
   nicheFramed: { left: 9, right: 9, bottom: 7, borderWidth: 1, borderColor: palette.chev },

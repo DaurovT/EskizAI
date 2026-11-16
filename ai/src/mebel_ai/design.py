@@ -18,6 +18,7 @@ from typing import Any, Literal, Optional
 from mebel_core import BuildResult, build, parse_tree
 from pydantic import ValidationError
 
+from .align import align_kitchen
 from .llm import DESIGN_MODEL, LLM, SONNET, AIRefused, content_to_params
 from .prompts import design_system
 from .schema import DesignResponse, DesignWire, Question
@@ -143,7 +144,7 @@ class DesignSession:
                 feedback = (f"Ответ не прошёл проверку схемы: {error}. Верни исправленный ответ целиком; "
                             "tree_json — валидный JSON строго по схеме дерева.")
             else:
-                tree = parsed.tree.model_dump(exclude_none=True, mode="json")
+                tree, _ = align_kitchen(parsed.tree.model_dump(exclude_none=True, mode="json"))
                 try:
                     result = build(parse_tree(tree))
                 except ValidationError as e:  # схема прошла, а модель дерева — нет (ограничения значений)

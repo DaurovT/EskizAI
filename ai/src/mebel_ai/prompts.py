@@ -45,6 +45,9 @@ Typical values:
   `drawer_layout: "small_top"`; omit it only when all fronts look the same height.
 - Kitchen wall row, read it column by column (left → right), each column = one `wall` item; widths of the wall
   items follow the cabinets above the base row (their sum ≈ the base row length, or less with `gap` items):
+  - Where a vertical joint of the uppers lines up with a joint of the base fronts below, the upper width is the
+    SUM of the base widths under it (base 600+150+450 / 450 / 600 with upper joints over those lines → wall
+    1200 / 450 / 600, not 900 / 550 / 800). Line up every upper joint you can see over a base joint.
   - The wall row starts and ends where the base row does unless bare wall is clearly visible there (perspective
     makes the far end look shorter) — no `gap` at the ends without a reason (window, column, vent).
   - Uppers up to the ceiling (no wall visible above them, or a narrow filler): `wall_height` = the FULL height of
@@ -61,13 +64,19 @@ Typical values:
     core warns about a taller one — do not "fix" it), two flaps of the same width one above the other →
     `flaps: 2`. Never invent a `top` tier or a second flap to use up the height: `top` only when a separate short
     box / row of small fronts is visibly there. A short `hood` cabinet usually has one lift flap.
+  - Bi-fold lift (складной подъёмник, Aventos HF): two horizontal fronts in one column joined by hinges, NO
+    shelf/carcass line between them, handle only on the lower one (or a continuous one); open — the two fronts
+    folded into a V/package above the cabinet; usually wide 600–1200 and 700–900 tall → `opening: "lift",
+    "lift_type": "fold"` (`flaps` is ignored; both fronts together 480–1040 mm). Two separate flaps with their
+    own struts and a visible shelf line between them stay `flaps: 2`.
   - Each raised flap belongs to the column under its hinge line and has that column's width: two raised flaps
     side by side over different columns are two cabinets with one flap each.
   - Open niche under a front (shelves with jars and NO front of their own at the bottom of a column, the front
     above ends at a shelf — often level with a microwave niche next to it) → that column is
     {{"kind": "doors", "open_bottom": <clear height of the niche>, "opening": "lift" | "hinged", "flaps": 1,
     "shelves": <shelves in the niche + behind the front>}}. A raised flap covers only its own height: shelves
-    visible lower than the flap reaches are this open niche, not `kind: "open"`.
+    visible lower than the flap reaches are this open niche, not `kind: "open"`. Niches or front joints of
+    neighbouring columns on one line in the photo → the same value (`open_bottom` = `niche_height`).
   - Built-in appliance niche in the wall row (a microwave or oven standing inside an open niche of an upper
     cabinet) → {{"kind": "appliance", "appliance": "microwave" | "oven", "width": 600, "above": "door" | "lift" |
     "open" | "none"}}: the niche is at the bottom of the cabinet (`niche_height` null = 380 microwave / 600 oven,
@@ -249,7 +258,9 @@ Tree facts that help:
 - Kitchen wall row: «подъёмные фасады», «газлифт» → `/wall/<i>/opening` = "lift" (one flap is 250–700 mm high:
   a 720 cabinet needs `/wall/<i>/flaps` = 2, a hood — 1); «обычные двери» → `/wall/<i>/opening` = "hinged";
   «два ряда дверей» → `/wall/<i>/rows` = 2; «открытая ниша снизу» → `/wall/<i>/open_bottom` = 400; «рамка вокруг
-  микроволновки» → `/wall/<i>/niche_frame` = true.
+  микроволновки» → `/wall/<i>/niche_frame` = true; «складной подъёмник», «фасад складывается», «Aventos HF»,
+  «бифолд» → `/wall/<i>/opening` = "lift" and `/wall/<i>/lift_type` = "fold" (two joined fronts, 480–1040 mm
+  together); «отдельные подъёмные» → `/wall/<i>/lift_type` = null.
 - Kitchen base row: «бутылочница», «карго» → a base item {"kind": "cargo", "width": 150} (150–300; take the width
   from the neighbour module so the row length stays); «ящики 1+2», «верхний ящик маленький» →
   `/base/<i>/drawer_layout` = "small_top".

@@ -8,6 +8,12 @@
 вокруг горизонтальной оси у верхней кромки, фасад уходит вверх к нам. Два фасада (flaps=2) — один над
 другим, между ними неподвижная полка.
 
+Складной подъёмник (lift_type=fold, тип Aventos HF): два фасада равной высоты на одном проёме, соединены
+петлями (без полки между ними). Верхний — узел «lift» по верхней кромке, как обычный подъёмный; нижний —
+узел-потомок (parent = верхний) с осью по стыку фасадов (по их внутренней стороне): при открывании нижний
+складывается к верхнему (+180° относительно него), стык уходит к нам, пакет фасадов — над модулем.
+Механизм — пара рычагов на боковинах (одна позиция «Подъёмник складной (2 фасада)»).
+
 Ниша под технику (kind=appliance): открытая ниша внизу модуля, над ней — неподвижная полка и отделение
 с фасадом (above). Технику покупает клиент — в смете только корпус и полки. niche_frame — рамка из материала
 фасадов вокруг ниши: одна панель с прямоугольным вырезом под технику («Рамка ниши»).
@@ -35,7 +41,9 @@ from .kitchen import _carcass, _door_count
 LIFT_ANGLE = 100  # подъёмный фасад открывается на ~100°
 LIFT_MIN, LIFT_MAX = mm(250), mm(700)  # высота одного подъёмного фасада на обычном газлифте
 LIFT_HARD_MAX = mm(900)  # выше — только два фасада; 700–900 — предупреждение (усиленный газлифт)
-LIFT_MAX_WIDTH = mm(1200)
+LIFT_MAX_WIDTH = mm(1200)  # и у складного: HF до 1800, но шире 1200 — уже провисание крыши/дна ЛДСП
+FOLD_MIN, FOLD_MAX = mm(480), mm(1040)  # складной подъёмник: высота двух фасадов вместе (Aventos HF)
+FOLD_LOWER_ANGLE = 180  # нижний фасад складного — относительно верхнего, складывается к нему
 NICHE = {"microwave": (mm(380), mm(360), "микроволновку", "Микроволновка"),
          "oven": (mm(600), mm(585), "духовку", "Духовка")}  # по умолчанию, минимум в свету, кого, название
 TIER_DEFAULT = mm(350)
@@ -46,7 +54,19 @@ FRAME_MIN_OPENING = {"microwave": (mm(460), mm(280)), "oven": (mm(560), mm(560))
 def extended(cab) -> bool:
     """Нужен ли этот модуль: поля, которых нет у обычного верхнего модуля."""
     return (cab.kind == "appliance" or cab.opening == "lift" or cab.top is not None or (cab.rows or 1) > 1
-            or cab.open_bottom is not None)
+            or cab.open_bottom is not None or cab.lift_type is not None)
+
+
+def _lifts(cab) -> bool:
+    """Есть ли у модуля подъёмные фасады (кроме яруса)."""
+    if cab.kind == "appliance":
+        return (cab.above or "door") == "lift"
+    return cab.kind in ("doors", "hood") and cab.opening == "lift"
+
+
+def is_fold(cab) -> bool:
+    """Складной подъёмник: два фасада на петлях складываются и уходят вверх (только у подъёмных)."""
+    return cab.lift_type == "fold" and _lifts(cab)
 
 
 def wall_ceiling(k) -> int | None:
@@ -87,6 +107,8 @@ def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: in
         raise BuildError("wall_tier_tall", f"Ярус {to_mm(tier_h):g} мм не оставляет места модулю высотой "
                                            f"{to_mm(z1 - z0):g} мм — уменьшите ярус или поднимите модуль", path)
     slot = _carcass(ctx, path=path, x=x, w=w, z=z0, h=main_top - z0, d=d, kind="wall", back=True, y0=y0)
+    if cab.lift_type == "fold" and not _lifts(cab):
+        ctx.warn("wall_fold_ignored", "Складной подъёмник — только у подъёмных фасадов (opening=lift)", path)
     if kind == "appliance":
         _appliance(ctx, cab, slot, path=path, ptr=ptr, x=x, w=w, z0=z0, z1=main_top, last=last)
     elif kind == "open":
@@ -107,11 +129,12 @@ def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: in
     elif cab.opening == "lift":
         if (cab.rows or 1) > 1:
             ctx.warn("wall_rows_ignored", "Два ряда — у распашных дверей; у подъёмных — flaps", path)
-        flaps = auto_flaps(cab.flaps, main_top - z0)
+        fold = is_fold(cab)
+        flaps = 2 if fold else auto_flaps(cab.flaps, main_top - z0)
         boxes = lift_flaps(ctx, slot, x, x + w, z0, main_top, flaps, path, ptr=ptr, has_flaps=True,
-                           fix_field="opening=hinged")
+                           fix_field="opening=hinged", fold=fold)
         if kind != "hood":
-            _shelves_split(ctx, slot, boxes, cab.shelves - (flaps - 1), path)
+            _shelves_split(ctx, slot, boxes, cab.shelves - (len(boxes) - 1), path)
     elif kind == "doors" and (cab.rows or 1) == 2:
         _door_rows(ctx, cab, slot, path=path, x=x, w=w, z0=z0, z1=main_top, last=last)
     else:  # распашные двери, как в kitchen.py (сюда попадает только модуль с ярусом)
@@ -193,14 +216,18 @@ def auto_flaps(flaps: int | None, opening_h: int) -> int:
 
 
 def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi: int, flaps: int, path: str, *,
-               ptr: str, has_flaps: bool, mount=None, fix_field: str = "") -> list[Box]:
+               ptr: str, has_flaps: bool, mount=None, fix_field: str = "", fold: bool = False) -> list[Box]:
     """Подъёмные фасады на проём [z_lo, z_hi] по сетке фасадов. mount — деталь над верхним фасадом под планки
-    петель (по умолчанию крыша корпуса). Возвращает отделения корпуса снизу вверх (между неподвижными полками)."""
+    петель (по умолчанию крыша корпуса). Возвращает отделения корпуса снизу вверх (между неподвижными полками).
+    fold — складной подъёмник (два фасада на петлях, без полки между ними)."""
     r, t = ctx.rules, ctx.t
     g = r.front_gap
     xa, xb = x0 + g // 2, x1 - g // 2
     za, zb = z_lo + g // 2, z_hi - g // 2
     box = slot.box
+    if fold:
+        _fold_fronts(ctx, xa, xb, za, zb, mount or slot.top, path, ptr=ptr, fix_field=fix_field)
+        return [box]
     boxes = [box]
     mounts = [mount or slot.top]
     if flaps == 1:
@@ -238,6 +265,75 @@ def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi:
         ctx.nodes.append(MovingNode(id=node, kind="lift", module=path, origin=(xa, ctx.front_y, fb), axis="-X",
                                     range=LIFT_ANGLE))
     return boxes
+
+
+def _fold_fronts(ctx: BuildContext, xa: int, xb: int, za: int, zb: int, mount, path: str, *, ptr: str,
+                 fix_field: str) -> None:
+    """Складной подъёмник на фасадный проём [za, zb] (уже с зазорами): верхний фасад на петлях к mount,
+    нижний — на соединительных петлях к верхнему; ручка — на нижнем."""
+    r = ctx.rules
+    g = r.front_gap
+    width = xb - xa
+    _check_fold(ctx, width, zb - za, path, ptr, fix_field)
+    mid = (za + zb) // 2  # стык фасадов — середина зазора
+    hw = ctx.product.hardware
+    kind_name = {"standard": "", "soft_close": " с доводчиком", "push": " push-to-open"}[hw.hinge]
+    cls = HARDWARE_CLASS_NAMES[hw.hinge_class]
+    n = 2 if width <= mm(900) else 3
+    ys = [r.hinge_end_offset, width - r.hinge_end_offset] + ([width // 2] if n == 3 else [])
+    up_id, low_id = f"{path}.fold[1]", f"{path}.fold[2]"
+    upper = _front_part(ctx, up_id, "Фасад складной верхний", "door", xa, xb, mid + g // 2, zb, up_id, door=True)
+    lower = _front_part(ctx, low_id, "Фасад складной нижний", "door", xa, xb, za, mid - g // 2, low_id, door=True)
+    pz = mount.aabb().min.z
+    for ly in ys:
+        # Верхний — петли по верхней кромке, планки снизу на крыше (как у подъёмного)
+        upper.holes.append(_cup(upper.length - r.hinge_cup_from_edge, ly, r))
+        for dy in (0, mm(32)):
+            ctx.drill(mount, at(xa + ly, ctx.front_y + r.system32_front + dy, pz), mm(5), mm(12), "планка петли")
+        # Соединительные: чашка — в верхнем у стыка, крепление — на внутренней стороне нижнего
+        upper.holes.append(Hole(x=r.hinge_cup_from_edge, y=ly, diameter=r.hinge_cup_diameter,
+                                depth=r.hinge_cup_depth, face="A", purpose="чашка петли соединительной"))
+        for dx in (mm(10), mm(42)):
+            lower.holes.append(Hole(x=lower.length - dx, y=ly, diameter=mm(3), depth=mm(10), face="A",
+                                    purpose="петля соединительная"))
+    ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls})", n, path,
+                     type=hw.hinge, hclass=hw.hinge_class)
+    ctx.add_hardware("hinge", f"Петля соединительная (складной подъёмник, {cls})", n, path,
+                     type="standard", hclass=hw.hinge_class)
+    ctx.add_hardware("fold_lift", "Подъёмник складной (2 фасада)", 1, path)
+    _flap_handle(ctx, lower, path)
+    # Верхний — как подъёмный: +LIFT_ANGLE° вокруг −X по верхней кромке (по внутренней стороне фасада).
+    # Нижний — внутри верхнего: +180° вокруг +X по стыку (внутренняя сторона) — низ уходит назад и вверх,
+    # фасады складываются внутренними сторонами, стык — к нам.
+    ctx.nodes.append(MovingNode(id=up_id, kind="lift", module=path, origin=(xa, ctx.front_y, zb), axis="-X",
+                                range=LIFT_ANGLE))
+    ctx.nodes.append(MovingNode(id=low_id, kind="lift", module=path, origin=(xa, ctx.front_y, mid), axis="+X",
+                                range=FOLD_LOWER_ANGLE, parent=up_id))
+
+
+def _check_fold(ctx: BuildContext, width: int, total: int, path: str, ptr: str, fix_field: str) -> None:
+    if not FOLD_MIN <= total <= FOLD_MAX:
+        fixes = []
+        if total < FOLD_MIN and LIFT_MIN <= total:
+            fixes.append(Fix(description="Один подъёмный фасад вместо складного",
+                             patch=[PatchOp(op="replace", path=f"{ptr}/lift_type", value=None),
+                                    PatchOp(op="replace", path=f"{ptr}/flaps", value=1)]))
+        elif total > FOLD_MAX and total <= 2 * LIFT_HARD_MAX:
+            fixes.append(Fix(description="Два отдельных подъёмных фасада друг над другом",
+                             patch=[PatchOp(op="replace", path=f"{ptr}/lift_type", value=None),
+                                    PatchOp(op="replace", path=f"{ptr}/flaps", value=2)]))
+        if fix_field:
+            field, value = fix_field.split("=")
+            fixes.append(Fix(description="Распашная дверь вместо подъёмной",
+                             patch=[PatchOp(op="replace", path=f"{ptr}/{field}", value=value)]))
+        ctx.issues.append(Issue(
+            level="error", code="lift_fold_height",
+            message=f"Складной подъёмник на фасады высотой {to_mm(total):g} мм — механизм рассчитан на "
+                    f"{to_mm(FOLD_MIN):g}–{to_mm(FOLD_MAX):g} мм (оба фасада вместе)", path=path, fixes=fixes))
+    if width > LIFT_MAX_WIDTH:
+        ctx.issues.append(Issue(level="error", code="lift_flap_width",
+                                message=f"Складной подъёмный фасад шириной {to_mm(width):g} мм — больше "
+                                        f"{to_mm(LIFT_MAX_WIDTH):g} мм", path=path))
 
 
 def _check_flap(ctx: BuildContext, width: int, heights: list[int], flaps: int, path: str, ptr: str,
@@ -346,8 +442,9 @@ def _niche_split(ctx: BuildContext, cab, slot: Slot, niche: int, above: str, *, 
     line = zs + t // 2  # линия фасадов — по середине полки
     boxes = [upper]
     if above == "lift":
-        got = lift_flaps(ctx, slot, x, x + w, line, z1, auto_flaps(cab.flaps, z1 - line), path, ptr=ptr,
-                         has_flaps=True, fix_field=fix_field)
+        fold = is_fold(cab)
+        got = lift_flaps(ctx, slot, x, x + w, line, z1, 2 if fold else auto_flaps(cab.flaps, z1 - line), path,
+                         ptr=ptr, has_flaps=True, fix_field=fix_field, fold=fold)
         if got != [slot.box]:
             boxes = [Box(x0=b.x0, x1=b.x1, y0=b.y0, y1=b.y1, z0=max(b.z0, upper.z0), z1=b.z1) for b in got]
     elif above == "door":

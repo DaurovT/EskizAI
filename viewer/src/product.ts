@@ -193,6 +193,8 @@ export interface NodeHandle {
   pivot: Group;
   /** Точка узла в сцене. */
   origin: Vector3;
+  /** Положение группы узла в группе родителя (вложенный узел) или в сцене. */
+  local: Vector3;
   /** Ось/направление в сцене (единичный вектор). */
   axis: Vector3;
   parts: PartHandle[];
@@ -426,11 +428,11 @@ export class ProductScene {
       const origin = coreToThree(node.origin, this.scale);
       pivot.position.copy(origin);
       pivot.userData.nodeId = node.id;
-      this.root.add(pivot);
       this.nodes.set(node.id, {
         node,
         pivot,
         origin,
+        local: origin.clone(),
         axis: axisToThree(node.axis).normalize(),
         parts: [],
         hardware: [],
@@ -438,6 +440,17 @@ export class ProductScene {
         progress: 0,
         target: 0,
       });
+    }
+    // Вложенный узел (нижний фасад складного подъёмника) — в группе родителя: двигается вместе с ним
+    for (const h of this.nodes.values()) {
+      const parent = this.parentOf(h);
+      if (parent) {
+        h.local.copy(h.origin).sub(parent.origin);
+        h.pivot.position.copy(h.local);
+        parent.pivot.add(h.pivot);
+      } else {
+        this.root.add(h.pivot);
+      }
     }
 
     for (const part of model.parts) {
@@ -1571,20 +1584,52 @@ export class ProductScene {
     this.applyNode(h);
   }
 
-  /** Плавно открыть узел (анимация идёт в update()). */
+  /** Плавно открыть узел (анимация идёт в update()). Складной подъёмник — оба фасада вместе. */
   openNode(id: string): void {
-    const h = this.nodes.get(id);
-    if (h) h.target = 1;
+    for (const h of this.linked(id)) h.target = 1;
   }
 
   closeNode(id: string): void {
-    const h = this.nodes.get(id);
-    if (h) h.target = 0;
+    for (const h of this.linked(id)) h.target = 0;
   }
 
   toggleNode(id: string): void {
-    const h = this.nodes.get(id);
-    if (h) h.target = h.target > 0.5 ? 0 : 1;
+    const list = this.linked(id);
+    if (!list.length) return;
+    const target = list[0]!.target > 0.5 ? 0 : 1;
+    for (const h of list) h.target = target;
+  }
+
+  /** Родитель узла, если он есть в сцене (и не сам узел). */
+  private parentOf(h: NodeHandle): NodeHandle | undefined {
+    const id = h.node.parent;
+    if (!id || id === h.node.id) return undefined;
+    const p = this.nodes.get(id);
+    // защита от цикла: родитель не должен быть потомком
+    for (let q = p; q; q = q.node.parent ? this.nodes.get(q.node.parent) : undefined) {
+      if (q === h) return undefined;
+      if (q.node.parent === q.node.id) break;
+    }
+    return p;
+  }
+
+  /**
+   * Узлы, которые двигаются вместе: lift с родителем lift — одна группа (складной подъёмник). Сначала корень
+   * группы, потом вложенные. Остальные узлы (ящик за дверью-купе) — сами по себе.
+   */
+  private linked(id: string): NodeHandle[] {
+    let h = this.nodes.get(id);
+    if (!h) return [];
+    const follows = (x: NodeHandle) => {
+      const p = this.parentOf(x);
+      return p && x.node.kind === 'lift' && p.node.kind === 'lift' ? p : undefined;
+    };
+    for (let p = follows(h); p; p = follows(h)) h = p;
+    const out = [h];
+    for (let i = 0; i < out.length; i++) {
+      for (const c of this.nodes.values()) if (follows(c) === out[i] && !out.includes(c)) out.push(c);
+    }
+    return out;
   }
 
   isNodeOpen(id: string): boolean {
@@ -1663,17 +1708,22 @@ export class ProductScene {
     const { node, pivot } = h;
     if (node.kind === 'rotate' || node.kind === 'lift') {
       const angle = (node.range * Math.PI) / 180;
-      pivot.position.copy(h.origin);
+      pivot.position.copy(h.local);
       pivot.quaternion.setFromAxisAngle(h.axis, angle * t);
     } else {
       pivot.quaternion.identity();
-      pivot.position.copy(h.origin).addScaledVector(h.axis, node.range * this.scale * t);
+      pivot.position.copy(h.local).addScaledVector(h.axis, node.range * this.scale * t);
     }
     pivot.updateMatrixWorld(true);
     if (this.explodeProgress > 0) {
-      this.applyExplodeTo(h.parts);
-      this.applyExplodeTo(h.hardware);
-      this.applyExplodeTo(h.lights);
+      for (const c of this.nodes.values()) {
+        let inside = false;
+        for (let o: Object3D | null = c.pivot; o && !inside; o = o.parent) inside = o === pivot;
+        if (!inside) continue; // сам узел и вложенные в него
+        this.applyExplodeTo(c.parts);
+        this.applyExplodeTo(c.hardware);
+        this.applyExplodeTo(c.lights);
+      }
     }
   }
 
@@ -1693,8 +1743,10 @@ export class ProductScene {
       tmpV.copy(h.explodeOffset).multiplyScalar(t);
       const parent = h.mesh.parent;
       if (parent && parent !== this.root) {
-        // Смещение задано в осях изделия; переводим в оси повернутого узла.
-        tmpQ.copy(parent.quaternion).invert();
+        // Смещение задано в осях изделия; переводим в оси повернутого узла (с учётом вложенных узлов).
+        tmpQ.identity();
+        for (let o: Object3D | null = parent; o && o !== this.root; o = o.parent) tmpQ.premultiply(o.quaternion);
+        tmpQ.invert();
         tmpV.applyQuaternion(tmpQ);
       }
       h.mesh.position.copy(base).add(tmpV);
