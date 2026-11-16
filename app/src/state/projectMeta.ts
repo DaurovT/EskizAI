@@ -18,6 +18,8 @@ interface Meta {
   answered?: { id: string; text: string; value: string }[];
   /** Замечания мастера к строкам «Что я нашёл» до отправки (ключ строки → что не так). */
   notes?: Record<string, { title: string; text: string }>;
+  /** Проект по листу чертежа из «Входящих» (SCR-55): разбор показывается как «Что взял из чертежа». */
+  drawing?: { inboxId: string; title: string; kind: string | null; sheet: string | null; sheetName: string | null };
 }
 export const metaStore = createStore<Record<string, Meta>>({});
 

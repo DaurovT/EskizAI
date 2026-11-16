@@ -135,6 +135,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .logo{width:56px;height:56px;border-radius:18px;background:#387D50;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;padding:12px;box-sizing:border-box}
@@ -149,7 +158,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </helmet>
 <div class="app">
 <div class="hdr" style="padding-top:14px">
-<span class="logo" aria-hidden="true"><i></i><i></i></span>
+<span aria-hidden="true" style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:8px;background:#387D50;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 40V13h24v27"></path><path d="M24 13v27"></path><path d="M20 24v5M28 24v5"></path><path d="M12 34h24" opacity=".55"></path><path d="M4 40h40"></path><circle cx="41" cy="8" r="2.6" fill="#fff" stroke="none"></circle></svg></span><span style="font-size:20px;letter-spacing:-.03em"><b style="font-weight:700">Eskiz</b> <span style="font-weight:500">Mebel</span></span></span>
 <span class="grow"></span>
 <div class="lang" role="group" aria-label="Язык"><a class="on" href="Login.dc.html">Рус</a><a href="Login.dc.html">O‘zb</a></div>
 </div>

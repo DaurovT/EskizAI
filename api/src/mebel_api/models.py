@@ -1002,3 +1002,5 @@ class InboxDrawing(Base):
     last_opened_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    # Проект, созданный по чертежу (POST /inbox/drawings/{id}/project): пока он есть, чертёж не истекает
+    project_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"), index=True)

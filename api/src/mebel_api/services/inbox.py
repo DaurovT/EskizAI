@@ -10,8 +10,9 @@
 загрузка и удаление одного sha256 на Postgres идут под advisory-блокировкой, чтобы чистка не удалила файл,
 который как раз переиспользует параллельная загрузка.
 
-Живая строка: `deleted_at IS NULL AND expires_at > now`. Срок — `inbox_retention_days` с создания или
-последнего открытия (GET /inbox/drawings/{id}).
+Живая строка: `deleted_at IS NULL AND (expires_at > now OR project_id IS NOT NULL)`. Срок — `inbox_retention_days`
+с создания или последнего открытия (GET /inbox/drawings/{id}); по чертежу создан проект
+(POST /inbox/drawings/{id}/project) — не истекает, пока проект не удалят.
 """
 
 import hashlib
@@ -170,6 +171,19 @@ def preview_path(m: dict[str, Any] | None) -> str | None:
     return mp if _is_preview_path(mp) else "previews/model.webp"
 
 
+def source_kind(m: dict[str, Any] | None) -> str | None:
+    """`dwg` / `dxf` — вид исходника (manifest.source.kind)."""
+    return _str(_dict(_dict(m).get("source")).get("kind"), 10)
+
+
+def unlink_project(db: Session, settings: Settings, project_id: uuid.UUID) -> None:
+    """Проект удалён: чертежи по нему снова живут обычный срок (с этого момента). Коммит — у вызывающего."""
+    exp = utcnow() + timedelta(days=settings.inbox_retention_days)
+    for d in db.scalars(select(InboxDrawing).where(InboxDrawing.project_id == project_id)):
+        d.project_id = None
+        d.expires_at = max(d.expires_at, exp)
+
+
 def summary(m: dict[str, Any] | None) -> dict[str, Any]:
     """Поля списка «Входящих» из manifest."""
     m = m or {}
@@ -248,7 +262,13 @@ def lock_blob(db: Session, sha256: str) -> None:
 
 
 def live_clause(now: datetime):
-    return and_(InboxDrawing.deleted_at.is_(None), InboxDrawing.expires_at > now)
+    return and_(InboxDrawing.deleted_at.is_(None),
+                or_(InboxDrawing.expires_at > now, InboxDrawing.project_id.is_not(None)))
+
+
+def is_expired(d: InboxDrawing, now: datetime) -> bool:
+    """Истёк: срок прошёл и по чертежу нет проекта."""
+    return d.project_id is None and d.expires_at <= now
 
 
 def _has_live_ref(db: Session, column, key: str, now: datetime) -> bool:
@@ -296,7 +316,7 @@ def get_own(db: Session, user_id: uuid.UUID, drawing_id: uuid.UUID, now: datetim
     """Только свой живой чертёж; чужой, удалённый, истёкший — одинаково 404."""
     d = db.get(InboxDrawing, drawing_id)
     now = now or utcnow()
-    if d is None or d.user_id != user_id or d.deleted_at is not None or d.expires_at <= now:
+    if d is None or d.user_id != user_id or d.deleted_at is not None or is_expired(d, now):
         raise ApiError(404, "not_found", "Чертёж не найден")
     return d
 
@@ -394,13 +414,14 @@ def prune(db: Session, storage: Storage, now: datetime | None = None) -> dict[st
     (по ним считается дневной лимит загрузок)."""
     now = now or utcnow()
     stats = {"rows_deleted": 0, "blobs_released": 0, "blobs_kept_shared": 0}
-    dead = list(db.scalars(select(InboxDrawing).where(or_(InboxDrawing.deleted_at.is_not(None),
-                                                          InboxDrawing.expires_at <= now))
+    dead = list(db.scalars(select(InboxDrawing).where(or_(
+        InboxDrawing.deleted_at.is_not(None),
+        and_(InboxDrawing.expires_at <= now, InboxDrawing.project_id.is_(None))))
                            .order_by(InboxDrawing.created_at)))
     done: set[str] = set()
     for d in dead:
         sha, key, pkey = d.sha256, d.storage_key, d.preview_key
-        if d.expires_at <= now or d.created_at <= now - KEEP_DELETED_ROWS:
+        if is_expired(d, now) or d.created_at <= now - KEEP_DELETED_ROWS:
             db.delete(d)
             stats["rows_deleted"] += 1
         db.commit()
@@ -431,14 +452,20 @@ def drawing_out(settings: Settings, d: InboxDrawing, *, detail: bool = False) ->
     out = {
         "id": d.id, "title": d.title, "filename": d.filename, "size": d.size, "sha256": d.sha256,
         "created_at": d.created_at, "last_opened_at": d.last_opened_at, "expires_at": d.expires_at,
-        "preview_url": preview_url, **summary(d.manifest),
+        "preview_url": preview_url, "project_id": d.project_id, "source_kind": source_kind(d.manifest),
+        **summary(d.manifest),
     }
     if detail:
         stored = preview_path(d.manifest) if d.preview_key else None
         # Сохранено одно превью (первого отмеченного листа) — ссылка только у этого листа, у остальных null
-        out["sheets"] = [{"number": sh["number"], "name": sh["name"], "selected": sh["selected"],
+        out["sheets"] = [{"id": sh["id"], "number": sh["number"], "name": sh["name"], "selected": sh["selected"],
                           "preview_url": preview_url if stored and sh["preview"] == stored else None}
                          for sh in sheets_of(d.manifest)]
         out["manifest"] = d.manifest
-        out["download_url"] = _signed(settings, d.storage_key, d.filename, "application/zip", DOWNLOAD_TTL)
+        out["download_url"] = package_url(settings, d)
     return out
+
+
+def package_url(settings: Settings, d: InboxDrawing) -> str:
+    """Подписанная ссылка на пакет .eskiz (30 минут), путь от адреса API."""
+    return _signed(settings, d.storage_key, d.filename, "application/zip", DOWNLOAD_TTL)

@@ -19,6 +19,8 @@ import { useOffline } from '../state/net';
 import { confirm, showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Carcass } from '../ui/Illus';
+import { DwgAppIcon } from '../ui/Drawing';
+import { ProjectDwgSheet } from './OpenInDwg';
 import { LangSwitch } from '../ui/LangSwitch';
 import { Banner, Button, Card, Dialog, Field, Footer, Gap, Group, IconButton, ListItem, Loading, MenuItem, OfflineBanner, Press, Sheet, T, toast, type IconName } from '../ui/kit';
 import { ScreenOptions, tablet, useEmbedded, useEmbedEvents, useLayout, useRouteParams } from '../ui/layout';
@@ -37,6 +39,7 @@ export function ProjectCardView() {
   const offline = useOffline();
   const { data: p, setData, error, loading, reload } = useResource(() => api.getProject(id), [id]);
   const versions = useResource(() => api.listVersions(id).catch(() => []), [id]);
+  const [dwgOpen, setDwgOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [delDialog, setDelDialog] = useState(false);
@@ -196,7 +199,16 @@ export function ProjectCardView() {
           <ListItem compact chevron icon="cube-outline" title={t('pc_orders')} right={<RowVal text={activeOrders.length ? activeOrders.map((o) => `№ ${o.number}`).join(', ') : t('pc_none')} />}
             onPress={() => (activeOrders[0] ? router.push(`/order/${activeOrders[0].id}`) : doAction({ code: 'order', label: t('act_order'), to_status: null }))} />
           {p.current_version_id ? <ListItem compact chevron icon="download-outline" title={t('pc_files')} onPress={() => router.push(`/project/${id}/files`)} /> : null}
+          {/* SCR-54: проект по чертежу из «Входящих» — исходник открывается в Eskiz DWG */}
+          {p.source_drawing ? (
+            <ListItem compact chevron left={<DwgAppIcon size={36} radius={10} />} title={t('pc_source_drawing')}
+              right={<RowVal text={(p.source_drawing.source_kind ?? 'dwg').toUpperCase()} />} onPress={() => setDwgOpen(true)} />
+          ) : null}
         </Group>
+        {p.source_drawing ? (
+          <ProjectDwgSheet projectId={id} drawing={p.source_drawing} visible={dwgOpen} onClose={() => setDwgOpen(false)}
+            preview={p.photos.find((ph) => ph.kind === 'source')?.url} />
+        ) : null}
     </>
   );
   const buttons = (

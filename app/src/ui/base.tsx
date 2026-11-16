@@ -138,8 +138,76 @@ export function Press({ feedback = 'scale', style, children, disabled, onPressIn
   );
 }
 
+// ---------- «стекло» GLASS-GREEN ----------
+/**
+ * Светло-зелёное стекло основных кнопок (блок GLASS-GREEN в CSS макетов): внешний слой — рамка 1.2 и вертикальный
+ * градиент, внутренний (отступ 4) — свой градиент, тонкое кольцо и внутренняя тень; тень снаружи; текст #12351A.
+ * Нажатие — «сплющивание» слоёв scale(1.03, .94) пружиной (.34,1.56,.64,1) за 550 мс, текст не двигается;
+ * при «уменьшить движение» — только лёгкое затемнение слоёв. Градиенты и тени — стили RN 0.88 (New Architecture), без нативных модулей.
+ */
+export const glass = {
+  fg: '#12351A',
+  border: 'rgba(80,92,76,0.95)',
+  outer: 'linear-gradient(180deg, rgba(240,244,234,0.96) 0%, rgba(200,216,194,0.92) 28%, rgba(176,198,170,0.92) 62%, rgba(214,243,207,0.96) 100%)',
+  inner: 'linear-gradient(180deg, rgba(190,198,175,0.94) 0%, rgba(203,212,189,0.94) 100%)',
+  innerShadow: 'inset 0px 1px 1px rgba(60,70,50,0.1), 0px 0px 0px 0.5px rgba(120,140,110,0.35)',
+  shadow: '0px 10px 22px -10px rgba(40,50,35,0.3), 0px 2px 5px rgba(40,50,35,0.08)',
+  /** .cta .v — плашка значения внутри стекла. */
+  chip: 'rgba(232,238,224,0.55)',
+  chipShadow: 'inset 0px 1px 0px rgba(255,255,255,0.6), 0px 0px 0px 1px rgba(80,96,74,0.22)',
+  /** text-shadow 0 1px 0 rgba(255,255,255,.35) */
+  text: { textShadowColor: 'rgba(255,255,255,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 0 } as TextStyle,
+} as const;
+const glassEase = Easing.bezier(0.34, 1.56, 0.64, 1);
+
+/** Два слоя стекла под содержимым; `p` — 0…1 нажатие (Animated). Радиус по умолчанию — «таблетка». */
+export function GlassLayers({ radius: r = 999, p, reduce }: { radius?: number; p?: Animated.Value; reduce?: boolean }) {
+  const anim = !p ? null
+    : reduce ? { opacity: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] }) }
+      : { transform: [{ scaleX: p.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }) }, { scaleY: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) }] };
+  return (
+    <>
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, gst.outer, { borderRadius: r }, anim]} />
+      <Animated.View pointerEvents="none" style={[gst.inner, { borderRadius: r }, anim]} />
+    </>
+  );
+}
+
+/** Неподвижная стеклянная плашка (иллюстрации онбординга и т. п.). */
+export function GlassSurface({ radius: r = 999, style, children }: { radius?: number; style?: StyleProp<ViewStyle>; children?: ReactNode }) {
+  return <View style={[{ borderRadius: r, boxShadow: glass.shadow }, style]}><GlassLayers radius={r} />{children}</View>;
+}
+
+/** Нажимаемое стекло: .cta, .plus, зелёные плитки .svc. Свой `style` задаёт размер и раскладку содержимого. */
+export function GlassPress({ radius: r = 999, style, children, disabled, onPressIn, onPressOut, ...rest }: Omit<PressableProps, 'style' | 'children'> & {
+  radius?: number; style?: StyleProp<ViewStyle>; children?: ReactNode;
+}) {
+  const p = useRef(new Animated.Value(0)).current;
+  const reduce = useReduceMotion();
+  const to = (v: number) => Animated.timing(p, {
+    toValue: v, duration: reduce ? motion.press : 550, easing: reduce ? ease : glassEase, useNativeDriver: true,
+  }).start();
+  return (
+    <Pressable
+      {...rest}
+      disabled={disabled}
+      onPressIn={(e) => { to(1); onPressIn?.(e); }}
+      onPressOut={(e) => { to(0); onPressOut?.(e); }}
+      style={[{ borderRadius: r, boxShadow: glass.shadow }, style]}
+    >
+      <GlassLayers radius={r} p={p} reduce={reduce} />
+      {children}
+    </Pressable>
+  );
+}
+
+const gst = StyleSheet.create({
+  outer: { borderWidth: 1.2, borderColor: glass.border, backgroundImage: glass.outer },
+  inner: { position: 'absolute', top: 4, left: 4, right: 4, bottom: 4, backgroundImage: glass.inner, boxShadow: glass.innerShadow },
+});
+
 // ---------- кнопки ----------
-/** primary=.cta, secondary=.soft, ghost=.txt, ghostDanger=.txt.red, danger=красная (.red), tg=.soft с самолётиком. */
+/** primary=.cta (стекло GLASS-GREEN, «таблетка»), secondary=.soft, ghost=.txt, ghostDanger=.txt.red, danger=красная (.red), tg=.soft с самолётиком. */
 export type BV = 'primary' | 'secondary' | 'ghost' | 'ghostDanger' | 'danger' | 'tg';
 export function Button({
   title, onPress, v = 'primary', icon, iconNode, iconRight, textStyle, loading, disabled, style, small, value, haptic, accessibilityLabel, numberOfLines = 2, color,
@@ -165,11 +233,14 @@ export function Button({
   const busy = !!loading;
   const text = v === 'ghost' || v === 'ghostDanger';
   const cta = v === 'primary' || v === 'danger';
-  const bg = text ? 'transparent'
+  // основная — стекло; выключенная остаётся серой .cta.off (той же «таблеткой», чтобы форма не прыгала)
+  const isGlass = v === 'primary' && !off;
+  const pill = v === 'primary';
+  const bg = text || isGlass ? 'transparent'
     : off && cta ? palette.off
-      : v === 'primary' ? palette.green : v === 'danger' ? palette.red : ctrl;
+      : v === 'danger' ? palette.red : ctrl;
   const fg = color ?? (off && cta ? palette.faint
-    : cta ? palette.white : v === 'ghost' ? palette.greenPress : v === 'ghostDanger' ? palette.redText : palette.ink);
+    : isGlass ? glass.fg : cta ? palette.white : v === 'ghost' ? palette.greenPress : v === 'ghostDanger' ? palette.redText : palette.ink);
   const ico = icon ?? (v === 'tg' ? 'paper-plane-outline' : undefined);
   const icoColor = v === 'tg' && !off ? colors.tg : fg;
   const txtStyle: TextStyle = text ? type.txt : small ? type.btnSm : cta ? type.btn : type.btnSoft;
@@ -179,30 +250,41 @@ export function Button({
     if (haptic) haptics[haptic]();
     onPress?.();
   };
-  return (
-    <Press
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? (hasVal ? `${title}, ${value}` : title)}
-      accessibilityState={{ disabled: off, busy }}
-      onPress={press}
-      disabled={off || busy}
-      feedback={text ? 'opacity' : off ? 'none' : 'scale'}
-      style={[
-        text ? st.txt : small ? st.sm : st.btn,
-        !text && { backgroundColor: bg },
-        cta && !small && st.ctaPad,
-        hasVal && st.val,
-        off && !cta && { opacity: 0.45 },
-        style,
-      ]}
-    >
+  const a11y = {
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: accessibilityLabel ?? (hasVal ? `${title}, ${value}` : title),
+    accessibilityState: { disabled: off, busy },
+    onPress: press,
+    disabled: off || busy,
+  };
+  const boxStyle = [
+    text ? st.txt : small ? st.sm : st.btn,
+    !text && { backgroundColor: bg },
+    pill && { borderRadius: 999 },
+    cta && !small && st.ctaPad,
+    hasVal && st.val,
+    off && !cta && { opacity: 0.45 },
+    style,
+  ];
+  const content = (
+    <>
       <View style={[st.inner, hasVal && { flex: 1, justifyContent: 'flex-start' }, { gap: text ? 6 : cta ? 10 : 8 }, busy && { opacity: 0 }]}>
         {iconNode ?? (ico ? <Ionicons name={ico} size={small || text ? 18 : 22} color={icoColor} /> : null)}
-        <Text style={resolveFont([txtStyle, { color: fg, textAlign: 'center', flexShrink: 1 }, textStyle])} numberOfLines={numberOfLines}>{title}</Text>
+        <Text style={resolveFont([txtStyle, { color: fg, textAlign: 'center', flexShrink: 1 }, isGlass && glass.text, textStyle])} numberOfLines={numberOfLines}>{title}</Text>
         {iconRight ? <Ionicons name={iconRight} size={small || text ? 18 : 22} color={fg} /> : null}
       </View>
-      {hasVal ? <View style={[st.v, busy && { opacity: 0 }]}><Text style={resolveFont([st.vText, { color: fg }])} numberOfLines={1}>{value}</Text></View> : null}
+      {hasVal ? (
+        <View style={[st.v, isGlass && st.vGlass, busy && { opacity: 0 }]}>
+          <Text style={resolveFont([st.vText, { color: fg }])} numberOfLines={1}>{value}</Text>
+        </View>
+      ) : null}
       {busy ? <View style={[StyleSheet.absoluteFill, st.center]} pointerEvents="none"><ActivityIndicator color={fg} /></View> : null}
+    </>
+  );
+  if (isGlass) return <GlassPress {...a11y} style={boxStyle}>{content}</GlassPress>;
+  return (
+    <Press {...a11y} feedback={text ? 'opacity' : off ? 'none' : 'scale'} style={boxStyle}>
+      {content}
     </Press>
   );
 }
@@ -239,6 +321,7 @@ const st = StyleSheet.create({
   val: { justifyContent: 'space-between', paddingLeft: 20, paddingRight: 8, gap: 10 },
   inner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexShrink: 1, paddingVertical: 6 },
   v: { height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.16)', justifyContent: 'center', paddingHorizontal: 12 },
+  vGlass: { backgroundColor: glass.chip, boxShadow: glass.chipShadow },
   vText: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20, fontVariant: ['tabular-nums'] },
   center: { alignItems: 'center', justifyContent: 'center' },
   ib: { alignItems: 'center', justifyContent: 'center' },

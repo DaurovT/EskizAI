@@ -117,7 +117,7 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 
 | v | CSS | вид |
 |---|---|---|
-| primary | `.cta` | зелёная #387D50, h56 r16, 17/600, белый текст |
+| primary | `.cta` | стекло GLASS-GREEN (см. ниже), «таблетка» r999, h56, 17/600, текст #12351A |
 | secondary | `.soft` | белая (серая внутри белого), 17/500 |
 | ghost | `.txt` | текст #2F6B44 16/500, мин. 44 |
 | ghostDanger | `.txt.red` | текст #C62A20 |
@@ -130,6 +130,18 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 ```tsx
 <Button title="Собрать модель" value="осталось 2" icon="sparkles" onPress={start} loading={busy} />
 <Button v="ghost" title="Без фото, только по описанию" onPress={…} />
+```
+
+### Стекло GLASS-GREEN (`GlassPress`, `GlassSurface`, `GlassLayers`, `glass`)
+Основная кнопка, «＋» нижнего меню и рейки, зелёные плитки `.svc` («Новый по фото», «Снять фото»). Два слоя под содержимым:
+внешний — рамка 1.2 rgba(80,92,76,.95) и градиент сверху вниз (240,244,234 → 200,216,194 28 % → 176,198,170 62 % → 214,243,207),
+внутренний (отступ 4) — градиент 190,198,175 → 203,212,189, кольцо 0.5 и внутренняя тень; снаружи тень 0 10 22 -10 + 0 2 5.
+Текст `glass.fg` #12351A + `glass.text` (белая тень 0 1 0). Нажатие — слои «сплющиваются» scale(1.03, .94) пружиной (.34,1.56,.64,1) 550 мс,
+текст на месте; «уменьшить движение» — лёгкое затемнение. Плашка значения — `glass.chip` + `glass.chipShadow`. Выключенная кнопка — серая `.cta.off` той же «таблеткой».
+Градиенты и тени — стили RN 0.88 (`backgroundImage: 'linear-gradient(…)'`, `boxShadow`), без нативных модулей.
+```tsx
+<GlassPress onPress={go} style={{ height: 52, alignItems: 'center', justifyContent: 'center' }}><T color={glass.fg}>Клиенту</T></GlassPress>
+<GlassPress radius={24} style={s.svc}>…</GlassPress>   // плитка
 ```
 
 ### `IconButton` (`.ib`)

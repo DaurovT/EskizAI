@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 from ..domain import EstimateView, Language, PhotoKind, ProjectStatus
 from .common import Out
 from .estimate import MasterEstimate, PriceRange, StaffEstimate
+from .inbox import SourceDrawingOut
 
 
 class ProjectIn(BaseModel):
@@ -92,6 +93,8 @@ class ProjectCardOut(ProjectListItem):
     cancel_reason: str | None
     has_order: bool
     photos: list[PhotoOut]
+    source_drawing: SourceDrawingOut | None = Field(None, description="Чертёж из «Входящих», по которому создан проект "
+                                                                     "(без ссылки: она — в GET /projects/{id}/source-drawing)")
     model_summary: dict[str, Any] | None = Field(None, description="Сводка текущей версии модели (без цен)")
     estimate: MasterEstimate | StaffEstimate | None = Field(
         None,

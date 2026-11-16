@@ -18,6 +18,9 @@ import { showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { Banner, BigTitle, Button, Card, Loading, Press, Screen, T } from '../../../src/ui/kit';
 import { palette } from '../../../src/ui/theme';
+import { DrawingThumb, DwgAppIcon } from '../../../src/ui/Drawing';
+import { drawingTitle } from '../../../src/lib/inbox';
+import { ProjectDwgSheet } from '../../../src/screens/OpenInDwg';
 
 type GroupKey = 'client' | 'buy' | 'make';
 const groupOf = (k: string): GroupKey =>
@@ -33,6 +36,11 @@ export default function Files() {
   const orders = useResource(() => api.listOrders().then((all) => all.filter((o) => o.project_id === id && o.status !== 'cancelled')), [id]);
   const versions = useResource(() => api.listVersions(id), [id]);
   const [sharing, setSharing] = useState(false);
+  // SCR-54 (MOpenDwg.dc.html): «Исходные» — чертёж из «Входящих», по которому создан проект
+  const card = useResource(() => api.getProject(id), [id]);
+  const [dwgOpen, setDwgOpen] = useState(false);
+  const srcDwg = card.data?.source_drawing ?? null;
+  const srcPreview = card.data?.photos.find((ph) => ph.kind === 'source')?.url ?? null;
 
   if (files.loading && !files.data) return <Loading />;
   if (!files.data) return <ErrorState error={files.error} onRetry={files.reload} />;
@@ -83,6 +91,22 @@ export default function Files() {
     <Screen gap={6} contentStyle={{ paddingTop: 0 }} footerBar={locked} footer={footer}>
       <Stack.Screen options={{ title: '' }} />
       <BigTitle style={{ paddingTop: 0, paddingBottom: 2 }}>{t('files_proj_title')}</BigTitle>
+      {srcDwg ? (
+        <View style={{ gap: 6 }}>
+          <T style={st.sh2}>{t('files_source')}</T>
+          <Card padded={false}>
+            <Press feedback="row" onPress={() => setDwgOpen(true)} accessibilityRole="button" accessibilityLabel={`${drawingTitle(srcDwg)}. ${t('odw_title')}`} style={st.src}>
+              <DrawingThumb uri={srcPreview} width={52} height={38} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <T v="rt" numberOfLines={1}>{drawingTitle(srcDwg)}</T>
+                <T v="rs" num>{[(srcDwg.source_kind ?? 'dwg').toUpperCase(), `${(srcDwg.size / 1048576).toFixed(1).replace('.', lang === 'uz' ? '.' : ',')} ${lang === 'uz' ? 'MB' : 'МБ'}`].join(' · ')}</T>
+              </View>
+              <DwgAppIcon size={28} radius={7} />
+            </Press>
+          </Card>
+          <ProjectDwgSheet projectId={id} drawing={srcDwg} preview={srcPreview} visible={dwgOpen} onClose={() => setDwgOpen(false)} />
+        </View>
+      ) : null}
       {list.length === 0 ? <T v="sub" style={{ paddingHorizontal: 8 }}>{t('files_none')}</T> : null}
       {groups.map(({ g, items }) => (
         <View key={g} style={{ gap: 6 }}>
@@ -110,6 +134,7 @@ const st = StyleSheet.create({
   sep: { borderTopWidth: 1, borderTopColor: palette.hair },
   ft: { width: 44, height: 32, borderRadius: 10, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center' },
   ftT: { fontSize: 13, lineHeight: 16, fontWeight: '700', color: palette.muted2, letterSpacing: 0.26 },
+  src: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingVertical: 10, paddingHorizontal: 20 },
   fn: { flex: 1, minWidth: 0, fontSize: 16, lineHeight: 21, fontWeight: '500' },
   buy: { height: 50, borderRadius: 16, backgroundColor: palette.ground, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18 },
   buyT: { fontSize: 17, lineHeight: 22, fontWeight: '500' },

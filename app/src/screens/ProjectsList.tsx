@@ -13,13 +13,14 @@ import { useResource } from '../hooks/useResource';
 import { useT } from '../i18n';
 import { formatDayMonth, formatRange } from '../lib/format';
 import { displayTitle } from '../lib/projectTitle';
+import { drawingTitle } from '../lib/inbox';
 import { openExample } from '../services/example';
 import { priceStore } from '../state/prices';
 import { useSession } from '../state/session';
 import { showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Wood } from '../ui/Illus';
-import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T } from '../ui/kit';
+import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass } from '../ui/kit';
 import { CenterColumn, Embedded, useLayout } from '../ui/layout';
 import { Pane, SplitEmpty, SplitView, splitRow } from '../ui/SplitView';
 import { palette, tones } from '../ui/theme';
@@ -81,16 +82,27 @@ function ProjectRow({ p, selected, onSelect }: { p: ProjectListItem; selected?: 
   );
 }
 
-/** .svc — плитка действия 118 r24. */
+/** .svc — плитка действия 118 r24; основная («Новый по фото») — стекло GLASS-GREEN. */
 function Svc({ title, sub, icon, green, onPress, children, style }: {
   title: string; sub: string; icon?: keyof typeof Ionicons.glyphMap; green?: boolean; onPress: () => void; children?: ReactNode; style?: ViewStyle;
 }) {
+  const a11y = { onPress, accessibilityRole: 'button' as const, accessibilityLabel: title.replace('\n', ' ') };
+  if (green) {
+    return (
+      <GlassPress {...a11y} radius={24} style={[s.svc, s.svcGlass, style]}>
+        {/* шкафчик в углу обрезается по плитке, а тень стекла — нет */}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: 24, overflow: 'hidden' }]}>{children}</View>
+        <T style={[s.svcB, glass.text]} color={glass.fg}>{title}</T>
+        <T style={[s.svcS, { opacity: 0.8 }]} color={glass.fg}>{sub}</T>
+      </GlassPress>
+    );
+  }
   return (
-    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={title.replace('\n', ' ')} style={[s.svc, green && { backgroundColor: palette.green }, style]}>
+    <Press {...a11y} style={[s.svc, style]}>
       {children}
       {icon ? <View style={s.svcIco}><Ionicons name={icon} size={20} color={palette.ink} /></View> : null}
-      <T style={s.svcB} color={green ? palette.white : palette.ink}>{title}</T>
-      <T style={[s.svcS, green && { opacity: 0.85 }]} color={green ? palette.white : palette.muted}>{sub}</T>
+      <T style={s.svcB} color={palette.ink}>{title}</T>
+      <T style={s.svcS} color={palette.muted}>{sub}</T>
     </Press>
   );
 }
@@ -121,6 +133,14 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
   const lim = useResource(() => (archived ? Promise.resolve(null) : api.limits()), [archived]);
   const notes = useResource(() => (archived ? Promise.resolve([]) : api.listNotifications().catch(() => [])), [archived]);
   const unread = (notes.data ?? []).some((n) => !n.read);
+  // SCR-52: входящие чертежи из Eskiz DWG — значок в шапке (точка, когда есть новые) и плашка над списком
+  const inbox = useResource(() => (archived ? Promise.resolve(null) : api.listInbox().catch(() => null)), [archived]);
+  const fresh = (inbox.data?.items ?? []).filter((d) => !d.last_opened_at);
+  const inboxBtn = <IconButton icon="file-tray-outline" badge={fresh.length > 0} label={t('inb_title')} onPress={() => router.push('/inbox')} />;
+  const inboxBanner = !archived && fresh.length ? (
+    <Banner tone="info" icon="file-tray-outline" title={fresh.length === 1 ? t('inb_banner_one') : t('inb_banner', { n: fresh.length })}
+      text={fresh.slice(0, 2).map((d) => drawingTitle(d)).join(', ')} action={{ label: t('inb_open'), onPress: () => router.push('/inbox') }} />
+  ) : null;
   // dev: /?empty=1 — пустой список (EmptyProjects.dc.html) для сверки с макетом
   const devEmpty = __DEV__ && useLocalSearchParams<{ empty?: string }>().empty === '1';
   const all = useMemo(() => (devEmpty ? [] : data?.items ?? []), [data, devEmpty]);
@@ -148,7 +168,12 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
           <Avatar dark name={workshop?.name || user?.name} />
         </IconButton>
       ),
-      headerRight: empty ? undefined : () => <IconButton icon="notifications-outline" badge={unread} label={t('pl_notifications')} onPress={() => router.push('/notifications')} />,
+      headerRight: () => (
+        <>
+          {inboxBtn}
+          {empty ? null : <IconButton icon="notifications-outline" badge={unread} label={t('pl_notifications')} onPress={() => router.push('/notifications')} />}
+        </>
+      ),
     }} />
   );
 
@@ -163,6 +188,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
         {split ? <BigTitle size="root" inset={20}>{t('projects_title')}</BigTitle> : null}
         <OfflineBanner />
         <ScrollView contentContainerStyle={[s.body, { flexGrow: 1 }]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+          {inboxBanner}
           <View style={s.tiles}>
             <Svc green title={t('pl_new_photo_big')} sub={t('pl_new_photo_big_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>
             <Svc title={t('pl_by_text')} sub={t('pl_by_text_sub')} icon="reorder-three-outline" onPress={() => router.push('/project/new?mode=text')} style={{ flex: 1 }} />
@@ -214,11 +240,13 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
       <SplitView
         title={t('projects_title')}
         right={<>
+          {inboxBtn}
           <IconButton icon="archive-outline" label={t('projects_archive')} onPress={() => router.push('/archive')} />
           <IconButton icon="notifications-outline" badge={unread} label={t('pl_notifications')} onPress={() => router.push('/notifications')} />
         </>}
         list={<>
           <OfflineBanner />
+          {inboxBanner}
           <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
           {chipRow}
           <Pane style={{ marginBottom: Math.max(insets.bottom, 20) }}>
@@ -243,7 +271,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
     <View style={s.root}>
       {header}
       <OfflineBanner />
-      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); }} />}>
+      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); inbox.reload(); }} />}>
         {!archived ? (
           <View style={s.tiles}>
             <Svc green title={t('pl_new_photo')} sub={t('pl_new_photo_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>
@@ -251,6 +279,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
             <Svc title={t('projects_archive')} sub={t('pl_archive_sub')} icon="archive-outline" onPress={() => router.push('/archive')} style={{ flex: 1 }} />
           </View>
         ) : null}
+        {inboxBanner}
         <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
         {chipRow}
         {items.length ? (
@@ -274,6 +303,7 @@ const s = StyleSheet.create({
   body: { paddingTop: 6, paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   tiles: { flexDirection: 'row', gap: 8 },
   svc: { height: 118, borderRadius: 24, backgroundColor: palette.white, padding: 14, justifyContent: 'flex-end', overflow: 'hidden' },
+  svcGlass: { backgroundColor: 'transparent', overflow: 'visible' },
   svcB: { fontSize: 16, lineHeight: 20, fontWeight: '600' },
   svcS: { fontSize: 13, lineHeight: 17, marginTop: 2 },
   svcIco: { position: 'absolute', right: 10, top: 10, width: 36, height: 36, borderRadius: 12, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center' },

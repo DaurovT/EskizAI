@@ -135,6 +135,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .spl{position:absolute;inset:0;background:#387D50;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}
@@ -144,8 +153,8 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </helmet>
 <div class="app">
 <div class="spl">
-<div class="rise" style="width:132px;height:132px;border-radius:34px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center"><svg width="112" height="112" viewBox="0 0 100 100" aria-hidden="true"><path d="M79.2 78.5 L66.2 86.0 L66.2 44.9 L79.2 37.4Z" fill="#fff" opacity="0.55"/><path d="M38.7 14.0 L79.2 37.4 L66.2 44.9 L25.7 21.5Z" fill="#fff" opacity="0.85"/><path d="M20.8 59.8 L66.2 86.0" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/><path d="M25.7 67.1 L25.7 21.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/><path d="M46.0 74.3 L46.0 33.2" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/><path d="M20.8 18.7 L25.7 21.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/></svg></div>
-<div class="rise" style="animation-delay:.12s;margin-top:22px;font-size:44px;line-height:48px;font-weight:700;letter-spacing:-.035em">Eskiz <span style="opacity:.7">AI</span></div>
+<div class="rise" style="width:132px;height:132px;border-radius:29px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center"><svg width="84" height="84" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 40V13h24v27"></path><path d="M24 13v27"></path><path d="M20 24v5M28 24v5"></path><path d="M12 34h24" opacity=".55"></path><path d="M4 40h40"></path><circle cx="41" cy="8" r="2.6" fill="#fff" stroke="none"></circle></svg></div>
+<div class="rise" style="animation-delay:.12s;margin-top:22px;font-size:44px;line-height:48px;font-weight:700;letter-spacing:-.035em">Eskiz <span style="font-weight:500">Mebel</span></div>
 <div class="rise" style="animation-delay:.2s;margin-top:6px;font-size:17px;opacity:.85">мебель в 3D</div>
 <div style="position:absolute;bottom:44px;font-size:14px;opacity:.7">для мебельных цехов</div>
 </div>

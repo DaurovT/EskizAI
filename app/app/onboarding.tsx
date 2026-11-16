@@ -9,8 +9,8 @@ import { ImageBackground, LayoutAnimation, PanResponder, StyleSheet, View, type 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useT, type DictKey } from '../src/i18n';
 import { markOnboarded } from '../src/state/onboarding';
-import { Button, Footer, T } from '../src/ui/kit';
-import { BrandLogo, Carcass, Wood } from '../src/ui/Illus';
+import { Button, Footer, GlassSurface, T, glass } from '../src/ui/kit';
+import { BrandLockup, Carcass, Wood } from '../src/ui/Illus';
 import { LangSwitch } from '../src/ui/LangSwitch';
 import { palette } from '../src/ui/theme';
 
@@ -48,8 +48,7 @@ export default function Onboarding() {
     <SafeAreaView style={s.root} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={s.hdr}>
-        <BrandLogo />
-        <T style={s.brand}>Eskiz Mebel</T>
+        <BrandLockup />
         <View style={{ flex: 1 }} />
         <LangSwitch itemStyle={{ minWidth: 68, paddingHorizontal: 10 }} />
       </View>
@@ -165,12 +164,12 @@ function Ill3({ t }: { t: TF }) {
       <View style={[abs({ left: 22, right: 22, top: 200 }), { flexDirection: 'row', gap: 6 }]}>
         {file('DXF', 'ob_i_parts')}{file('CSV', 'ob_i_cutlist')}{file('PDF', 'ob_i_drawings')}
       </View>
-      <View style={[abs({ left: 22, right: 22, bottom: 24, height: 52 }), { borderRadius: 16, backgroundColor: palette.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 8 }]}>
-        <T style={{ fontSize: 15, fontWeight: '600' }} color={palette.white}>{t('ob_i_order')}</T>
-        <View style={{ backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10 }}>
-          <T style={{ fontSize: 14, lineHeight: 20, fontWeight: '600' }} color={palette.white}>{t('ob_i_free')}</T>
+      <GlassSurface style={[abs({ left: 22, right: 22, bottom: 24, height: 52 }), { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 18, paddingRight: 8 }]}>
+        <T style={[{ fontSize: 15, fontWeight: '600' }, glass.text]} color={glass.fg}>{t('ob_i_order')}</T>
+        <View style={{ backgroundColor: glass.chip, boxShadow: glass.chipShadow, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10 }}>
+          <T style={{ fontSize: 14, lineHeight: 20, fontWeight: '600' }} color={glass.fg}>{t('ob_i_free')}</T>
         </View>
-      </View>
+      </GlassSurface>
     </>
   );
 }
@@ -178,7 +177,6 @@ function Ill3({ t }: { t: TF }) {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.ground },
   hdr: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 14, paddingHorizontal: 12, paddingBottom: 4, minHeight: 74 },
-  brand: { fontSize: 18, lineHeight: 24, fontWeight: '700', letterSpacing: -0.36 },
   ill: { flexShrink: 1, height: ILL_H, minHeight: 300, marginTop: 12, marginHorizontal: 16, borderRadius: 32, backgroundColor: palette.white, overflow: 'hidden' },
   canvas: { position: 'absolute', left: 0, width: ILL_W, height: ILL_H },
   text: { paddingTop: 24, paddingHorizontal: 24, gap: 10 },

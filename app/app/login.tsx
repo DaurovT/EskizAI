@@ -16,7 +16,7 @@ import { deviceId, savedPushToken } from '../src/services/push';
 import { useSession } from '../src/state/session';
 import { maskPhone, normalizePhone } from '../src/lib/format';
 import { Banner, Button, Footer, Group, IconButton, ListItem, T, Tile, resolveFont } from '../src/ui/kit';
-import { Carcass } from '../src/ui/Illus';
+import { BrandLockup, Carcass } from '../src/ui/Illus';
 import { LangSwitch } from '../src/ui/LangSwitch';
 import { AuthFrame } from '../src/ui/AuthFrame';
 import { palette, type as ty } from '../src/ui/theme';
@@ -177,9 +177,8 @@ export default function Login() {
     <SafeAreaView style={s.root} edges={['top']}>
       <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
         <View style={s.hdr}>
-          <View style={s.logo} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <View style={s.logoBar} /><View style={s.logoBar} />
-          </View>
+          {/* Login.dc.html: плитка 36 r8 со знаком и «Eskiz Mebel» 20 */}
+          <BrandLockup />
           <View style={{ flex: 1 }} />
           <LangSwitch />
         </View>
@@ -241,8 +240,6 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.ground },
   hdr: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 14, paddingHorizontal: 12, paddingBottom: 4, minHeight: 74 }, // .hdr: min-height 56 + отступы 14/4
   body: { flex: 1, padding: 12, gap: 10 },
-  logo: { width: 56, height: 56, borderRadius: 18, backgroundColor: palette.green, padding: 12, flexDirection: 'row', gap: 3 },
-  logoBar: { flex: 1, backgroundColor: palette.ground, borderRadius: 2 },
   hero: { height: 200, borderRadius: 28, backgroundColor: palette.wood, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end' },
   heroTags: { position: 'absolute', left: 20, top: 20, gap: 8, alignItems: 'stretch' },
   heroTag: { height: 26, paddingHorizontal: 10, borderRadius: 9, backgroundColor: palette.white, justifyContent: 'center' },

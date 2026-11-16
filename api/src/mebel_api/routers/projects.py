@@ -9,7 +9,7 @@ from ..db import utcnow
 from ..deps import CurrentDep, CurrentUser, DbDep, OwnerDep, SettingsDep, StorageDep
 from ..domain import PhotoKind, ProjectStatus as S
 from ..errors import ERROR_RESPONSES, ApiError, not_found
-from ..models import Client, Measurement, ModelVersion, Project, ProjectPhoto, ProjectStatusChange
+from ..models import Client, InboxDrawing, Measurement, ModelVersion, Project, ProjectPhoto, ProjectStatusChange
 from ..schemas.common import Ok, Page
 from ..schemas.projects import (
     ActionOut,
@@ -24,7 +24,8 @@ from ..schemas.projects import (
     ProjectUpdateIn,
     StatusChangeOut,
 )
-from ..services import examples, lifecycle, titles
+from ..schemas.inbox import SourceDrawingOut
+from ..services import examples, inbox, lifecycle, titles
 from ..services.activity import activities
 from ..services.estimate import compute_range, is_measured, master_estimate, remember, staff_estimate
 from ..services.limits import charge_project
@@ -84,6 +85,18 @@ def project_estimate(db, current: CurrentUser, p: Project):
     return master_estimate(er, current.workshop) if current.sees_cost else staff_estimate(er)
 
 
+def source_drawing(db, p: Project) -> InboxDrawing | None:
+    """Чертёж из «Входящих», по которому создан проект (последний живой)."""
+    return db.scalar(select(InboxDrawing).where(InboxDrawing.project_id == p.id, InboxDrawing.deleted_at.is_(None))
+                     .order_by(InboxDrawing.created_at.desc()).limit(1))
+
+
+def source_drawing_brief(d: InboxDrawing | None) -> dict | None:
+    if d is None:
+        return None
+    return {"id": d.id, "title": d.title, "filename": d.filename, "size": d.size, "source_kind": inbox.source_kind(d.manifest)}
+
+
 def project_card(db, current: CurrentUser, p: Project, with_estimate: bool = False) -> ProjectCardOut:
     """Смета (50–160 мс) считается только для GET карточки, не для ответов на переходы."""
     version = lifecycle.current_version(db, p)
@@ -102,6 +115,7 @@ def project_card(db, current: CurrentUser, p: Project, with_estimate: bool = Fal
         cancel_reason=p.cancel_reason,
         has_order=lifecycle.has_order(db, p),
         photos=[PhotoOut.model_validate(ph) for ph in p.photos],
+        source_drawing=source_drawing_brief(source_drawing(db, p)),
         model_summary=version.summary if version else None,
         estimate=estimate,
         next_step=lifecycle.next_step(p),
@@ -250,14 +264,26 @@ def update_project(project_id: uuid.UUID, body: ProjectUpdateIn, current: Curren
 
 
 @router.delete("/{project_id}", response_model=Ok, summary="Удалить проект (владелец)")
-def delete_project(project_id: uuid.UUID, current: OwnerDep, db: DbDep) -> Ok:
+def delete_project(project_id: uuid.UUID, current: OwnerDep, db: DbDep, settings: SettingsDep) -> Ok:
     """Проект с заказом удалить нельзя — только в архив. Удалённый проект не возвращает лимит."""
     p = get_project(db, current, project_id)
     if lifecycle.has_order(db, p):
         raise ApiError(409, "project_has_order", "Проект с заказом удалить нельзя — его можно только отправить в архив")
     p.deleted_at = utcnow()
+    inbox.unlink_project(db, settings, p.id)  # чертёж по проекту снова живёт обычный срок
     db.commit()
     return Ok()
+
+
+@router.get("/{project_id}/source-drawing", response_model=SourceDrawingOut, summary="Исходный чертёж проекта (SCR-54)")
+def get_source_drawing(project_id: uuid.UUID, current: CurrentDep, db: DbDep, settings: SettingsDep) -> dict:
+    """Чертёж из «Входящих», по которому создан проект, и свежая подписанная ссылка на пакет .eskiz (30 минут) —
+    для «Открыть в Eskiz DWG» (`eskizdwg://open?src=…`). Нет чертежа (или его удалили из входящих) — `404`."""
+    p = get_project(db, current, project_id)
+    d = source_drawing(db, p)
+    if d is None:
+        raise not_found("Чертёж")
+    return {**source_drawing_brief(d), "download_url": inbox.package_url(settings, d)}
 
 
 @router.post("/{project_id}/archive", response_model=ProjectCardOut, summary="Отправить в архив")

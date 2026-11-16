@@ -20,7 +20,7 @@ import { updateMeta } from '../../src/state/projectMeta';
 import { takeShared } from '../../src/state/shareIntent';
 import { useOffline } from '../../src/state/net';
 import { showError } from '../../src/ui/dialogs';
-import { Badge, BigTitle, Button, Card, Chip, Group, Header, ListItem, Press, Screen, Sheet, T, Toggle, resolveFont } from '../../src/ui/kit';
+import { Badge, BigTitle, Button, Card, Chip, GlassPress, Group, Header, ListItem, Press, Screen, Sheet, T, Toggle, glass, resolveFont } from '../../src/ui/kit';
 import { colors, palette, type as ty } from '../../src/ui/theme';
 
 const TIPS_OFF = 'mebel.photoTips.off';
@@ -208,16 +208,21 @@ export default function NewProject() {
   );
 }
 
-/** .svc — плитка действия 118 r24: иконка 40 r14 сверху, подпись 16/600 снизу; основная — зелёная. */
+/** .svc — плитка действия 118 r24: иконка 40 r14 сверху, подпись 16/600 снизу; основная — стекло GLASS-GREEN. */
 function Service({ icon, label, onPress, primary }: { icon: 'camera-outline' | 'image-outline'; label: string; onPress: () => void; primary?: boolean }) {
-  const fg = primary ? palette.white : palette.ink;
-  return (
-    <Press accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={[s.svc, primary && { backgroundColor: palette.green }]}>
-      <View style={[s.svcIco, primary && { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+  const fg = primary ? glass.fg : palette.ink;
+  const body = (
+    <>
+      <View style={[s.svcIco, primary && { backgroundColor: glass.chip, boxShadow: glass.chipShadow }]}>
         <Ionicons name={icon} size={22} color={fg} />
       </View>
-      <T style={{ fontSize: 16, lineHeight: 20, fontWeight: '600', color: fg }}>{label}</T>
-    </Press>
+      <T style={[{ fontSize: 16, lineHeight: 20, fontWeight: '600', color: fg }, primary && glass.text]}>{label}</T>
+    </>
+  );
+  return primary ? (
+    <GlassPress accessibilityRole="button" accessibilityLabel={label} onPress={onPress} radius={24} style={[s.svc, { backgroundColor: 'transparent' }]}>{body}</GlassPress>
+  ) : (
+    <Press accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={s.svc}>{body}</Press>
   );
 }
 

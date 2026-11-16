@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '../i18n';
-import { BrandLogo, Carcass } from './Illus';
+import { BrandLockup, Carcass } from './Illus';
 import { T } from './kit';
 import { CenterColumn, useLayout } from './layout';
 import { palette } from './theme';
@@ -19,10 +19,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
   return (
     <View style={st.root}>
       <View style={st.left} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={st.logo}><BrandLogo size={56} /></View>
-          <T style={st.brand} color={palette.white}>Eskiz <T style={[st.brand, { opacity: 0.7 }]} color={palette.white}>AI</T></T>
-        </View>
+        <BrandLockup onGreen tile={56} fontSize={28} />
         <View style={{ maxWidth: 500, gap: 22 }}>
           <T style={st.head} color={palette.white}>{t('auth_t_head')}</T>
           <View style={{ gap: 10 }}>
@@ -51,8 +48,6 @@ export function AuthFrame({ children }: { children: ReactNode }) {
 const st = StyleSheet.create({
   root: { flex: 1, flexDirection: 'row', backgroundColor: palette.ground },
   left: { flex: 1, margin: 16, marginRight: 0, borderRadius: 32, backgroundColor: palette.green, padding: 36, gap: 32, overflow: 'hidden' },
-  logo: { width: 56, height: 56, borderRadius: 18, overflow: 'hidden' },
-  brand: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.8 },
   head: { fontSize: 38, lineHeight: 44, fontWeight: '700', letterSpacing: -1.1 },
   room: {
     flex: 1, minHeight: 200, maxHeight: 330, marginTop: 'auto', borderRadius: 24, backgroundColor: palette.wood,

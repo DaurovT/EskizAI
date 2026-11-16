@@ -159,6 +159,15 @@ export interface Api {
   // уведомления (Notifications.dc.html)
   listNotifications(): Promise<T.NotificationOut[]>;
   markNotificationRead(id: string): Promise<void>;
+  // входящие чертежи из Eskiz DWG (SCR-52…55)
+  listInbox(): Promise<T.Page<T.InboxDrawing>>;
+  /** Открыть: сервер отмечает открытие и продлевает хранение на 90 дней. */
+  getInboxDrawing(id: string): Promise<T.InboxDrawingDetail>;
+  deleteInboxDrawing(id: string): Promise<void>;
+  /** Проект по листу (`sheet` — id или номер; нет — первый отмеченный). */
+  projectFromDrawing(id: string, sheet?: string | null): Promise<T.InboxProjectOut>;
+  /** Исходный чертёж проекта со свежей ссылкой на пакет (404 — нет). */
+  getSourceDrawing(projectId: string): Promise<T.SourceDrawingOut>;
   // настройки уведомлений (FR-66, Misc.dc.html)
   getNotificationSettings(): Promise<T.NotificationSettingsOut>;
   updateNotificationSettings(body: T.NotificationSettingsIn): Promise<T.NotificationSettingsOut>;

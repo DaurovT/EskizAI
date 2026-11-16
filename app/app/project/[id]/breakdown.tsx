@@ -3,6 +3,9 @@
  * Запускает POST …/ai/design (если пришли с SCR-04), опрашивает задачу, показывает найденные элементы
  * метками на фото и списком «Что я нашёл»; карандаш у строки — исправить. Таймаут 90 с → выбор типа вручную.
  * SCR-05b (RecognitionMulti.dc.html): несколько предметов на фото → мультивыбор; каждый — отдельный проект (лимит за каждый).
+ * SCR-55 «Разбор чертежа» (MDrawing.dc.html): проект по листу из «Входящих» (meta.drawing) — тот же разбор, только
+ * сверху лист чертежа на белом (contain) с метками, шапка «название · DXF · лист 1 «…»», «Что взял из чертежа»,
+ * вопросы с меткой «нет на листе», внизу «Всё верно, дальше» и «Взять другой лист» (назад к SCR-53).
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -22,6 +25,8 @@ import { PhotoBoxes, Pin, coverMap, usePhotoRatio } from '../../../src/ui/PhotoB
 import { ErrorScreen } from '../../../src/ui/ErrorState';
 import { SUPPORT_TG } from '../../../src/config';
 import { Banner, Button, Card, Field, Press, Screen, Sheet, Skeleton, T } from '../../../src/ui/kit';
+import { DrawingImage } from '../../../src/ui/Drawing';
+import { TitleHeader } from '../../../src/ui/TitleHeader';
 import { palette } from '../../../src/ui/theme';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -69,6 +74,20 @@ const SHOT_DESIGN: Record<string, { photos: string[]; design: DesignOut }> = __D
   aifail: {
     photos: [''],
     design: { status: 'failed', product_kind: null, confidence: 0, alternatives: [], elements: [], understood: [], unclear: [], estimated: [], questions: [], differences: [], message: null, version_id: null, issues: [], error: null },
+  },
+  // SCR-55: проект по листу чертежа (как ответ мока на текст листа «Кухня Юнусабад»)
+  drawing: {
+    photos: ['mock:dwg_kitchen_plan'],
+    design: {
+      status: 'questions', product_kind: 'kitchen_corner', confidence: 0.9, alternatives: [], understood: [], unclear: [], estimated: ['/height'], differences: [],
+      elements: [
+        { name: 'Кухня угловая, стены 3200 и 2400', kind: 'body', count: 1, sure: true, note: 'Угловая · 2 стены' },
+        { name: 'Нижний ряд · 8 модулей', kind: 'module', count: 1, sure: true, note: '4 по стене A, 3 по стене B' },
+        { name: 'Мойка 800, варка 600', kind: 'module', count: 1, sure: true, note: 'Мойка у окна' },
+      ],
+      questions: [{ id: 'q_upper', text: 'Верхний ряд и высота?', options: ['720 мм', '920 мм', 'Без верхних'], default: '720 мм' }],
+      message: null, version_id: null, issues: [], error: null,
+    },
   },
   text: {
     photos: [],
@@ -159,6 +178,7 @@ export default function Breakdown() {
       const q0 = SHOT_DESIGN[shot].design.questions[0];
       // снимки: q=open — вопрос раскрыт; q=answered — ответ выбран (✓) и замечание к строке
       updateMeta(id, { photos: SHOT_DESIGN[shot].photos, design: SHOT_DESIGN[shot].design, answered: [],
+        drawing: shot === 'drawing' ? { inboxId: 'dwg-kitchen', title: 'Кухня Юнусабад', kind: 'DXF', sheet: '1', sheetName: 'Кухня — план' } : undefined,
         answers: shotQ === 'answered' && q0 ? { [q0.id]: q0.options[0] } : {},
         notes: shotQ === 'answered' ? { e1: { title: 'Скругление', text: 'Радиус 250, не 300' } } : {} });
       if (shotQ === 'open' && q0) setOpenQ(q0.id);
@@ -262,13 +282,14 @@ export default function Breakdown() {
     </>
   );
   /** Вопросы ИИ строками: тап — варианты, выбор — ответ и зелёная галочка; отвеченное раньше — сверху. */
+  const drawing = meta.drawing;
   const questionRows = (startFirst: boolean) => (
     <>
       {answered.map((a, i) => (
         <AnsweredRow key={`a${a.id}`} title={a.text} value={a.value} first={startFirst && i === 0} />
       ))}
       {pendingQs.map((q, i) => (
-        <QuestionRow key={`q${q.id}`} q={q} first={startFirst && !answered.length && i === 0} open={openQ === q.id}
+        <QuestionRow key={`q${q.id}`} q={q} first={startFirst && !answered.length && i === 0} open={openQ === q.id} tag={drawing ? t('dr_not_on_sheet') : undefined}
           value={answers[q.id]} dontKnow={t('q_dont_know_short')} customLabel={t('bd_q_custom')}
           onToggle={() => setOpenQ(openQ === q.id ? null : q.id)} onPick={(v) => setAnswer(q.id, v)}
           onCustom={() => { setCustomQ(q); setCustomText(answers[q.id] && !q.options.includes(answers[q.id]) && answers[q.id] !== DONT_KNOW ? answers[q.id] : ''); }} />
@@ -406,19 +427,37 @@ export default function Breakdown() {
     ...d.differences.map((u, i) => ({ key: `d${i}`, sure: false, title: u, mark: 'info' as Mark, el: { name: u, kind: 'difference', count: 1, sure: false } })),
   ] : [];
   const pins = d && !ai.running ? d.elements.slice(0, 6) : [];
+  // разбор чертежа: вопросы — янтарными метками на листе; «Всё верно, дальше», пока мастер ничего не ответил здесь
+  const qPins = drawing && d && !ai.running ? pendingQs.filter((q) => q.text.length <= 24).slice(0, 2) : [];
+  const recalcNow = d && d.status !== 'choose_type' && (drawing ? hasInput : pendingQs.length > 0 || hasInput);
+  const otherSheet = () => (router.canGoBack() ? router.back() : drawing && router.replace(`/inbox/${drawing.inboxId}`));
   return (
-    <Screen gap={8} contentStyle={{ paddingTop: 0 }} footerStyle={{ gap: 2, paddingTop: 6 }}
+    <Screen gap={8} contentStyle={{ paddingTop: drawing ? 4 : 0 }} footerStyle={{ gap: 2, paddingTop: 6 }}
       footer={<>
-        {d && (pendingQs.length > 0 || hasInput) && d.status !== 'choose_type' ? (
+        {recalcNow ? (
           <Button title={recalcTitle} onPress={recalc} loading={ai.running} disabled={!d} />
         ) : (
           <Button title={t('rec_ok_next')} onPress={next} loading={opening} disabled={ai.running || !d} />
         )}
-        <Button v="ghost" title={t('rec_wrong')} onPress={() => router.push(`/project/${id}/nonstandard`)} disabled={ai.running} />
+        {drawing ? <Button v="ghost" title={t('dr_other_sheet')} onPress={otherSheet} disabled={ai.running} />
+          : <Button v="ghost" title={t('rec_wrong')} onPress={() => router.push(`/project/${id}/nonstandard`)} disabled={ai.running} />}
       </>}
     >
-      {head(isPhoto ? '' : t('bd_text_title'), photoPill)}
-      {isPhoto ? (
+      {drawing ? (
+        <Stack.Screen options={{ header: () => (
+          <TitleHeader compact title={drawing.title}
+            sub={[drawing.kind, drawing.sheet ? `${t('dr_sheet', { n: drawing.sheet })}${drawing.sheetName ? ` «${drawing.sheetName}»` : ''}` : null].filter(Boolean).join(' · ')} />
+        ) }} />
+      ) : head(isPhoto ? '' : t('bd_text_title'), photoPill)}
+      {drawing && isPhoto ? (
+        <View style={s.dwg} accessibilityRole="image" accessibilityLabel={drawing.sheetName ?? drawing.title}>
+          <DrawingImage uri={meta.photos[0]} style={StyleSheet.absoluteFill} />
+          {pins.length || qPins.length ? (
+            <ScatterPins labels={[...pins.map((el) => ({ label: el.note && el.note.length <= 22 ? el.note : el.name, q: !el.sure })),
+              ...qPins.map((q) => ({ label: q.text, q: true }))]} at={SCATTER_DWG} />
+          ) : null}
+        </View>
+      ) : isPhoto ? (
         <PhotoPager photos={meta.photos} page={page} onPage={setPage}>
           {pins.length ? (
             <ScatterPins labels={pins.map((el) => ({ label: el.note && el.note.length <= 22 ? el.note : el.name, q: !el.sure }))} />
@@ -427,8 +466,8 @@ export default function Breakdown() {
       ) : null}
       {notice ? <Banner tone="ok" icon="albums-outline" text={notice} /> : null}
       <View style={s.foundHead}>
-        <T style={{ fontSize: 20, lineHeight: 26, fontWeight: '700', letterSpacing: -0.3 }}>{t('rec_found_title')}</T>
-        {ai.running || !d || !d.version_id ? (
+        <T style={{ fontSize: 20, lineHeight: 26, fontWeight: '700', letterSpacing: -0.3 }}>{drawing ? t('dr_found_title') : t('rec_found_title')}</T>
+        {ai.running || !d || (!d.version_id && !drawing) ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ring />
             <T v="cap">{t('rec_building')}</T>
@@ -524,13 +563,15 @@ function Ring() {
 
 /** Метки на фото вразброс, как в макете (у ИИ нет координат элементов — точки условные, порядок как в списке). */
 const SCATTER: [number, number][] = [[0.038, 14], [0.464, 58], [0.262, 120], [0.596, 184], [0.038, 226], [0.5, 226]];
-function ScatterPins({ labels }: { labels: { label: string; q: boolean }[] }) {
+/** Лист чертежа 300 (MDrawing.dc.html): метки ближе к середине, ниже размерной линии сверху. */
+const SCATTER_DWG: [number, number][] = [[0.41, 132], [0.563, 172], [0.36, 220], [0.06, 254], [0.52, 254], [0.6, 96]];
+function ScatterPins({ labels, at = SCATTER }: { labels: { label: string; q: boolean }[]; at?: [number, number][] }) {
   const [w, setW] = useState(0);
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-      {w > 0 && labels.slice(0, SCATTER.length).map((p, i) => {
-        const left = Math.round(SCATTER[i][0] * w);
-        return <Pin key={i} label={p.label} q={p.q} dot={p.q ? palette.amber : palette.green} style={{ position: 'absolute', left, top: SCATTER[i][1], maxWidth: w - left - 10 }} />;
+      {w > 0 && labels.slice(0, at.length).map((p, i) => {
+        const left = Math.round(at[i][0] * w);
+        return <Pin key={i} label={p.label} q={p.q} dot={p.q ? palette.amber : palette.green} style={{ position: 'absolute', left, top: at[i][1], maxWidth: w - left - 10 }} />;
       })}
     </View>
   );
@@ -572,8 +613,10 @@ function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer
 }
 
 /** Вопрос ИИ строкой: «?» → тап раскрывает варианты (+ «Не знаю», «Свой ответ»); выбран — ✓ и ответ под вопросом. */
-function QuestionRow({ q, first, open, value, dontKnow, customLabel, onToggle, onPick, onCustom }: {
+function QuestionRow({ q, first, open, value, dontKnow, customLabel, onToggle, onPick, onCustom, tag }: {
   q: DesignQuestion; first: boolean; open: boolean; value?: string; dontKnow: string; customLabel: string;
+  /** Метка у вопроса (.st.c-amber «нет на листе» в разборе чертежа). */
+  tag?: string;
   onToggle: () => void; onPick: (v: string) => void; onCustom: () => void;
 }) {
   const done = !!value;
@@ -588,7 +631,12 @@ function QuestionRow({ q, first, open, value, dontKnow, customLabel, onToggle, o
             : <T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T>}
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <T v="rt">{q.text}</T>
+          {tag && !done ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+              <T v="rt">{q.text}</T>
+              <View style={s.est}><T style={s.estText}>{tag}</T></View>
+            </View>
+          ) : <T v="rt">{q.text}</T>}
           {shown ? <T style={s.noteText}>{shown}</T> : null}
         </View>
         <View style={s.fix}>
@@ -679,6 +727,7 @@ const s = StyleSheet.create({
   pill: { height: 32, borderRadius: 16, paddingHorizontal: 12, backgroundColor: palette.white, justifyContent: 'center' },
   pillText: { fontSize: 14, lineHeight: 18, fontWeight: '600', color: palette.muted2 },
   photo: { height: 272, borderRadius: 28, overflow: 'hidden', backgroundColor: '#CDBFA8' },
+  dwg: { height: 300, borderRadius: 28, overflow: 'hidden', backgroundColor: palette.white, marginBottom: 4 },
   foundHead: { paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   it: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingVertical: 6, paddingHorizontal: 20 },
   itLine: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: palette.hair },

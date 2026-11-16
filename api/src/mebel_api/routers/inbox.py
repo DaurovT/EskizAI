@@ -9,12 +9,12 @@ from fastapi import APIRouter, File, Query, Response, UploadFile
 from sqlalchemy import func, select
 
 from ..db import utcnow
-from ..deps import DbDep, InboxCurrentDep, SettingsDep, StorageDep
+from ..deps import CurrentDep, DbDep, InboxCurrentDep, SettingsDep, StorageDep
 from ..errors import ERROR_RESPONSES
 from ..models import InboxDrawing
 from ..schemas.common import Ok, Page
-from ..schemas.inbox import InboxDrawingDetail, InboxDrawingOut
-from ..services import inbox
+from ..schemas.inbox import InboxDrawingDetail, InboxDrawingOut, InboxProjectIn, InboxProjectOut
+from ..services import inbox, inbox_project
 
 router = APIRouter(prefix="/inbox", tags=["inbox"], responses={
     **ERROR_RESPONSES,
@@ -62,3 +62,21 @@ def delete_drawing(drawing_id: uuid.UUID, current: InboxCurrentDep, db: DbDep, s
     d = inbox.get_own(db, current.user.id, drawing_id)
     inbox.soft_delete(db, storage, d)
     return Ok()
+
+
+@router.post("/drawings/{drawing_id}/project", response_model=InboxProjectOut, status_code=201,
+             summary="Сделать проект по листу чертежа (SCR-55)",
+             responses={200: {"model": InboxProjectOut, "description": "Черновик по этому чертежу ещё без модели — "
+                                                                       "он же, с новым листом"}})
+def drawing_project(drawing_id: uuid.UUID, body: InboxProjectIn, current: CurrentDep, db: DbDep, storage: StorageDep,
+                    response: Response) -> dict:
+    """Только полный токен мастера (не Eskiz DWG). Проект — в цехе мастера: превью листа — исходное фото,
+    `text` — короткая выжимка `data.json` листа (габариты, цепочки размеров, оси, отметки, марки, надписи; мм).
+    Дальше приложение запускает обычное распознавание `POST /projects/{id}/ai/design` с этим текстом.
+    Пока по чертежу есть проект, чертёж не истекает. Повтор (другой лист), пока черновик без модели, —
+    тот же проект (`200`). `422 sheet_not_found` — такого листа нет; чужой/удалённый чертёж — `404`."""
+    d = inbox.get_own(db, current.user.id, drawing_id)
+    out = inbox_project.make_project(db, storage, current, d, body.sheet)
+    if not out["created"]:
+        response.status_code = 200
+    return out

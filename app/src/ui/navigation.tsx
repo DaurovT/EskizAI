@@ -10,7 +10,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
 import { BrandLogo } from './Illus';
-import { BigTitle, Header, Press, resolveFont, type IconName } from './kit';
+import { BigTitle, GlassPress, Header, Press, glass, resolveFont, type IconName } from './kit';
 import { HeaderColumn, tablet, useLayout } from './layout';
 import { palette, radius, type } from './theme';
 
@@ -95,9 +95,9 @@ function BottomBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarP
         if (route.name === 'new') {
           return (
             <View key={route.key} style={st.slot}>
-              <Press accessibilityRole="button" accessibilityLabel={t('new_title')} onPress={() => router.push('/project/new')} style={st.plus}>
-                <Ionicons name="add" size={28} color={palette.white} />
-              </Press>
+              <GlassPress accessibilityRole="button" accessibilityLabel={t('new_title')} onPress={() => router.push('/project/new')} style={st.plus}>
+                <Ionicons name="add" size={28} color={glass.fg} />
+              </GlassPress>
             </View>
           );
         }
@@ -134,9 +134,9 @@ function RailBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarPro
   return (
     <View style={[st.rail, { paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 20) }]} accessibilityRole="tablist">
       <View style={st.logo} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><BrandLogo size={48} /></View>
-      <Press accessibilityRole="button" accessibilityLabel={t('new_title')} onPress={() => router.push('/project/new')} style={st.railNew}>
-        <Ionicons name="add" size={30} color={palette.white} />
-      </Press>
+      <GlassPress accessibilityRole="button" accessibilityLabel={t('new_title')} onPress={() => router.push('/project/new')} style={st.railNew}>
+        <Ionicons name="add" size={30} color={glass.fg} />
+      </GlassPress>
       {state.routes.map((route, i) => {
         if (route.name === 'new') return null;
         const { options } = descriptors[route.key];
@@ -163,7 +163,7 @@ function RailBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarPro
 const st = StyleSheet.create({
   rail: { width: tablet.rail, backgroundColor: palette.white, alignItems: 'center', gap: 6 },
   logo: { width: 48, height: 48, borderRadius: 14, overflow: 'hidden', marginBottom: 10 },
-  railNew: { width: 56, height: 56, borderRadius: 18, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  railNew: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   rv: { width: 76, minHeight: 60, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 4 },
   nav: {
     backgroundColor: palette.white, borderTopLeftRadius: radius.nav, borderTopRightRadius: radius.nav,
@@ -171,7 +171,7 @@ const st = StyleSheet.create({
   },
   slot: { width: 70, alignItems: 'center', gap: 3 },
   ni: { width: 52, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  plus: { width: 52, height: 44, borderRadius: 16, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  plus: { width: 52, height: 44, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
 });
 
 /**

@@ -18,6 +18,7 @@ import { KITCHEN_EDITOR_DEMO, SAMPLES, kindToSample, sampleFor, type SampleKey }
 import { builtinOptions, decorateViewer, decorIssues, frontStyles, hasBuiltin, hasDecor, lightingZones, withNiche } from './decorMock';
 import { fitToNiche, nicheHeights, nicheWidths } from '../../lib/decorStyle';
 import { clientEstimate, masterEstimate, pricingK, staffEstimate } from './estimate';
+import { isDrawingText, seedInbox } from './inboxSamples';
 
 export interface MockOptions {
   /** Задержка ответов, мс (имитация 4G). */
@@ -86,6 +87,9 @@ interface MProject {
   aiAnswers?: Record<string, string>;
 }
 
+/** Проект по чертежу из «Входящих» (SCR-55). */
+const MOCK_DWG_SIGNED = 'https://api.eskizai.uz/signed-files/mock-';
+
 let seq = 1000;
 /** AR в моке: образцы model-viewer (GLB для Scene Viewer, USDZ для Quick Look). */
 export const MOCK_AR_GLB = 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
@@ -148,6 +152,13 @@ export function createMockApi(opts: MockOptions = {}): Api {
     { id: 'c-3', name: 'Нигора', phone: '+998946660000', address: null, notes: 'Кухня, сдана', created_at: iso(40 * DAY), updated_at: iso(7 * DAY) },
   ];
   const projects: MProject[] = [];
+  const inbox = seedInbox();
+  const liveDrawing = (id: string) => {
+    const x = inbox.find((m) => m.d.id === id && !m.deleted);
+    if (!x) throw new ApiError(404, 'not_found', 'Чертёж не найден');
+    return x;
+  };
+  const drawingOf = (projectId: string) => inbox.find((m) => !m.deleted && m.d.project_id === projectId) ?? null;
   // приглашения (SCR-38a): демо — номер на …0000 приглашён, на …0001 — приглашение устарело
   const invites: T.InviteOut[] = [];
   let myInvite: T.InviteOut | null = null;
@@ -299,6 +310,10 @@ export function createMockApi(opts: MockOptions = {}): Api {
       delivered_at: p.delivered_at, materials_self_bought: p.materials_self_bought, cancelled_at: p.cancelled_at,
       cancel_reason: p.cancel_reason, has_order: orders.some((o) => o.project_id === p.id), photos: p.photos,
       model_summary: curVersion(p)?.summary ?? null, estimate: estimateOf(p), next_step: NEXT_STEP[p.status], actions,
+      source_drawing: (() => {
+        const m = drawingOf(p.id);
+        return m ? { id: m.d.id, title: m.d.title, filename: m.d.filename, size: m.d.size, source_kind: m.d.source_kind ?? null } : null;
+      })(),
     };
   };
   const setStatus = (p: MProject, to: T.ProjectStatus) => {
@@ -618,6 +633,25 @@ export function createMockApi(opts: MockOptions = {}): Api {
     const tl = text.toLowerCase();
     if (/ошибк|не мебель|xato/.test(tl)) {
       return { status: 'failed', product_kind: null, confidence: 0, alternatives: [], elements: [], understood: [], unclear: [], estimated: [], questions: [], differences: [], message: 'Не вижу мебель на фото', version_id: null, issues: [], error: 'not_furniture' };
+    }
+    // текст листа из чертежа Eskiz DWG с кухней: угловая кухня по плану (MDrawing.dc.html)
+    if (isDrawingText(text) && /кухн|oshxona/.test(tl) && photos) {
+      const tree: T.ProductTree = JSON.parse(JSON.stringify(SAMPLES.kitchen_corner.tree));
+      const questions: T.DesignQuestion[] = [
+        { id: 'q_upper', text: 'Верхний ряд и высота?', options: ['720 мм', '920 мм', 'Без верхних'], default: '720 мм', affects: ['/height'] },
+      ];
+      p.design = { sample: 'kitchen_corner', tree, estimated: ['/height'], questions };
+      p.aiAnswers = {};
+      for (const q of questions) p.chat.push({ id: uid('m'), author: 'ai', kind: 'question', text: q.text, options: q.options, undone: false, created_at: iso() });
+      return {
+        status: 'questions', product_kind: SAMPLES.kitchen_corner.productKind, confidence: 0.9, alternatives: [], understood: [], unclear: [],
+        elements: [
+          { name: 'Кухня угловая, стены 3200 и 2400', kind: 'body', count: 1, sure: true, note: 'Угловая · 2 стены' },
+          { name: 'Нижний ряд · 8 модулей', kind: 'module', count: 1, sure: true, note: '4 по стене A, 3 по стене B' },
+          { name: 'Мойка 800, варка 600', kind: 'module', count: 1, sure: true, note: 'Мойка у окна' },
+        ],
+        estimated: ['/height'], questions, differences: [], message: null, version_id: null, issues: [], error: null,
+      };
     }
     const sample: SampleKey = /купе|kupe/.test(tl) ? 'kupe_3doors' : /кухн|oshxona/.test(tl) ? 'kitchen_straight' : /стеллаж|stellaj/.test(tl) ? 'wardrobe_2sec' : /ниш|nisha/.test(tl) ? 'wardrobe_3sec_niche' : 'wardrobe_full';
     if (!photos && text && text.length < 8) {
@@ -1519,6 +1553,40 @@ export function createMockApi(opts: MockOptions = {}): Api {
     unregisterPush: () => wait(undefined),
     listNotifications: () => wait(() => notifications.map((n) => ({ ...n }))),
     markNotificationRead: (id) => wait(() => { const n = notifications.find((x) => x.id === id); if (n) n.read = true; }),
+    listInbox: () => wait(() => {
+      const items = inbox.filter((m) => !m.deleted).map((m) => ({ ...m.d }));
+      return { items, total: items.length, limit: 200, offset: 0 };
+    }),
+    getInboxDrawing: (id) => wait(() => {
+      const m = liveDrawing(id);
+      m.d.last_opened_at = iso();
+      m.d.expires_at = new Date(Date.now() + 90 * DAY).toISOString();
+      return { ...m.d, sheets: m.sheets.map(({ id: sid, number, name, selected, preview_url }) => ({ id: sid, number, name, selected, preview_url })),
+        manifest: { format: 'eskiz', format_version: 1, title: m.d.title, units: m.units ?? { code: 'mm', source: 'file' },
+          source: { kind: m.d.source_kind, release: m.release } }, download_url: `${MOCK_DWG_SIGNED}${m.d.id}` };
+    }),
+    deleteInboxDrawing: (id) => wait(() => { liveDrawing(id).deleted = true; }),
+    projectFromDrawing: (id, sheet) => wait(() => {
+      const m = liveDrawing(id);
+      const sh = sheet ? m.sheets.find((x) => x.id === sheet || x.number === sheet) : m.sheets.find((x) => x.selected) ?? m.sheets[0];
+      if (!sh) throw new ApiError(422, 'sheet_not_found', 'В чертеже нет такого листа');
+      const old = m.d.project_id ? projects.find((x) => x.id === m.d.project_id) : undefined;
+      const reuse = !!old && old.status === 'draft' && !old.current;
+      const p = reuse && old ? old : baseProject({ title: (m.d.title ?? m.d.filename).replace(/_/g, ' ') });
+      if (!reuse) projects.unshift(p);
+      p.source_text = sh.text;
+      p.photos = sh.preview_url ? [{ id: uid('ph'), kind: 'source', url: sh.preview_url, content_type: 'image/webp', size_bytes: 0, created_at: iso() }] : [];
+      m.d.project_id = p.id;
+      const ph = p.photos[0];
+      return { project_id: p.id, created: !reuse, sheet: { id: sh.id, number: sh.number, name: sh.name }, text: sh.text,
+        photo_id: ph?.id ?? null, photo_url: ph?.url ?? null };
+    }),
+    getSourceDrawing: (id) => wait(() => {
+      const m = drawingOf(getP(id).id);
+      if (!m) throw new ApiError(404, 'not_found', 'Чертёж не найден');
+      return { id: m.d.id, title: m.d.title, filename: m.d.filename, size: m.d.size, source_kind: m.d.source_kind ?? null,
+        download_url: `${MOCK_DWG_SIGNED}${m.d.id}` };
+    }),
     getNotificationSettings: () => wait(() => JSON.parse(JSON.stringify(notifSettings))),
     updateNotificationSettings: (body) => wait(() => {
       for (const t of notifSettings.types) { const v = body.types?.[t.key as T.NotificationTypeKey]; if (v != null) t.enabled = v; }

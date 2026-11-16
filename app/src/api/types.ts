@@ -168,6 +168,8 @@ export interface ProjectCardOut extends ProjectListItem {
   materials_self_bought: boolean; cancelled_at: string | null; cancel_reason: string | null;
   has_order: boolean; photos: PhotoOut[]; model_summary: ModelSummary | null;
   estimate: ProjectEstimate | null; next_step: string; actions: ActionOut[];
+  /** Чертёж из «Входящих», по которому создан проект (SCR-54: «Открыть в Eskiz DWG»); старый сервер — нет поля. */
+  source_drawing?: SourceDrawingOut | null;
 }
 /** Пример «Попробовать на примере» создаёт только сервер — POST /projects/example (api.createExample). */
 export interface ProjectIn { title: string; client_id?: string | null; source_text?: string | null }
@@ -633,4 +635,30 @@ export interface PaymentOut {
   method: string | null; method_label: string | null; status: 'paid' | 'refunded' | string;
   paid_at: string; refunded_at: string | null; receipt_url: string | null;
   project_id: string | null; project_title: string | null;
+}
+
+// --- входящие чертежи из Eskiz DWG (docs/dwg_contract.md, SCR-52…55) ---
+/** Элемент «Входящих». Ссылки (`preview_url`, `download_url`) клиент API уже сделал полными (https://…/signed-files/…). */
+export interface InboxDrawing {
+  id: string; title: string | null; filename: string; size: number; sha256: string;
+  created_at: string; last_opened_at: string | null; expires_at: string;
+  preview_url: string | null; sheet_count: number | null; units_guessed: boolean; units_note: string | null;
+  package_created_at: string | null;
+  /** dwg / dxf (manifest.source.kind). */
+  source_kind?: string | null;
+  /** Проект, созданный по чертежу: пока он есть, чертёж не истекает. */
+  project_id?: string | null;
+}
+export interface InboxSheet { id?: string | null; number: string | null; name: string | null; selected: boolean; preview_url: string | null }
+export interface InboxDrawingDetail extends InboxDrawing {
+  sheets: InboxSheet[]; manifest: Record<string, unknown> | null; download_url: string;
+}
+/** POST /inbox/drawings/{id}/project → проект по листу; `text` — для POST /projects/{id}/ai/design. */
+export interface InboxProjectOut {
+  project_id: string; created: boolean; sheet: { id: string | null; number: string | null; name: string | null } | null;
+  text: string; photo_id: string | null; photo_url: string | null;
+}
+/** Исходный чертёж проекта; `download_url` — только в GET /projects/{id}/source-drawing. */
+export interface SourceDrawingOut {
+  id: string; title: string | null; filename: string; size: number; source_kind: string | null; download_url?: string | null;
 }

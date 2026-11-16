@@ -27,7 +27,7 @@ import {
 import { useResource } from '../hooks/useResource';
 import { useT } from '../i18n';
 import { ProductCanvas, type CanvasHandle } from '../three/ProductCanvas';
-import { IconButton, Press, SurfaceProvider, T, Toggle, resolveFont } from '../ui/kit';
+import { GlassPress, IconButton, Press, SurfaceProvider, T, Toggle, glass, resolveFont } from '../ui/kit';
 import { KitchenChat, type KitchenChatProps } from './KitchenChat';
 import { DecorMenu } from './DecorMenu';
 import { palette, type as ty } from '../ui/theme';
@@ -752,10 +752,10 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
                 <T num style={{ fontSize: 16, lineHeight: 20, fontWeight: '700' }}>{price}</T>
               </Press>
             ) : null}
-            <Press onPress={() => router.push({ pathname: '/project/[id]/send', params: { id } })} style={s.cta} accessibilityRole="button">
-              <T style={{ fontSize: 17, fontWeight: '600', color: palette.white }}>{t('ed_to_client')}</T>
-              <Ionicons name="paper-plane-outline" size={18} color={palette.white} />
-            </Press>
+            <GlassPress onPress={() => router.push({ pathname: '/project/[id]/send', params: { id } })} style={s.cta} accessibilityRole="button">
+              <T style={[{ fontSize: 17, fontWeight: '600', color: glass.fg }, glass.text]}>{t('ed_to_client')}</T>
+              <Ionicons name="paper-plane-outline" size={18} color={glass.fg} />
+            </GlassPress>
           </View>
         </SurfaceProvider>
       </View>
@@ -1156,5 +1156,5 @@ const s = StyleSheet.create({
   go: { width: 40, height: 40, borderRadius: 20, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' },
   cbar: { flexDirection: 'row', gap: 8, paddingTop: 8, paddingHorizontal: 16, alignItems: 'center' },
   pr: { height: 52, paddingHorizontal: 14, borderRadius: 16, backgroundColor: palette.ground, justifyContent: 'center' },
-  cta: { flex: 1, height: 52, borderRadius: 16, backgroundColor: palette.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+  cta: { flex: 1, height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
 });

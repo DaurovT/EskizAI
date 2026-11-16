@@ -2,6 +2,7 @@ import type { Api, DownloadedFile, ProjectQuery, UploadFile } from './client';
 import { ApiError } from './errors';
 import { Http, type RequestOpts } from './http';
 import type * as T from './types';
+import { absUrl, withAbsUrls } from '../lib/inbox';
 
 export type Downloader = (url: string, headers: Record<string, string>, fileName: string) => Promise<DownloadedFile>;
 
@@ -216,6 +217,21 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
     unregisterPush: async (deviceId) => { await del(`/devices?device_id=${enc(deviceId)}`); },
     listNotifications: () => get('/notifications'),
     markNotificationRead: async (id) => { await post(`/notifications/${enc(id)}/read`); },
+    // входящие чертежи: ссылки сервера — пути от адреса API, делаем полными (картинки, eskizdwg://open?src=…)
+    listInbox: async () => {
+      const page = await get<T.Page<T.InboxDrawing>>('/inbox/drawings', { limit: 200 });
+      return { ...page, items: page.items.map((d) => withAbsUrls(http.baseUrl, d)) };
+    },
+    getInboxDrawing: async (id) => withAbsUrls(http.baseUrl, await get<T.InboxDrawingDetail>(`/inbox/drawings/${enc(id)}`)),
+    deleteInboxDrawing: async (id) => { await del(`/inbox/drawings/${enc(id)}`); },
+    projectFromDrawing: async (id, sheet) => {
+      const r = await post<T.InboxProjectOut>(`/inbox/drawings/${enc(id)}/project`, { sheet: sheet ?? null });
+      return { ...r, photo_url: absUrl(http.baseUrl, r.photo_url) };
+    },
+    getSourceDrawing: async (id) => {
+      const r = await get<T.SourceDrawingOut>(`${pj(id)}/source-drawing`);
+      return { ...r, download_url: absUrl(http.baseUrl, r.download_url) };
+    },
     getNotificationSettings: () => get('/me/notification-settings'),
     updateNotificationSettings: (body) => patch('/me/notification-settings', body),
   };

@@ -17,7 +17,7 @@ import { setAt } from '../../../src/lib/jsonPatch';
 import { useOffline } from '../../../src/state/net';
 import { showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
-import { Banner, Button, Chip, ChipRow, Loading, Press, Screen, Search, Segmented, T, Toggle, toast } from '../../../src/ui/kit';
+import { Banner, Button, Chip, ChipRow, GlassPress, Loading, Press, Screen, Search, Segmented, T, Toggle, glass, toast } from '../../../src/ui/kit';
 import { palette } from '../../../src/ui/theme';
 
 type Target = 'body' | 'fronts' | 'color' | 'edge';
@@ -123,19 +123,22 @@ export default function Materials() {
     : selDecor ? [selDecor.decor, name(selDecor)].filter(Boolean).join(' · ') : sel ? sel : target === 'fronts' ? t('mat_same_as_body') : '';
   const ctaVal = target === 'color' ? (glossSel?.price_m2 ? `${groupDigits(glossSel.price_m2)} / м²` : null) : selDecor?.price ? groupDigits(selDecor.price) : null;
   const ctaOff = target === 'color' ? !paintDirty || offline || saving : (dirty && offline) || saving;
+  // выключенная — серая .cta.off, иначе стекло GLASS-GREEN
+  const ctaGray = ctaOff && (target === 'color' || dirty);
+  const CtaPress = ctaGray ? Press : GlassPress;
   const footer = target === 'body' || target === 'fronts' || target === 'color' ? (
-    <Press disabled={ctaOff} onPress={() => {
+    <CtaPress disabled={ctaOff} onPress={() => {
       if (target === 'color') return applyPaint();
       if (!dirty) return router.back();
       const next = setAt(tree, target === 'body' ? '/body/material' : '/fronts/material', pick ?? null);
       save(target === 'fronts' ? withoutPaint(next) : next);
-    }} accessibilityRole="button" style={[s.cta, ctaOff && (target === 'color' || dirty) && { backgroundColor: palette.off }]}>
+    }} accessibilityRole="button" style={[s.cta, ctaGray && { backgroundColor: palette.off }]}>
       <View style={{ flex: 1 }}>
-        <T style={{ fontSize: 17, lineHeight: 19, fontWeight: '600', color: ctaOff && (target === 'color' || dirty) ? palette.faint : palette.white }}>{ctaTitle}</T>
-        <T style={{ fontSize: 13, lineHeight: 19, color: palette.white, opacity: 0.85 }} numberOfLines={1}>{ctaSub}</T>
+        <T style={[{ fontSize: 17, lineHeight: 19, fontWeight: '600', color: ctaGray ? palette.faint : glass.fg }, !ctaGray && glass.text]}>{ctaTitle}</T>
+        <T style={{ fontSize: 13, lineHeight: 19, color: ctaGray ? palette.faint : glass.fg, opacity: 0.8 }} numberOfLines={1}>{ctaSub}</T>
       </View>
-      {ctaVal ? <View style={s.v}><T num style={{ fontSize: 15, fontWeight: '600', color: palette.white }}>{ctaVal}</T></View> : null}
-    </Press>
+      {ctaVal ? <View style={[s.v, !ctaGray && { backgroundColor: glass.chip, boxShadow: glass.chipShadow }]}><T num style={{ fontSize: 15, fontWeight: '600', color: ctaGray ? palette.faint : glass.fg }}>{ctaVal}</T></View> : null}
+    </CtaPress>
   ) : undefined;
 
   const FChip = ({ label, on, onPress, dot }: { label: string; on: boolean; onPress: () => void; dot?: string }) => (
@@ -275,6 +278,6 @@ const s = StyleSheet.create({
   pal: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, columnGap: 8, backgroundColor: palette.white, borderRadius: 24, paddingVertical: 16, paddingHorizontal: 14 },
   pcDot: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: 'rgba(33,32,31,0.12)' },
   pcOn: { borderWidth: 3, borderColor: palette.white, shadowColor: palette.ink, shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 0 }, outlineWidth: 0 },
-  cta: { height: 56, borderRadius: 16, backgroundColor: palette.green, flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, gap: 10 },
+  cta: { height: 56, borderRadius: 999, flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, gap: 10 },
   v: { height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.16)', justifyContent: 'center', paddingHorizontal: 12 },
 });
