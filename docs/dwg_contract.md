@@ -96,3 +96,10 @@ multipart, одно поле `file` — пакет `.eskiz` (zip). → `201 Inbo
 - Возобновляемая загрузка (tus / chunked с `Upload-Offset`) — сейчас пакет одним запросом.
 - Превью каждого листа (сейчас хранится одно), сверка `source.sha256` с `source.dwg`, перечитывание пакетов по `converter.version`.
 - Экран «Входящие чертежи» в приложении Eskiz Mebel.
+
+## «Открыть в Eskiz DWG» из проекта (SCR-54, макет `MOpenDwg`) — следующий шаг
+
+Договорённость с командой DWG (16.11.2026), в приложении Mebel ещё не сделано:
+- ссылка `eskizdwg://open?src=<URL-encoded https-ссылка на файл>&name=<имя файла>`; `src` — наша подписанная ссылка (`*.eskizai.uz`, https, файл до 100 МБ). Можно передать `.eskiz` из «Входящих»: DWG возьмёт из него `source.*`;
+- проверка, что DWG установлен: `Linking.canOpenURL("eskizdwg://")`; в `app/app.json` → `ios.infoPlist.LSApplicationQueriesSchemes: ["eskizdwg"]` (нужна новая сборка);
+- не установлен — экран со ссылкой на App Store (ссылку DWG пришлёт после публикации, пока заглушка).
