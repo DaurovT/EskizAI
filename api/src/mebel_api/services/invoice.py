@@ -120,10 +120,10 @@ def invoice_pdf(order: Order, project: Project, workshop: Workshop, language: st
     if order.payment_reference:
         story.append(Paragraph(t["ref"].format(r=order.payment_reference), small))
     story += [Spacer(1, 6 * mm), Paragraph(t["note"], small),
-              Paragraph(f"Eskiz AI · {utcnow().astimezone(tz):%d.%m.%Y %H:%M}", small)]
+              Paragraph(f"Eskiz Mebel · {utcnow().astimezone(tz):%d.%m.%Y %H:%M}", small)]
 
     out = io.BytesIO()
     doc = SimpleDocTemplate(out, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm,
-                            bottomMargin=16 * mm, title=f"{t['title']} №{number}", author="Eskiz AI")
+                            bottomMargin=16 * mm, title=f"{t['title']} №{number}", author="Eskiz Mebel")
     doc.build(story)
     return out.getvalue()

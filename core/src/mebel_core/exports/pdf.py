@@ -346,7 +346,7 @@ KP_TEXT = {
            "item": "Изделие", "mm": "мм", "no": "№ {n} от {date}", "date_only": "от {date}",
            "valid": "действует {days} дней", "qr": ["3D и примерка в комнате:", "наведите камеру на QR"],
            "term_lead": "Срок", "term_pay": "Оплата", "term_warranty": "Гарантия", "project": "Проект {v}",
-           "made": "сформировано в Eskiz AI", "page": "стр. {i} из {n}", "body": "Корпус", "fronts": "фасады",
+           "made": "сформировано в Eskiz Mebel", "page": "стр. {i} из {n}", "body": "Корпус", "fronts": "фасады",
            "months": ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября",
                       "октября", "ноября", "декабря"]},
     "uz": {"title": "Tijorat taklifi", "total": "Jami", "materials": "Materiallar",
@@ -356,7 +356,7 @@ KP_TEXT = {
            "item": "Buyum", "mm": "mm", "no": "№ {n} · {date}", "date_only": "{date}",
            "valid": "{days} kun amal qiladi", "qr": ["3D va xonada ko‘rish:", "kamerani QR’ga qarating"],
            "term_lead": "Muddat", "term_pay": "To‘lov", "term_warranty": "Kafolat", "project": "Loyiha {v}",
-           "made": "Eskiz AI’da yaratilgan", "page": "{i}/{n} bet", "body": "Korpus", "fronts": "fasadlar",
+           "made": "Eskiz Mebel’da yaratilgan", "page": "{i}/{n} bet", "body": "Korpus", "fronts": "fasadlar",
            "months": ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentyabr", "oktyabr",
                       "noyabr", "dekabr"]},
 }
@@ -782,7 +782,7 @@ def export_kp_pdf(result: BuildResult, estimate_view: dict, *, workshop: str, ma
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     c.setTitle(t["title"] + (f" · {project}" if project else ""))
-    c.setAuthor("Eskiz AI")
+    c.setAuthor("Eskiz Mebel")
     draw(c, n)
     c.save()
     return buf.getvalue()

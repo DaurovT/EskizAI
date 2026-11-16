@@ -356,7 +356,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
   };
   const DESIGNER = 'Дильшод · конструктор EMAN';
   const event = (o: T.OrderOut, type: string, status: T.OrderStatus | null, actor: T.OrderActor, comment: string | null = null, at = iso()) => {
-    ox(o.id).events.push({ id: uid('ev'), type, status, actor_type: actor, actor_name: actor === 'vendor' ? DESIGNER : actor === 'platform' ? 'Eskiz AI' : actor === 'master' ? user.name : null, comment, data: null, created_at: at });
+    ox(o.id).events.push({ id: uid('ev'), type, status, actor_type: actor, actor_name: actor === 'vendor' ? DESIGNER : actor === 'platform' ? 'Eskiz Mebel' : actor === 'master' ? user.name : null, comment, data: null, created_at: at });
   };
   const setOrderStatus = (o: T.OrderOut, to: T.OrderStatus, actor: T.OrderActor, comment: string | null = null) => {
     o.status = to; o.status_label = ORDER_LABELS[to]; o.steps = orderSteps(o);
@@ -382,7 +382,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
   const demoFile = (name: string, content_type: string): T.OrderAttachment => ({ key: uid('f'), url: null, name, content_type, size: 48_000 });
   const message = (orderId: string, author: T.MessageAuthor, text: string | null, ago = 0, read = true, attachments: T.OrderAttachment[] = []): T.OrderMessage => ({
     id: uid('msg'), order_id: orderId, author_type: author, author_id: author === 'master' ? user.id : null,
-    author_name: author === 'vendor' ? DESIGNER : author === 'platform' ? 'Eskiz AI' : user.name,
+    author_name: author === 'vendor' ? DESIGNER : author === 'platform' ? 'Eskiz Mebel' : user.name,
     text, attachments, created_at: iso(ago), read_by_master_at: read || author === 'master' ? iso(ago) : null, read_by_vendor_at: author === 'master' ? null : iso(ago),
   });
   const PAID_LIKE: T.OrderStatus[] = ['paid', 'cutting', 'ready', 'issued'];
@@ -761,7 +761,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
   const fileOpen = (p: MProject, f: { free?: boolean }) => f.free || p.filesPaid || p.status === 'in_work' || p.status === 'delivered';
   const tinyPdf = (title: string) => {
     const txt = title.replace(/[^\x20-\x7e]/g, '?');
-    const stream = `BT /F1 18 Tf 60 760 Td (Eskiz AI demo) Tj 0 -30 Td (${txt}) Tj ET`;
+    const stream = `BT /F1 18 Tf 60 760 Td (Eskiz Mebel demo) Tj 0 -30 Td (${txt}) Tj ET`;
     const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>', `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
     let out = '%PDF-1.4\n';
     const offs: number[] = [];

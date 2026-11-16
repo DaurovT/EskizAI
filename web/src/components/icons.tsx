@@ -154,17 +154,19 @@ export function IconChevron({ size = 20, sw = 2.2 }: P) {
   );
 }
 
-/** Знак Eskiz AI (как в макете ClientExpired). */
+/** Знак Eskiz Mebel (семейство Eskiz: шкаф на зелёной плитке, макет Logo.dc.html). */
 export function EskizMark({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
-      <rect width="100" height="100" rx="26" fill="#387D50" />
-      <path d="M79.2 78.5 L66.2 86.0 L66.2 44.9 L79.2 37.4Z" fill="#fff" opacity="0.55" />
-      <path d="M38.7 14.0 L79.2 37.4 L66.2 44.9 L25.7 21.5Z" fill="#fff" opacity="0.85" />
-      <g fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20.8 59.8 L66.2 86.0" />
-        <path d="M25.7 67.1 L25.7 21.5" />
-        <path d="M46.0 74.3 L46.0 33.2" />
+    <svg width={size} height={size} viewBox="0 0 140 140" aria-hidden="true">
+      <rect width="140" height="140" rx="31" fill="#387D50" />
+      <g transform="translate(26 26) scale(1.8333)" fill="none" stroke="#fff" strokeWidth={size < 40 ? 3.4 : 2.6}
+        strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 40V13h24v27" />
+        <path d="M24 13v27" />
+        <path d="M20 24v5M28 24v5" />
+        <path d="M12 34h24" opacity=".55" />
+        <path d="M4 40h40" />
+        <circle cx="41" cy="8" r="2.6" fill="#fff" stroke="none" />
       </g>
     </svg>
   );

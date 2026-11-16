@@ -420,7 +420,7 @@ async def post_order_message(order_id: uuid.UUID, admin: OrdersDep, db: DbDep, s
                              files: Annotated[list[UploadFile] | None, File()] = None) -> dict:
     o = _order(db, order_id)
     attachments = await flow.store_files(storage, files, f"platform/orders/{o.id}/messages")
-    m = flow.post_message(db, o, author_type="platform", author_id=admin.id, author_name="Платформа Eskiz AI",
+    m = flow.post_message(db, o, author_type="platform", author_id=admin.id, author_name="Платформа Eskiz Mebel",
                           text=text, attachments=attachments)
     _log(db, admin, "order", o.id, "platform_message", after={"message_id": str(m.id)})
     db.commit()
@@ -487,7 +487,7 @@ def intervene(order_id: uuid.UUID, body: InterveneIn, admin: OrdersDep, db: DbDe
             flow.reverse_commission(db, o)
         flow.set_status(db, o, O.cancelled, **kw, comment=reason)
     if body.comment:
-        flow.post_message(db, o, author_type="platform", author_id=admin.id, author_name="Платформа Eskiz AI",
+        flow.post_message(db, o, author_type="platform", author_id=admin.id, author_name="Платформа Eskiz Mebel",
                           text=body.comment, attachments=[])
     db.commit()
     return _order_brief(db, o)

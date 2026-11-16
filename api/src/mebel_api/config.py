@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     # Повтор уже ротированного refresh завершает всю сессию; в эти секунды после ротации — просто 401
     # (две вкладки обновили токен одновременно)
     staff_refresh_reuse_grace_seconds: int = 5
-    staff_mfa_issuer: str = "Eskiz AI"
+    staff_mfa_issuer: str = "Eskiz Mebel"
     impersonation_ttl_minutes: int = 15  # «глазами мастера» — короткий токен только на чтение
     # Источник цен поставщика: фоновая проверка расписания в процессе API (иначе — scripts/run_price_sources.py)
     price_source_scheduler: bool = False

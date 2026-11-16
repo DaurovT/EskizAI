@@ -16,7 +16,7 @@ export default function LoginPage() {
     <LoginForm
       client={adminClient}
       title="Вход в админку"
-      subtitle="Eskiz AI · сотрудники платформы"
+      subtitle="Eskiz Mebel · сотрудники платформы"
       onSuccess={(me) => {
         if (me.org.kind === 'supplier') return 'Это учётная запись поставщика — войдите в кабинет поставщика.';
         router.replace('/admin');

@@ -54,7 +54,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <StaffShell
       client={adminClient}
-      brand={() => 'Eskiz AI · админка'}
+      brand={() => 'Eskiz Mebel · админка'}
       nav={NAV}
       rel={path}
       isPublic={path.startsWith('/admin/login')}

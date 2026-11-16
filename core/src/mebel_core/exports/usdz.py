@@ -216,7 +216,7 @@ def export_usdz(result: BuildResult, *, placement: str | None = None,
 
     alignment = "vertical" if placement == "wall" else "horizontal"
     layer = "\n".join([
-        "#usda 1.0", "(", '    customLayerData = {', '        string creator = "Eskiz AI"', "    }",
+        "#usda 1.0", "(", '    customLayerData = {', '        string creator = "Eskiz Mebel"', "    }",
         '    defaultPrim = "Root"', "    metersPerUnit = 1", '    upAxis = "Y"', ")", "",
         'def Xform "Root"', "{",
         '    def Scope "Scenes" (', '        kind = "sceneLibrary"', "    )", "    {",

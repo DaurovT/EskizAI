@@ -3,7 +3,7 @@ import './admin.css';
 import { AdminShell } from '@/components/admin/AdminShell';
 
 export const metadata: Metadata = {
-  title: 'Админка · Eskiz AI',
+  title: 'Админка · Eskiz Mebel',
   robots: { index: false, follow: false },
 };
 

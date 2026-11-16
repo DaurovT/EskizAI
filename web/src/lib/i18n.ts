@@ -78,7 +78,7 @@ const ru = {
   askNewLink: 'Попросить новую ссылку',
   callMaster: 'Позвонить мастеру',
   masterIs: 'мастер {name}',
-  madeIn: 'Сделано в Eskiz AI',
+  madeIn: 'Сделано в Eskiz Mebel',
   // 3D: панель и полноэкранный режим
   doors: 'Двери',
   doorsOpenAria: 'Открыть двери',
@@ -225,7 +225,7 @@ const uz: Record<DictKey, string> = {
   askNewLink: 'Yangi havola so‘rash',
   callMaster: 'Ustaga qo‘ng‘iroq',
   masterIs: 'usta {name}',
-  madeIn: 'Eskiz AI’da yaratilgan',
+  madeIn: 'Eskiz Mebel’da yaratilgan',
   doors: 'Eshiklar',
   doorsOpenAria: 'Eshiklarni ochish',
   doorsCloseAria: 'Eshiklarni yopish',

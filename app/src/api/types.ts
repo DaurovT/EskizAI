@@ -417,7 +417,7 @@ export interface OrderAttachment { key: string; url?: string | null; name?: stri
 export type MessageAuthor = 'master' | 'vendor' | 'platform';
 export interface OrderMessage {
   id: string; order_id: string; author_type: MessageAuthor; author_id?: string | null;
-  /** Имя автора: конструктор поставщика, «Eskiz AI» для платформы. */
+  /** Имя автора: конструктор поставщика, «Eskiz Mebel» для платформы. */
   author_name?: string | null;
   text: string | null; attachments: OrderAttachment[]; created_at: string;
   read_by_master_at?: string | null; read_by_vendor_at?: string | null;

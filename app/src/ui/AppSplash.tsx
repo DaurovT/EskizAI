@@ -1,7 +1,7 @@
 /**
  * SCR-00 заставка (Splash.dc.html): продолжает нативную заставку (зелёный #387D50 + та же картинка) без скачка
  * и держится, пока грузится сессия, — максимум ~1,5 с, затем растворяется.
- * Знак, «Eskiz AI» и «мебель в 3D» стоят там же, где на нативной картинке (её уже видно — «подъём» дал бы мигание);
+ * Знак, «Eskiz Mebel» и «мебель в 3D» стоят там же, где на нативной картинке (её уже видно — «подъём» дал бы мигание);
  * подпись «для мебельных цехов» появляется с анимацией rise (.5 с, задержка .2 с).
  */
 import * as SplashScreen from 'expo-splash-screen';
@@ -49,7 +49,7 @@ export function AppSplash({ ready, onDone }: { ready: boolean; onDone: () => voi
       <View style={s.box}>
         <Image source={require('../../assets/brand/mark.png')} style={s.mark} />
       </View>
-      <T style={s.name} color={palette.white}>Eskiz <T style={s.name} color="rgba(255,255,255,0.7)">AI</T></T>
+      <T style={s.name} color={palette.white}>Eskiz <T style={[s.name, s.thin]} color="rgba(255,255,255,0.7)">Mebel</T></T>
       <T style={s.tag} color={palette.white}>{t('splashTagline')}</T>
       <Animated.View
         style={[s.footer, { opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0, 0.7] }), transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}
@@ -65,6 +65,7 @@ const s = StyleSheet.create({
   box: { width: 132, height: 132, borderRadius: 34, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
   mark: { width: 112, height: 112 },
   name: { marginTop: 26, fontSize: 44, lineHeight: 48, fontWeight: '700', letterSpacing: -1.54 },
+  thin: { fontWeight: '500' },
   tag: { marginTop: 2, fontSize: 17, lineHeight: 22, opacity: 0.85 },
   footer: { position: 'absolute', bottom: 44, left: 0, right: 0, alignItems: 'center' },
   footerText: { fontSize: 14, lineHeight: 22 },

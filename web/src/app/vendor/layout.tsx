@@ -4,7 +4,7 @@ import './vendor.css';
 import { VendorShell } from '@/components/vendor/VendorShell';
 
 export const metadata: Metadata = {
-  title: 'Кабинет поставщика · Eskiz AI',
+  title: 'Кабинет поставщика · Eskiz Mebel',
   robots: { index: false, follow: false },
 };
 

@@ -10,7 +10,7 @@ export default function VendorLogin() {
     <LoginForm
       client={vendorClient}
       title="Кабинет поставщика"
-      subtitle="Eskiz AI · вход для сотрудников поставщика"
+      subtitle="Eskiz Mebel · вход для сотрудников поставщика"
       onSuccess={(me) => {
         if (me.org.kind !== 'supplier') return 'Это учётная запись платформы — войдите в админку.';
         router.replace('/vendor');

@@ -77,7 +77,7 @@ export function VendorShell({ children }: { children: React.ReactNode }) {
   return (
     <StaffShell
       client={vendorClient}
-      brand={(me) => `Eskiz AI · ${me.org.supplier_name ?? 'поставщик'}`}
+      brand={(me) => `Eskiz Mebel · ${me.org.supplier_name ?? 'поставщик'}`}
       nav={NAV}
       rel={rel}
       isPublic={rel.startsWith('/vendor/login')}

@@ -49,7 +49,7 @@ export default function Onboarding() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={s.hdr}>
         <BrandLogo />
-        <T style={s.brand}>Eskiz AI</T>
+        <T style={s.brand}>Eskiz Mebel</T>
         <View style={{ flex: 1 }} />
         <LangSwitch itemStyle={{ minWidth: 68, paddingHorizontal: 10 }} />
       </View>

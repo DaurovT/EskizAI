@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Проект мебели · Eskiz AI',
+  title: 'Проект мебели · Eskiz Mebel',
   icons: { icon: '/favicon.png' },
   robots: { index: false, follow: false },
 };
