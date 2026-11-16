@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from sqlalchemy import select
 
 from ..db import utcnow
-from ..deps import CurrentDep, DbDep, SettingsDep, StorageDep
+from ..deps import CurrentDep, DbDep, InboxCurrentDep, SettingsDep, StorageDep
 from ..domain import Role
 from ..errors import ERROR_RESPONSES, ApiError, not_found
 from ..models import Device, Invite, RefreshToken, User, Workshop
@@ -23,7 +23,7 @@ from ..schemas.auth import (
 )
 from ..schemas.common import Ok
 from ..schemas.workshops import InviteOut
-from ..security import create_access_token, create_refresh_token, decode_token
+from ..security import SCOPE_FULL, create_access_token, create_refresh_token, decode_token
 from ..services.account import accept_invite, delete_account, invite_for_user, invite_out, invite_status
 from ..services.action_log import log_action
 from ..services.auth_codes import DELETE_ACCOUNT, LOGIN, account_exists, check_code, issue_code, normalize_phone
@@ -53,30 +53,40 @@ def _invited(db, phone: str) -> bool:
     return db.scalar(select(Invite.id).where(Invite.phone == phone, Invite.status == "pending").limit(1)) is not None
 
 
-def _issue_tokens(db, settings, user: User, is_new: bool = False) -> TokensOut:
+def _issue_tokens(db, settings, user: User, is_new: bool = False, scope: str = SCOPE_FULL) -> TokensOut:
     expires = utcnow() + timedelta(days=settings.refresh_token_ttl_days)
-    rt = RefreshToken(user_id=user.id, expires_at=expires)
+    rt = RefreshToken(user_id=user.id, expires_at=expires, scope=scope)
     db.add(rt)
     db.flush()
     return TokensOut(
-        access_token=create_access_token(settings, user.id, user.workshop_id, user.role),
-        refresh_token=create_refresh_token(settings, user.id, rt.id, int(expires.timestamp())),
+        access_token=create_access_token(settings, user.id, user.workshop_id, user.role, scope),
+        refresh_token=create_refresh_token(settings, user.id, rt.id, int(expires.timestamp()), scope),
         expires_in=settings.access_token_ttl_minutes * 60,
         user=UserOut.model_validate(user),
         is_new_user=is_new,
+        scope=scope,
     )
 
 
-@router.post("/verify-code", response_model=TokensOut, summary="Подтвердить код и войти")
+@router.post("/verify-code", response_model=TokensOut, summary="Подтвердить код и войти",
+             responses={404: {"description": "create=false, а аккаунта с этим номером нет (account_not_found)"}})
 def verify_code(body: VerifyCodeIn, db: DbDep, settings: SettingsDep) -> TokensOut:
     """Новый номер — новый аккаунт владельца и новый цех. Если номер пригласили в цех —
-    в ответе `invite`: приложение показывает приглашение до онбординга (SCR-38a)."""
+    в ответе `invite`: приложение показывает приглашение до онбординга (SCR-38a).
+
+    `create=false` (Eskiz DWG) — только вход: номер без аккаунта → `404 account_not_found`, ничего не создаётся;
+    код при этом погашен (повторить его нельзя). `scope=dwg_upload` — ограниченные токены (docs/dwg_contract.md)."""
     phone = normalize_phone(body.phone)
     now = utcnow()
     check_code(db, settings, phone, body.code, LOGIN)
 
     user = db.scalar(select(User).where(User.phone == phone))
     is_new = user is None
+    # вход Eskiz DWG (scope=dwg_upload) никогда не регистрирует: аккаунт заводится только в приложении Eskiz Mebel
+    if user is None and (not body.create or body.scope != SCOPE_FULL):
+        db.commit()  # код погашен (check_code) — тем же кодом второй раз не войти, в т. ч. с create=true
+        raise ApiError(404, "account_not_found",
+                       "Аккаунт с этим номером не найден — зарегистрируйтесь в приложении Eskiz Mebel")
     if user is None:
         from ..services.spend_limits import registration_open
 
@@ -91,8 +101,10 @@ def verify_code(body: VerifyCodeIn, db: DbDep, settings: SettingsDep) -> TokensO
     elif not user.is_active:
         raise ApiError(403, "user_inactive", "Аккаунт отключён владельцем цеха")
     user.last_login_at = now
+    restricted = body.scope != SCOPE_FULL
 
-    if body.device_id:
+    # Устройство и push-токен — только для приложения мастера: вход из Eskiz DWG push Mebel не получает
+    if body.device_id and not restricted:
         device = db.scalar(select(Device).where(Device.user_id == user.id, Device.device_id == body.device_id))
         if device is None:
             device = Device(user_id=user.id, device_id=body.device_id)
@@ -101,8 +113,8 @@ def verify_code(body: VerifyCodeIn, db: DbDep, settings: SettingsDep) -> TokensO
         device.push_token = body.push_token or device.push_token
         device.last_seen_at = now
 
-    tokens = _issue_tokens(db, settings, user, is_new)
-    inv = invite_for_user(db, user)
+    tokens = _issue_tokens(db, settings, user, is_new, body.scope)
+    inv = None if restricted else invite_for_user(db, user)  # принять приглашение ограниченным токеном нельзя
     if inv is not None:
         tokens.invite = invite_out(db, inv)
     db.commit()
@@ -119,13 +131,14 @@ def _load_refresh(db, settings, token: str) -> RefreshToken:
 
 @router.post("/refresh", response_model=TokensOut, summary="Обновить токены")
 def refresh(body: RefreshIn, db: DbDep, settings: SettingsDep) -> TokensOut:
-    """Старый refresh-токен отзывается, выдаётся новая пара (ротация)."""
+    """Старый refresh-токен отзывается, выдаётся новая пара (ротация) с той же областью (`scope`):
+    из токена Eskiz DWG полный не получить."""
     rt = _load_refresh(db, settings, body.refresh_token)
     user = db.get(User, rt.user_id)
     if user is None or not user.is_active:
         raise ApiError(401, "user_inactive", "Аккаунт не найден или отключён")
     rt.revoked_at = utcnow()
-    tokens = _issue_tokens(db, settings, user)
+    tokens = _issue_tokens(db, settings, user, scope=rt.scope or SCOPE_FULL)
     db.commit()
     return tokens
 
@@ -139,7 +152,8 @@ def logout(body: RefreshIn, db: DbDep, settings: SettingsDep) -> Ok:
 
 
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
-def me(current: CurrentDep) -> User:
+def me(current: InboxCurrentDep) -> User:
+    """Принимает и ограниченный токен Eskiz DWG (scope=dwg_upload)."""
     return current.user
 
 

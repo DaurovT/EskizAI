@@ -86,6 +86,11 @@ class Settings(BaseSettings):
     s3_public_base_url: str = ""
     max_photo_bytes: int = 10 * 1024 * 1024
     max_photos_per_kind: int = 5
+    # Входящие чертежи из Eskiz DWG (docs/dwg_contract.md): пакет .eskiz, квота и срок хранения — на пользователя
+    inbox_max_bytes: int = 50 * 1024 * 1024
+    inbox_quota_bytes: int = 2 * 1024 * 1024 * 1024
+    inbox_uploads_per_day: int = 60
+    inbox_retention_days: int = 90
 
     # Лимиты и ссылки
     free_projects_per_month: int = 3

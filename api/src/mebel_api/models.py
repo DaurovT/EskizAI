@@ -143,6 +143,9 @@ class RefreshToken(Base):
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
     revoked_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = _created()
+    # Область токенов (security.SCOPES): full — приложение мастера, dwg_upload — Eskiz DWG (только входящие чертежи).
+    # /auth/refresh выдаёт новую пару с той же областью — из dwg_upload полный токен не получить
+    scope: Mapped[str] = mapped_column(String(20), default="full", server_default="full")
 
 
 class Client(Base):
@@ -972,3 +975,30 @@ class OrderDispute(Base):
     resolved_by: Mapped[Optional[str]] = mapped_column(String(64))
     resolved_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = _created()
+
+
+class InboxDrawing(Base):
+    """Входящий чертёж из Eskiz DWG (docs/dwg_contract.md): пакет .eskiz виден только загрузившему пользователю.
+
+    Файл — в закрытой зоне хранилища по sha256 содержимого (одинаковые байты — один файл, строки и видимость —
+    свои у каждого пользователя). Живёт `inbox_retention_days` с последнего открытия; удалённые и истёкшие
+    строки и их файлы чистит scripts/prune_inbox.py."""
+
+    __tablename__ = "inbox_drawings"
+    __table_args__ = (Index("ix_inbox_drawings_user_created", "user_id", "created_at"),)
+
+    id: Mapped[uuid.UUID] = _id()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # Цех — на будущее (общие входящие цеха); сейчас не заполняется и на видимость не влияет
+    workshop_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("workshops.id", ondelete="SET NULL"))
+    filename: Mapped[str] = mapped_column(String(200))
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    storage_key: Mapped[str] = mapped_column(String(500))  # private/inbox/…/package.eskiz
+    preview_key: Mapped[Optional[str]] = mapped_column(String(500))  # первая previews/*.png пакета
+    title: Mapped[Optional[str]] = mapped_column(String(200))  # manifest.title
+    manifest: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = _created()
+    last_opened_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime)

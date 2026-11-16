@@ -27,6 +27,11 @@ class VerifyCodeIn(BaseModel):
     device_id: str | None = Field(None, max_length=200)
     platform: Literal["ios", "android", "web"] | None = None
     push_token: str | None = Field(None, max_length=500)
+    create: bool = Field(True, description="false — только вход: номер без аккаунта → 404 account_not_found, "
+                                           "ничего не создаётся (Eskiz DWG)")
+    scope: Literal["full", "dwg_upload"] = Field(
+        "full", description="dwg_upload — ограниченный токен Eskiz DWG: только входящие чертежи и /auth/me; "
+                            "push_token и устройство не регистрируются")
 
 
 class UserOut(Out):
@@ -48,6 +53,7 @@ class TokensOut(BaseModel):
     expires_in: int = Field(description="Срок жизни access-токена, секунд")
     user: UserOut
     is_new_user: bool = False
+    scope: Literal["full", "dwg_upload"] = Field("full", description="Область токенов (docs/dwg_contract.md)")
     invite: InviteOut | None = Field(None, description="Приглашение в цех для этого номера (SCR-38a) — показать до онбординга")
 
 

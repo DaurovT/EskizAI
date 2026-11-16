@@ -21,6 +21,7 @@ from .routers import (
     devices,
     estimates,
     files,
+    inbox,
     models,
     nonstandard,
     orders,
@@ -60,6 +61,7 @@ TAGS = [
     {"name": "admin", "description": "Админка: оплата заказа менеджером, тарифы, журналы"},
     {"name": "staff", "description": "Сотрудники платформы и поставщиков: вход по почте, 2FA, сессии, роли"},
     {"name": "vendor", "description": "Кабинет поставщика: заказы, переписка, исправления, возвраты, прайс, деньги"},
+    {"name": "inbox", "description": "Входящие чертежи из Eskiz DWG: видит только загрузивший (docs/dwg_contract.md)"},
     {"name": "system", "description": "Служебное"},
 ]
 
@@ -97,6 +99,11 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
     from .services.action_log import RequestIpMiddleware
 
     app.add_middleware(RequestIpMiddleware)  # IP запроса → журнал действий сотрудников
+    from .services.uploads import BodySizeLimit
+
+    # Пакет Eskiz DWG: тело больше лимита (+1 МБ на обвязку multipart) — 413 до разбора и спула на диск
+    app.add_middleware(BodySizeLimit, limits={"/inbox/drawings": settings.inbox_max_bytes + 1024 * 1024},
+                       message=f"Файл больше {settings.inbox_max_bytes // (1024 * 1024)} МБ")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -109,7 +116,7 @@ def create_app(settings: Settings | None = None, *, code_sender: DevCodeSender |
     # /admin/workshops.csv, /admin/suppliers/performance не должны перехватываться маршрутами с {id}
     app.include_router(admin_ops.router)
     for r in (auth, workshops, clients, projects, models, estimates, ai, files, catalog, orders, share, billing, tasks,
-              devices, nonstandard, price_requests, admin, admin_panel, admin_catalog, ar):
+              devices, nonstandard, price_requests, admin, admin_panel, admin_catalog, ar, inbox):
         app.include_router(r.router)
     app.include_router(nonstandard.admin_router)
     app.include_router(price_requests.admin_router)

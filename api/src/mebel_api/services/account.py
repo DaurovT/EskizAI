@@ -191,7 +191,11 @@ def _delete_project_files(db: Session, storage: Storage, pids: list[uuid.UUID]) 
     return len(keys)
 
 
-def _anonymize_user(db: Session, user: User, now: datetime) -> None:
+def _anonymize_user(db: Session, user: User, now: datetime, storage: Storage | None = None) -> None:
+    from .inbox import purge_user
+
+    if storage is not None:
+        purge_user(db, storage, user.id)  # входящие чертежи Eskiz DWG — строки и (неделимые) файлы
     old_phone = user.phone
     user.phone = f"del:{user.id.hex[:16]}"  # номер освобождается — с ним можно зарегистрироваться заново
     user.name, user.title = "", None
@@ -218,7 +222,7 @@ def purge_workshop(db: Session, storage: Storage, w: Workshop, now: datetime) ->
     """Стирает цех владельца. Возвращает счётчики для журнала (без личных данных)."""
     users = list(db.scalars(select(User).where(User.workshop_id == w.id, User.deleted_at.is_(None))))
     for u in users:
-        _anonymize_user(db, u, now)
+        _anonymize_user(db, u, now, storage)
 
     pids = list(db.scalars(select(Project.id).where(Project.workshop_id == w.id)))
     files = _delete_project_files(db, storage, pids)
@@ -265,5 +269,5 @@ def delete_account(db: Session, storage: Storage, user: User, workshop: Workshop
     now = utcnow()
     if user.role == Role.owner:
         return "workshop", purge_workshop(db, storage, workshop, now)
-    _anonymize_user(db, user, now)
+    _anonymize_user(db, user, now, storage)
     return "user", {"users": 1}

@@ -14,7 +14,7 @@ from .config import Settings
 from .domain import Role
 from .errors import ApiError, forbidden
 from .models import StaffMfa, StaffSession, StaffUser, Supplier, User, Workshop
-from .security import decode_token
+from .security import SCOPE_DWG_UPLOAD, SCOPE_FULL, decode_token
 from .services.storage import Storage
 from .services.tasks import TaskQueue
 
@@ -48,6 +48,7 @@ class CurrentUser:
     user: User
     workshop: Workshop
     impersonated_by: str | None = None  # id сотрудника платформы («глазами мастера», только чтение)
+    scope: str = SCOPE_FULL  # область токена (security.SCOPES)
 
     @property
     def is_owner(self) -> bool:
@@ -68,15 +69,15 @@ class CurrentUser:
         return self.is_owner or bool(self.user.can_order)
 
 
-def get_current_user(
-    request: Request,
-    db: DbDep,
-    settings: SettingsDep,
-    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
-) -> CurrentUser:
+def _resolve_user(request: Request, db: Session, settings: Settings,
+                  creds: HTTPAuthorizationCredentials | None, allowed: frozenset[str]) -> CurrentUser:
     if creds is None:
         raise ApiError(401, "not_authenticated", "Нужно войти по номеру телефона")
     payload = decode_token(settings, creds.credentials, "access")
+    scope = payload.get("scp", SCOPE_FULL)  # токены до 0013 — без claim, полные
+    if scope not in allowed:
+        raise ApiError(403, "scope_limited",
+                       "Этот вход даёт доступ только к входящим чертежам. Откройте приложение Eskiz Mebel")
     user = db.get(User, uuid.UUID(payload["sub"]))
     if user is None or not user.is_active:
         raise ApiError(401, "user_inactive", "Аккаунт не найден или отключён")
@@ -84,10 +85,37 @@ def get_current_user(
     assert workshop is not None
     if payload.get("imp"):  # «глазами мастера» (§4a): только чтение, каждый запрос — в журнал
         _impersonation_guard(request, payload, workshop)
-        return CurrentUser(user=user, workshop=workshop, impersonated_by=str(payload["imp"]))
+        return CurrentUser(user=user, workshop=workshop, impersonated_by=str(payload["imp"]), scope=scope)
     if workshop.blocked:
         raise ApiError(403, "workshop_blocked", "Цех заблокирован. Напишите в поддержку")
-    return CurrentUser(user=user, workshop=workshop)
+    return CurrentUser(user=user, workshop=workshop, scope=scope)
+
+
+# Области токена — запрет по умолчанию: CurrentDep (и всё, что на нём: OwnerDep и т. п.) принимает только
+# полный токен приложения мастера. Ограниченный токен Eskiz DWG (scope=dwg_upload) принимают только ручки,
+# которые явно взяли InboxCurrentDep: входящие чертежи и GET /auth/me (/auth/refresh и /auth/logout работают
+# по refresh-токену). Список таких ручек закреплён тестом (tests/test_dwg_inbox.py).
+_FULL_ONLY = frozenset({SCOPE_FULL})
+_INBOX_SCOPES = frozenset({SCOPE_FULL, SCOPE_DWG_UPLOAD})
+
+
+def get_current_user(
+    request: Request,
+    db: DbDep,
+    settings: SettingsDep,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> CurrentUser:
+    return _resolve_user(request, db, settings, creds, _FULL_ONLY)
+
+
+def get_current_user_inbox(
+    request: Request,
+    db: DbDep,
+    settings: SettingsDep,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> CurrentUser:
+    """Полный токен или токен Eskiz DWG (dwg_upload) — только для ручек, которым он разрешён."""
+    return _resolve_user(request, db, settings, creds, _INBOX_SCOPES)
 
 
 def _impersonation_guard(request: Request, payload: dict, workshop: Workshop) -> None:
@@ -105,6 +133,7 @@ def _impersonation_guard(request: Request, payload: dict, workshop: Workshop) ->
 
 
 CurrentDep = Annotated[CurrentUser, Depends(get_current_user)]
+InboxCurrentDep = Annotated[CurrentUser, Depends(get_current_user_inbox)]
 
 
 def require_owner(current: CurrentDep) -> CurrentUser:

@@ -132,3 +132,68 @@ class PublicMedia(StaticFiles):
         if os.path.splitext(str(full_path))[1].lower() not in _INLINE_EXT:
             resp.headers["Content-Disposition"] = "attachment"
         return resp
+
+
+# --- Потолок размера тела запроса (до разбора multipart) ---
+
+
+class _BodyTooLarge(Exception):
+    pass
+
+
+class BodySizeLimit:
+    """ASGI-прослойка: POST на путь из `limits` ({path: max_body_bytes}) с телом больше лимита —
+    `413 file_too_large` сразу по Content-Length или, без него, как только принятое тело перевалило лимит
+    (дальше не читаем и на диск не спулим). Ответ ручки в этом случае подменяется на 413."""
+
+    def __init__(self, app, limits: dict[str, int], message: str = "Файл слишком большой"):
+        self.app = app
+        self.limits = limits
+        self.message = message
+
+    async def _reject(self, send) -> None:
+        import json
+
+        body = json.dumps({"error": {"code": "file_too_large", "message": self.message, "details": None}},
+                          ensure_ascii=False).encode()
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
+                                (b"connection", b"close")]})
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope, receive, send):
+        limit = self.limits.get(scope.get("path", "")) if scope["type"] == "http" and scope.get("method") == "POST" \
+            else None
+        if limit is None:
+            return await self.app(scope, receive, send)
+        for name, value in scope.get("headers") or []:
+            if name == b"content-length":
+                try:
+                    if int(value) > limit:
+                        return await self._reject(send)
+                except ValueError:
+                    pass
+        state = {"received": 0, "exceeded": False, "started": False}
+
+        async def limited_receive():
+            msg = await receive()
+            if msg["type"] == "http.request":
+                state["received"] += len(msg.get("body", b""))
+                if state["received"] > limit:
+                    state["exceeded"] = True
+                    raise _BodyTooLarge()
+            return msg
+
+        async def guarded_send(msg):
+            if state["exceeded"]:
+                return  # ответ ручки (обычно 400 «ошибка разбора тела») подменяем на 413
+            if msg["type"] == "http.response.start":
+                state["started"] = True
+            await send(msg)
+
+        try:
+            await self.app(scope, limited_receive, guarded_send)
+        except _BodyTooLarge:
+            pass
+        if state["exceeded"] and not state["started"]:
+            await self._reject(send)
