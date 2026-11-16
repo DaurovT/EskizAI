@@ -12,7 +12,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, palette, radius, space, statusTone, tagTones, bannerTones, tones, type, type BannerTone, type TagTone, type Tone } from './theme';
 import {
   IconButton, Press, RowInsetProvider, SeparatorProvider, SurfaceProvider, T, ease, resolveFont,
-  useControlBg, useReduceMotion, useRowInset, useSeparator, useSurface, type IconName,
+  useControlBg, useReduceMotion, useRowInset, useSeparator, useSurface, useTabBarSpace, type IconName,
 } from './base';
 import { haptics } from './haptics';
 import { useT } from '../i18n';
@@ -185,6 +185,12 @@ export function Screen({
   const offset = useRef(0);
   const kb = useKeyboardOverlap(box);
   const bottomInset = useSafeAreaInsets().bottom;
+  // .foot (не .bar) — кнопки «висят в воздухе» над прокруткой (Liquid Glass): прозрачный футер поверх тела,
+  // тело прокручивается под ним, снизу запас на высоту футера. Без прокрутки — как раньше, в потоке.
+  const floatFoot = !!footer && !footerBar && scroll;
+  const [footH, setFootH] = useState(0);
+  // вкладка с плавающим меню: последние строки должны выезжать из-под меню
+  const tabSpace = useTabBarSpace();
   // клавиатура открылась — прокрутить так, чтобы поле ввода (и строка под ним) было над футером/клавиатурой
   useEffect(() => {
     if (!kb || !scroll) return;
@@ -204,7 +210,7 @@ export function Screen({
   }, [kb, scroll]);
   const body = scroll ? (
     <View style={{ flex: 1 }}>
-      <ScrollView ref={scrollRef} contentContainerStyle={[pad, { paddingBottom: footer ? space.m : space.xxl, flexGrow: 1 }]}
+      <ScrollView ref={scrollRef} contentContainerStyle={[pad, { paddingBottom: (floatFoot ? footH + space.xs : footer ? space.m : space.xxl) + tabSpace, flexGrow: 1 }]}
         keyboardShouldPersistTaps="handled" refreshControl={refreshControl} scrollEventThrottle={32}
         onScroll={(e) => { offset.current = e.nativeEvent.contentOffset.y; }}>
         {children}
@@ -214,7 +220,7 @@ export function Screen({
       {kb ? <EdgeFade edge="bottom" /> : null}
     </View>
   ) : (
-    <View style={[{ flex: 1 }, pad]}>{children}</View>
+    <View style={[{ flex: 1 }, pad, tabSpace ? { paddingBottom: tabSpace } : null]}>{children}</View>
   );
   // с футером нижнюю безопасную зону забирает сам футер (белая плашка доходит до края)
   const safeEdges = footer ? edges.filter((e) => e !== 'bottom') : edges;
@@ -224,8 +230,17 @@ export function Screen({
       <OfflineBanner />
       {/* футер и поле у низа — ровно над клавиатурой (KeyboardAvoidingView ошибался на высоту шапки стека) */}
       <View ref={box} style={{ flex: 1, paddingBottom: footer && kb ? Math.max(0, kb - bottomInset + 8) : kb }}>
-        {body}
-        {footer ? <View ref={footRef}><Footer bar={footerBar} style={footerStyle}>{footer}</Footer></View> : null}
+        {floatFoot ? (
+          <View style={{ flex: 1 }}>
+            {body}
+            <FloatingFooter ref={footRef} style={footerStyle} onHeight={setFootH}>{footer}</FloatingFooter>
+          </View>
+        ) : (
+          <>
+            {body}
+            {footer ? <View ref={footRef}><Footer bar={footerBar} style={footerStyle}>{footer}</Footer></View> : null}
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -277,6 +292,23 @@ export function Footer({ children, bar, style }: { children: ReactNode; bar?: bo
     </SafeAreaView>
   );
 }
+/**
+ * Плавающий .foot (Liquid Glass): кнопки над прокручиваемым содержимым, без белой/цветной полосы под ними.
+ * Кладите последним ребёнком контейнера `flex: 1`, в котором лежит прокрутка; `onHeight` — высота футера,
+ * её добавьте прокрутке в paddingBottom, чтобы последние строки выезжали из-под кнопок. За кнопками — лёгкое
+ * растворение фона снизу (только у края экрана), чтобы текст под ними не спорил с подписями.
+ */
+export const FloatingFooter = forwardRef<ViewInstance, { children: ReactNode; style?: StyleProp<ViewStyle>; onHeight?: (h: number) => void }>(
+  function FloatingFooter({ children, style, onHeight }, ref) {
+    return (
+      <View ref={ref} pointerEvents="box-none" style={st.footFloat} onLayout={onHeight ? (e) => onHeight(Math.round(e.nativeEvent.layout.height)) : undefined}>
+        <View pointerEvents="none" style={st.footFade} />
+        <Footer style={style}>{children}</Footer>
+      </View>
+    );
+  },
+);
+
 /** Ряд кнопок .fr: дети с style={{ flex: 1 }} делят ширину. */
 export const ButtonRow = ({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) => (
   <View style={[{ flexDirection: 'row', gap: 8 }, style]}>{children}</View>
@@ -640,6 +672,9 @@ const st = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.ground },
   body: { paddingHorizontal: space.gutter, paddingTop: 8 },
   foot: { paddingTop: 10, paddingHorizontal: 12, paddingBottom: 16, gap: 8 },
+  footFloat: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // растворение фона за плавающими кнопками: сверху прозрачно, к краю экрана — фон .7
+  footFade: { position: 'absolute', left: 0, right: 0, top: '35%', bottom: 0, backgroundImage: `linear-gradient(180deg, rgba(242,241,238,0) 0%, rgba(242,241,238,0.7) 100%)` },
   footBar: { backgroundColor: palette.white, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
   card: { backgroundColor: palette.white, borderRadius: radius.sheet, overflow: 'hidden' },
   cardPad: { paddingVertical: 16, paddingHorizontal: 20 },

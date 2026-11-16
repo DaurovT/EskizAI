@@ -114,7 +114,7 @@ export default function Element() {
         <T style={{ fontSize: 13, color: palette.blue, opacity: 0.7 }}>{t('mm')}</T>
       </View>
       <View style={[s.hdr, { marginTop: top }]}>
-        <IconButton icon="chevron-back" label={t('back')} onPress={() => router.back()} style={s.lift} />
+        <IconButton icon="chevron-back" label={t('back')} onPress={() => router.back()} />
         <View style={[s.tpill, s.lift]}>
           <T style={{ fontSize: 15, lineHeight: 19, fontWeight: '600' }} numberOfLines={1}>{tab === 'section' ? t('ed_section', { n: (sec ?? 0) + 1 }) : part.name}</T>
           <T style={{ fontSize: 13, lineHeight: 16, color: palette.muted }} numberOfLines={1}>{tab === 'section' ? t('el_section_sub') : t('el_part_n', { n: part.number })}</T>

@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../../src/i18n';
 import { CenterColumn, useLayout } from '../../src/ui/layout';
+import { TabBarSpaceProvider, floatingNav } from '../../src/ui/kit';
 import { TabBar, TabHeader } from '../../src/ui/navigation';
 import { colors } from '../../src/ui/theme';
 
@@ -8,16 +10,24 @@ import { colors } from '../../src/ui/theme';
 const SPLIT = new Set(['index', 'clients', 'orders']);
 
 /**
- * Нижняя панель .nav: Проекты · Клиенты · ＋ Новый проект (в центре, всегда один тап) · Заказы · Профиль.
+ * Нижнее меню .nav: Проекты · Клиенты · ＋ Новый проект (в центре, всегда один тап) · Заказы · Профиль.
+ * На телефоне — плавающая стеклянная капсула (Liquid Glass) поверх экрана: экраны вкладок получают нижний запас
+ * под неё через TabBarSpaceProvider (Screen добавляет его сам, свои ScrollView — useTabBarSpace()).
  * На планшете — рейка слева (TProjects.dc.html .rail), разделы без своей раскладки — колонкой по центру.
  */
 export default function TabsLayout() {
   const { t } = useT();
   const { tablet, wide } = useLayout();
+  const insets = useSafeAreaInsets();
+  const navSpace = tablet ? 0 : floatingNav.space(insets.bottom);
   return (
     <Tabs
       tabBar={(p) => <TabBar {...p} />}
-      screenLayout={({ children, route }) => (tablet && !(wide && SPLIT.has(route.name)) ? <CenterColumn>{children}</CenterColumn> : children)}
+      screenLayout={({ children, route }) => (
+        <TabBarSpaceProvider value={navSpace}>
+          {tablet && !(wide && SPLIT.has(route.name)) ? <CenterColumn>{children}</CenterColumn> : children}
+        </TabBarSpaceProvider>
+      )}
       screenOptions={({ route }) => ({
         header: (p) => <TabHeader {...p} />,
         headerShown: !(wide && SPLIT.has(route.name)),

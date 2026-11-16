@@ -22,7 +22,7 @@ import { Carcass } from '../ui/Illus';
 import { DwgAppIcon } from '../ui/Drawing';
 import { ProjectDwgSheet } from './OpenInDwg';
 import { LangSwitch } from '../ui/LangSwitch';
-import { Banner, Button, Card, Dialog, Field, Footer, Gap, Group, IconButton, ListItem, Loading, MenuItem, OfflineBanner, Press, Sheet, T, toast, type IconName } from '../ui/kit';
+import { Banner, Button, Card, Dialog, Field, FloatingFooter, Footer, Gap, Group, IconButton, ListItem, Loading, MenuItem, OfflineBanner, Press, Sheet, T, toast, type IconName } from '../ui/kit';
 import { ScreenOptions, tablet, useEmbedded, useEmbedEvents, useLayout, useRouteParams } from '../ui/layout';
 import { palette, space } from '../ui/theme';
 
@@ -41,6 +41,8 @@ export function ProjectCardView() {
   const versions = useResource(() => api.listVersions(id).catch(() => []), [id]);
   const [dwgOpen, setDwgOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  // .foot «в воздухе»: высота плавающих кнопок — запас снизу прокрутки
+  const [footH, setFootH] = useState(0);
   const [menu, setMenu] = useState(false);
   const [delDialog, setDelDialog] = useState(false);
   const [cancelSheet, setCancelSheet] = useState(false);
@@ -348,7 +350,8 @@ export function ProjectCardView() {
         <IconButton icon="ellipsis-horizontal" label={t('pc_more')} onPress={() => setMenu(true)} />
       </View>
       <OfflineBanner />
-      <ScrollView contentContainerStyle={st.body}>
+      <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={[st.body, { paddingBottom: footH + 4 }]}>
         {banners}
         <Card padded={false} onPress={p.current_version_id ? openEditor : () => router.push(`/project/${id}/breakdown`)} accessibilityLabel={p.title}>
           <View style={st.sum}>
@@ -366,7 +369,8 @@ export function ProjectCardView() {
         </Card>
         {details}
       </ScrollView>
-      <Footer style={{ paddingTop: 6 }}>{buttons}</Footer>
+      <FloatingFooter style={{ paddingTop: 6 }} onHeight={setFootH}>{buttons}</FloatingFooter>
+      </View>
       {overlays}
     </SafeAreaView>
   );

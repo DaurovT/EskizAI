@@ -92,7 +92,7 @@ export default function RoomColor() {
       </View>
 
       <View style={[s.hdr, { paddingTop: insets.top + 12 }]} pointerEvents="box-none">
-        <IconButton icon="chevron-back" label={t('back')} onPress={() => router.back()} style={s.lift} />
+        <IconButton icon="chevron-back" label={t('back')} onPress={() => router.back()} />
         <View style={[s.tpill, s.lift]}>
           <T style={{ fontSize: 15, lineHeight: 19, fontWeight: '600' }} numberOfLines={1}>{title || t('ed_title')}</T>
           <T style={{ fontSize: 13, lineHeight: 16, color: palette.muted }} numberOfLines={1}>{t('rc_sub')}</T>

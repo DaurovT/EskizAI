@@ -135,6 +135,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .ttl{font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:0 8px;flex:none}
@@ -158,7 +167,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </style>
 </helmet>
 <div class="app">
-<div class="hdr"><a class="ib" href="Editor.dc.html" aria-label="Назад к модели"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a></div>
+<div class="hdr"><a class="ib" href="Editor.dc.html" aria-label="Назад к модели"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a></div>
 <div class="body" style="gap:8px;padding-top:4px">
 <div style="display:flex;align-items:baseline;justify-content:space-between;padding-right:8px"><div class="ttl">Фурнитура</div><div class="num" style="font-size:18px;line-height:24px;font-weight:700">{{total}} <span class="sum">сум</span></div></div>
 <div class="seg"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="2"><button class="sg {{t.on}}" onClick="{{t.pick}}">{{t.t}}</button></sc-for></div>
@@ -176,7 +185,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </div>
 <div class="sh" style="padding-top:4px">Отделка</div>
 <div class="fin"><sc-for list="{{fins}}" as="f" hint-placeholder-count="5"><button class="fi {{f.on}} {{f.off}}" onClick="{{f.pick}}" aria-label="{{f.t}}"><i style="background:{{f.hex}}"></i><span>{{f.t}}</span></button></sc-for></div>
-<sc-if value="{{warn}}" hint-placeholder-val="{{ false }}"><div class="ban est"><span style="flex:none;margin-top:1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg></span><div class="bd" style="font-size:15px;line-height:20px">Gola нужен паз 20 мм в боковинах. Добавлю сам.</div></div></sc-if>
+<sc-if value="{{warn}}" hint-placeholder-val="{{ false }}"><div class="ban est"><span style="flex:none;margin-top:1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg></span><div class="bd" style="font-size:15px;line-height:20px">Gola нужен паз 20 мм в боковинах. Добавлю сам.</div></div></sc-if>
 <sc-if value="{{noFin}}" hint-placeholder-val="{{ false }}"><div class="cap" style="padding:0 8px">Без ручек: открывание push-to-open, отделка не нужна</div></sc-if>
 </sc-if>
 

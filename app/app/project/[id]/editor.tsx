@@ -45,7 +45,9 @@ import { DIM_ESTIMATED_COLOR, ProductCanvas, type AnyDimensionKey, type CanvasHa
 import { confirm, errorInfo, showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { haptics } from '../../../src/ui/haptics';
-import { Button, IconButton, Loading, OfflineBanner, Press, SurfaceProvider, T, Tag, Toggle, resolveFont, toast, useReduceMotion } from '../../../src/ui/kit';
+import {
+  Button, IconButton, LiquidLayer, LiquidPress, Loading, OfflineBanner, Press, SurfaceProvider, T, Tag, Toggle, liquid, resolveFont, toast, useGlassPress, useReduceMotion,
+} from '../../../src/ui/kit';
 import { tablet, useLayout } from '../../../src/ui/layout';
 import { palette, type as ty } from '../../../src/ui/theme';
 
@@ -56,13 +58,17 @@ const NIGHT_BG = '#2A2B2C';
 const DOTS = require('../../../assets/dots.png');
 type Snap = 'min' | 'half' | 'full';
 /**
- * Высоты шторки (с нижним отступом 28 — его заменяет безопасная зона). Свёрнута: ручка 22 + инструменты 36 + 8 +
+ * Высоты шторки (с нижним отступом 28 — его заменяет безопасная зона). Свёрнута: ручка 22 + 8 +
  * ввод 52 + 10 + «Клиенту» 52 + 28 + 6. Пустая половина — плюс строка подсказок.
+ * Инструменты («Деталь · Декор · Фурнитура · Раскрой») — не в шторке, а стеклянной капсулой .tool в 12 над ней.
  */
-const SNAPS: Record<Snap, number> = { min: 214, half: 470, full: 660 };
-const HALF_EMPTY = 214 + 52;
+const SNAPS: Record<Snap, number> = { min: 178, half: 426, full: 660 };
+const HALF_EMPTY = 178 + 44;
 /** Половина с выбранной деталью / фурнитурой — низкая (коротко о детали), 3D крупнее; + строка кнопок фасада. */
-const HALF_PICK = 214 + 8 + 104;
+const HALF_PICK = 178 + 104;
+/** .tool (Liquid Glass): капсула 52 над шторкой с зазором 12. */
+const TOOL_H = 52;
+const TOOL_GAP = 12;
 const PICK_BTNS = 48;
 const KEYS_H = 540;
 /** Шапка (72) и строка «Вид · AR» (40 + 4) от верхней безопасной зоны. */
@@ -114,6 +120,7 @@ export default function Editor() {
   // широкий планшет (TEditor.dc.html): чат — панелью справа, всегда открыт; инструменты — колонкой слева
   const side = useLayout().wide;
   const reduce = useReduceMotion();
+  const toolPress = useGlassPress();
 
   const model = useResource(() => api.getModel(id), [id]);
   const card = useResource(() => api.getProject(id), [id]);
@@ -523,12 +530,13 @@ export default function Editor() {
   const full = vmode === 'full' && !keys;
   const showRow = !full && !keys;
   const canvasTop = insets.top + (showRow ? ROW_TOP + ROW_H : HDR_H);
-  const canvasH = side ? Math.max(60, H - canvasTop - pb - 16) : Math.max(60, H - sheetH - kbH - canvasTop);
+  // .tool — над шторкой (кроме полного чата, клавиатуры и ввода размера); модель вписывается выше неё
+  const showTools = !side && vmode !== 'full' && !kbH && !keys;
+  const canvasH = side ? Math.max(60, H - canvasTop - pb - 16) : Math.max(60, H - sheetH - kbH - canvasTop - (showTools ? TOOL_H + TOOL_GAP : 0));
   const canvasFullH = side ? H : Math.max(canvasTop + canvasH, H - snapH('min'));
   // планшет: слева от модели — колонка инструментов (16 + 76)
   const freeArea = { top: canvasTop, bottom: canvasFullH - canvasTop - canvasH, left: side ? SIDE_TOOLS_W : 0, right: 0 };
   const freePad = canvasH < 300 ? 12 : 28;
-  const showTools = !side && vmode !== 'full' && !kbH;
   const fieldFor = (k: DimKey) => paramFields(draft).find((f) => f.pointer === `/${k}`) ?? null;
   const limitsFor = (k: DimKey) => dimLimits(draft, kind, k);
   const openKeys = (k: DimKey) => {
@@ -641,7 +649,7 @@ export default function Editor() {
       <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: side ? SIDE_W : 0, top: insets.top }}>
         <OfflineBanner />
         <View style={s.hdr} pointerEvents="box-none">
-          <IconButton icon="chevron-back" label={t('ed_to_project')} onPress={() => (router.canGoBack() ? router.back() : router.replace(`/project/${id}`))} style={s.lift} />
+          <IconButton icon="chevron-back" label={t('ed_to_project')} onPress={() => (router.canGoBack() ? router.back() : router.replace(`/project/${id}`))} />
           <Press feedback="scale" onPress={() => router.push(`/project/${id}/versions`)} accessibilityRole="button" accessibilityLabel={`${title}. ${anyEst ? `${t('estimate_mark')}. ` : ''}${sub}`} style={[s.titlePill, s.lift]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <T style={{ flexShrink: 1, fontSize: 15, lineHeight: 19, fontWeight: '600' }} numberOfLines={1}>{title}</T>
@@ -649,22 +657,24 @@ export default function Editor() {
             </View>
             <T v="cap" style={{ fontSize: 12, lineHeight: 15 }} numberOfLines={1}>{sub}</T>
           </Press>
-          <IconButton label={t('ed_undo')} disabled={!state.can_undo || saving || disabled} onPress={() => run(() => api.undo(id))} style={s.lift}>
+          <IconButton label={t('ed_undo')} disabled={!state.can_undo || saving || disabled} onPress={() => run(() => api.undo(id))}>
             <MaterialCommunityIcons name="undo-variant" size={22} color={palette.ink} />
           </IconButton>
         </View>
       </View>
       {showRow ? (
         <View style={[s.viewRow, { top: insets.top + ROW_TOP }, side && { right: SIDE_W + 12 }]} pointerEvents="box-none">
-          <Press onPress={() => { hideHint(); setViewMenu(!viewMenu); }} accessibilityRole="button" accessibilityState={{ expanded: viewMenu }} style={[s.vb, viewMenu && { backgroundColor: palette.ink }]}>
+          {/* .vb (Liquid Glass): стеклянные «Вид» и AR; открытое меню «Вид» — тёмная кнопка */}
+          <LiquidPress onPress={() => { hideHint(); setViewMenu(!viewMenu); }} accessibilityRole="button" accessibilityState={{ expanded: viewMenu }}
+            radius={20} squish={[1.07, 0.93]} layerStyle={viewMenu ? s.vbOn : undefined} style={s.vb}>
             <Ionicons name={exploded ? 'apps-outline' : evening ? 'moon-outline' : 'eye-outline'} size={17} color={viewMenu ? palette.white : palette.ink} />
             <T style={[s.vbText, viewMenu && { color: palette.white }]}>{t('ed_view')}</T>
             <Ionicons name={viewMenu ? 'chevron-up' : 'chevron-down'} size={14} color={viewMenu ? palette.white : palette.muted} />
-          </Press>
-          <Press onPress={() => router.push(`/project/${id}/ar`)} accessibilityRole="button" accessibilityLabel="AR" style={s.vb}>
+          </LiquidPress>
+          <LiquidPress onPress={() => router.push(`/project/${id}/ar`)} accessibilityRole="button" accessibilityLabel="AR" radius={20} squish={[1.07, 0.93]} style={s.vb}>
             <Ionicons name="cube-outline" size={17} color={palette.ink} />
             <T style={s.vbText}>AR</T>
-          </Press>
+          </LiquidPress>
         </View>
       ) : null}
 
@@ -679,6 +689,19 @@ export default function Editor() {
             </Press>
           ))}
         </View>
+      ) : null}
+
+      {/* .tool (Liquid Glass): стеклянная капсула инструментов в 12 над шторкой, едет вместе с ней */}
+      {showTools ? (
+        <Animated.View pointerEvents="box-none" style={[s.toolBar, { bottom: Animated.add(Animated.add(h, kb), TOOL_GAP) }]}>
+          <LiquidLayer radius={TOOL_H / 2} p={toolPress.p} reduce={toolPress.reduce} squish={[1.02, 0.96]} />
+          {tools.map(([k, fn]) => (
+            <Pressable key={k} onPress={fn} onPressIn={toolPress.in} onPressOut={toolPress.out} accessibilityRole="button"
+              style={({ pressed }) => [s.tlGlass, pressed && { backgroundColor: liquid.press }]}>
+              <T style={s.tlGlassText} numberOfLines={1}>{t(k)}</T>
+            </Pressable>
+          ))}
+        </Animated.View>
       ) : null}
 
       {!keys ? (
@@ -870,16 +893,6 @@ export default function Editor() {
                 <T v="cap" style={{ flex: 1 }} numberOfLines={1}>{t('ed_budget_line', { p: budget.data.percent })}</T>
                 <T onPress={() => router.push('/paywall' as never)} style={{ fontSize: 14, fontWeight: '700', color: palette.greenPress, paddingVertical: 6 }}>{t('pl_tariffs')}</T>
               </View>
-            ) : null}
-            {/* инструменты — чипами над вводом, слева, через 8 (без иконок: все четыре помещаются в ширину 390 без прокрутки) */}
-            {showTools ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: vmode === 'min' ? 0 : 8 }} contentContainerStyle={s.tools} keyboardShouldPersistTaps="handled">
-                {tools.map(([k, fn]) => (
-                  <Press key={k} onPress={fn} accessibilityRole="button" style={s.tl}>
-                    <T style={s.tlText}>{t(k)}</T>
-                  </Press>
-                ))}
-              </ScrollView>
             ) : null}
             <View style={{ paddingTop: 8, paddingHorizontal: 16 }}>
               <Pressable style={[s.inp, aiLimited && { opacity: 0.75 }]} disabled={!aiLimited} onPress={() => router.push('/paywall' as never)}>
@@ -1092,7 +1105,8 @@ const s = StyleSheet.create({
   seg: { flex: 1, flexDirection: 'row', height: 36, borderRadius: 12, padding: 3, gap: 2, backgroundColor: palette.segOnWhite },
   segB: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   segOn: { backgroundColor: palette.white, shadowColor: palette.ink, shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } },
-  vb: { height: 40, borderRadius: 20, backgroundColor: palette.white, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, shadowColor: palette.ink, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
+  vb: { height: 40, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10 },
+  vbOn: { backgroundImage: 'none', backgroundColor: palette.ink, boxShadow: 'none' },
   vbText: { fontSize: 13, fontWeight: '700' },
   nt: { height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.12)', flexDirection: 'row', padding: 3, gap: 2 },
   ntB: { height: 34, borderRadius: 17, paddingHorizontal: 12, justifyContent: 'center' },
@@ -1103,6 +1117,10 @@ const s = StyleSheet.create({
   tools: { flexDirection: 'row', gap: 8, paddingHorizontal: 16 },
   tl: { height: 36, borderRadius: 18, backgroundColor: palette.ground, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12 },
   tlText: { fontSize: 14, lineHeight: 18, fontWeight: '500' },
+  // .tool / .tl (Liquid Glass): капсула 52 r26 с отступом 4, пункты — прозрачные «таблетки» 44 r22, нажатый — белый .6
+  toolBar: { position: 'absolute', left: 12, right: 12, height: TOOL_H, borderRadius: TOOL_H / 2, flexDirection: 'row', padding: 4 },
+  tlGlass: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  tlGlassText: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
   sug: { backgroundColor: palette.greenSoft },
   chat: {
     position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: palette.white, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'visible',

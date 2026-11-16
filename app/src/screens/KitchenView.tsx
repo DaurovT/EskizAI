@@ -579,14 +579,14 @@ export function KitchenView({ id, tree, title, sub, price, materialName, onField
       ) : null}
       {/* шапка */}
       <View style={[s.hdr, { marginTop: top }]} pointerEvents="box-none">
-        <IconButton icon="chevron-back" label={t('ed_to_project')} onPress={() => (router.canGoBack() ? router.back() : router.replace(`/project/${id}`))} style={s.lift} />
+        <IconButton icon="chevron-back" label={t('ed_to_project')} onPress={() => (router.canGoBack() ? router.back() : router.replace(`/project/${id}`))} />
         <View style={[s.tpill, s.lift]}>
           <T style={{ fontSize: 15, lineHeight: 19, fontWeight: '600' }} numberOfLines={1}>{title}</T>
           <T style={{ fontSize: 13, lineHeight: 16, color: palette.muted }} numberOfLines={1}>
             {sub ?? (corner ? t('kit_sub_corner', { n: base.length + base2.length }) : t('kit_sub_straight', { a: base.length, b: wall.length }))}
           </T>
         </View>
-        <IconButton icon="color-palette-outline" label={t('ed2_kitchen_tools')} onPress={() => setMenu(true)} style={s.lift} />
+        <IconButton icon="color-palette-outline" label={t('ed2_kitchen_tools')} onPress={() => setMenu(true)} />
       </View>
       {/* размер · план/стены · Схема / 3D */}
       <View style={[s.row2, { top: top + ROW2 }]} pointerEvents="box-none">

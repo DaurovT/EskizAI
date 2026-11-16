@@ -135,6 +135,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .ttl{font-size:26px;line-height:32px;font-weight:700;letter-spacing:-.025em;padding:0 4px}
@@ -160,7 +169,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </style>
 </helmet>
 <div class="app">
-<div class="hdr" style="padding-bottom:0"><a class="ib" href="Editor.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><span class="grow"></span><span class="st c-gray" style="background:#fff;height:32px;font-size:14px">Шкаф · Азиз</span></div>
+<div class="hdr" style="padding-bottom:0"><a class="ib" href="Editor.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a><span class="grow"></span><span class="st c-gray" style="background:#fff;height:32px;font-size:14px">Шкаф · Азиз</span></div>
 <div class="body" style="gap:8px;padding-top:2px">
 <div class="ttl">Подсветка</div>
 <div class="sh">Шкаф<span>{{lenW}} м ленты</span></div>

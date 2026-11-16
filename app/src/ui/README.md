@@ -44,8 +44,22 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 Переходы: iOS — системный push (параллакс 30 %, свайп от края = назад), Android — `slide_from_right`; `gestureEnabled: true`.
 
 Вкладки (`app/(tabs)/_layout.tsx`): `TabHeader` — большой заголовок 30/36 из `headerTitle ?? title`; `headerLeft/headerRight` вкладки дают строку над ним
-(как аватар «МП» и колокольчик в Projects.dc.html). `TabBar` — `.nav`: белая, r24 сверху, 84 с безопасной зоной; активная — зелёная «таблетка» `#E6F1EA`
-под иконкой, подпись 12/500; центр — `.plus` 52×44 r16 → `/project/new`. Для своей шапки вкладки — `options={{ headerShown: false }}`.
+(как аватар «МП» и колокольчик в Projects.dc.html). Для своей шапки вкладки — `options={{ headerShown: false }}`.
+
+`TabBar` на телефоне — **плавающее стеклянное меню** `.nav` (блок `/* Liquid Glass */` в Projects/Clients/Orders/Profile.dc.html):
+капсула 64 r32, слева/справа 12, снизу `floatingNav.bottom(insets.bottom)` = 26 на iPhone с «полоской» (34 − 8), не меньше 12 без неё;
+жидкое стекло (`LiquidLayer`), экран прокручивается **под** меню. Пункты `.nv` 62: иконка 24 в подложке 56×32, подпись 11/13 600 #55524D;
+активный — #275C3A и подложка `liquid.active` rgba(255,255,255,.72) с бликом. Центр — стеклянный «＋» 54×50 r25 (`GlassLayers` с `inset={3.5}`
+`innerRadius={22}`) → `/project/new`.
+**Линза** (`nvDown/nvMove/nvUp` макета): нажатие показывает линзу 76×84 r42 (над меню на 10) под пальцем, её можно вести вдоль меню —
+пункты рядом увеличиваются до 1.22, капсула сплющивается 1.025×.96; отпустили — линза пружиной (.34,1.56,.64,1) 450 мс едет к ближайшему пункту
+и гаснет, меню переходит туда (тап — сразу, перетаскивание — через 320 мс). В покое линзы нет, как в макете (opacity 0). PanResponder + Animated
+(нативный драйвер), без gesture-handler/reanimated. «Уменьшить движение» — без линзы, увеличения и сплющивания, переход сразу.
+Доступность: пункты — `tab` + `selected` + подпись, «＋» — `button`; двойной тап VoiceOver/TalkBack — действие `activate`.
+На Android при открытой клавиатуре меню скрыто.
+**Нижний запас под меню:** `_layout` вкладок кладёт `TabBarSpaceProvider` (= `floatingNav.space` ≈ 104, как `.app:has(>.nav) .body`); `Screen` добавляет
+его сам, свои `ScrollView` во вкладках — `paddingBottom: … + useTabBarSpace()`. Вне вкладок и на планшете — 0.
+На планшете — прежняя белая рейка слева (`.rail`), «＋» в ней — стекло GLASS-GREEN.
 
 ### `Header` (`.hdr` + `.big`)
 `back?: boolean` · `onBack?` · `backIcon?: 'back' | 'close'` · `backLabel?` · `title?` (.ht в строке) · `left?` · `right?` ·
@@ -65,6 +79,10 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 `edges = ['bottom']` (добавьте `'top'`, если шапки нет) · `padded = true` (отступы 8/12/12) · `gap = 10` (между детьми — как `.body`) ·
 `header?: node` · `refreshControl?` · `contentStyle?` · `style?` · `footerStyle?` (свои отступы/gap футера, напр. `{ gap: 2, paddingTop: 6 }`).
 Фон `#F2F1EE`, офлайн-плашка сверху, клавиатура не перекрывает поля. С футером нижнюю безопасную зону берёт футер.
+**Футер `.foot` (без `footerBar`) плавает** (Liquid Glass, «кнопка в воздухе»): лежит поверх прокрутки (`FloatingFooter`), без полосы под кнопками,
+тело прокручивается под ним, снизу добавлен запас на высоту футера; у края экрана — лёгкое растворение фона (35 % → низ, до .7). При `scroll={false}`
+футер в потоке, как раньше. `footerBar` (`.foot.bar`, Estimate, Files, чат заказа) и `.bbar` (FacadeStyle, Lighting) — белые полосы, как в макетах.
+Во вкладке `Screen` сам добавляет запас под плавающее меню.
 ```tsx
 <Screen footerBar footer={<><T v="cap">Клиенту до замера</T><ButtonRow><Button v="secondary" icon="resize-outline" title="Замер" /><Button title="Отправить клиенту" style={{ flex: 1 }} /></ButtonRow></>}>
 ```
@@ -72,6 +90,10 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 
 ### `Footer` (`.foot` / `.foot.bar`)
 `children` · `bar?` · `style?`. Для экранов без `Screen` (редактор). Отступы 10/12 + safe area (мин. 16), gap 8.
+
+### `FloatingFooter` — плавающий `.foot` для экранов без `Screen`
+`children` · `style?` · `onHeight?(h)`. Последним ребёнком контейнера `flex: 1` с прокруткой; высоту из `onHeight` добавьте прокрутке в `paddingBottom`
+(так сделана карточка проекта `ProjectCard`).
 
 ### `ButtonRow` (`.fr`) — ряд кнопок, gap 8; кнопкам `style={{ flex: 1 }}`.
 ### `Row` — `children, style?, gap = 8` (row + center). `Grow` — растяжка (`.grow`). `Hairline` — линия `.hair` #F0EFEC.
@@ -146,7 +168,22 @@ import { palette, type as ty, space, radius, tones } from '../src/ui/theme';
 
 ### `IconButton` (`.ib`)
 `icon?` · `label` (a11y, обязателен) · `onPress?` · `disabled?` · `color?` · `flat?` (`.ib.flat` прозрачная) · `badge?` (красная точка, как у колокольчика) ·
-`dark?` (чёрная, белая иконка/текст — аватар цеха) · `size = 44` · `iconSize = 22` · `children?` (вместо иконки, например инициалы «МП») · `style?`.
+`dark?` (чёрная, белая иконка/текст — аватар цеха) · `glass = true` · `size = 44` · `iconSize = 22` · `children?` (вместо иконки, например инициалы «МП») · `style?`.
+На фоне экрана — **жидкое стекло** (`.ib:not([style*=background]):not(.flat)`: «назад», колокольчик, входящие, «⋯», кнопки редактора);
+нажатие сплющивает стекло 1.08×.93 пружиной 550 мс, иконка на месте. Внутри белого (Card, Sheet, футер-бар) — серая #F2F1EE, как раньше;
+`glass={false}` — белая. Свою тень (`lift`) стеклу не передавайте — у него своя.
+
+### Жидкое стекло (Liquid Glass): `liquid`, `LiquidLayer`, `LiquidPress`, `useGlassPress`
+Прозрачное стекло блока `/* Liquid Glass */`: меню вкладок, `.ib`, инструменты `.tool` и кнопки `.vb` редактора.
+В CSS — градиент rgba(255,255,255,.30 → .08) поверх `backdrop-filter: blur(4px) saturate(2.2) brightness(1.05)`. **Размытия фона в RN без нативного
+модуля нет** (expo-blur не установлен), поэтому `liquid.fill` плотнее: белый .9 → .72 — на #F2F1EE это тот же почти белый тон, содержимое под меню
+лишь слегка просвечивает. Блики и тени как в макете (`liquid.shadow`: inset 0 1 0 .95, inset 0 −1 1 .5, кольцо 1 .5, внешнее кольцо .5 и 0 10 28 −8 .28).
+- `LiquidLayer` — `radius`, `p?` (0…1 нажатие), `reduce?`, `squish = [1.08, .93]`, `style?` — слой под содержимым.
+- `LiquidPress` — `Pressable` со слоем: `radius`, `squish`, `layerStyle?` (например тёмная включённая кнопка), `style`.
+- `useGlassPress()` → `{ p, reduce, in, out }` — общее нажатие (капсула `.tool` сплющивается 1.02×.96, пока нажат любой пункт).
+- Токены: `liquid.active/activeShadow` (.nv.on), `liquid.press` (.tl:active, белый .6), `liquid.lens/lensBg/lensShadow` (линза меню).
+Редактор: `.tool` — капсула 52 r26 (отступ 4) в 12 над шторкой, едет вместе с ней; пункты — прозрачные «таблетки» 44 r22, 15/600, нажатый белый .6;
+прячется в полном чате, при клавиатуре и вводе размера. `.vb` («Вид», AR) — стекло 40 r20, сплющивание 1.07×.93; открытое меню «Вид» — тёмная.
 
 ### `Press` — база для своих нажимаемых блоков (`.svc`, плитки): `feedback?: 'scale' | 'row' | 'opacity' | 'none'` + все пропы `Pressable`.
 

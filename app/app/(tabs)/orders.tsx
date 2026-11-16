@@ -16,7 +16,7 @@ import { invoiceTotal, isActiveOrder, needsMaster, orderBadge, orderNote, orderP
 import { useOrderPush } from '../../src/state/orderEvents';
 import { useSession } from '../../src/state/session';
 import { ErrorState } from '../../src/ui/ErrorState';
-import { Avatar, Badge, Button, Card, Chip, ChipRow, EmptyState, IconButton, Loading, OfflineBanner, Press, T } from '../../src/ui/kit';
+import { Avatar, Badge, Button, Card, Chip, ChipRow, EmptyState, IconButton, Loading, OfflineBanner, Press, T, useTabBarSpace } from '../../src/ui/kit';
 import { Embedded, useLayout } from '../../src/ui/layout';
 import { Pane, SplitEmpty, SplitView, splitRow } from '../../src/ui/SplitView';
 import { OrderCardView } from '../../src/screens/OrderCard';
@@ -35,6 +35,7 @@ export default function Orders() {
   const { wide, tablet: onTablet } = useLayout();
   const split = wide;
   const insets = useSafeAreaInsets();
+  const navSpace = useTabBarSpace();
   const [sel, setSel] = useState<string | null>(null);
   const { data, error, loading, refreshing, reload, refresh } = useResource(() => api.listOrders(), []);
   // push по любому заказу (сообщение, решение поставщика) — тихо обновить список
@@ -139,7 +140,7 @@ export default function Orders() {
       {header}
       <OfflineBanner />
       {loading && !data ? <Loading /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : (
-        <ScrollView contentContainerStyle={st.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+        <ScrollView contentContainerStyle={[st.body, { paddingBottom: 24 + navSpace }]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
           <T v="cap" style={{ paddingHorizontal: 8, marginTop: -9 }}>{t('ol_sub')}</T>
           {chips}
           {!all.length ? (

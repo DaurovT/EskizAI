@@ -135,6 +135,21 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+.cta.val{background:none!important;isolation:isolate;position:relative;box-shadow:0 10px 22px -10px rgba(40,50,35,.30),0 2px 5px rgba(40,50,35,.08)!important;border-radius:28px;color:#12351A!important;padding:0 9px 0 26px;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta.val::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96) 0%,rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96) 100%);-webkit-backdrop-filter:blur(12px) saturate(1.5);backdrop-filter:blur(12px) saturate(1.5);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.cta.val::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:24px;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.10),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.cta.val:active{transform:none!important;filter:none!important}.cta.val:active::before,.cta.val:active::after{transform:scale(1.03,.94)}
+.cta.val .v{height:36px;border-radius:18px;color:#12351A;background:rgba(232,238,224,.55)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
+:is(a,button)[style*="background:#387D50"] .ico{background:rgba(232,238,224,.6)!important}
 /*/V3*/
 
 .svc{flex:1;height:118px;border-radius:24px;background:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:14px;box-sizing:border-box;color:#21201F}
@@ -147,31 +162,31 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </style>
 </helmet>
 <div class="app">
-<div class="hdr" style="padding-top:14px"><a class="ib" href="Projects.dc.html" aria-label="Закрыть"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></a></div>
-<div class="body" style="padding-top:4px">
+<div class="hdr" style="padding-top:14px"><a class="ib" href="Projects.dc.html" aria-label="Закрыть"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a></div>
+<div class="body" style="padding-top: 4px; height: 577px">
 <div style="padding:0 8px 4px"><div class="big" style="padding:0">Новый проект</div><div class="sub" style="margin-top:6px">Фото, описание или и то и другое</div></div>
 <div style="display:flex;gap:8px;flex:none">
-<a class="svc" href="NewProject.dc.html" style="background:#387D50;color:#fff"><span class="ico" style="background:rgba(255,255,255,.18)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2L9.5 5h5l1.8 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/></svg></span><b>Снять фото</b></a>
-<a class="svc" href="NewProject.dc.html"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4.5 3 3L15 13l4 4"/></svg></span><b>Из галереи</b></a>
+<a class="svc" href="NewProject.dc.html" style="background:#387D50;color:#fff"><span class="ico" style="background:rgba(255,255,255,.18)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2L9.5 5h5l1.8 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></span><b>Снять фото</b></a>
+<a class="svc" href="NewProject.dc.html"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M5 17l4.5-4.5 3 3L15 13l4 4"></path></svg></span><b>Из галереи</b></a>
 </div>
 <div class="sheet" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
 <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:18px;font-weight:700">Фото</span><span class="rs">2 из 5</span></div>
 <div style="display:flex;gap:8px">
-<div class="ph" role="img" aria-label="Фото шкафа 1"><span class="x" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
-<div class="ph" role="img" aria-label="Фото шкафа 2" style="background:#DCD3C1"><span class="x" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div>
-<div class="ph add" aria-label="Добавить фото"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+<div class="ph" role="img" aria-label="Фото шкафа 1"><span class="x" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></div>
+<div class="ph" role="img" aria-label="Фото шкафа 2" style="background:#DCD3C1"><span class="x" aria-label="Удалить"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></span></div>
+<div class="ph add" aria-label="Добавить фото"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></div>
 </div>
 </div>
 <div class="sheet" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px">
 <span style="font-size:18px;font-weight:700">Описание</span>
 <div class="ta">Шкаф-купе в нишу 1500 на 2400, глубина 600. Три двери, зеркало посередине, антресоль.</div>
 <div style="display:flex;flex-wrap:wrap;gap:8px">
-<a class="chip" href="NewProject.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Размеры</a>
-<a class="chip" href="NewProject.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Бюджет</a>
-<a class="chip" href="Clients.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Клиент</a>
+<a class="chip" href="NewProject.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Размеры</a>
+<a class="chip" href="NewProject.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Бюджет</a>
+<a class="chip" href="Clients.dc.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Клиент</a>
 </div>
 </div>
-<div class="cap" style="padding:0 8px">Фото можно переслать из Telegram</div>
+
 </div>
 <div class="foot" style="gap:2px;padding-top:6px">
 <a class="cta val" href="Recognition.dc.html">Собрать модель<span class="v">осталось 2</span></a>

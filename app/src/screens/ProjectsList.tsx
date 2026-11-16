@@ -20,7 +20,7 @@ import { useSession } from '../state/session';
 import { showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Wood } from '../ui/Illus';
-import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass } from '../ui/kit';
+import { Avatar, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, Hairline, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass, useTabBarSpace } from '../ui/kit';
 import { CenterColumn, Embedded, useLayout } from '../ui/layout';
 import { Pane, SplitEmpty, SplitView, splitRow } from '../ui/SplitView';
 import { palette, tones } from '../ui/theme';
@@ -121,6 +121,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
   const { wide, tablet: onTablet } = useLayout();
   const split = wide && !archived;
   const insets = useSafeAreaInsets();
+  const navSpace = useTabBarSpace();
   const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<ProjectStatus | 'all'>('all');
@@ -187,7 +188,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
         <CenterColumn>
         {split ? <BigTitle size="root" inset={20}>{t('projects_title')}</BigTitle> : null}
         <OfflineBanner />
-        <ScrollView contentContainerStyle={[s.body, { flexGrow: 1 }]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+        <ScrollView contentContainerStyle={[s.body, { flexGrow: 1, paddingBottom: 12 + navSpace }]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
           {inboxBanner}
           <View style={s.tiles}>
             <Svc green title={t('pl_new_photo_big')} sub={t('pl_new_photo_big_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>
@@ -271,7 +272,7 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
     <View style={s.root}>
       {header}
       <OfflineBanner />
-      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); inbox.reload(); }} />}>
+      <ScrollView contentContainerStyle={[s.body, { paddingBottom: 12 + navSpace }]} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { refresh(); lim.reload(); inbox.reload(); }} />}>
         {!archived ? (
           <View style={s.tiles}>
             <Svc green title={t('pl_new_photo')} sub={t('pl_new_photo_sub')} onPress={() => router.push('/project/new')} style={{ flex: 1.2 }}><SvcArt /></Svc>

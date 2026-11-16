@@ -9,7 +9,7 @@ import { useT } from '../../src/i18n';
 import { callPhone, openTelegramPhone } from '../../src/lib/contact';
 import { formatRange, plural } from '../../src/lib/format';
 import { ErrorState } from '../../src/ui/ErrorState';
-import { Avatar, Button, Card, EmptyState, Loading, OfflineBanner, Press, Search, T } from '../../src/ui/kit';
+import { Avatar, Button, Card, EmptyState, Loading, OfflineBanner, Press, Search, T, useTabBarSpace } from '../../src/ui/kit';
 import { Embedded, useLayout } from '../../src/ui/layout';
 import { Pane, SplitEmpty, SplitView, splitRow } from '../../src/ui/SplitView';
 import { ClientCardView } from '../../src/screens/ClientCard';
@@ -22,6 +22,7 @@ export default function Clients() {
   // широкий планшет: список слева, карточка клиента справа (TClients.dc.html)
   const split = useLayout().wide;
   const insets = useSafeAreaInsets();
+  const navSpace = useTabBarSpace();
   const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const { data, error, loading, refreshing, reload, refresh } = useResource(() => api.listClients(q.trim() || undefined), [q]);
@@ -108,7 +109,7 @@ export default function Clients() {
     <View style={{ flex: 1, backgroundColor: palette.ground }}>
       {header}
       <OfflineBanner />
-      <ScrollView contentContainerStyle={st.body} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+      <ScrollView contentContainerStyle={[st.body, { paddingBottom: 24 + navSpace }]} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
         <Search value={q} onChangeText={setQ} placeholder={t('cls_search')} />
         {loading && !data ? <Loading /> : error && !data ? <ErrorState error={error} onRetry={reload} /> : !items.length ? (
           <EmptyState icon="people-outline" title={t('clients_empty_title')} actions={<Button title={t('clients_add')} icon="person-add-outline" onPress={add} />} />

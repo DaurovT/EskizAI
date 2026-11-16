@@ -135,6 +135,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .h1{font-size:30px;line-height:34px;font-weight:700;letter-spacing:-.02em;padding:0 8px}
@@ -152,7 +161,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </style>
 </helmet>
 <div class="app">
-<div class="hdr"><a class="ib" href="Estimate.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a></div>
+<div class="hdr"><a class="ib" href="Estimate.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a></div>
 <div class="body" style="gap:10px;padding-top:4px">
 <div class="h1">Отправить клиенту</div>
 <div class="hd" style="margin-top:4px">Вид сметы</div>
@@ -160,7 +169,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 <sc-for list="{{views}}" as="v" hint-placeholder-count="3"><button class="sg {{v.on}}" onClick="{{v.pick}}">{{v.t}}</button></sc-for>
 </div>
 <a class="sheet" href="ClientPage.dc.html" style="display:block;color:#21201F">
-<div class="prev" aria-hidden="true"><div class="carc" style="width:80px;height:68px;border-radius:0 26px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:3px"><i class="wood"></i><i class="wood"></i><i class="wood" style="border-radius:0 22px 0 0"></i></div><span class="pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>Как увидит клиент</span></div>
+<div class="prev" aria-hidden="true"><div class="carc" style="width:80px;height:68px;border-radius:0 26px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:3px"><i class="wood"></i><i class="wood"></i><i class="wood" style="border-radius:0 22px 0 0"></i></div><span class="pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>Как увидит клиент</span></div>
 <div style="padding:12px 20px 16px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span class="rt" style="font-weight:600">Шкаф для Азиза</span><span class="st c-blue">3D и AR</span></div>
 <sc-if value="{{vDet}}" hint-placeholder-val="{{ false }}">
@@ -177,13 +186,13 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </div>
 </a>
 <div class="sheet">
-<div class="row" style="min-height:56px"><span class="tile" style="width:40px;height:40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></svg></span><span class="tx rt">Язык ссылки</span><span class="lang2"><span class="on">Рус</span><span>O‘zb</span></span></div>
-<div class="row" style="min-height:56px"><span class="tile" style="width:40px;height:40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg></span><span class="tx rt">Ссылка действует</span><span class="rv" style="font-weight:500">30 дней</span></div>
+<div class="row" style="min-height:56px"><span class="tile" style="width:40px;height:40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"></path></svg></span><span class="tx rt">Язык ссылки</span><span class="lang2"><span class="on">Рус</span><span>O‘zb</span></span></div>
+<div class="row" style="min-height:56px"><span class="tile" style="width:40px;height:40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 7.5V12l3 2"></path></svg></span><span class="tx rt">Ссылка действует</span><span class="rv" style="font-weight:500">30 дней</span></div>
 </div>
 </div>
 <div class="foot" style="padding-top:6px">
-<a class="cta" href="ClientPage.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5L3.5 11.5l5 1.8L18 7.5l-7.5 7v4.5l3-3 4 3z"/></svg>Отправить в Telegram</a>
-<div class="fr"><a class="soft" href="Send.dc.html" style="font-size:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>Копировать</a><a class="soft" href="ProposalPDF.dc.html" style="font-size:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.5z"/><path d="M14 3.5V8h4"/></svg>КП в PDF</a></div>
+<a class="cta" href="ClientPage.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5L3.5 11.5l5 1.8L18 7.5l-7.5 7v4.5l3-3 4 3z"></path></svg>Отправить в Telegram</a>
+<div class="fr"><a class="soft" href="Send.dc.html" style="font-size:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>Копировать</a><a class="soft" href="ProposalPDF.dc.html" style="font-size:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.5z"></path><path d="M14 3.5V8h4"></path></svg>КП в PDF</a></div>
 </div>
 </div>
 </x-dc>

@@ -135,6 +135,27 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/* Liquid Glass */
+.ib:not([style*="background"]):not(.flat){background:none!important;isolation:isolate}
+.ib:not([style*="background"]):not(.flat)::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.ib:not([style*="background"]):not(.flat):active::before{transform:scale(1.08,.93)}
+.tool{height:52px;border-radius:26px;padding:4px!important;gap:0!important;isolation:isolate;box-sizing:border-box}
+.tool::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.tool:has(.tl:active)::after{transform:scale(1.02,.96)}
+.tl{flex:1!important;justify-content:center;height:44px!important;border-radius:22px!important;background:none!important;box-shadow:none!important;padding:0 6px!important;font-weight:600!important}
+.tl:active{background:rgba(255,255,255,.6)!important;transform:none!important;filter:none!important}
+.vb{background:none!important;box-shadow:none!important;isolation:isolate;position:relative}
+.vb::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.vb:active{transform:none!important;filter:none!important}.vb:active::before{transform:scale(1.07,.93)}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
 .cv{position:absolute;inset:0;background-image:radial-gradient(#D5D3CE 1.1px,transparent 1.1px);background-size:16px 16px}
@@ -169,15 +190,15 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 <div class="cv"></div>
 <button onClick="{{toMin}}" aria-label="Показать 3D на весь экран" style="position:absolute;inset:0;z-index:0;cursor:default"></button>
 <div class="top"><div class="hdr">
-<a class="ib lift" href="ProjectCard.dc.html" aria-label="К проекту"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<a class="ib lift" href="ProjectCard.dc.html" aria-label="К проекту"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
 <div class="lift" style="flex:1;min-width:0;background:#fff;border-radius:22px;height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 16px"><span style="font-size:15px;line-height:19px;font-weight:600">Шкаф · Азиз</span><span class="cap" style="font-size:12px;line-height:15px">v4 · сохранено</span></div>
-<button class="ib lift" onClick="{{undo1}}" aria-label="Отменить последнее"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L5 11l4 4"/><path d="M5 11h9a5 5 0 0 1 0 10h-2"/></svg></button>
+<button class="ib lift" onClick="{{undo1}}" aria-label="Отменить последнее"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L5 11l4 4"></path><path d="M5 11h9a5 5 0 0 1 0 10h-2"></path></svg></button>
 </div></div>
 
 <sc-if value="{{showView}}" hint-placeholder-val="{{ true }}">
 <div style="position:absolute;left:12px;right:12px;top:70px;z-index:2;display:flex;gap:6px;justify-content:space-between">
-<span style="display:flex;gap:5px"><button class="vb" onClick="{{toggleAll}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>{{allLabel}}</button><a class="vb" href="RoomColor.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12"/><path d="M4 20h16M9 20v-6h6v6"/></svg>Стены</a><a class="vb" href="Lighting.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>Свет</a></span>
-<a class="vb" href="ARMaster.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg>AR</a>
+<span style="display:flex;gap:5px"><button class="vb" onClick="{{toggleAll}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{allLabel}}</button><a class="vb" href="RoomColor.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12"></path><path d="M4 20h16M9 20v-6h6v6"></path></svg>Стены</a><a class="vb" href="Lighting.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"></path><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"></path></svg>Свет</a></span>
+<a class="vb" href="ARMaster.dc.html"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"></path><path d="M4 7.5L12 12l8-4.5M12 12v9"></path></svg>AR</a>
 </div>
 </sc-if>
 
@@ -218,7 +239,7 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </sc-if>
 <sc-if value="{{notMin}}" hint-placeholder-val="{{ true }}">
 <div class="chg">
-<span class="ok28" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>
+<span class="ok28" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>
 <span style="flex:1;min-width:0"><span style="display:block;font-size:15px;line-height:20px;font-weight:700">{{chgTitle}}</span><span class="mono" style="display:block;font-size:13px;line-height:18px;color:#6E6B66">{{chgSub}}</span></span>
 <button class="soft sm" style="height:40px;font-size:14px" onClick="{{undo1}}">{{undoLabel}}</button>
 </div>
@@ -231,10 +252,10 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 <div class="grow"></div>
 <div style="padding:8px 16px 0;display:flex;align-items:center;gap:8px" class="cap"><span class="dot d-amber"></span><span style="flex:1;white-space:nowrap">ИИ-правок ~20% · тапы без лимита</span><a href="Paywall.dc.html" style="font-weight:700;min-height:32px;display:flex;align-items:center">Тарифы</a></div>
 </sc-if>
-<div style="padding:8px 16px 0"><div class="inp"><span style="flex:1;font-size:15px;color:#6E6B66">Скажите, что поменять</span><span class="snd" aria-label="Отправить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span></div></div>
+<div style="padding:8px 16px 0"><div class="inp"><span style="flex:1;font-size:15px;color:#6E6B66">Скажите, что поменять</span><span class="snd" aria-label="Отправить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></span></div></div>
 <div class="bar2">
 <a class="pr" href="Estimate.dc.html"><span class="cap" style="font-size:13px;line-height:16px">до замера</span><span class="mono" style="font-size:15px;font-weight:700">{{price}}</span></a>
-<a class="cta" href="Send.dc.html" style="flex:1">Клиенту<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></a>
+<a class="cta" href="Send.dc.html" style="flex:1">Клиенту<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"></path></svg></a>
 </div>
 </div>
 </sc-if>

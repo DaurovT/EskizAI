@@ -3,9 +3,9 @@
  * Импортируйте через './kit' — там всё реэкспортировано.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { createContext, useContext, useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ComponentProps, type ComponentType, type ReactNode } from 'react';
 import {
-  AccessibilityInfo, ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text, View,
+  AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, View,
   type PressableProps, type StyleProp, type TextStyle, type ViewStyle,
 } from 'react-native';
 import { colors, fontFor, fonts, motion, palette, radius, type } from './theme';
@@ -81,6 +81,23 @@ export const RowInsetProvider = InsetCtx.Provider;
 export const useRowInset = () => useContext(InsetCtx);
 /** Волосяная линия .hair (#F0EFEC). */
 export const Hairline = ({ style }: { style?: StyleProp<ViewStyle> }) => <View style={[{ height: 1, backgroundColor: palette.hair }, style]} />;
+
+// ---------- плавающее меню вкладок ----------
+/**
+ * Размеры плавающего .nav (Liquid Glass): капсула 64 с отступами 12 по бокам и 26 снизу (у iPhone с «полоской»
+ * домой это 34 − 8, у остальных — не меньше 12, чтобы не задевать системную полосу Android).
+ */
+export const floatingNav = {
+  height: 64,
+  side: 12,
+  bottom: (insetBottom: number) => Math.max(insetBottom - 8, 12),
+  /** Нижний отступ прокрутки под меню: .app:has(>.nav) .body { padding-bottom: 104 } = 26 + 64 + 14. */
+  space: (insetBottom: number) => Math.max(insetBottom - 8, 12) + 64 + 14,
+};
+/** Сколько места снизу занимает плавающее меню вкладок над экраном (0 — меню нет: стек, планшет). */
+const TabSpaceCtx = createContext(0);
+export const TabBarSpaceProvider = TabSpaceCtx.Provider;
+export const useTabBarSpace = () => useContext(TabSpaceCtx);
 
 // ---------- «уменьшить движение» ----------
 let reduceMotion = false;
@@ -160,15 +177,23 @@ export const glass = {
 } as const;
 const glassEase = Easing.bezier(0.34, 1.56, 0.64, 1);
 
-/** Два слоя стекла под содержимым; `p` — 0…1 нажатие (Animated). Радиус по умолчанию — «таблетка». */
-export function GlassLayers({ radius: r = 999, p, reduce }: { radius?: number; p?: Animated.Value; reduce?: boolean }) {
-  const anim = !p ? null
-    : reduce ? { opacity: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] }) }
-      : { transform: [{ scaleX: p.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] }) }, { scaleY: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.94] }) }] };
+/** Сплющивание стекла при нажатии: scale(sx, sy) по `p` 0…1; при «уменьшить движение» — лёгкое затемнение. */
+const squishStyle = (p: Animated.Value | undefined, reduce: boolean | undefined, [sx, sy]: readonly [number, number]) => (!p ? null
+  : reduce ? { opacity: p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.86] }) }
+    : { transform: [{ scaleX: p.interpolate({ inputRange: [0, 1], outputRange: [1, sx] }) }, { scaleY: p.interpolate({ inputRange: [0, 1], outputRange: [1, sy] }) }] });
+
+/**
+ * Два слоя стекла под содержимым; `p` — 0…1 нажатие (Animated). Радиус по умолчанию — «таблетка».
+ * `inset`/`innerRadius` — отступ и радиус внутреннего слоя (у «＋» меню 3.5 и 22), `squish` — сплющивание при нажатии.
+ */
+export function GlassLayers({ radius: r = 999, p, reduce, inset = 4, innerRadius, squish = [1.03, 0.94] }: {
+  radius?: number; p?: Animated.Value; reduce?: boolean; inset?: number; innerRadius?: number; squish?: readonly [number, number];
+}) {
+  const anim = squishStyle(p, reduce, squish);
   return (
     <>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, gst.outer, { borderRadius: r }, anim]} />
-      <Animated.View pointerEvents="none" style={[gst.inner, { borderRadius: r }, anim]} />
+      <Animated.View pointerEvents="none" style={[gst.inner, { top: inset, left: inset, right: inset, bottom: inset, borderRadius: innerRadius ?? r }, anim]} />
     </>
   );
 }
@@ -203,8 +228,103 @@ export function GlassPress({ radius: r = 999, style, children, disabled, onPress
 
 const gst = StyleSheet.create({
   outer: { borderWidth: 1.2, borderColor: glass.border, backgroundImage: glass.outer },
-  inner: { position: 'absolute', top: 4, left: 4, right: 4, bottom: 4, backgroundImage: glass.inner, boxShadow: glass.innerShadow },
+  inner: { position: 'absolute', backgroundImage: glass.inner, boxShadow: glass.innerShadow },
 });
+
+// ---------- «жидкое стекло» (блок /* Liquid Glass */ макетов) ----------
+/**
+ * Прозрачное стекло: плавающее меню, круглые кнопки шапки (.ib), инструменты и «Вид» редактора (.tool, .vb).
+ * В CSS — градиент rgba(255,255,255,.30 → .08) поверх backdrop-filter: blur(4px) saturate(2.2) brightness(1.05).
+ * Размытия того, что под элементом, в RN без нативного модуля нет (expo-blur не установлен), поэтому заливка плотнее:
+ * на фоне #F2F1EE она даёт тот же почти белый тон, что и «осветлённое размытие» макета, а содержимое под меню
+ * лишь слегка просвечивает. Блики и тени — как в макете.
+ */
+export const liquid = {
+  /** Заливка (замена backdrop-blur): белый .9 сверху → .72 снизу. */
+  fill: 'linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.72) 100%)',
+  /** Внутренние блики (верх 1px, низ, кольцо) + внешнее кольцо .5 и тень 0 10 28 -8. */
+  shadow: 'inset 0px 1px 0px rgba(255,255,255,0.95), inset 0px -1px 1px rgba(255,255,255,0.5), inset 0px 0px 0px 1px rgba(255,255,255,0.5), '
+    + '0px 0px 0px 0.5px rgba(33,32,31,0.1), 0px 10px 28px -8px rgba(33,32,31,0.28)',
+  /** Тень под системным стеклом iOS 26: только внешнее кольцо и мягкая тень. */
+  nativeShadow: '0px 0px 0px 0.5px rgba(33,32,31,0.08), 0px 10px 28px -8px rgba(33,32,31,0.22)',
+  /** .nv.on .ni — подложка активной вкладки. */
+  active: 'rgba(255,255,255,0.72)',
+  activeShadow: 'inset 0px 1px 0px #FFFFFF, 0px 3px 10px -3px rgba(33,32,31,0.22)',
+  /** .tl:active — нажатый пункт в стекле. */
+  press: 'rgba(255,255,255,0.6)',
+  /** .nav .lens — линза, которую тянут по меню. */
+  lens: 'radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.03) 60%)',
+  lensBg: 'rgba(255,255,255,0.05)',
+  lensShadow: 'inset 0px 1.5px 0px #FFFFFF, inset 0px -2px 3px rgba(255,255,255,0.65), inset 0px 0px 0px 1px rgba(255,255,255,0.85), '
+    + 'inset 3px 0px 7px rgba(255,255,255,0.45), inset -3px 0px 7px rgba(255,255,255,0.45), 0px 18px 36px -10px rgba(33,32,31,0.4), 0px 0px 0px 1px rgba(33,32,31,0.1)',
+} as const;
+
+/**
+ * Слой жидкого стекла под содержимым (::before/::after в CSS): заливка, блики, кольцо и тень; `p` 0…1 — нажатие,
+ * `squish` — во что сплющивается (у .ib 1.08 × .93, у .vb 1.07 × .93, у меню 1.025 × .96).
+ */
+/** Настоящее стекло iOS 26 (expo-glass-effect, UIGlassEffect) — размывает то, что под ним; иначе — заливка liquid.fill. */
+let nativeGlassView: ComponentType<{ style?: StyleProp<ViewStyle>; glassEffectStyle?: 'clear' | 'regular'; colorScheme?: 'light' }> | null | undefined;
+export function nativeGlass() {
+  if (nativeGlassView === undefined) {
+    nativeGlassView = null;
+    if (Platform.OS === 'ios') {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const m = require('expo-glass-effect');
+        if (m.isLiquidGlassAvailable()) nativeGlassView = m.GlassView;
+      } catch { nativeGlassView = null; }
+    }
+  }
+  return nativeGlassView;
+}
+
+export function LiquidLayer({ radius: r = 999, p, reduce, squish = [1.08, 0.93], style }: {
+  radius?: number; p?: Animated.Value; reduce?: boolean; squish?: readonly [number, number]; style?: StyleProp<ViewStyle>;
+}) {
+  const Glass = nativeGlass();
+  if (Glass) {
+    // стекло системы + те же внешнее кольцо и тень; блики рисует сама система
+    return (
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: r, boxShadow: liquid.nativeShadow }, squishStyle(p, reduce, squish), style]}>
+        <Glass glassEffectStyle="regular" colorScheme="light" style={[StyleSheet.absoluteFill, { borderRadius: r, overflow: 'hidden' }]} />
+      </Animated.View>
+    );
+  }
+  return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: r, backgroundImage: liquid.fill, boxShadow: liquid.shadow }, squishStyle(p, reduce, squish), style]} />;
+}
+
+/** Нажатие стекла: пружина (.34,1.56,.64,1) за 550 мс; при «уменьшить движение» — 120 мс без отскока. */
+export function useGlassPress() {
+  const p = useRef(new Animated.Value(0)).current;
+  const reduce = useReduceMotion();
+  const to = (v: number) => Animated.timing(p, {
+    toValue: v, duration: reduce ? motion.press : 550, easing: reduce ? ease : glassEase, useNativeDriver: true,
+  }).start();
+  return { p, reduce, in: () => to(1), out: () => to(0) };
+}
+
+/** Нажимаемое жидкое стекло (.vb, .ib): слой сплющивается, содержимое на месте. Свой `style` — размер и раскладка. */
+export function LiquidPress({ radius: r = 999, squish, style, layerStyle, children, disabled, onPressIn, onPressOut, ...rest }: Omit<PressableProps, 'style' | 'children'> & {
+  radius?: number; squish?: readonly [number, number]; style?: StyleProp<ViewStyle>;
+  /** Поверх стиля слоя (например, тёмная «включённая» кнопка без стекла). */
+  layerStyle?: StyleProp<ViewStyle>;
+  children?: ReactNode;
+}) {
+  const g = useGlassPress();
+  return (
+    <Pressable
+      {...rest}
+      disabled={disabled}
+      onPressIn={(e) => { g.in(); onPressIn?.(e); }}
+      onPressOut={(e) => { g.out(); onPressOut?.(e); }}
+      style={[{ borderRadius: r }, style]}
+    >
+      <LiquidLayer radius={r} p={g.p} reduce={g.reduce} squish={squish} style={layerStyle} />
+      {children}
+    </Pressable>
+  );
+}
 
 // ---------- кнопки ----------
 /** primary=.cta (стекло GLASS-GREEN, «таблетка»), secondary=.soft, ghost=.txt, ghostDanger=.txt.red, danger=красная (.red), tg=.soft с самолётиком. */
@@ -289,26 +409,42 @@ export function Button({
   );
 }
 
-/** .ib — круглая кнопка 44 (белая на фоне, серая внутри белого); flat — прозрачная; badge — красная точка. */
-export function IconButton({ icon, onPress, label, disabled, color = palette.ink, style, flat, badge, size = 44, iconSize = 22, dark, children }: {
+/**
+ * .ib — круглая кнопка 44. На фоне экрана — жидкое стекло (Liquid Glass: заливка, блики, тень; нажатие сплющивает
+ * стекло 1.08 × .93, иконка на месте); внутри белого (Card, Sheet, футер-бар) — серая #F2F1EE; flat — прозрачная;
+ * dark — тёмная (аватар цеха); `glass={false}` — прежняя белая. badge — красная точка.
+ */
+export function IconButton({ icon, onPress, label, disabled, color = palette.ink, style, flat, badge, size = 44, iconSize = 22, dark, glass: glassOn = true, children }: {
   icon?: IconName; onPress?: () => void; label: string; disabled?: boolean; color?: string; style?: StyleProp<ViewStyle>;
   flat?: boolean; badge?: boolean; size?: number; iconSize?: number;
   /** Тёмная (аватар цеха в шапке). */
-  dark?: boolean; children?: ReactNode;
+  dark?: boolean;
+  /** false — белая/серая без стекла. */
+  glass?: boolean;
+  children?: ReactNode;
 }) {
   const ctrl = useControlBg();
-  return (
-    <Press
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: !!disabled }}
-      onPress={disabled ? undefined : onPress}
-      disabled={disabled}
-      hitSlop={4}
-      style={[st.ib, { width: size, height: size, borderRadius: size / 2, backgroundColor: flat ? 'transparent' : dark ? palette.ink : ctrl }, disabled && { opacity: 0.35 }, style]}
-    >
+  const onWhite = useSurface() === 'white';
+  const liquidOn = glassOn && !flat && !dark && !onWhite;
+  const a11y = {
+    accessibilityLabel: label,
+    accessibilityRole: 'button' as const,
+    accessibilityState: { disabled: !!disabled },
+    onPress: disabled ? undefined : onPress,
+    disabled,
+    hitSlop: 4,
+  };
+  const content = (
+    <>
       {icon ? <Ionicons name={icon} size={iconSize} color={dark ? palette.white : color} /> : children}
-      {badge ? <View style={[st.badge, { borderColor: flat ? palette.ground : ctrl }]} /> : null}
+      {badge ? <View style={[st.badge, { borderColor: flat ? palette.ground : liquidOn ? palette.white : ctrl }]} /> : null}
+    </>
+  );
+  const dims = { width: size, height: size, borderRadius: size / 2 };
+  if (liquidOn) return <LiquidPress {...a11y} radius={size / 2} style={[st.ib, dims, disabled && { opacity: 0.35 }, style]}>{content}</LiquidPress>;
+  return (
+    <Press {...a11y} style={[st.ib, dims, { backgroundColor: flat ? 'transparent' : dark ? palette.ink : ctrl }, disabled && { opacity: 0.35 }, style]}>
+      {content}
     </Press>
   );
 }
