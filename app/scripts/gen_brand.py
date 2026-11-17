@@ -100,7 +100,7 @@ def main() -> None:
     # Android adaptive-icon.png делается из того же значка (см. историю), здесь не трогаем
     splash(780).save(a / "splash-icon.png")
     mark(336).save(a / "brand/mark.png")
-    mark(168, lines=DWG_LINES, stroke=STROKE * 1.15).save(a / "brand/dwg-mark.png")
+    # brand/dwg-mark.png — значок Eskiz DWG из его макета (eskiz-dwg/design/icon-2026-11-17/dwg.svg), здесь не рисуем
     tile(96).save(a / "brand/logo.png")
     app_icon.resize((48, 48), Image.LANCZOS).save(a / "favicon.png")
     ios = APP / "ios/EskizAI/Images.xcassets"
