@@ -3,7 +3,7 @@ import { SHOTS } from '../src/dev/shot';
 import NetInfo from '@react-native-community/netinfo';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { Stack, router, useSegments } from 'expo-router';
+import { Stack, router, usePathname, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -75,6 +75,9 @@ function Gate() {
   canOrderRef.current = canOrder;
   const system = useSystemScreen();
   const segments = useSegments();
+  const pathname = usePathname();
+  // ссылка, по которой открыли приложение без входа (mebelmaster://inbox/<id> из Eskiz DWG и т. п.) — откроем после входа
+  const pendingPath = useRef<string | null>(null);
   const { t } = useT();
   const onboarded = useOnboarded();
 
@@ -87,14 +90,21 @@ function Gate() {
     // служебные снимки экранов (DIAG/dev) — без перенаправлений
     if (SHOTS && segments[0] === 'shot') return;
     // SCR-00a: первый запуск — онбординг до входа (один раз)
-    if (status === 'signedOut' && !inAuth) router.replace(onboarded ? '/login' : '/onboarding');
+    if (status === 'signedOut' && !inAuth) {
+      if (pathname && pathname !== '/' && /^\/(inbox|project|client-requests|order)\//.test(pathname)) pendingPath.current = pathname;
+      router.replace(onboarded ? '/login' : '/onboarding');
+    }
     // приглашение в цех (SCR-38a) — до онбординга; принято / отклонено — дальше как обычно
     const inInvite = segments[0] === 'invite';
     if (status === 'signedIn' && invite && !inInvite) { router.replace('/invite'); return; }
     if (status === 'signedIn' && !invite && inInvite) { router.replace(workshop && !workshop.name ? '/workshop' : '/'); return; }
     // после входа: новый цех без названия → SCR-02, иначе — список проектов
-    if (status === 'signedIn' && inLogin) router.replace(workshop && !workshop.name ? '/workshop' : '/');
-  }, [status, segments, workshop, invite, onboarded]);
+    if (status === 'signedIn' && inLogin) {
+      const next = workshop && !workshop.name ? '/workshop' : pendingPath.current ?? '/';
+      pendingPath.current = null;
+      router.replace(next as never);
+    }
+  }, [status, segments, pathname, workshop, invite, onboarded]);
 
   // SCR-45: версия приложения и техработы — при запуске и при возврате в приложение
   useEffect(() => {
