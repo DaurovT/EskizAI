@@ -792,6 +792,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
     { kind: 'drawings_pdf', title: 'Чертежи, присадка, вид', format: 'pdf' },
     { kind: 'hardware_xlsx', title: 'Ведомость фурнитуры', format: 'xlsx' },
     { kind: 'assembly_pdf', title: 'Схема сборки', format: 'pdf' },
+    { kind: 'production_set_pdf', title: 'Комплект чертежей', format: 'pdf' },
     { kind: 'estimate_xlsx', title: 'Смета мастера (Excel)', format: 'xlsx' },
     { kind: 'model_glb', title: '3D-модель (GLB)', format: 'glb' },
   ];

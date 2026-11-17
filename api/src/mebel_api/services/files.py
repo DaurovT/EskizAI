@@ -2,7 +2,7 @@
 
 - КП клиенту (PDF) и 3D (GLB закрыто / открыто) — бесплатно всегда.
 - Производственные файлы (спецификация, карты раскроя, CSV, DXF, чертежи, общий вид, схема сборки,
-  Excel со сметой) — бесплатно, когда по проекту оплачен заказ в EMAN (статус «В работе» / «Сдан»)
+  «Комплект чертежей» одним PDF, Excel со сметой) — бесплатно, когда по проекту оплачен заказ в EMAN (статус «В работе» / «Сдан»)
   или есть доступ к файлам (оплата файлов, решение менеджера). Pro — скидка на оплату (пока флаг).
   Иначе 402 «Файлы — после заказа в EMAN или оплаты».
 - Сотрудник получает Excel без себестоимости (with_cost=False).
@@ -50,6 +50,7 @@ KINDS: dict[str, FileKind] = {k.kind: k for k in [
     FileKind("drawings_pdf", "Чертежи деталей с присадкой (PDF)", "pdf", PDF, "production", False),
     FileKind("general_view_pdf", "Общий вид (PDF)", "pdf", PDF, "assembly", False),
     FileKind("assembly_pdf", "Схема сборки (PDF)", "pdf", PDF, "assembly", False),
+    FileKind("production_set_pdf", "Комплект чертежей (PDF)", "pdf", PDF, "production", False),
     FileKind("kp_pdf", "Коммерческое предложение (PDF)", "pdf", PDF, "client", True),
     FileKind("glb_closed", "3D-модель, закрыто (GLB)", "glb", "model/gltf-binary", "model3d", True),
     FileKind("glb_open", "3D-модель, открыто (GLB)", "glb", "model/gltf-binary", "model3d", True),
@@ -138,6 +139,7 @@ FILE_LABELS: dict[str, tuple[str, str]] = {
     "drawings_pdf": ("чертежи_деталей", "detal_chizmalari"),
     "general_view_pdf": ("общий_вид", "umumiy_korinish"),
     "assembly_pdf": ("схема_сборки", "yigish_sxemasi"),
+    "production_set_pdf": ("комплект_чертежей", "chizmalar_toplami"),
     "kp_pdf": ("КП", "TK"),
     "glb_closed": ("3D_закрыто", "3D_yopiq"),
     "glb_open": ("3D_открыто", "3D_ochiq"),
@@ -187,10 +189,10 @@ class Builder:
         return mebel_core.export_xlsx(self.result, self.nesting, est, with_cost=self.with_cost)
 
     def _spec_pdf(self) -> bytes:
-        return mebel_core.export_spec_pdf(self.result, project=self.label)
+        return mebel_core.export_spec_pdf(self.result, project=self.label, workshop=self.workshop.name or "")
 
     def _cutmaps_pdf(self) -> bytes:
-        return mebel_core.export_cutmaps_pdf(self.result, self.nesting, self.label)
+        return mebel_core.export_cutmaps_pdf(self.result, self.nesting, self.label, workshop=self.workshop.name or "")
 
     def _csv(self) -> bytes:
         return mebel_core.export_csv(self.result)
@@ -199,13 +201,18 @@ class Builder:
         return mebel_core.export_dxf_zip(self.result)
 
     def _drawings_pdf(self) -> bytes:
-        return mebel_core.export_part_drawings_pdf(self.result, self.label)
+        return mebel_core.export_part_drawings_pdf(self.result, self.label, workshop=self.workshop.name or "")
 
     def _general_view_pdf(self) -> bytes:
-        return mebel_core.export_general_view_pdf(self.result, self.label)
+        return mebel_core.export_general_view_pdf(self.result, self.label, workshop=self.workshop.name or "")
 
     def _assembly_pdf(self) -> bytes:
-        return mebel_core.export_assembly_pdf(self.result, self.label)
+        return mebel_core.export_assembly_pdf(self.result, self.label, workshop=self.workshop.name or "")
+
+    def _production_set_pdf(self) -> bytes:
+        """Комплект чертежей: титул, виды, развёртки стен, взрыв-схема, детали, спецификация, раскрой."""
+        return mebel_core.export_drawing_set_pdf(self.result, self.nesting, project=self.label,
+                                                 workshop=self.workshop.name or "")
 
     def _glb_closed(self) -> bytes:
         return mebel_core.export_glb(self.result, opened=False)
@@ -247,7 +254,7 @@ class Builder:
         out = io.BytesIO()
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
             for k in KINDS.values():
-                if k.kind == "archive":
+                if k.kind in ("archive", "production_set_pdf"):  # комплект = те же листы, что и PDF по отдельности
                     continue
                 z.writestr(file_name(self.project, self.version, k, self.language), self.make(k.kind))
         return out.getvalue()

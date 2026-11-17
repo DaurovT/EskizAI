@@ -1,7 +1,8 @@
 /**
  * SCR-21 Файлы проекта (Files.dc.html): пакет мастера по группам (клиенту · закупка и распил · производство и сборка),
  * закрытые — с замком. До оплаты: «Заказать в EMAN — файлы 0 сум» и «Скачать без заказа»; открыто — номер заказа,
- * версия и «Поделиться всем архивом» (файлы уходят файлами через системное меню).
+ * версия и «Поделиться всем архивом» (файлы уходят файлами через системное меню). «Комплект чертежей» —
+ * один PDF со всеми листами (титул, виды, развёртки, взрыв-схема, детали, спецификация, раскрой).
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
@@ -30,7 +31,9 @@ const badgeOf = (f: FileItem) => (/dxf/.test(f.kind) ? 'DXF' : (f.format ?? f.ki
 
 export default function Files() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, lang } = useT();
+  const { t, td, lang } = useT();
+  // название файла: перевод по kind (files_k_<kind>), иначе — как прислал сервер
+  const titleOf = (f: FileItem) => td(`files_k_${f.kind}`, f.title ?? f.name ?? f.kind);
   // весь ответ: файлы + цена «Скачать без заказа» (purchase, с учётом скидки Pro)
   const files = useResource(() => api.filesInfo(id), [id]);
   const orders = useResource(() => api.listOrders().then((all) => all.filter((o) => o.project_id === id && o.status !== 'cancelled')), [id]);
@@ -52,7 +55,7 @@ export default function Files() {
   const vNum = versions.data?.find((v) => v.is_current)?.number ?? versions.data?.[0]?.number;
 
   const open = (f: FileItem) => (f.available
-    ? router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: f.kind, title: f.title ?? f.name ?? f.kind } })
+    ? router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: f.kind, title: titleOf(f) } })
     : Alert.alert(t('files_locked_title'), f.reason ?? ''));
 
   // весь пакет: архив, если сервер его отдаёт, иначе — файлы по очереди через системное меню
@@ -114,9 +117,9 @@ export default function Files() {
           <Card padded={false}>
             {items.map((f, i) => (
               <Press key={f.kind} feedback="row" onPress={() => open(f)} accessibilityRole="button"
-                accessibilityLabel={`${f.title ?? f.kind}, ${f.available ? t('files_open') : t('files_locked')}`} style={[st.fr2, i > 0 && st.sep]}>
+                accessibilityLabel={`${titleOf(f)}, ${f.available ? t('files_open') : t('files_locked')}`} style={[st.fr2, i > 0 && st.sep]}>
                 <View style={st.ft}><T style={st.ftT}>{badgeOf(f)}</T></View>
-                <T style={st.fn} numberOfLines={1}>{f.title ?? f.name ?? f.kind}</T>
+                <T style={st.fn} numberOfLines={1}>{titleOf(f)}</T>
                 <Ionicons name={f.available ? 'chevron-forward' : 'lock-closed-outline'} size={18} color="#A3A09A" />
               </Press>
             ))}

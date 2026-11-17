@@ -9,7 +9,7 @@ from .conftest import ADMIN, tree_variant
 from .test_roles import employee
 
 PRODUCTION = ["spec_xlsx", "spec_pdf", "cutmaps_pdf", "csv", "dxf_zip", "drawings_pdf", "general_view_pdf",
-              "assembly_pdf", "archive"]
+              "assembly_pdf", "production_set_pdf", "archive"]
 
 
 def files(client, h, pid):
@@ -62,9 +62,13 @@ def test_paid_order_opens_files_from_frozen_version(api, client, owner):
 
     r = client.get(f"/projects/{pid}/files/csv", headers=owner)
     assert r.status_code == 200 and r.headers["x-model-version"] == "1"
-    for kind in ("spec_pdf", "cutmaps_pdf", "drawings_pdf", "general_view_pdf", "assembly_pdf"):
+    for kind in ("spec_pdf", "cutmaps_pdf", "drawings_pdf", "general_view_pdf", "assembly_pdf", "production_set_pdf"):
         r = client.get(f"/projects/{pid}/files/{kind}", headers=owner)
         assert r.status_code == 200 and r.content[:4] == b"%PDF", kind
+    from mebel_core.exports.sheet import page_count
+
+    r = client.get(f"/projects/{pid}/files/production_set_pdf", headers=owner)
+    assert "_v1.pdf" in r.headers["content-disposition"] and page_count(r.content) >= 8
     z = zipfile.ZipFile(io.BytesIO(client.get(f"/projects/{pid}/files/dxf_zip", headers=owner).content))
     assert any(n.endswith(".dxf") for n in z.namelist())
     arch = zipfile.ZipFile(io.BytesIO(client.get(f"/projects/{pid}/files/archive", headers=owner).content))

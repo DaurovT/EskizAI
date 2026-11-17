@@ -77,6 +77,8 @@ HARDWARE: dict[str, PriceItem] = {
     i.id: i
     for i in [
         PriceItem(id="confirmat", name="Конфирмат 7×50", unit="шт", price=250),
+        # Шкант 8×40 с клеем — там, где головку конфирмата закрывает другая деталь (drilling.py)
+        PriceItem(id="dowel", name="Шкант 8×40", unit="шт", price=100, status="analog"),
         PriceItem(id="shelf_pin", name="Полкодержатель", unit="шт", price=400),
         PriceItem(id="nail", name="Гвоздь для ХДФ 1,6×25", unit="шт", price=30),
         PriceItem(id="screw", name="Саморез", unit="шт", price=80),

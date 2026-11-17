@@ -3,14 +3,14 @@
   "module_versions": {
     "back": "0.2.0",
     "body": "0.2.0",
-    "drawer": "0.3.0",
-    "fronts": "0.5.0",
+    "drawer": "0.4.0",
+    "fronts": "0.6.0",
     "mezzanine": "0.1.0",
     "partition": "0.2.0",
     "plinth": "0.2.0",
     "rod": "0.1.0",
     "sections": "0.2.0",
-    "shelf": "0.2.0",
+    "shelf": "0.3.0",
     "zones": "0.1.0"
   },
   "rules_version": "2026.11-draft",
@@ -491,7 +491,11 @@
   "hardware": [
     {
       "name": "Конфирмат 7×50",
-      "qty": 120
+      "qty": 112
+    },
+    {
+      "name": "Шкант 8×40",
+      "qty": 8
     },
     {
       "name": "Полкодержатель",

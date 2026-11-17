@@ -1,6 +1,9 @@
 """PDF-документы мастера (раздел 8 PRD): спецификация, карты раскроя, чертежи
 деталей с присадкой, общий вид, схема сборки, коммерческое предложение (КП).
 
+Производственные документы — на листах с рамкой и штампом (sheet.SheetCanvas: «Лист N», «Листов M»,
+масштаб, цех, дата); чертежи, виды и взрыв-схема — в drawings.py. КП клиенту — свой макет без штампа.
+
 Шрифт DejaVu Sans (свободная лицензия, файл LICENSE_DEJAVU рядом со шрифтами) —
 чтобы кириллица и узбекская латиница печатались одинаково на любом сервере.
 КП клиенту — шрифтом Onest, как в макете (OFL, LICENSE_ONEST); без файлов — DejaVu.
@@ -9,10 +12,9 @@
 import io
 import math
 from datetime import date
-from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm as MM
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -20,28 +22,21 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 
 from ..assembler import BuildResult
-from ..catalog import edge_type, material
+from ..catalog import material
 from ..nesting import Nesting
 from ..spec import hardware_rows, number_ranges, spec_rows
 from ..units import to_mm
+from .sheet import _FONTS, F, FB, DocInfo, SheetCanvas  # noqa: F401 — шрифты DejaVu регистрируются в sheet
 
-_FONTS = Path(__file__).resolve().parent.parent / "fonts"
-pdfmetrics.registerFont(TTFont("DejaVu", str(_FONTS / "DejaVuSans.ttf")))
-pdfmetrics.registerFont(TTFont("DejaVu-Bold", str(_FONTS / "DejaVuSans-Bold.ttf")))
-F, FB = "DejaVu", "DejaVu-Bold"
-
-INK = colors.HexColor("#2b2118")
-LINE = colors.HexColor("#5a4632")
-EDGE = colors.HexColor("#c0392b")
-FACE_A = colors.HexColor("#1f6fb2")
-FACE_B = colors.HexColor("#2e8b57")
-EDGE_HOLE = colors.HexColor("#e67e22")
-FILL = colors.HexColor("#efe4d4")
-FRONT = colors.HexColor("#d9bf9a")
-HEAD_BG = colors.HexColor("#eee6da")
+INK = colors.black
+LINE = colors.black
+FILL = colors.Color(0.93, 0.93, 0.93)
+HEAD_BG = colors.Color(0.9, 0.9, 0.9)
+FRONT_ROLES = {"door", "drawer_front", "sliding_fill"}
 
 
 def _header(c: canvas.Canvas, title: str, meta: str, page_w: float, page_h: float) -> None:
+    """Заголовок страницы без штампа (оставлен для совместимости)."""
     c.setFont(FB, 13)
     c.setFillColor(INK)
     c.drawString(12 * MM, page_h - 14 * MM, title)
@@ -57,14 +52,20 @@ def _meta(result: BuildResult, project: str) -> str:
     return f"{project} · {w:g}×{h:g}×{d:g} мм · {date.today():%d.%m.%Y}"
 
 
-def _table(c: canvas.Canvas, data: list[list], widths: list[float], x: float, y_top: float, page_h: float,
-           page_w: float, title: str, meta: str, font_size: float = 7.5) -> float:
-    """Таблица с переносом на новые страницы. Возвращает y под таблицей."""
+def doc_info(result: BuildResult, project: str, workshop: str = "") -> DocInfo:
+    from .drawings import product_line
+
+    return DocInfo(project=project, product=product_line(result), workshop=workshop)
+
+
+def _table(c: SheetCanvas, data: list[list], widths: list[float], x: float, y_top: float, title: str,
+           font_size: float = 7.5) -> float:
+    """Таблица с переносом на следующие листы (с тем же наименованием). Возвращает y под таблицей."""
     style = TableStyle([
         ("FONT", (0, 0), (-1, -1), F, font_size),
         ("FONT", (0, 0), (-1, 0), FB, font_size),
         ("BACKGROUND", (0, 0), (-1, 0), HEAD_BG),
-        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#b9a68f")),
+        ("GRID", (0, 0), (-1, -1), 0.3, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 2),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
@@ -72,7 +73,7 @@ def _table(c: canvas.Canvas, data: list[list], widths: list[float], x: float, y_
     header, rows = data[0], data[1:]
     y = y_top
     while True:
-        avail = y - 14 * MM
+        avail = y - c.content().y0
         chunk: list[list] = []
         for r in rows:
             t = Table([header] + chunk + [r], colWidths=widths)
@@ -88,51 +89,55 @@ def _table(c: canvas.Canvas, data: list[list], widths: list[float], x: float, y_
         if not rows:
             return y - h
         c.showPage()
-        _header(c, title, meta, page_w, page_h)
-        y = page_h - 22 * MM
+        y = c.sheet(title, c.sheet_scale).y1
 
 
 # --- Спецификация ---
 
-def export_spec_pdf(result: BuildResult, project: str = "Проект") -> bytes:
-    buf = io.BytesIO()
-    pw, ph = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-    title, meta = "Спецификация деталей", _meta(result, project)
-    _header(c, title, meta, pw, ph)
+def draw_spec(c: SheetCanvas, result: BuildResult) -> None:
+    title = "Спецификация деталей"
+    box = c.sheet(title, "—")
     data = [["№", "Деталь", "Материал", "Толщ.", "Чистовой, мм", "Распил, мм", "Кол.", "Кромка", "Текстура"]]
     for r in spec_rows(result):
         data.append([number_ranges(r.numbers), r.name, r.material, f"{r.thickness:g}", f"{r.length:g}×{r.width:g}",
                      f"{r.cut_length:g}×{r.cut_width:g}", r.qty,
                      " ".join(f"{k}:{v}" for k, v in r.edges.items()) or "—", r.grain])
-    y = _table(c, data, [22 * MM, 48 * MM, 46 * MM, 13 * MM, 30 * MM, 30 * MM, 12 * MM, 44 * MM, 26 * MM],
-               12 * MM, ph - 22 * MM, ph, pw, title, meta)
+    widths = [34 * MM, 46 * MM, 36 * MM, 12 * MM, 29 * MM, 29 * MM, 11 * MM, 40 * MM, 25 * MM]  # № шире: «12–13, 18–19, 24–25»
+    y = _table(c, data, widths, box.x0, box.y1, title)
     hw = [["Фурнитура и крепёж", "Кол-во"]] + [[h.name, h.qty] for h in hardware_rows(result)]
-    if y < 60 * MM:
+    if y - c.content().y0 < 40 * MM:
         c.showPage()
-        _header(c, title, meta, pw, ph)
-        y = ph - 22 * MM
-    _table(c, hw, [110 * MM, 20 * MM], 12 * MM, y - 8 * MM, ph, pw, title, meta)
-    c.setFont(F, 7)
-    c.drawString(12 * MM, 8 * MM, "Кромка: Д1/Д2 — длинные стороны, Ш1/Ш2 — короткие; распил = чистовой − кромка.")
+        y = c.sheet(title, "—").y1 + 8 * MM
+    _table(c, hw, [110 * MM, 20 * MM], box.x0, y - 8 * MM, title)
+    fb = c.frame_box()
+    c.setFont(F, 6.5)
+    c.setFillColor(INK)
+    c.drawString(fb.x0 + 2 * MM, fb.y0 + 14 * MM, "Кромка: Д1/Д2 — длинные стороны, Ш1/Ш2 — короткие;")
+    c.drawString(fb.x0 + 2 * MM, fb.y0 + 10.5 * MM, "распил = чистовой − кромка. Номера — как на чертежах.")
+    c.showPage()
+
+
+def export_spec_pdf(result: BuildResult, project: str = "Проект", workshop: str = "") -> bytes:
+    buf = io.BytesIO()
+    c = SheetCanvas(buf, doc_info(result, project, workshop))
+    draw_spec(c, result)
     c.save()
     return buf.getvalue()
 
 
 # --- Карты раскроя ---
 
-def export_cutmaps_pdf(result: BuildResult, nesting: Nesting, project: str = "Проект") -> bytes:
-    buf = io.BytesIO()
-    pw, ph = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-    names = {p.number: p.name for p in result.parts}
+def draw_cutmaps(c: SheetCanvas, result: BuildResult, nesting: Nesting) -> None:
+    from .drawings import pick_scale, scale_label
+
     for m in nesting.materials:
         for s in m.sheets:
-            _header(c, f"Карта раскроя · {material(m.material).name} · лист {s.index} из {len(m.sheets)}",
-                    _meta(result, project), pw, ph)
             L, W = to_mm(s.length), to_mm(s.width)
-            scale = min((pw - 24 * MM) / L, (ph - 40 * MM) / W)
-            ox, oy = 12 * MM, 14 * MM
+            box = c.sheet(f"Карта раскроя · {material(m.material).name} · лист {s.index} из {len(m.sheets)}")
+            n = pick_scale(L, W, box.w, box.h - 8 * MM, 0, 0)
+            c.sheet_scale = scale_label(n)
+            scale = MM / n
+            ox, oy = box.x0, box.y1 - W * scale
             c.setStrokeColor(LINE)
             c.setFillColor(colors.white)
             c.setLineWidth(0.8)
@@ -157,179 +162,39 @@ def export_cutmaps_pdf(result: BuildResult, nesting: Nesting, project: str = "П
             c.drawString(ox, oy - 6 * MM, f"Лист {L:g}×{W:g} мм · заполнение {round(100 * s.usage)}% · "
                                           f"отход по материалу {m.waste_percent}% · ↻ — деталь повёрнута")
             c.showPage()
-    c.save()
-    return buf.getvalue()
 
 
-# --- Чертежи деталей с присадкой ---
-
-def export_part_drawings_pdf(result: BuildResult, project: str = "Проект") -> bytes:
+def export_cutmaps_pdf(result: BuildResult, nesting: Nesting, project: str = "Проект", workshop: str = "") -> bytes:
     buf = io.BytesIO()
-    pw, ph = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-    seen = set()
-    for p in result.parts:
-        if not material(p.material).is_sheet:
-            continue
-        sig = (p.name, p.length, p.width, p.thickness, tuple(sorted(p.edges.items())),
-               tuple((h.x, h.y, h.diameter, h.depth, h.face) for h in p.holes))
-        same = [q.number for q in result.parts if q is not p and q.name == p.name and q.length == p.length
-                and q.width == p.width and tuple((h.x, h.y, h.diameter, h.depth, h.face) for h in q.holes)
-                == sig[5]]
-        if sig in seen:
-            continue
-        seen.add(sig)
-        nums = number_ranges([p.number] + same)
-        _header(c, f"Деталь {nums} · {p.name}", _meta(result, project), pw, ph)
-        e = {s: to_mm(p.edge_thickness(s)) for s in ("x0", "x1", "y0", "y1")}
-        L, W = to_mm(p.cut_length), to_mm(p.cut_width)
-        draw_w, draw_h = pw * 0.62, ph - 60 * MM
-        scale = min(draw_w / L, draw_h / W)
-        ox, oy = 18 * MM, 26 * MM
-        c.setStrokeColor(LINE)
-        c.setFillColor(FILL)
-        c.setLineWidth(0.8)
-        c.rect(ox, oy, L * scale, W * scale, fill=1)
-        # Кромка — толстые красные линии по кромлённым сторонам
-        c.setStrokeColor(EDGE)
-        c.setLineWidth(2.2)
-        sides = {"y0": ((0, 0), (L, 0)), "y1": ((0, W), (L, W)), "x0": ((0, 0), (0, W)), "x1": ((L, 0), (L, W))}
-        for side in p.edges:
-            (x0, y0), (x1, y1) = sides[side]
-            c.line(ox + x0 * scale, oy + y0 * scale, ox + x1 * scale, oy + y1 * scale)
-        # Размеры
-        c.setFillColor(INK)
-        c.setFont(F, 8)
-        c.drawCentredString(ox + L * scale / 2, oy - 6 * MM, f"{L:g} (чистовой {to_mm(p.length):g})")
-        c.saveState()
-        c.translate(ox - 5 * MM, oy + W * scale / 2)
-        c.rotate(90)
-        c.drawCentredString(0, 0, f"{W:g} (чистовой {to_mm(p.width):g})")
-        c.restoreState()
-        if p.grain != "none":
-            c.setFont(F, 8)
-            c.drawString(ox, oy + W * scale + 4 * MM, "Текстура → вдоль длины" if p.grain == "length"
-                         else "Текстура → вдоль ширины")
-        # Отверстия
-        rows = [["№", "Сторона", "X", "Y", "Ø", "Глуб.", "Назначение"]]
-        for i, h in enumerate(sorted(p.holes, key=lambda h: (h.face, h.x, h.y)), start=1):
-            x, y = to_mm(h.x) - e["x0"], to_mm(h.y) - e["y0"]
-            col = FACE_A if h.face == "A" else FACE_B if h.face == "B" else EDGE_HOLE
-            c.setStrokeColor(col)
-            c.setLineWidth(0.7)
-            r = max(to_mm(h.diameter) / 2 * scale, 1.6)
-            c.circle(ox + min(max(x, 0), L) * scale, oy + min(max(y, 0), W) * scale, r)
-            rows.append([i, {"A": "пласть A", "B": "пласть B"}.get(h.face, f"торец {h.face}"), f"{x:g}", f"{y:g}",
-                         f"{to_mm(h.diameter):g}", "скв." if h.depth == 0 else f"{to_mm(h.depth):g}", h.purpose])
-        info = [["Материал", material(p.material).name], ["Толщина", f"{to_mm(p.thickness):g} мм"],
-                ["Кромка", ", ".join(f"{s}: {to_mm(edge_type(t).thickness):g}" for s, t in p.edges.items()) or "—"],
-                ["Кол-во", str(1 + len(same))]]
-        t = Table(info, colWidths=[22 * MM, 52 * MM])
-        t.setStyle(TableStyle([("FONT", (0, 0), (-1, -1), F, 7.5), ("GRID", (0, 0), (-1, -1), 0.3, colors.grey)]))
-        _, th = t.wrap(0, 0)
-        tx = pw - 96 * MM
-        t.drawOn(c, tx, ph - 24 * MM - th)
-        if len(rows) > 1:
-            shown = rows[:40]
-            ht = Table(shown, colWidths=[7 * MM, 15 * MM, 11 * MM, 11 * MM, 7 * MM, 9 * MM, 25 * MM])
-            ht.setStyle(TableStyle([("FONT", (0, 0), (-1, -1), F, 6.2), ("FONT", (0, 0), (-1, 0), FB, 6.2),
-                                    ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                                    ("TOPPADDING", (0, 0), (-1, -1), 1), ("BOTTOMPADDING", (0, 0), (-1, -1), 1)]))
-            _, hh = ht.wrap(0, 0)
-            ht.drawOn(c, tx, ph - 28 * MM - th - hh)
-            if len(rows) > 40:
-                c.setFont(F, 6)
-                c.drawString(tx, ph - 31 * MM - th - hh, f"…ещё {len(rows) - 40} отверстий — в DXF")
-        c.setFont(F, 6.5)
-        c.drawString(12 * MM, 8 * MM, "Координаты — от левого нижнего угла детали в размере распила, мм. "
-                                      "Синие — пласть A, зелёные — пласть B, оранжевые — торец, красное — кромка.")
+    c = SheetCanvas(buf, doc_info(result, project, workshop))
+    draw_cutmaps(c, result, nesting)
+    if not c._code and not c._sheets:  # нет листовых деталей — пустой лист со штампом
+        c.sheet("Карты раскроя")
         c.showPage()
     c.save()
     return buf.getvalue()
 
 
-# --- Общий вид и схема сборки ---
+# --- Чертежи деталей, общий вид, схема сборки (drawings.py) ---
 
-FRONT_ROLES = {"door", "drawer_front", "sliding_fill"}
+def export_part_drawings_pdf(result: BuildResult, project: str = "Проект", workshop: str = "") -> bytes:
+    from .drawings import export_part_drawings
 
-
-def _front_projection(c: canvas.Canvas, result: BuildResult, ox: float, oy: float, scale: float, fronts: bool,
-                      numbers: bool) -> None:
-    parts = [p for p in result.parts if fronts or p.role not in FRONT_ROLES]
-    for p in sorted(parts, key=lambda p: -p.aabb().min.y):
-        b = p.aabb()
-        x0, x1, z0, z1 = to_mm(b.min.x), to_mm(b.max.x), to_mm(b.min.z), to_mm(b.max.z)
-        c.setStrokeColor(LINE)
-        c.setLineWidth(0.4)
-        c.setFillColor(FRONT if p.role in FRONT_ROLES else (colors.HexColor("#f6f1ea") if p.role == "back" else FILL))
-        c.rect(ox + x0 * scale, oy + z0 * scale, (x1 - x0) * scale, (z1 - z0) * scale, fill=1)
-        if numbers and p.role != "back" and (x1 - x0) * scale > 6 and (z1 - z0) * scale > 6:
-            c.setFillColor(INK)
-            c.setFont(F, 5.5)
-            c.drawCentredString(ox + (x0 + x1) / 2 * scale, oy + (z0 + z1) / 2 * scale - 2, str(p.number))
+    return export_part_drawings(result, project, workshop)
 
 
-def _dim(c: canvas.Canvas, x0: float, y0: float, x1: float, y1: float, text: str, vertical: bool = False) -> None:
-    c.setStrokeColor(INK)
-    c.setLineWidth(0.4)
-    c.line(x0, y0, x1, y1)
-    for x, y in ((x0, y0), (x1, y1)):
-        c.line(x - 1.5, y - 1.5, x + 1.5, y + 1.5)
-    c.setFont(F, 7)
-    c.setFillColor(INK)
-    if vertical:
-        c.saveState()
-        c.translate(x0 - 3, (y0 + y1) / 2)
-        c.rotate(90)
-        c.drawCentredString(0, 0, text)
-        c.restoreState()
-    else:
-        c.drawCentredString((x0 + x1) / 2, y0 + 2.5, text)
+def export_general_view_pdf(result: BuildResult, project: str = "Проект", workshop: str = "") -> bytes:
+    """Общий вид: с фасадами, разрез, вид сверху; без фасадов с цепочками; у кухни — план и развёртки стен."""
+    from .drawings import export_general_view
+
+    return export_general_view(result, project, workshop)
 
 
-def export_general_view_pdf(result: BuildResult, project: str = "Проект") -> bytes:
-    """Общий вид: с фасадами и без, габариты и ширины секций."""
-    buf = io.BytesIO()
-    pw, ph = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-    _header(c, "Общий вид", _meta(result, project), pw, ph)
-    W, H, D = (to_mm(v) for v in result.size)
-    scale = min((pw / 2 - 30 * MM) / W, (ph - 55 * MM) / H)
-    for i, (fronts, label) in enumerate(((True, "С фасадами"), (False, "Без фасадов"))):
-        ox, oy = 22 * MM + i * pw / 2, 24 * MM
-        _front_projection(c, result, ox, oy, scale, fronts, numbers=False)
-        c.setFont(FB, 9)
-        c.setFillColor(INK)
-        c.drawString(ox, oy + H * scale + 9 * MM, label)
-        _dim(c, ox, oy + H * scale + 4 * MM, ox + W * scale, oy + H * scale + 4 * MM, f"{W:g}")
-        _dim(c, ox - 5 * MM, oy, ox - 5 * MM, oy + H * scale, f"{H:g}", vertical=True)
-        if not fronts and getattr(result.product, "type", "wardrobe") == "wardrobe":
-            # Ширины секций в свету — по перегородкам
-            xs = sorted({to_mm(p.aabb().min.x) for p in result.parts if p.role in ("side", "partition")} |
-                        {to_mm(p.aabb().max.x) for p in result.parts if p.role in ("side", "partition")})
-            for a, b in zip(xs[1::2], xs[2::2]):
-                if b - a > 50:
-                    _dim(c, ox + a * scale, oy - 5 * MM, ox + b * scale, oy - 5 * MM, f"{b - a:g}")
-    c.setFont(F, 7)
-    c.drawString(12 * MM, 8 * MM, f"Глубина корпуса {D:g} мм. Размеры — мм.")
-    c.save()
-    return buf.getvalue()
+def export_assembly_pdf(result: BuildResult, project: str = "Проект", workshop: str = "") -> bytes:
+    """Схема сборки: взрыв-схема в изометрии с номерами позиций и ведомость фурнитуры."""
+    from .drawings import export_assembly
 
-
-def export_assembly_pdf(result: BuildResult, project: str = "Проект") -> bytes:
-    """Схема сборки (MVP): вид без фасадов с номерами деталей и перечень."""
-    buf = io.BytesIO()
-    pw, ph = landscape(A4)
-    c = canvas.Canvas(buf, pagesize=(pw, ph))
-    title, meta = "Схема сборки", _meta(result, project)
-    _header(c, title, meta, pw, ph)
-    W, H, _ = (to_mm(v) for v in result.size)
-    scale = min((pw * 0.58) / W, (ph - 45 * MM) / H)
-    _front_projection(c, result, 14 * MM, 22 * MM, scale, fronts=False, numbers=True)
-    rows = [["№", "Деталь"]] + [[number_ranges(r.numbers), r.name] for r in spec_rows(result)]
-    _table(c, rows, [24 * MM, 70 * MM], pw - 104 * MM, ph - 22 * MM, ph, pw, title, meta, font_size=7)
-    c.save()
-    return buf.getvalue()
+    return export_assembly(result, project, workshop)
 
 
 # --- Коммерческое предложение для клиента ---

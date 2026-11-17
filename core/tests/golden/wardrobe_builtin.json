@@ -3,14 +3,14 @@
   "module_versions": {
     "body": "0.2.0",
     "builtin": "0.1.0",
-    "drawer": "0.3.0",
-    "fronts": "0.5.0",
+    "drawer": "0.4.0",
+    "fronts": "0.6.0",
     "mezzanine": "0.1.0",
     "partition": "0.2.0",
     "plinth_legs": "0.1.0",
     "rod": "0.1.0",
     "sections": "0.2.0",
-    "shelf": "0.2.0",
+    "shelf": "0.3.0",
     "side_panels": "0.1.0",
     "wall_fixing": "0.1.0",
     "zones": "0.1.0"
@@ -615,7 +615,7 @@
   "hardware": [
     {
       "name": "Конфирмат 7×50",
-      "qty": 88
+      "qty": 80
     },
     {
       "name": "Ножка мебельная регулируемая",
@@ -623,6 +623,10 @@
     },
     {
       "name": "Клипса цоколя",
+      "qty": 8
+    },
+    {
+      "name": "Шкант 8×40",
       "qty": 8
     },
     {

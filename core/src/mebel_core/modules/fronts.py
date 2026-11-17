@@ -30,7 +30,7 @@ DOOR = dict(u="+Z", v="+X", n="+Y")  # дверь: длина — по высо�
 DRAWER_FRONT = dict(u="+X", v="+Z", n="+Y")  # фасад ящика: длина — по ширине
 
 
-@module("fronts", "0.5.0", "Фасады")
+@module("fronts", "0.6.0", "Фасады")
 def build_fronts(ctx: BuildContext) -> None:
     p = ctx.product
     _check_push_handles(ctx)
@@ -214,11 +214,16 @@ def _hinges(ctx: BuildContext, slot: Slot, door: Part, side: str, a: int, b: int
     overlay = "накладная" if panel.role == "side" else "полунакладная"
     face_x = panel.aabb().max.x if side == "left" else panel.aabb().min.x
     cup_y_local = r.hinge_cup_from_edge if side == "left" else (b - a) - r.hinge_cup_from_edge
+    from ..drilling import hinge_plate, plate_shift
+
     for k in range(count):
         local_z = round(off + k * step)  # вдоль двери снизу
+        # Планка занята (петли двери с другой стороны перегородки, направляющая) — петля сдвигается на 32 мм
+        local_z += plate_shift(ctx, panel, at(face_x, ctx.front_y + r.system32_front, z0 + local_z), "Z",
+                               lo=z0 + r.hinge_cup_diameter // 2 + mm(5) - (z0 + local_z),
+                               hi=z1 - r.hinge_cup_diameter // 2 - mm(5) - (z0 + local_z))
         door.holes.append(_cup(local_z, cup_y_local, r))
-        for y in (ctx.front_y + r.system32_front, ctx.front_y + r.system32_front + mm(32)):
-            ctx.drill(panel, at(face_x, y, z0 + local_z), mm(5), mm(12), "планка петли")
+        hinge_plate(ctx, panel, at(face_x, ctx.front_y + r.system32_front, z0 + local_z), "Z")
     hw = ctx.product.hardware
     kind_name = {"standard": "", "soft_close": " с доводчиком", "push": " push-to-open"}[hw.hinge]
     cls = HARDWARE_CLASS_NAMES[hw.hinge_class]

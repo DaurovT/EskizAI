@@ -6,7 +6,9 @@
 
 from ..assembler import BuildContext, BuildError, Box, Slot, Zone, at
 from ..catalog import material
+from ..drilling import drill_free
 from ..geometry import Placement
+from ..parts import Hole
 from ..schema import DrawersFill, RodFill, Section, ShelvesFill
 from ..units import mm, to_mm
 from . import module
@@ -96,7 +98,7 @@ def _zone_divider(ctx: BuildContext, slot: Slot, z: int, path: str) -> None:
     ctx.join(slot.right, shelf, path)
 
 
-@module("shelf", "0.2.0", "Полка")
+@module("shelf", "0.3.0", "Полка")
 def build_shelves(ctx: BuildContext, slot: Slot, box: Box, fill: ShelvesFill, path: str) -> None:
     r, t = ctx.rules, ctx.t
     n = fill.count
@@ -109,9 +111,23 @@ def build_shelves(ctx: BuildContext, slot: Slot, box: Box, fill: ShelvesFill, pa
     length = box.width - 2 * side_gap
     y0 = box.y0 + r.shelf_front_setback
     depth = box.depth - r.shelf_front_setback
+    zs = [box.z0 + round(k * gap + (k - 1) * t) for k in range(1, n + 1)]
+    row: list[int] = []
+    if pins and r.shelf_pin_rows == "system32":
+        # Ряд через 32 мм на всю зону; полки встают на ближайшее отверстие ряда
+        step, first = r.system32_step, box.z0 + r.shelf_pin_row_margin
+        row = [first + j * step for j in range(max(0, (box.z1 - r.shelf_pin_row_margin - first) // step) + 1)]
+        snapped: list[int] = []
+        for z in zs:
+            options = [h for h in row if (not snapped or h > snapped[-1] - r.shelf_pin_hole_below + t)
+                       and h + r.shelf_pin_hole_below + t <= box.z1]
+            if options:
+                hz = min(options, key=lambda h: abs(h + r.shelf_pin_hole_below - z))
+                z = hz + r.shelf_pin_hole_below
+            snapped.append(z)
+        zs = snapped
 
-    for k in range(1, n + 1):
-        z = box.z0 + round(k * gap + (k - 1) * t)
+    for k, z in enumerate(zs, start=1):
         shelf = ctx.add_part(
             key=f"{path}.shelf[{k}]",
             name="Полка",
@@ -123,17 +139,28 @@ def build_shelves(ctx: BuildContext, slot: Slot, box: Box, fill: ShelvesFill, pa
             placement=Placement(origin=at(box.x0 + side_gap, y0, z), **HORIZONTAL),
             edges={"y0": r.edge_front},
         )
-        if pins:
-            hz = z - r.shelf_pin_hole_below
-            for y in (y0 + r.system32_front, box.y1 - r.system32_front):
-                ctx.drill(slot.left, at(box.x0, y, hz), mm(5), mm(12), "полкодержатель")
-                ctx.drill(slot.right, at(box.x1, y, hz), mm(5), mm(12), "полкодержатель")
-        else:
+        if pins and not row:
+            _pin_holes(ctx, slot, box, y0, z - r.shelf_pin_hole_below)
+        elif not pins:
             ctx.join(slot.left, shelf, path)
             ctx.join(slot.right, shelf, path)
+    for hz in row:
+        _pin_holes(ctx, slot, box, y0, hz)
 
     if pins:
         ctx.add_hardware("shelf_pin", "Полкодержатель", n * r.shelf_pins_per_shelf, path)
+
+
+def _pin_holes(ctx: BuildContext, slot: Slot, box: Box, y0: int, hz: int) -> None:
+    """Отверстия полкодержателей в обеих боковинах секции: линии system32_front от передней кромки полки
+    и от задней стенки. Встречное отверстие с другой стороны перегородки — линия сдвигается вглубь на 32 мм."""
+    r = ctx.rules
+    step = r.system32_step
+    lines = ((y0 + r.system32_front, step), (box.y1 - r.system32_front, -step))
+    for y, inward in lines:
+        for panel, x in ((slot.left, box.x0), (slot.right, box.x1)):
+            drill_free(ctx, panel, at(x, y, hz), r.shelf_pin_diameter, r.shelf_pin_depth, "полкодержатель",
+                       shifts=[("Y", inward), ("Y", 2 * inward)])
 
 
 @module("rod", "0.1.0", "Штанга")
@@ -159,7 +186,7 @@ def build_rod(ctx: BuildContext, box: Box, path: str) -> None:
         ctx.warn("rod_zone_low", f"Зона для штанги {to_mm(box.height)} мм — одежда не поместится", path)
 
 
-@module("drawer", "0.3.0", "Ящик")
+@module("drawer", "0.4.0", "Ящик")
 def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, path: str, doors=None,
                   ratios: list[float] | None = None) -> None:
     """ratios — доли высоты места под ящики снизу вверх (кухня 1+2); None — поровну."""
@@ -211,14 +238,17 @@ def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, pa
             length=width, width=slide, placement=Placement(origin=at(x0, y0, bz), **HORIZONTAL),
             grain="none", node=node,
         )
-        ctx.add_hardware("confirmat", "Конфирмат 7×50", 4 * 2, path)  # стенки к боковинам
+        # Стенки к боковинам ящика — конфирматы общим проходом присадки (drilling.auto_joints)
         slide_name = {"ball": "шариковые", "hidden_full": "скрытые полного выдвижения",
                       "hidden_soft": "скрытые с доводчиком"}[hw.slides]
         cls = {"econom": "эконом", "standard": "стандарт", "premium": "премиум"}[hw.slides_class]
         ctx.add_hardware("slide", f"Направляющие {slide_name} {round(to_mm(slide))} мм (пара, {cls})", 1, path,
                          length=slide, type=hw.slides, hclass=hw.slides_class)
-        # Направляющие крепятся к боковинам секции (или к проставкам) на высоте середины ящика
-        hz = sz + box_h // 2
+        # Направляющие крепятся к боковинам секции (или к проставкам): шариковые — по середине высоты ящика,
+        # скрытые — у низа ящика (rules.hidden_slide_hole_z); отверстия — по таблице rules.slide_holes
+        ball = hw.slides == "ball"
+        hz = sz + box_h // 2 if ball else bz + r.hidden_slide_hole_z
+        holes_y = r.slide_hole_positions(hw.slides, slide)
         mounts = {"left": (slot.left, box.x0), "right": (slot.right, box.x1)}
         for side in ("left", "right"):
             panel, face_x = mounts[side]
@@ -227,12 +257,27 @@ def build_drawers(ctx: BuildContext, slot: Slot, box: Box, fill: DrawersFill, pa
                 panel = ctx.add_part(
                     key=f"{node}.spacer.{side}", name="Проставка", role="spacer", module=path,
                     material_id=body_mat, length=slide, width=r.spacer_height,
-                    placement=Placement(origin=at(sx, y0, hz - r.spacer_height // 2), **DRAWER_SIDE),
+                    placement=Placement(origin=at(sx, y0, max(hz - r.spacer_height // 2, box.z0)), **DRAWER_SIDE),
                 )
                 face_x = inner_x0 if side == "left" else inner_x1
                 ctx.add_hardware("screw", "Саморез 4×30 (проставка)", 3, path)
-            for y in (y0 + r.system32_front, y0 + slide // 2, y0 + slide - r.system32_front):
-                ctx.drill(panel, at(face_x, y, hz), mm(5), mm(12), "направляющая")
+            step = r.system32_step
+            for y in holes_y:
+                drill_free(ctx, panel, at(face_x, y0 + y, hz), r.slide_hole_diameter, r.slide_hole_depth,
+                           "направляющая", shifts=[("Y", step), ("Y", -step)])
+        # Ответная часть на ящике: шариковые — на боковинах ящика снаружи, скрытые — крючки в задней стенке
+        if ball:
+            for side, sx in (("left", x0), ("right", x0 + width)):
+                dside = ctx.part(f"{node}.side.{side}")
+                for y in holes_y:
+                    drill_free(ctx, dside, at(sx, y0 + y, hz), r.slide_drawer_hole_diameter,
+                               r.slide_drawer_hole_depth, "направляющая ящика", shifts=[("Y", step), ("Y", -step)])
+        else:
+            back = ctx.part(f"{node}.wall.back")
+            d, depth_h = r.hidden_slide_rear_hole
+            for lx in (r.hidden_slide_rear_from_side, back.length - r.hidden_slide_rear_from_side):
+                back.holes.append(Hole(x=lx, y=r.hidden_slide_rear_from_bottom, diameter=d, depth=depth_h, face="A",
+                                       purpose="крючок направляющей"))
 
         from ..parts import MovingNode
 

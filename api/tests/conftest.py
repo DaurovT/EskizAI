@@ -161,3 +161,24 @@ def root_admin(app, client) -> dict:
     from .staff_helpers import superadmin
 
     return superadmin(app, client, "root-admin@eskizai.uz")
+
+
+@pytest.fixture(autouse=True)
+def _fresh_demo_prices(monkeypatch):
+    """Встроенный прайс датирован PRICE_DATE; через 14 дней он «устаревает» и тесты начинают зависеть от календаря.
+    В тестах «сегодня» для пометки устаревших цен — день после даты прайса (тесты про устаревание задают свою дату)."""
+    from datetime import date, timedelta
+
+    import importlib
+
+    est = importlib.import_module("mebel_core.estimate")  # модуль, а не одноимённая функция пакета
+    from mebel_core.pricing import PRICE_DATE
+
+    fixed = date.fromisoformat(PRICE_DATE) + timedelta(days=1)
+
+    class _D(date):
+        @classmethod
+        def today(cls):  # noqa: D102
+            return fixed
+
+    monkeypatch.setattr(est, "_date", _D)

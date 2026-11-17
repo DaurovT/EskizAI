@@ -7,6 +7,7 @@ from .assembler import BuildResult, build, parse_tree
 from .catalog import EDGE_TYPES, MATERIALS, Material, edge_type, material
 from .estimate import Estimate, EstimateRange, PricingSettings, client_view, estimate, estimate_range
 from .exports.csv_cut import export_csv
+from .exports.drawings import export_drawing_set_pdf
 from .exports.dxf_parts import export_dxf_zip, part_dxf
 from .exports.pdf import (
     export_assembly_pdf,
@@ -38,7 +39,7 @@ __all__ = [
     "estimate", "estimate_range", "client_view", "PricingSettings", "Estimate", "EstimateRange",
     "export_csv", "export_dxf_zip", "part_dxf", "export_xlsx",
     "export_spec_pdf", "export_cutmaps_pdf", "export_part_drawings_pdf", "export_general_view_pdf",
-    "export_assembly_pdf", "export_kp_pdf",
+    "export_assembly_pdf", "export_kp_pdf", "export_drawing_set_pdf",
     "apply_fix", "apply_patch", "migrate_tree", "apply_measurements", "fit_to_niche", "Niche", "Builtin",
     "supplier_order", "SupplierOrder", "delivery_cost", "PriceBook", "PriceItem", "DEMO_PRICES",
     "hardware_options", "HardwareGroup",

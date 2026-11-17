@@ -29,6 +29,7 @@
 """
 
 from ..assembler import BuildContext, BuildError, Box, Slot, at
+from ..drilling import hinge_plate, lift_brackets
 from ..geometry import Placement
 from ..parts import Fix, Hole, Issue, MovingNode, PatchOp
 from ..schema import ShelvesFill
@@ -90,7 +91,7 @@ def tier_height(ctx: BuildContext, cab, row_top: int) -> tuple[int, bool]:
     return TIER_DEFAULT, False
 
 
-@module("kitchen_wall_ext", "0.2.0", "Верхний модуль кухни: подъёмные фасады, ниша под технику, ярус")
+@module("kitchen_wall_ext", "0.3.0", "Верхний модуль кухни: подъёмные фасады, ниша под технику, ярус")
 def build_wall_ext(ctx: BuildContext, cab, *, path: str, ptr: str, x: int, w: int, z0: int, z1: int, d: int,
                    y0: int, last: bool) -> tuple[int, int]:
     """Модуль в колонке [z0, z1] (z1 — верх ряда). Возвращает (низ модуля, верх колонки с ярусом)."""
@@ -226,7 +227,7 @@ def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi:
     za, zb = z_lo + g // 2, z_hi - g // 2
     box = slot.box
     if fold:
-        _fold_fronts(ctx, xa, xb, za, zb, mount or slot.top, path, ptr=ptr, fix_field=fix_field)
+        _fold_fronts(ctx, xa, xb, za, zb, mount or slot.top, path, ptr=ptr, fix_field=fix_field, slot=slot)
         return [box]
     boxes = [box]
     mounts = [mount or slot.top]
@@ -255,11 +256,13 @@ def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi:
         pz = panel.aabb().min.z
         for ly in ys:
             flap.holes.append(_cup(fb - fa - r.hinge_cup_from_edge, ly, r))
-            for dy in (0, mm(32)):
-                ctx.drill(panel, at(xa + ly, ctx.front_y + r.system32_front + dy, pz), mm(5), mm(12), "планка петли")
+            hinge_plate(ctx, panel, at(xa + ly, ctx.front_y + r.system32_front, pz), "X")
         ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls})", n, path,
                          type=hw.hinge, hclass=hw.hinge_class)
-        ctx.add_hardware("gas_lift", "Подъёмный механизм (газлифт)", 1 if width <= mm(600) else 2, path)
+        lifts = 1 if width <= mm(600) else 2
+        ctx.add_hardware("gas_lift", "Подъёмный механизм (газлифт)", lifts, path)
+        # Кронштейн газлифта на боковине (≈): один — слева, два — с обеих сторон
+        lift_brackets(ctx, slot, pz, ["left", "right"][:lifts], r.gas_lift_holes, "кронштейн газлифта")
         _flap_handle(ctx, flap, path)
         # Поворот на +range° вокруг −X у верхней кромки: низ фасада уходит к нам (−Y) и вверх
         ctx.nodes.append(MovingNode(id=node, kind="lift", module=path, origin=(xa, ctx.front_y, fb), axis="-X",
@@ -268,7 +271,7 @@ def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi:
 
 
 def _fold_fronts(ctx: BuildContext, xa: int, xb: int, za: int, zb: int, mount, path: str, *, ptr: str,
-                 fix_field: str) -> None:
+                 fix_field: str, slot: Slot | None = None) -> None:
     """Складной подъёмник на фасадный проём [za, zb] (уже с зазорами): верхний фасад на петлях к mount,
     нижний — на соединительных петлях к верхнему; ручка — на нижнем."""
     r = ctx.rules
@@ -288,8 +291,7 @@ def _fold_fronts(ctx: BuildContext, xa: int, xb: int, za: int, zb: int, mount, p
     for ly in ys:
         # Верхний — петли по верхней кромке, планки снизу на крыше (как у подъёмного)
         upper.holes.append(_cup(upper.length - r.hinge_cup_from_edge, ly, r))
-        for dy in (0, mm(32)):
-            ctx.drill(mount, at(xa + ly, ctx.front_y + r.system32_front + dy, pz), mm(5), mm(12), "планка петли")
+        hinge_plate(ctx, mount, at(xa + ly, ctx.front_y + r.system32_front, pz), "X")
         # Соединительные: чашка — в верхнем у стыка, крепление — на внутренней стороне нижнего
         upper.holes.append(Hole(x=r.hinge_cup_from_edge, y=ly, diameter=r.hinge_cup_diameter,
                                 depth=r.hinge_cup_depth, face="A", purpose="чашка петли соединительной"))
@@ -301,6 +303,8 @@ def _fold_fronts(ctx: BuildContext, xa: int, xb: int, za: int, zb: int, mount, p
     ctx.add_hardware("hinge", f"Петля соединительная (складной подъёмник, {cls})", n, path,
                      type="standard", hclass=hw.hinge_class)
     ctx.add_hardware("fold_lift", "Подъёмник складной (2 фасада)", 1, path)
+    if slot is not None:  # механизм — на обеих боковинах (≈, по шаблону производителя)
+        lift_brackets(ctx, slot, pz, ["left", "right"], r.fold_lift_holes, "подъёмник складной")
     _flap_handle(ctx, lower, path)
     # Верхний — как подъёмный: +LIFT_ANGLE° вокруг −X по верхней кромке (по внутренней стороне фасада).
     # Нижний — внутри верхнего: +180° вокруг +X по стыку (внутренняя сторона) — низ уходит назад и вверх,

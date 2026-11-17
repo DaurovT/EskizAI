@@ -1003,6 +1003,7 @@ export const ru = {
   files_open: 'Открыть',
   files_none: 'Файлы появятся после построения модели',
   files_locked_title: 'Файлы закрыты',
+  files_k_production_set_pdf: 'Комплект чертежей (PDF)',
   files_parts: 'Деталей: {n}',
   fv_tab_drawings: 'Чертежи',
   fv_tab_spec: 'Спецификация',

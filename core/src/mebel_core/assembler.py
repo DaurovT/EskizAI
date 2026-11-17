@@ -10,7 +10,7 @@ from typing import Any
 from pydantic import BaseModel, TypeAdapter
 
 from .catalog import material
-from .geometry import Placement, Vec3, axis_value, to_local
+from .geometry import Placement, Vec3, to_local
 from .modules import MODULES, load_all
 from .parts import HardwareItem, Hole, Issue, LightRun, MovingNode, Part
 from .rules import DEFAULT_RULES, RuleSet
@@ -93,6 +93,8 @@ class BuildContext:
         self.zone_slots: list[Slot] = []  # слоты всех рядов (кухня) — для подсветки
         self.niche = None  # встроенный шкаф: щели и доборы по замеру ниши (niche.NicheLayout)
         self.shift_x: int = 0  # на сколько изделие сдвинуто вправо (левые торцевые секции, панели, доборы)
+        self.joined: set[tuple[str, str]] = set()  # соединённые пары (пласть, торец) — drilling.py
+        self.contacts_cache = None  # стыки деталей на время прохода присадки
 
     # Свойства изделия, которые нужны многим модулям
     @property
@@ -160,55 +162,14 @@ class BuildContext:
         face = "A" if lz >= part.thickness else "B"
         part.holes.append(Hole(x=lx, y=ly, diameter=diameter, depth=depth, face=face, purpose=purpose))
 
-    def join(self, face_part: Part, edge_part: Part, module: str) -> None:
-        """Соединение на конфирматах: торец edge_part упирается в пласть face_part.
+    def join(self, face_part: Part, edge_part: Part, module: str) -> int:
+        """Соединение «торец в пласть» на конфирматах (или шкантах) — drilling.confirmat_joint.
 
-        В пласти — сквозные Ø7 (со стороны, противоположной соединению),
-        в торце — Ø5 глубиной 50. Число — по длине соединения (rules).
-        """
-        fa, ea = face_part.aabb(), edge_part.aabb()
-        n = face_part.placement.n[1]
-        if axis_value(ea.min, n) == axis_value(fa.max, n):
-            contact, from_face = axis_value(fa.max, n), "B"
-        elif axis_value(ea.max, n) == axis_value(fa.min, n):
-            contact, from_face = axis_value(fa.min, n), "A"
-        else:
-            self.warn("join_no_contact", f"«{edge_part.name}» не касается «{face_part.name}»", module)
-            return
+        В пласти — сквозные Ø7 со стороны, противоположной соединению, в торце — Ø5 глубиной 50;
+        число — по длине соединения (rules). Фурнитура — по числу просверленных пар."""
+        from .drilling import confirmat_joint
 
-        a1, a2 = [a for a in "XYZ" if a != n]
-        ranges = {}
-        for a in (a1, a2):
-            lo = max(axis_value(fa.min, a), axis_value(ea.min, a))
-            hi = min(axis_value(fa.max, a), axis_value(ea.max, a))
-            ranges[a] = (lo, hi)
-        long_axis = max((a1, a2), key=lambda a: ranges[a][1] - ranges[a][0])
-        thin_axis = a2 if long_axis == a1 else a1
-        lo, hi = ranges[long_axis]
-        mid_thin = sum(ranges[thin_axis]) // 2
-        count = self.rules.confirmats_for_depth(hi - lo)
-        offset = min(self.rules.confirmat_end_offset, (hi - lo) // 4)
-        if count == 1:
-            positions = [(lo + hi) // 2]
-        else:
-            step = (hi - lo - 2 * offset) / (count - 1)
-            positions = [round(lo + offset + k * step) for k in range(count)]
-
-        for pos in positions:
-            coords = {n: contact, long_axis: pos, thin_axis: mid_thin}
-            point = Vec3(x=coords["X"], y=coords["Y"], z=coords["Z"])
-            lx, ly, _ = to_local(face_part.placement, point)
-            face_part.holes.append(
-                Hole(x=lx, y=ly, diameter=mm(7), depth=0, face=from_face, purpose="конфирмат")
-            )
-            ex, ey, _ = to_local(edge_part.placement, point)
-            side = (
-                "x0" if ex == 0 else "x1" if ex == edge_part.length else "y0" if ey == 0 else "y1"
-            )
-            edge_part.holes.append(
-                Hole(x=ex, y=ey, diameter=mm(5), depth=mm(50), face=side, purpose="конфирмат")
-            )
-        self.add_hardware("confirmat", "Конфирмат 7×50", count, module)
+        return confirmat_joint(self, face_part, edge_part, module)
 
     # Замечания
     def error(self, code: str, message: str, path: str = "") -> None:
@@ -303,6 +264,7 @@ def build(product: Product | Kitchen | dict, rules: RuleSet = DEFAULT_RULES) -> 
     except KeyError as e:  # нет материала или кромки в каталоге
         ctx.error("catalog", str(e.args[0]) if e.args else str(e))
 
+    _drilling(ctx)
     _decor(ctx)
     if product.operations and ctx.parts:
         from .operations import apply_operations
@@ -313,6 +275,7 @@ def build(product: Product | Kitchen | dict, rules: RuleSet = DEFAULT_RULES) -> 
         size = _shift_left(ctx, product)
     if ctx.slots:
         _check_spans(ctx)
+    _check_drilling(ctx)
     _check_parts(ctx)
     for number, part in enumerate(ctx.parts, start=1):
         part.number = number
@@ -329,6 +292,26 @@ def build(product: Product | Kitchen | dict, rules: RuleSet = DEFAULT_RULES) -> 
         issues=ctx.issues,
         lights=ctx.lights,
     )
+
+
+def _drilling(ctx: BuildContext) -> None:
+    """Присадка после сборки модулей: недостающие соединения, ножки, навесы (drilling.py)."""
+    if not ctx.parts:
+        return
+    from .drilling import apply_drilling
+
+    try:
+        apply_drilling(ctx)
+    except KeyError as e:
+        ctx.error("catalog", str(e.args[0]) if e.args else str(e))
+
+
+def _check_drilling(ctx: BuildContext) -> None:
+    """Проверка присадки — после операций формы и сдвигов: пересечения, вырыв у края, закрытые отверстия."""
+    if ctx.parts:
+        from .drilling import check_drilling
+
+        check_drilling(ctx)
 
 
 def _decor(ctx: BuildContext) -> None:
@@ -384,6 +367,7 @@ def _build_kitchen(ctx: BuildContext) -> BuildResult:
         ctx.error(e.code, e.message, e.path)
     except KeyError as e:
         ctx.error("catalog", str(e.args[0]) if e.args else str(e))
+    _drilling(ctx)
     _decor(ctx)
     if ctx.product.operations and ctx.parts:
         from .operations import apply_operations
@@ -394,6 +378,7 @@ def _build_kitchen(ctx: BuildContext) -> BuildResult:
 
         for code, message in check_site(ctx.product, ctx.rules):
             ctx.warn(code, message, "site")
+    _check_drilling(ctx)
     _check_parts(ctx)
     for number, part in enumerate(ctx.parts, start=1):
         part.number = number

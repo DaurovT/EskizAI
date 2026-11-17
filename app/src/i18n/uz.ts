@@ -981,6 +981,7 @@ export const uz: Dict = {
   files_open: 'Ochish',
   files_none: 'Fayllar model qurilgandan keyin paydo boʻladi',
   files_locked_title: 'Fayllar yopiq',
+  files_k_production_set_pdf: 'Chizmalar toʻplami (PDF)',
   files_parts: 'Detallar: {n}',
   fv_tab_drawings: 'Chizmalar',
   fv_tab_spec: 'Spetsifikatsiya',
