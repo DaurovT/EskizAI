@@ -39,6 +39,12 @@ from .body import HORIZONTAL
 from .fronts import _cup, _doors, _front_part, handle_name, HARDWARE_CLASS_NAMES
 from .kitchen import _carcass, _door_count
 
+
+def _brand(r) -> str:
+    """Марка петель цеха (SCR-56) — в названии петли."""
+    return f" · {r.hinge_brand}" if r.hinge_brand else ""
+
+
 LIFT_ANGLE = 100  # подъёмный фасад открывается на ~100°
 LIFT_MIN, LIFT_MAX = mm(250), mm(700)  # высота одного подъёмного фасада на обычном газлифте
 LIFT_HARD_MAX = mm(900)  # выше — только два фасада; 700–900 — предупреждение (усиленный газлифт)
@@ -257,7 +263,7 @@ def lift_flaps(ctx: BuildContext, slot: Slot, x0: int, x1: int, z_lo: int, z_hi:
         for ly in ys:
             flap.holes.append(_cup(fb - fa - r.hinge_cup_from_edge, ly, r))
             hinge_plate(ctx, panel, at(xa + ly, ctx.front_y + r.system32_front, pz), "X")
-        ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls})", n, path,
+        ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls}){_brand(r)}", n, path,
                          type=hw.hinge, hclass=hw.hinge_class)
         lifts = 1 if width <= mm(600) else 2
         ctx.add_hardware("gas_lift", "Подъёмный механизм (газлифт)", lifts, path)
@@ -298,7 +304,7 @@ def _fold_fronts(ctx: BuildContext, xa: int, xb: int, za: int, zb: int, mount, p
         for dx in (mm(10), mm(42)):
             lower.holes.append(Hole(x=lower.length - dx, y=ly, diameter=mm(3), depth=mm(10), face="A",
                                     purpose="петля соединительная"))
-    ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls})", n, path,
+    ctx.add_hardware("hinge", f"Петля накладная {r.hinge_angle}°{kind_name} ({cls}){_brand(r)}", n, path,
                      type=hw.hinge, hclass=hw.hinge_class)
     ctx.add_hardware("hinge", f"Петля соединительная (складной подъёмник, {cls})", n, path,
                      type="standard", hclass=hw.hinge_class)

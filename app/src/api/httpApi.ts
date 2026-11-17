@@ -56,6 +56,8 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
     updateWorkshop: (body) => patch('/workshops/me', body),
     getPricing: () => get('/workshops/me/pricing'),
     updatePricing: (body) => patch('/workshops/me/pricing', body),
+    getProduction: () => get('/workshops/me/production'),
+    updateProduction: (body) => patch('/workshops/me/production', body),
     listEmployees: () => get('/workshops/me/employees'),
     addEmployee: (phone, name) => post('/workshops/me/employees', { phone, name }),
     inviteEmployee: (body) => post('/workshops/me/invites', body),
@@ -132,6 +134,8 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
     createShareLink: (id, body) => post(`${pj(id)}/share-links`, body),
     listShareLinks: (id) => get(`${pj(id)}/share-links`),
     listClientRequests: (id) => get(`${pj(id)}/client-requests`),
+    listWorkshopClientRequests: (q) => get('/client-requests', q as RequestOpts['query']),
+    setClientRequestStatus: (rid, status) => patch(`/client-requests/${enc(rid)}`, { status }),
     getProjectAr: (id) => get(`${pj(id)}/ar`),
 
     getTask: (taskId) => get(`/tasks/${enc(taskId)}`),
@@ -160,6 +164,7 @@ export function createHttpApi(http: Http, download?: Downloader): Api {
       if (!download) throw new ApiError(0, 'no_downloader', 'download unavailable');
       return download(`${http.baseUrl}${pj(id)}/files/${enc(kind)}`, await http.authHeader(), kind);
     },
+    getDrawingSet: (id) => get(`${pj(id)}/drawing-set`),
 
     orderPreview: (id, km) => get(`${pj(id)}/orders/preview`, { distance_km: km ?? undefined }),
     createOrder: (id, km) => post(`${pj(id)}/orders`, { distance_km: km ?? null }),

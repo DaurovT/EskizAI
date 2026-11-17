@@ -4,7 +4,7 @@
  * Считается по ширине окна, а не по устройству: iPad в Split View получает телефонную раскладку.
  */
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react';
 import { useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 
 export type LayoutMode = 'phone' | 'portrait' | 'wide';
@@ -47,17 +47,44 @@ export function CenterColumn({ children, max = tablet.column, style }: { childre
  */
 export const FULL_WIDTH_ROUTES = new Set(['(tabs)', 'project/[id]/editor', 'project/[id]/builtin', 'project/[id]/ar', 'login', 'diag', 'shot']);
 
-/** Обёртка экрана корневого стека: колонкой по центру, кроме FULL_WIDTH_ROUTES. */
+/**
+ * Только на широком планшете — во всю ширину (своя «десктопная» раскладка с боковой панелью: TInbox, TRequests).
+ * На портрете планшета эти экраны — колонкой, как раньше.
+ */
+export const WIDE_FULL_ROUTES = new Set(['inbox/index', 'inbox/[id]', 'client-requests/index', 'client-requests/[id]']);
+
+// Экран, которому во всю ширину нужно не всегда (разбор чертежа — только в режиме чертежа): включает сам на время показа.
+const wideFull = new Set<string>();
+const wideFullSubs = new Set<() => void>();
+const wideFullSub = (fn: () => void) => { wideFullSubs.add(fn); return () => { wideFullSubs.delete(fn); }; };
+/** На широком планшете показать маршрут `route` во всю ширину, пока компонент на экране (src/screens/DrawingParseWide.tsx). */
+export function useWideFullWidth(route: string, on: boolean) {
+  useEffect(() => {
+    if (!on) return undefined;
+    wideFull.add(route);
+    wideFullSubs.forEach((f) => f());
+    return () => { wideFull.delete(route); wideFullSubs.forEach((f) => f()); };
+  }, [route, on]);
+}
+function useFullWidth(route: string | undefined) {
+  const { wide } = useLayout();
+  const dyn = useSyncExternalStore(wideFullSub, () => (route ? wideFull.has(route) : false));
+  return !!route && (FULL_WIDTH_ROUTES.has(route) || (wide && (WIDE_FULL_ROUTES.has(route) || dyn)));
+}
+
+/** Обёртка экрана корневого стека: колонкой по центру, кроме FULL_WIDTH_ROUTES (и WIDE_FULL_ROUTES на широком). */
 export function RouteColumn({ route, children }: { route: string; children: ReactNode }) {
   const { tablet: tab } = useLayout();
-  if (!tab || FULL_WIDTH_ROUTES.has(route)) return <>{children}</>;
+  const full = useFullWidth(route);
+  if (!tab || full) return <>{children}</>;
   return <CenterColumn>{children}</CenterColumn>;
 }
 
 /** Шапка той же ширины, что колонка экрана под ней; фон — на всю ширину. */
 export function HeaderColumn({ children, route, bg }: { children: ReactNode; route?: string; bg?: string }) {
   const { tablet: tab } = useLayout();
-  if (!tab || (route && FULL_WIDTH_ROUTES.has(route))) return <>{children}</>;
+  const full = useFullWidth(route);
+  if (!tab || full) return <>{children}</>;
   return (
     <View style={{ alignItems: 'center', backgroundColor: bg }}>
       <View style={{ width: '100%', maxWidth: tablet.column }}>{children}</View>

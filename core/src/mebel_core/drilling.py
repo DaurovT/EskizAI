@@ -12,6 +12,7 @@
   боковинам). Фурнитура считается здесь же — число конфирматов = число просверленных пар;
 - если пласть со стороны головки уже закрыта другой деталью (полки на одной высоте по обе стороны
   перегородки) — соединение на шкантах; занятое место — сдвиг вдоль соединения на шаг 32 мм;
+- цех на шкантах (настройки производства, rules.carcass_fastener = dowel) — все соединения на шкантах Ø8;
 - полкодержатели и направляющие — fill.py через drill_free (встречные отверстия в перегородке
   расходятся по глубине); планки петель — hinge_plate (fronts.py, kitchen_wall.py);
 - газлифт / складной подъёмник — lift_brackets (≈); ножки и навесы — по позициям фурнитуры
@@ -285,7 +286,8 @@ def confirmat_joint(ctx, face_part: Part, edge_part: Part, module: str) -> int:
     Ø5 глубиной 50 (rules.confirmat_*). Число — по длине соединения, первый — на confirmat_end_offset от
     края, остальные поровну; место занято другим отверстием — сдвиг на joint_shift_step. Если пласть
     со стороны головки закрыта торцом другой детали (полки на одной высоте по обе стороны перегородки) —
-    шкант Ø8: глухое в пласти со стороны соединения и в торце. Возвращает число соединителей."""
+    шкант Ø8: глухое в пласти со стороны соединения и в торце. Цех на шкантах (rules.carcass_fastener =
+    dowel) — все соединения на шкантах. Возвращает число соединителей."""
     r = ctx.rules
     c = find_contact(face_part, edge_part)
     if c is None:
@@ -317,10 +319,13 @@ def confirmat_joint(ctx, face_part: Part, edge_part: Part, module: str) -> int:
         return _pair(face_part, edge_part, c, long_axis, thin_axis, pos, mid_thin, fd, fdepth, side, ed, edepth,
                      purpose)
 
+    # Цех собирает на шкантах (rules.carcass_fastener = dowel) — конфирматов нет совсем
+    dowels_only = r.carcass_fastener == "dowel"
+    order = ("шкант",) if dowels_only else ("конфирмат", "шкант")
     for nominal in _joint_positions(lo, hi, count, offset):
         chosen = None
         all_covered = True
-        for purpose in ("конфирмат", "шкант"):
+        for purpose in order:
             fd = kinds[purpose][0]
             margin = fd // 2 + r.drill_edge_min
             for k in (0, 1, -1, 2, -2):
@@ -337,7 +342,7 @@ def confirmat_joint(ctx, face_part: Part, edge_part: Part, module: str) -> int:
             if chosen:
                 break
         if chosen is None:  # места нет — как по правилу (проверка присадки предупредит)
-            purpose = "шкант" if all_covered else "конфирмат"
+            purpose = "шкант" if all_covered or dowels_only else "конфирмат"
             chosen = (purpose, nominal, *pair(purpose, nominal))
         purpose, pos, fh, eh = chosen
         placed.append(pos)

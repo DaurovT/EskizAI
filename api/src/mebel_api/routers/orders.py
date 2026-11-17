@@ -49,13 +49,22 @@ def order_version(db, p: Project) -> ModelVersion | None:
 
 
 def compose(version: ModelVersion, distance_km: float | None, db=None, project: Project | None = None) -> dict[str, Any]:
-    """Снимок состава заказа поставщику (суммы — себестоимость, сумы)."""
-    result = build(parse_tree(version.tree))
+    """Снимок состава заказа поставщику (суммы — себестоимость, сумы). Присадка и крепёж — по правилам цеха."""
+    from mebel_core import DEFAULT_RULES
+
+    from ..services.production import rules_for_project
+
+    rules = DEFAULT_RULES
+    owner = project if project is not None else (db.get(Project, version.project_id) if db is not None else None)
+    if db is not None and owner is not None:
+        rules = rules_for_project(db, owner)
+    result = build(parse_tree(version.tree), rules)
     nesting = nest(result)
     from ..services.prices import price_book_for
 
     prices = price_book_for(version)  # сессию берём из версии модели
-    so = supplier_order(result, estimate(result, nesting=nesting, prices=prices), nesting, distance_km=distance_km)
+    est = estimate(result, rules=rules, nesting=nesting, prices=prices)
+    so = supplier_order(result, est, nesting, distance_km=distance_km)
     out = so.model_dump(mode="json")
     if db is not None and project is not None:
         from ..services.price_requests import apply_to_order

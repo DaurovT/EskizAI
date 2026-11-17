@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -161,3 +162,41 @@ class ActionLogOut(Out):
     before: dict | None
     after: dict | None
     created_at: datetime
+
+
+# --- Производство цеха (SCR-56) ---
+
+Fastener = Literal["confirmat", "dowel"]
+HingeBrand = Literal["blum", "hettich", "gtv"]
+ConfirmatDepth = Literal[35, 40, 45, 50]
+
+
+class HingeBrandOut(BaseModel):
+    """Как марка петель сверлится (mebel_core.HINGE_BRANDS) — для схемы планки в приложении."""
+
+    id: HingeBrand
+    name: str
+    plate_pattern: Literal["along", "across"] = Field(
+        description="along — 2 отверстия планки вдоль кромки двери на линии 37 мм; across — на 37 и 37 + spacing мм "
+                    "от переднего края на высоте чашки")
+    plate_spacing_mm: float
+    plate_line_mm: float = Field(description="Линия отверстий планки от переднего края боковины")
+    cup_diameter_mm: float
+    cup_depth_mm: float
+    cup_from_edge_mm: float = Field(description="Центр чашки от края двери")
+
+
+class ProductionOut(BaseModel):
+    fastener: Fastener = Field(description="Крепёж корпуса: confirmat — конфирмат 7×50, dowel — шкант Ø8 с клеем")
+    confirmat_depth: ConfirmatDepth = Field(description="Глубина отверстия конфирмата в торце детали, мм")
+    hinge_brand: HingeBrand
+    shelf_pin_grid: bool = Field(description="Сетка 32 мм: ряд отверстий полкодержателей по всей высоте боковины")
+    saved: bool = Field(description="false — цех ещё не сохранял, действуют значения по умолчанию")
+    hinge_brands: list[HingeBrandOut]
+
+
+class ProductionUpdateIn(BaseModel):
+    fastener: Fastener | None = None
+    confirmat_depth: ConfirmatDepth | None = None
+    hinge_brand: HingeBrand | None = None
+    shelf_pin_grid: bool | None = None

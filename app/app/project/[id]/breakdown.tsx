@@ -17,6 +17,7 @@ import { BudgetDeclinedError, TaskTimeoutError, withBudgetConfirm } from '../../
 import type { ChooseObjectsOut, DesignElement, DesignObject, DesignOut, DesignQuestion, EditOut } from '../../../src/api/types';
 import { useAiTask } from '../../../src/hooks/useAiTask';
 import { useT } from '../../../src/i18n';
+import { isProposal } from '../../../src/lib/clarify';
 import { applyDesign, pendingDesign } from '../../../src/services/design';
 import { loadMeta, updateMeta, useMeta } from '../../../src/state/projectMeta';
 import { askBudget, errorInfo, showError } from '../../../src/ui/dialogs';
@@ -26,7 +27,11 @@ import { ErrorScreen } from '../../../src/ui/ErrorState';
 import { SUPPORT_TG } from '../../../src/config';
 import { Banner, Button, Card, Field, Press, Screen, Sheet, Skeleton, T } from '../../../src/ui/kit';
 import { DrawingImage } from '../../../src/ui/Drawing';
+import { QMark, QuestionItem } from '../../../src/ui/QuestionItem';
 import { TitleHeader } from '../../../src/ui/TitleHeader';
+// [tablet-drawing] широкий планшет: разбор чертежа — TDrawing.dc.html
+import { DrawingParseWide } from '../../../src/screens/DrawingParseWide';
+import { useLayout } from '../../../src/ui/layout';
 import { palette } from '../../../src/ui/theme';
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -108,6 +113,7 @@ export default function Breakdown() {
   const { t, lang } = useT();
   const meta = useMeta(id);
   const ai = useAiTask();
+  const { wide } = useLayout(); // [tablet-drawing]
   const [fix, setFix] = useState<DesignElement | 'add' | null>(null);
   const [fixKey, setFixKey] = useState<string | null>(null);
   const [fixText, setFixText] = useState('');
@@ -290,7 +296,7 @@ export default function Breakdown() {
       ))}
       {pendingQs.map((q, i) => (
         <QuestionRow key={`q${q.id}`} q={q} first={startFirst && !answered.length && i === 0} open={openQ === q.id} tag={drawing ? t('dr_not_on_sheet') : undefined}
-          value={answers[q.id]} dontKnow={t('q_dont_know_short')} customLabel={t('bd_q_custom')}
+          value={answers[q.id]} dontKnow={t('q_dont_know_short')} customLabel={t('bd_q_custom')} editLabel={t('clr_change')}
           onToggle={() => setOpenQ(openQ === q.id ? null : q.id)} onPick={(v) => setAnswer(q.id, v)}
           onCustom={() => { setCustomQ(q); setCustomText(answers[q.id] && !q.options.includes(answers[q.id]) && answers[q.id] !== DONT_KNOW ? answers[q.id] : ''); }} />
       ))}
@@ -431,6 +437,17 @@ export default function Breakdown() {
   const qPins = drawing && d && !ai.running ? pendingQs.filter((q) => q.text.length <= 24).slice(0, 2) : [];
   const recalcNow = d && d.status !== 'choose_type' && (drawing ? hasInput : pendingQs.length > 0 || hasInput);
   const otherSheet = () => (router.canGoBack() ? router.back() : drawing && router.replace(`/inbox/${drawing.inboxId}`));
+  // [tablet-drawing] TDrawing.dc.html: на широком планшете лист и «Что взял из чертежа» — рядом (src/screens/DrawingParseWide.tsx)
+  if (wide && drawing && isPhoto) {
+    return (
+      <DrawingParseWide drawing={drawing} photo={meta.photos[0]} running={ai.running} elapsed={ai.elapsed} ready={!!d} rows={rows} notes={notes}
+        pins={[...pins.map((el) => ({ label: el.note && el.note.length <= 22 ? el.note : el.name, q: !el.sure })), ...qPins.map((q) => ({ label: q.text, q: true }))]}
+        questions={pendingQs} answered={answered} answers={answers} message={d?.message} onFix={(r) => openFix(r.el, r.key)} onAnswer={setAnswer}
+        onCustom={(q) => { setCustomQ(q); setCustomText(answers[q.id] && !q.options.includes(answers[q.id]) && answers[q.id] !== DONT_KNOW ? answers[q.id] : ''); }}
+        primary={recalcNow ? { title: recalcTitle, onPress: recalc } : { title: t('rec_ok_next'), onPress: next, loading: opening }}
+        onOtherSheet={otherSheet}>{fixSheet}</DrawingParseWide>
+    );
+  }
   return (
     <Screen gap={8} contentStyle={{ paddingTop: drawing ? 4 : 0 }} footerStyle={{ gap: 2, paddingTop: 6 }}
       footer={<>
@@ -580,12 +597,9 @@ function ScatterPins({ labels, at = SCATTER }: { labels: { label: string; q: boo
 /** Строка «Что я нашёл» (.it): знак ✓/?, название, «оценка»; справа карандаш (.fix) или «Ответить» (.ans). */
 type Mark = 'sure' | 'q' | 'proposed' | 'info';
 
-/** Отметка строки: ✓ найдено; ? вопрос; лампочка — предложено ИИ (на фото не видно); i — пояснение. */
+/** Отметка строки (Clarify.dc.html .qic): ✓ найдено; ? вопрос; ✦ предложено ИИ (на фото не видно); i — пояснение. */
 function MarkIcon({ mark }: { mark: Mark }) {
-  if (mark === 'sure') return <View style={[s.mk, { backgroundColor: palette.greenSoft }]}><MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} /></View>;
-  if (mark === 'proposed') return <View style={[s.mk, { backgroundColor: palette.amberSoft }]}><MaterialCommunityIcons name="lightbulb-outline" size={17} color={palette.amberDeep} /></View>;
-  if (mark === 'info') return <View style={[s.mk, { backgroundColor: palette.ground }]}><MaterialCommunityIcons name="information-variant" size={18} color={palette.muted} /></View>;
-  return <View style={[s.mk, { backgroundColor: palette.amberSoft }]}><T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T></View>;
+  return <QMark kind={mark === 'sure' ? 'ok' : mark === 'proposed' ? 's' : mark === 'info' ? 'i' : 'q'} />;
 }
 
 function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer, note, mark, onFix }: {
@@ -612,71 +626,33 @@ function FoundRow({ sure, title, est, first, compact, fixLabel, estLabel, answer
   );
 }
 
-/** Вопрос ИИ строкой: «?» → тап раскрывает варианты (+ «Не знаю», «Свой ответ»); выбран — ✓ и ответ под вопросом. */
-function QuestionRow({ q, first, open, value, dontKnow, customLabel, onToggle, onPick, onCustom, tag }: {
-  q: DesignQuestion; first: boolean; open: boolean; value?: string; dontKnow: string; customLabel: string;
+/**
+ * Вопрос ИИ строкой (Clarify.dc.html .qi): ? и варианты сразу в строке (+ «Не знаю», «Свой ответ…»); выбран —
+ * ✓ и плашка «ответ · изменить» (тап — снова варианты).
+ */
+function QuestionRow({ q, first, open, value, dontKnow, customLabel, editLabel, onToggle, onPick, onCustom, tag }: {
+  q: DesignQuestion; first: boolean; open: boolean; value?: string; dontKnow: string; customLabel: string; editLabel: string;
   /** Метка у вопроса (.st.c-amber «нет на листе» в разборе чертежа). */
   tag?: string;
   onToggle: () => void; onPick: (v: string) => void; onCustom: () => void;
 }) {
-  const done = !!value;
+  const done = !!value && !open;
   const shown = value === DONT_KNOW ? `${dontKnow}${q.default ? ` → ${q.default}` : ''}` : value;
-  const opts = [...q.options, DONT_KNOW];
+  const custom = !!value && value !== DONT_KNOW && !q.options.includes(value);
   return (
-    <View style={!first ? s.itLine : null}>
-      <Press feedback="row" onPress={onToggle} accessibilityRole="button" accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${q.text}${shown ? `. ${shown}` : ''}`} style={[s.it, { alignItems: 'flex-start', paddingVertical: 12 }]}>
-        <View style={[s.mk, { backgroundColor: done ? palette.greenSoft : palette.amberSoft, marginTop: 1 }]}>
-          {done ? <MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} />
-            : <T style={{ fontSize: 16, fontWeight: '700', color: palette.amberDeep }}>?</T>}
-        </View>
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          {tag && !done ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-              <T v="rt">{q.text}</T>
-              <View style={s.est}><T style={s.estText}>{tag}</T></View>
-            </View>
-          ) : <T v="rt">{q.text}</T>}
-          {shown ? <T style={s.noteText}>{shown}</T> : null}
-        </View>
-        <View style={s.fix}>
-          <MaterialCommunityIcons name={open ? 'chevron-up' : done ? 'pencil-outline' : 'chevron-down'} size={20} color={palette.ink} />
-        </View>
-      </Press>
-      {open ? (
-        <View style={s.opts}>
-          {opts.map((o) => {
-            const on = value === o;
-            return (
-              <Press key={o} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={o}
-                onPress={() => onPick(o)} style={[s.op, on && { backgroundColor: palette.ink }]}>
-                <T style={[s.opText, on && { color: palette.white }]} numberOfLines={1}>{o === DONT_KNOW ? dontKnow : o}</T>
-              </Press>
-            );
-          })}
-          <Press accessibilityRole="button" accessibilityLabel={customLabel} onPress={onCustom}
-            style={[s.op, value && !opts.includes(value) && { backgroundColor: palette.ink }]}>
-            <T style={[s.opText, value && !opts.includes(value) ? { color: palette.white } : null]} numberOfLines={1}>{customLabel}…</T>
-          </Press>
-        </View>
-      ) : null}
-    </View>
+    <QuestionItem kind={done ? 'ok' : isProposal(q) ? 's' : 'q'} text={q.text} done={done} first={first} padX={20} tag={tag && !done ? tag : undefined} deltas={q.deltas}
+      picked={done ? shown : null} editLabel={editLabel} onEdit={onToggle}
+      options={[
+        ...q.options.map((o) => ({ label: o, on: value === o, onPress: () => onPick(o) })),
+        { label: dontKnow, ghost: true, on: false, onPress: () => onPick(DONT_KNOW) },
+        { label: `${customLabel}…`, on: custom, onPress: onCustom },
+      ]} />
   );
 }
 
 /** Ответ прошлого раунда: ✓, вопрос и ответ — только для чтения. */
 function AnsweredRow({ title, value, first }: { title: string; value: string; first: boolean }) {
-  return (
-    <View style={[s.it, { alignItems: 'flex-start', paddingVertical: 12 }, !first && s.itLine]} accessibilityLabel={`${title}. ${value}`}>
-      <View style={[s.mk, { backgroundColor: palette.greenSoft, marginTop: 1 }]}>
-        <MaterialCommunityIcons name="check-bold" size={16} color={palette.greenDeep} />
-      </View>
-      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <T v="rt" style={{ color: palette.muted }}>{title}</T>
-        <T style={s.noteText}>{value}</T>
-      </View>
-    </View>
-  );
+  return <QuestionItem kind="ok" text={title} done picked={value} first={first} padX={20} />;
 }
 
 /** Фото 272 r28 с листанием (несколько фото); метки — поверх. */
@@ -731,7 +707,6 @@ const s = StyleSheet.create({
   foundHead: { paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   it: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingVertical: 6, paddingHorizontal: 20 },
   itLine: { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: palette.hair },
-  mk: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   fix: { width: 36, height: 36, borderRadius: 12, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center' },
   est: { height: 22, borderRadius: 9, paddingHorizontal: 8, backgroundColor: palette.amberSoft, justifyContent: 'center' },
   estText: { fontSize: 13, lineHeight: 18, fontWeight: '600', color: palette.amberDeep },
@@ -745,7 +720,4 @@ const s = StyleSheet.create({
   ckOn: { backgroundColor: palette.green, borderColor: palette.green },
   note: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20, backgroundColor: palette.off },
   noteText: { fontSize: 14, lineHeight: 19, fontWeight: '600', color: palette.greenDeep },
-  opts: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingLeft: 62, paddingRight: 20, paddingBottom: 14 },
-  op: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minHeight: 44, borderRadius: 14, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  opText: { fontSize: 14, lineHeight: 19, fontWeight: '500', textAlign: 'center' },
 });

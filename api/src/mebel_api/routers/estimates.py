@@ -74,7 +74,9 @@ def nesting(project_id: uuid.UUID, current: CurrentDep, db: DbDep) -> dict:
         raise ApiError(409, "model_missing", "Раскрой появится после построения модели")
     if not v.ok:
         raise ApiError(409, "model_invalid", "В модели есть ошибки — исправьте их, чтобы посчитать раскрой")
-    result = build(parse_tree(v.tree))
+    from ..services.production import rules_for_project
+
+    result = build(parse_tree(v.tree), rules_for_project(db, p))
     n = nest(result)
     try:
         from mebel_core.rules import DEFAULT_RULES

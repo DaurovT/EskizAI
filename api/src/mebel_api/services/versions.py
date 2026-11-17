@@ -58,7 +58,9 @@ def create_version(
 ) -> ModelVersion:
     """estimated=None — пометки «оценка» переходят от текущей версии (кроме изменённых значений)."""
     ensure_model_editable(project)
-    built = build_tree(tree)
+    from .production import rules_for_project
+
+    built = build_tree(tree, rules_for_project(db, project))
     if reject_on_errors and not built.ok:
         raise ApiError(
             422,

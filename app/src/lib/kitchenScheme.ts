@@ -239,6 +239,190 @@ export function withKind(m: KMod, row: KRow, choice: string): KMod {
   }
 }
 
+// ---------- типы модуля (KitchenEditor.dc.html .types / TKitchen2 .pal) ----------
+
+/**
+ * Готовые типы модуля в панели «Модуль»: вид ядра + настройка (ящики 1+2, два ряда дверей, складной подъёмник,
+ * рамка под СВЧ, ниша под фасадом). Тап — модуль становится этим типом; точная настройка — строками ниже.
+ */
+export const BASE_PRESETS = ['doors', 'dr12', 'drawers', 'cargo', 'appliance', 'dw', 'sink', 'fridge'] as const;
+export const WALL_PRESETS = ['doors', 'rows2', 'lift', 'fold', 'niche', 'open', 'hood', 'appliance', 'mwf', 'gap'] as const;
+/** Типы с плашкой «новое» (как NEW в макете). */
+export const NEW_PRESETS: ReadonlySet<string> = new Set(['dr12', 'cargo', 'rows2', 'fold', 'niche', 'mwf']);
+
+/** Какой тип модуля выбран (самый точный из списка). */
+export function presetOf(m: KMod, row: KRow): string {
+  if (row === 'mid') return 'mid';
+  const k = m.kind;
+  if (isUpper(row)) {
+    if (k === 'doors' && hasOpenBottom(m)) return 'niche';
+    if (k === 'doors' && m.opening === 'lift') return isFold(m) ? 'fold' : 'lift';
+    if (k === 'doors' && m.rows === 2) return 'rows2';
+    if (k === 'appliance' && m.niche_frame === true) return 'mwf';
+    return k;
+  }
+  if (k === 'drawers') return m.drawer_layout === 'small_top' && num(m.drawers, 3) >= 2 ? 'dr12' : 'drawers';
+  if (k === 'appliance') return m.dw === true ? 'dw' : 'appliance';
+  return k;
+}
+
+const drop = (m: KMod, ...keys: string[]): KMod => {
+  const out: KMod = { ...m };
+  for (const k of keys) delete out[k];
+  return out;
+};
+
+/**
+ * Модуль → выбранный тип. Вид меняется через withKind (ширина, стиль, ярус сохраняются), настройка типа
+ * выставляется, настройки других типов снимаются. Бутылочница — 150 мм, из бутылочницы в другой тип — 450 (как в макете).
+ */
+export function applyPreset(m: KMod, row: KRow, key: string): KMod {
+  if (isUpper(row)) {
+    switch (key) {
+      case 'doors': return drop(withKind(m, row, 'doors'), 'rows', 'open_bottom');
+      case 'rows2': return { ...drop(withKind(m, row, 'doors'), 'open_bottom'), rows: 2 };
+      case 'lift': return drop(withKind(m, row, 'lift'), 'open_bottom', 'lift_type');
+      case 'fold': return { ...drop(withKind(m, row, 'lift'), 'open_bottom'), lift_type: 'fold', flaps: null };
+      case 'niche': {
+        const base = m.kind === 'doors' ? m : withKind(m, row, 'doors');
+        return { ...drop(base, 'rows'), open_bottom: hasOpenBottom(m) ? m.open_bottom : 400 };
+      }
+      case 'appliance': return drop(withKind(m, row, 'appliance'), 'niche_frame');
+      case 'mwf': return { ...withKind(m, row, 'appliance'), appliance: 'microwave', niche_frame: true };
+      default: return withKind(m, row, key);
+    }
+  }
+  const leaveCargo = m.kind === 'cargo' && key !== 'cargo';
+  const w = (x: KMod): KMod => (leaveCargo ? { ...x, width: 450 } : x);
+  switch (key) {
+    case 'dr12': return w({ ...withKind(m, row, 'drawers'), drawers: num(m.drawers, 3) >= 2 ? num(m.drawers, 3) : 3, drawer_layout: 'small_top' });
+    case 'drawers': return w(drop(withKind(m, row, 'drawers'), 'drawer_layout'));
+    case 'cargo': return { ...withKind(m, row, 'cargo'), width: 150 };
+    case 'appliance': return w(withKind(m, row, 'appliance'));
+    case 'dw': return w({ ...withKind(m, row, 'appliance'), dw: true });
+    default: return w(withKind(m, row, key));
+  }
+}
+
+// ---------- рисунок модуля (части фасада, как .m i в макете) ----------
+
+/**
+ * Часть рисунка модуля в процентах от внутренней области (без рамки 3 pt): ln — линия стыка/полки, hd — ручка,
+ * dk — механизм подъёмника, op — открытая ниша, gl — дисплей, mw — стекло духовки/СВЧ, bt — бутылки карго.
+ */
+export type KPartKind = 'ln' | 'hd' | 'dk' | 'op' | 'gl' | 'mw' | 'bt';
+export type KPart = { c: KPartKind; l: number; t: number; w: number; h: number };
+const P = (c: KPartKind, l: number, t: number, w: number, h: number): KPart => ({ c, l, t, w, h });
+const r1 = (v: number) => Math.round(v * 10) / 10;
+
+/** Распашные двери в полосе [y0, y1]: стык посередине у двух дверей, вертикальные ручки на высоте hy (доля полосы). */
+function doorParts(m: KMod, y0: number, y1: number, hy: number, hh: number): KPart[] {
+  const span = y1 - y0;
+  const t = r1(y0 + span * hy);
+  const h = r1(span * hh);
+  if (doorCount(m) === 2) return [P('ln', 49.5, y0, 1, span), P('hd', 40, t, 3, h), P('hd', 57, t, 3, h)];
+  return [P('hd', m.hinge === 'right' ? 13 : 84, t, 3, h)];
+}
+
+/** Подъёмные фасады в полосе [y0, y1]: горизонтальные ручки внизу фасадов, механизм сверху; складной/два — стык. */
+function liftParts(m: KMod, y0: number, y1: number): KPart[] {
+  const span = y1 - y0;
+  const two = isFold(m) || m.flaps === 2;
+  const out: KPart[] = [];
+  if (two) {
+    const mid = r1(y0 + span * 0.49);
+    out.push(P('ln', 0, mid, 100, 1.5), P('hd', 38, r1(y0 + span * 0.4), 24, 3));
+    // два отдельных — у каждого свой механизм; складной — один
+    if (!isFold(m)) out.push(P('dk', 47, r1(mid + span * 0.1), 6, r1(span * 0.14)));
+  }
+  out.push(P('hd', 38, r1(y0 + span * 0.88), 24, 3), P('dk', 47, r1(y0 + span * 0.12), 6, r1(span * 0.16)));
+  return out;
+}
+
+/** Рисунок нижнего модуля (корпус ряда base / base2). */
+export function baseParts(m: KMod): KPart[] {
+  switch (m.kind) {
+    case 'drawers': {
+      const ls = drawerLines(m).map((f) => f * 100);
+      const edges = [0, ...ls, 100];
+      const out: KPart[] = ls.map((y) => P('ln', 0, r1(y), 100, 1.5));
+      for (let j = 0; j < edges.length - 1; j++) out.push(P('hd', 38, r1(edges[j] + Math.min((edges[j + 1] - edges[j]) * 0.42, 16)), 24, 3));
+      return out;
+    }
+    case 'cargo': return [P('bt', 22, 30, 16, 48), P('bt', 44, 22, 16, 56), P('bt', 66, 34, 16, 44), P('hd', 30, 8, 40, 3)];
+    case 'appliance':
+      if (m.dw === true) return [P('hd', 30, 8, 40, 3)];
+      return [P('ln', 0, 22, 100, 1.5), P('hd', 38, 8, 24, 3), P('mw', 12, 34, 76, 46), P('hd', 30, 88, 40, 3)];
+    case 'sink':
+    case 'doors': return doorParts(m, 0, 100, 0.4, 0.18);
+    case 'fridge': return [P('ln', 0, 38, 100, 1), P('hd', m.hinge === 'right' ? 13 : 84, 24, 3, 9), P('hd', m.hinge === 'right' ? 13 : 84, 46, 3, 14)];
+    default: return [];
+  }
+}
+
+/** Рисунок верхнего модуля: двери / два ряда / подъёмные / ниша под фасадом / ниша техники в рамке / открытые полки. */
+export function wallParts(m: KMod, tree: ProductTree): KPart[] {
+  const H = Math.max(1, wallModHeight(m, tree));
+  if (m.kind === 'gap') return [];
+  if (m.kind === 'open') {
+    const n = num(m.shelves, 2);
+    return [P('op', 0, 0, 100, 100), ...Array.from({ length: n }, (_, j) => P('ln', 0, r1((100 * (j + 1)) / (n + 1)), 100, 1.5))];
+  }
+  if (m.kind === 'appliance') {
+    const nf = m.above === 'none' ? 1 : clamp(nicheHeight(m) / H, [0.25, 0.8]);
+    const nt = r1(100 - nf * 100); // верх ниши
+    const frame = m.niche_frame === true;
+    const out: KPart[] = [];
+    const above = typeof m.above === 'string' ? m.above : 'door';
+    if (nt > 0) {
+      out.push(P('ln', 0, r1(Math.max(0, nt - 6)), 100, 1.5));
+      const fb = Math.max(0, nt - 6);
+      if (above === 'lift') out.push(...(isFold(m) ? liftParts(m, 0, fb) : [P('hd', 38, r1(fb * 0.78), 24, 3)]));
+      else if (above === 'door') out.push(...doorParts(m, 0, fb, 0.55, 0.3));
+      else if (above === 'open') out.push(P('op', 0, 0, 100, fb));
+    }
+    const ny = nt > 0 ? nt + 2 : 0;
+    const nh = 100 - ny - (frame ? 6 : 0);
+    out.push(frame ? P('op', 8, r1(ny), 84, r1(nh)) : P('op', 0, r1(ny), 100, r1(100 - ny)));
+    if (m.appliance === 'oven') out.push(P('mw', 14, r1(ny + nh * 0.14), 72, r1(nh * 0.66)), P('hd', 30, r1(ny + nh * 0.04), 40, 3));
+    else out.push(P('mw', 16, r1(ny + nh * 0.12), 58, r1(nh * 0.76)), P('gl', 78, r1(ny + nh * 0.24), 8, r1(Math.min(8, nh * 0.2))));
+    return out;
+  }
+  // doors / hood: открытая ниша внизу, фасады над ней
+  const ob = hasOpenBottom(m) ? clamp(num(m.open_bottom, 400) / H, [0.15, 0.7]) * 100 : 0;
+  const fb = ob ? r1(100 - ob - 2) : 100;
+  const out: KPart[] = [];
+  if (ob) out.push(P('ln', 0, fb, 100, 1.5), P('op', 0, r1(fb + 2), 100, r1(100 - fb - 2)));
+  if (m.opening === 'lift') out.push(...liftParts(m, 0, fb));
+  else if (m.rows === 2 && !ob) {
+    const mid = r1(fb * 0.49);
+    out.push(P('ln', 0, mid, 100, 1.5), ...doorParts(m, 0, mid, 0.6, 0.25), ...doorParts(m, mid + 1.5, fb, 0.6, 0.25));
+  } else out.push(...doorParts(m, 0, fb, ob ? 0.62 : 0.72, ob ? 0.2 : 0.16));
+  return out;
+}
+
+/** Антресольный ярус: подъёмный фасад — ручка внизу, распашные — по дверям. */
+export function tierParts(m: KMod): KPart[] {
+  const tp = (m.top as { doors?: number | null; opening?: string } | null) ?? {};
+  if (tp.opening === 'lift') return [P('hd', 38, 70, 24, 8)];
+  const doors = tp.doors === 1 || tp.doors === 2 ? tp.doors : num(m.width, 600) <= 600 ? 1 : 2;
+  return doors === 2 ? [P('ln', 49.5, 0, 1, 100), P('hd', 40, 40, 3, 40), P('hd', 57, 40, 3, 40)] : [P('hd', 84, 40, 3, 40)];
+}
+
+/** Полка на столешнице: открытый короб с полками. */
+export function midParts(m: KMod): KPart[] {
+  const n = num(m.shelves, 1);
+  return [P('op', 0, 0, 100, 100), ...Array.from({ length: n }, (_, j) => P('ln', 0, r1((100 * (j + 1)) / (n + 1)), 100, 2))];
+}
+
+/** Мини-рисунок типа для списка типов (TKitchen2 .gl2): типичный модуль этого типа. */
+export function presetParts(row: KRow, key: string, tree: ProductTree): KPart[] {
+  const sample: KMod = applyPreset({ kind: 'doors', width: 600, doors: 2 }, row, key);
+  if (key === 'doors') sample.doors = 2;
+  if (isUpper(row)) return wallParts(sample, tree);
+  return baseParts(sample);
+}
+
 // ---------- подгонка суммы к стене ----------
 
 export type SumFix = { kind: 'neighbour'; i: number; from: number; to: number } | { kind: 'add'; width: number };

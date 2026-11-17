@@ -103,9 +103,28 @@ class ShareFeedbackOut(BaseModel):
 
 
 class ClientRequestOut(BaseModel):
-    """Просьба клиента «Хочу изменить…» со страницы ссылки (для карточки проекта у мастера)."""
+    """Просьба клиента «Хочу изменить…» со страницы ссылки (SCR-58: список цеха и карточка проекта у мастера)."""
 
     id: str
     text: str
     created_at: str
     link_id: str
+    status: Literal["new", "done"] = Field("new", description="new — ещё не разобрана; done — мастер отметил «Сделано»")
+    done_at: str | None = None
+    project_id: str | None = None
+    project_title: str | None = None
+    client_name: str | None = None
+    client_phone: str | None = None
+    version_number: int | None = Field(None, description="Версия модели, которую клиент смотрел по ссылке")
+    views: int = Field(0, description="Сколько раз клиент открывал ссылку")
+    ar: bool = Field(False, description="Клиент примерял в AR")
+
+
+class ClientRequestPage(BaseModel):
+    items: list[ClientRequestOut]
+    new_count: int = Field(description="Новых (не отмеченных «Сделано») по цеху — для счётчиков")
+    total: int
+
+
+class ClientRequestPatch(BaseModel):
+    status: Literal["new", "done"]

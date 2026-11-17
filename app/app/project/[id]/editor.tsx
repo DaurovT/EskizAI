@@ -474,7 +474,7 @@ export default function Editor() {
     return (
       <>
         <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
-        <KitchenView id={id} tree={draft} busy={saving || ai.running} disabled={offline} viewer={v.viewer} initialView={viewParam === '3d' ? '3d' : undefined}
+        <KitchenView id={id} tree={draft} version={v.number} busy={saving || ai.running} disabled={offline} viewer={v.viewer} initialView={viewParam === '3d' ? '3d' : undefined}
           title={[card.data?.title, card.data?.client?.name].filter(Boolean).join(' · ') || t('ed_title')}
           price={price ? noCurrency(formatRange(price, lang)) : null} onSend={sendAi}
           materialName={(mid) => v.viewer?.materials?.[mid]?.name}

@@ -174,3 +174,20 @@ def test_big_kitchen_set_is_fast(name: str) -> None:
     t = time.perf_counter()
     mc.export_drawing_set_pdf(result, n, project="Кухня")
     assert time.perf_counter() - t < 3.0
+
+
+@pytest.mark.parametrize("name", ["wardrobe_2sec", "kitchen_corner"])
+def test_drawing_set_index_matches_stamps(name: str, stamps) -> None:
+    """Оглавление комплекта (SCR-57): листы по порядку штампа, разделы, детали на листах чертежей деталей."""
+    result = build(load(name))
+    data, index = mc.export_drawing_set(result, nest(result), project="Проект")
+    assert page_count(data) == len(index)
+    assert [(s["n"], s["title"]) for s in index] == [(n, t) for n, _, t in stamps]
+    sections = [s["section"] for s in index]
+    assert sections[0] == "cover" and "other" not in sections
+    # разделы идут подряд: титул → виды → сборка → детали → спецификация → раскрой
+    order = [k for k, _ in d.SET_SECTIONS]
+    assert sections == sorted(sections, key=order.index)
+    numbers = sorted(n for s in index if s["section"] == "parts" for n in s["parts"])
+    assert numbers == sorted(n for g in d.part_groups(result) for n in g.numbers)
+    assert all(not s["parts"] for s in index if s["section"] != "parts")

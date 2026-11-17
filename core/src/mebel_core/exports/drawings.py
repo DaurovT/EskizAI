@@ -1551,6 +1551,7 @@ def sheets_parts(c: SheetCanvas, result: BuildResult) -> int:
     pages = _pack(groups)
     for rows in pages:
         box = c.sheet("Чертежи деталей", size=A4L)
+        c.sheet_parts = sorted(n for row in rows for g in row for n in g.numbers)
         ink = Ink(c)
         scales = set()
         heights = [box.h] if len(rows) == 1 and rows[0][0].size == "full" else [(box.h - 4 * MM) / 2] * 2
@@ -2216,9 +2217,31 @@ def export_assembly(result: BuildResult, project: str = "Проект", workshop
     return buf.getvalue()
 
 
+# Разделы комплекта по наименованию листа (оглавление в приложении, SCR-57)
+SET_SECTIONS: list[tuple[str, tuple[str, ...]]] = [
+    ("cover", ("Комплект чертежей",)),
+    ("general", ("Общий вид", "Вид без фасадов", "План", "Развёртка")),
+    ("assembly", ("Схема сборки", "Ведомость фурнитуры")),
+    ("parts", ("Чертежи деталей",)),
+    ("spec", ("Спецификация",)),
+    ("cutting", ("Карта раскроя",)),
+]
+
+
+def sheet_section(title: str) -> str:
+    return next((key for key, prefixes in SET_SECTIONS if title.startswith(prefixes)), "other")
+
+
 def export_drawing_set_pdf(result: BuildResult, nesting=None, project: str = "Проект", workshop: str = "") -> bytes:
     """«Комплект чертежей» одним PDF: титул с составом, общий вид и виды, план и развёртки стен (кухня),
     взрыв-схема с фурнитурой, чертежи деталей, спецификация, карты раскроя. Сквозная нумерация листов."""
+    return export_drawing_set(result, nesting, project, workshop)[0]
+
+
+def export_drawing_set(result: BuildResult, nesting=None, project: str = "Проект",
+                       workshop: str = "") -> tuple[bytes, list[dict]]:
+    """Комплект чертежей и его оглавление: [{n, title, section, parts}] — номер листа (как в штампе),
+    наименование, раздел (SET_SECTIONS) и номера деталей на листах чертежей деталей."""
     from ..nesting import nest
     from .pdf import draw_cutmaps, draw_spec
 
@@ -2235,4 +2258,4 @@ def export_drawing_set_pdf(result: BuildResult, nesting=None, project: str = "П
     draw_spec(c, result)
     draw_cutmaps(c, result, nesting)
     c.save()
-    return buf.getvalue()
+    return buf.getvalue(), [{**s, "section": sheet_section(s["title"])} for s in c.sheet_index]

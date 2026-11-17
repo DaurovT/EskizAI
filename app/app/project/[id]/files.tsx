@@ -1,8 +1,10 @@
 /**
  * SCR-21 Файлы проекта (Files.dc.html): пакет мастера по группам (клиенту · закупка и распил · производство и сборка),
  * закрытые — с замком. До оплаты: «Заказать в EMAN — файлы 0 сум» и «Скачать без заказа»; открыто — номер заказа,
- * версия и «Поделиться всем архивом» (файлы уходят файлами через системное меню). «Комплект чертежей» —
- * один PDF со всеми листами (титул, виды, развёртки, взрыв-схема, детали, спецификация, раскрой).
+ * версия и «Поделиться всем архивом» (файлы уходят файлами через системное меню). «Комплект чертежей · N листов» —
+ * один PDF со всеми листами (титул, виды, развёртки, взрыв-схема, детали, спецификация, раскрой): строка открывает
+ * SCR-57 (оглавление видно и до оплаты). Чертежи деталей и общий вид отдельными строками не показываются — они
+ * в комплекте (просмотр детали — с листа комплекта); архив — кнопкой «Поделиться всем архивом».
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
@@ -11,10 +13,11 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { api } from '../../../src/api';
 import type { FileItem } from '../../../src/api/types';
+import type { DictKey } from '../../../src/i18n';
 import { useResource } from '../../../src/hooks/useResource';
 import { useT } from '../../../src/i18n';
 import { mimeOf, utiOf } from '../../../src/lib/files';
-import { formatMoney } from '../../../src/lib/format';
+import { formatMoney, plural } from '../../../src/lib/format';
 import { showError } from '../../../src/ui/dialogs';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { Banner, BigTitle, Button, Card, Loading, Press, Screen, T } from '../../../src/ui/kit';
@@ -24,16 +27,43 @@ import { drawingTitle } from '../../../src/lib/inbox';
 import { ProjectDwgSheet } from '../../../src/screens/OpenInDwg';
 
 type GroupKey = 'client' | 'buy' | 'make';
-const groupOf = (k: string): GroupKey =>
-  /offer|proposal|kp/.test(k) ? 'client' : /spec|cut|csv|hardware|estimate|nesting/.test(k) ? 'buy' : 'make';
+/** Порядок и подписи строк по макету (kind сервера и мока); группа — по `group` сервера, иначе отсюда. */
+const ROWS: { re: RegExp; g: GroupKey; label: DictKey }[] = [
+  { re: /offer|proposal|kp/, g: 'client', label: 'prod_fk_kp' },
+  { re: /glb_closed/, g: 'client', label: 'prod_fk_glb_closed' },
+  { re: /glb_open/, g: 'client', label: 'prod_fk_glb_open' },
+  { re: /glb/, g: 'client', label: 'prod_fk_glb' },
+  { re: /^spec_xlsx/, g: 'buy', label: 'prod_fk_spec_xlsx' },
+  { re: /spec/, g: 'buy', label: 'prod_fk_spec' },
+  { re: /cut|nesting/, g: 'buy', label: 'prod_fk_cut' },
+  { re: /csv/, g: 'buy', label: 'prod_fk_csv' },
+  { re: /hardware/, g: 'buy', label: 'prod_fk_hardware' },
+  { re: /estimate/, g: 'buy', label: 'prod_fk_estimate' },
+  { re: /dxf/, g: 'make', label: 'prod_fk_dxf' },
+  { re: /production_set/, g: 'make', label: 'prod_fk_set' },
+  { re: /assembl/, g: 'make', label: 'prod_fk_assembly' },
+];
+/** Не строками: архив — кнопка внизу, чертежи деталей и общий вид — листы комплекта. */
+const HIDDEN = /^(archive|drawings_pdf|general_view_pdf)$/;
+const SERVER_GROUP: Record<string, GroupKey> = { client: 'client', model3d: 'client', purchase: 'buy', production: 'make', assembly: 'make' };
+const rowOf = (f: FileItem) => ROWS.findIndex((r) => r.re.test(f.kind));
+const groupOf = (f: FileItem): GroupKey => (f.group && SERVER_GROUP[f.group]) || ROWS[rowOf(f)]?.g || 'make';
+const isSet = (f: FileItem) => /production_set/.test(f.kind);
 /** Метка формата в плашке .ft: PDF, XLS, CSV, DXF… */
 const badgeOf = (f: FileItem) => (/dxf/.test(f.kind) ? 'DXF' : (f.format ?? f.kind.split('_').pop() ?? '').replace(/^xlsx?$/i, 'xls').slice(0, 4).toUpperCase());
 
 export default function Files() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t, td, lang } = useT();
-  // название файла: перевод по kind (files_k_<kind>), иначе — как прислал сервер
-  const titleOf = (f: FileItem) => td(`files_k_${f.kind}`, f.title ?? f.name ?? f.kind);
+  // комплект чертежей: число листов (оглавление строится на сервере один раз на версию)
+  const set = useResource(() => api.getDrawingSet(id).catch(() => null), [id]);
+  // название файла по макету («Карты раскроя · 4 листа»), иначе — перевод по kind / как прислал сервер
+  const titleOf = (f: FileItem) => {
+    const row = ROWS[rowOf(f)];
+    const base = row ? t(row.label) : td(`files_k_${f.kind}`, f.title ?? f.name ?? f.kind);
+    const n = f.sheets ?? (isSet(f) ? set.data?.pages : /cut/.test(f.kind) ? set.data?.sections.find((x) => x.key === 'cutting')?.count : null);
+    return n ? t('prod_fk_n', { title: base, n, w: plural(n, t('ds_sheet_forms')) }) : base;
+  };
   // весь ответ: файлы + цена «Скачать без заказа» (purchase, с учётом скидки Pro)
   const files = useResource(() => api.filesInfo(id), [id]);
   const orders = useResource(() => api.listOrders().then((all) => all.filter((o) => o.project_id === id && o.status !== 'cancelled')), [id]);
@@ -50,13 +80,18 @@ export default function Files() {
   const list = files.data.files;
   const purchase = files.data.purchase;
   const locked = list.some((f) => !f.available);
-  const groups = (['client', 'buy', 'make'] as GroupKey[]).map((g) => ({ g, items: list.filter((f) => groupOf(f.kind) === g) })).filter((x) => x.items.length);
+  const rank = (f: FileItem) => { const i = rowOf(f); return i < 0 ? ROWS.length : i; };
+  const shown = list.filter((f) => !HIDDEN.test(f.kind)).sort((a, b) => rank(a) - rank(b));
+  const groups = (['client', 'buy', 'make'] as GroupKey[]).map((g) => ({ g, items: shown.filter((f) => groupOf(f) === g) })).filter((x) => x.items.length);
   const order = orders.data?.[0];
   const vNum = versions.data?.find((v) => v.is_current)?.number ?? versions.data?.[0]?.number;
 
-  const open = (f: FileItem) => (f.available
-    ? router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: f.kind, title: titleOf(f) } })
-    : Alert.alert(t('files_locked_title'), f.reason ?? ''));
+  // комплект — SCR-57 и до оплаты (оглавление, там же «Заказать»); остальное закрытое — причина
+  const open = (f: FileItem) => (isSet(f) && (f.available || set.data)
+    ? router.push(`/project/${id}/drawing-set`)
+    : f.available
+      ? router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: f.kind, title: titleOf(f) } })
+      : Alert.alert(t('files_locked_title'), f.reason ?? ''));
 
   // весь пакет: архив, если сервер его отдаёт, иначе — файлы по очереди через системное меню
   const shareAll = async () => {

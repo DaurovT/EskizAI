@@ -12,7 +12,9 @@
 
 import io
 import re
+import threading
 import zipfile
+from collections import OrderedDict
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -107,8 +109,14 @@ def list_files(db: Session, project: Project, workshop: Workshop, language: str,
             available, reason = False, "В модели есть ошибки — исправьте их"
         elif not k.free and not access.granted:
             available, reason = False, LOCKED_MESSAGE
+        sheets = None
+        if version is not None and k.kind in ("production_set_pdf", "cutmaps_pdf"):
+            cached = cached_index(version.id, workshop)  # число листов — если оглавление уже строилось
+            if cached is not None:
+                sheets = len(cached) if k.kind == "production_set_pdf" else \
+                    sum(1 for s in cached if s["section"] == "cutting")
         items.append({
-            "kind": k.kind, "title": k.title, "format": k.ext, "group": k.group, "free": k.free,
+            "kind": k.kind, "title": k.title, "format": k.ext, "group": k.group, "free": k.free, "sheets": sheets,
             "available": available, "reason": reason, "locked": not k.free and not access.granted,
             "url": f"/projects/{project.id}/files/{k.kind}", "content_type": k.content_type,
             "file_name": file_name(project, version, k, language) if version else None,
@@ -121,6 +129,58 @@ def list_files(db: Session, project: Project, workshop: Workshop, language: str,
         # «Скачать без заказа ≈ 45 000 сум»; null — файлы уже открыты
         "purchase": None if access.granted else purchase_price(db, settings, access.pro_discount),
         "files": items,
+    }
+
+
+# Оглавление «Комплекта чертежей» (SCR-57): (версия, правила цеха) → листы. Комплект строится за 0,1–0,3 с;
+# в памяти процесса — последние INDEX_CACHE_SIZE оглавлений (после перезапуска — заново при первом запросе).
+INDEX_CACHE_SIZE = 256
+_INDEX: "OrderedDict[tuple[str, str], list[dict]]" = OrderedDict()
+_INDEX_LOCK = threading.Lock()
+
+
+def remember_index(version_id, rules_version: str, index: list[dict]) -> None:
+    with _INDEX_LOCK:
+        _INDEX[(str(version_id), rules_version)] = index
+        _INDEX.move_to_end((str(version_id), rules_version))
+        while len(_INDEX) > INDEX_CACHE_SIZE:
+            _INDEX.popitem(last=False)
+
+
+def cached_index(version_id, workshop: Workshop) -> list[dict] | None:
+    from .production import rules_key
+
+    with _INDEX_LOCK:
+        return _INDEX.get((str(version_id), rules_key(workshop)))
+
+
+SECTION_ORDER = ["cover", "general", "assembly", "parts", "spec", "cutting", "other"]
+
+
+def drawing_set_index(db: Session, project: Project, workshop: Workshop, version: ModelVersion,
+                      language: str = "ru") -> dict:
+    """Листы комплекта с номерами и разделами. Оглавление видно и до оплаты (только наименования листов);
+    скачать PDF — по правилам доступа к файлам (`available`)."""
+    index = cached_index(version.id, workshop)
+    if index is None:
+        builder = Builder(db, project, workshop, version, with_cost=False, language=language)
+        builder.make("production_set_pdf")
+        index = builder.sheet_index or []
+    access = production_access(db, project, workshop)
+    sections = []
+    for s in index:
+        if sections and sections[-1]["key"] == s["section"]:
+            sections[-1]["count"] += 1
+        else:
+            sections.append({"key": s["section"], "first": s["n"], "count": 1})
+    k = KINDS["production_set_pdf"]
+    return {
+        "version_id": str(version.id), "version_number": version.number, "frozen": bool(version.frozen),
+        "kind": k.kind, "file_name": file_name(project, version, k, language),
+        "available": access.granted, "locked": not access.granted,
+        "reason": None if access.granted else LOCKED_MESSAGE,
+        "pages": len(index), "sections": sections,
+        "sheets": [{"n": s["n"], "title": s["title"], "section": s["section"], "parts": s["parts"]} for s in index],
     }
 
 
@@ -163,19 +223,23 @@ class Builder:
         self.with_cost, self.language = with_cost, language
         self._result: BuildResult | None = None
         self._nesting = None
+        from .production import rules_for
+
+        self.rules = rules_for(workshop)  # присадка по настройкам производства цеха (SCR-56)
+        self.sheet_index: list[dict] | None = None  # оглавление комплекта после _production_set_pdf
         today = utcnow().astimezone(ZoneInfo("Asia/Tashkent")).strftime("%d.%m.%Y")
         self.label = f"{project.title} · версия {version.number} · {today}"
 
     @property
     def result(self) -> BuildResult:
         if self._result is None:
-            self._result = build(parse_tree(self.version.tree))
+            self._result = build(parse_tree(self.version.tree), self.rules)
         return self._result
 
     @property
     def nesting(self):
         if self._nesting is None:
-            self._nesting = nest(self.result)
+            self._nesting = nest(self.result, self.rules)
         return self._nesting
 
     def make(self, kind: str) -> bytes:
@@ -184,7 +248,7 @@ class Builder:
     def _spec_xlsx(self) -> bytes:
         from .prices import price_book_for
 
-        est = estimate(self.result, pricing_settings(self.workshop), nesting=self.nesting,
+        est = estimate(self.result, pricing_settings(self.workshop), self.rules, nesting=self.nesting,
                        prices=price_book_for(self.workshop))
         return mebel_core.export_xlsx(self.result, self.nesting, est, with_cost=self.with_cost)
 
@@ -211,8 +275,10 @@ class Builder:
 
     def _production_set_pdf(self) -> bytes:
         """Комплект чертежей: титул, виды, развёртки стен, взрыв-схема, детали, спецификация, раскрой."""
-        return mebel_core.export_drawing_set_pdf(self.result, self.nesting, project=self.label,
-                                                 workshop=self.workshop.name or "")
+        data, self.sheet_index = mebel_core.export_drawing_set(self.result, self.nesting, project=self.label,
+                                                               workshop=self.workshop.name or "")
+        remember_index(self.version.id, self.rules.version, self.sheet_index)
+        return data
 
     def _glb_closed(self) -> bytes:
         return mebel_core.export_glb(self.result, opened=False)

@@ -4,18 +4,18 @@ import uuid
 from datetime import timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Header, Request
+from fastapi import APIRouter, Header, Query, Request
 from fastapi.responses import Response
 from sqlalchemy import select
 
 from ..db import utcnow
-from ..deps import CurrentDep, DbDep, SettingsDep, StorageDep
+from ..deps import CurrentDep, CurrentUser, DbDep, SettingsDep, StorageDep
 from ..domain import ESTIMATE_VIEW_LABELS, EstimateView, Plan, ProjectStatus as S, ShareEventKind
 from ..errors import ERROR_RESPONSES, ApiError, forbidden, not_found
 from ..models import ModelVersion, Project, ShareEvent, ShareLink, User, Workshop
 from ..schemas.common import Ok
 from ..schemas.projects import ShareLinkIn, ShareLinkOut
-from ..schemas.share import (AgreeOut, ClientRequestOut, ShareEventIn, ShareFeedbackIn, ShareFeedbackOut, ShareGlb, ShareMaster,
+from ..schemas.share import (AgreeOut, ClientRequestOut, ClientRequestPage, ClientRequestPatch, ShareEventIn, ShareFeedbackIn, ShareFeedbackOut, ShareGlb, ShareMaster,
                              SharePayload, ShareProject)
 from ..services import ar_files, lifecycle
 from ..services import staff_auth as sa
@@ -93,15 +93,84 @@ def list_links(project_id: uuid.UUID, current: CurrentDep, db: DbDep, settings: 
     return [link_out(link, settings) for link in rows]
 
 
+def client_request_out(e: ShareEvent, link: ShareLink | None, project: Project | None,
+                       version_number: int | None) -> ClientRequestOut:
+    """Просьба = событие ссылки change_request; «Сделано» хранится в meta (done_at), без отдельной таблицы."""
+    meta = e.meta or {}
+    client = project.client if project is not None else None
+    return ClientRequestOut(
+        id=str(e.id), text=str(meta.get("text", "")), link_id=str(e.share_link_id), created_at=e.created_at.isoformat(),
+        status="done" if meta.get("done_at") else "new", done_at=meta.get("done_at"),
+        project_id=str(e.project_id), project_title=project.title if project is not None else None,
+        client_name=(client.name or None) if client is not None else None,
+        client_phone=(client.phone or None) if client is not None else None,
+        version_number=version_number, views=link.views if link is not None else 0,
+        ar=bool(link and link.ar_starts),
+    )
+
+
+def _requests_out(db, rows: list[ShareEvent]) -> list[ClientRequestOut]:
+    links = {lk.id: lk for lk in db.scalars(select(ShareLink).where(ShareLink.id.in_({e.share_link_id for e in rows})))} if rows else {}
+    projects = {p.id: p for p in db.scalars(select(Project).where(Project.id.in_({e.project_id for e in rows})))} if rows else {}
+    vids = {lk.version_id for lk in links.values()}
+    numbers = dict(db.execute(select(ModelVersion.id, ModelVersion.number).where(ModelVersion.id.in_(vids))).all()) if vids else {}
+    return [client_request_out(e, links.get(e.share_link_id), projects.get(e.project_id),
+                               numbers.get(links[e.share_link_id].version_id) if e.share_link_id in links else None)
+            for e in rows]
+
+
 @router.get("/projects/{project_id}/client-requests", response_model=list[ClientRequestOut],
             summary="Просьбы клиента «Хочу изменить…» по проекту (новые сверху)")
 def list_client_requests(project_id: uuid.UUID, current: CurrentDep, db: DbDep) -> list[ClientRequestOut]:
     p = get_project(db, current, project_id)
-    rows = db.scalars(select(ShareEvent).where(ShareEvent.project_id == p.id,
-                                               ShareEvent.kind == ShareEventKind.change_request)
-                      .order_by(ShareEvent.created_at.desc()).limit(100))
-    return [ClientRequestOut(id=str(e.id), text=str((e.meta or {}).get("text", "")), link_id=str(e.share_link_id),
-                             created_at=e.created_at.isoformat()) for e in rows]
+    rows = list(db.scalars(select(ShareEvent).where(ShareEvent.project_id == p.id,
+                                                    ShareEvent.kind == ShareEventKind.change_request)
+                           .order_by(ShareEvent.created_at.desc()).limit(100)))
+    return _requests_out(db, rows)
+
+
+def _workshop_requests(current: CurrentUser):
+    return (select(ShareEvent).join(Project, Project.id == ShareEvent.project_id)
+            .where(Project.workshop_id == current.workshop.id, Project.deleted_at.is_(None),
+                   ShareEvent.kind == ShareEventKind.change_request))
+
+
+def _is_new(e: ShareEvent) -> bool:
+    return not (e.meta or {}).get("done_at")
+
+
+@router.get("/client-requests", response_model=ClientRequestPage,
+            summary="Просьбы клиентов по всем проектам цеха (SCR-58): новые / сделанные / все")
+def list_workshop_client_requests(
+    current: CurrentDep, db: DbDep,
+    status: Annotated[Literal["new", "done", "all"], Query(description="new — не отмеченные «Сделано»")] = "all",
+    project_id: uuid.UUID | None = None,
+    limit: int = Query(100, ge=1, le=200),
+) -> ClientRequestPage:
+    """Новые сверху. «Сделано» — в meta события (PATCH /client-requests/{id}); new_count — по всему цеху
+    (для счётчика в боковой панели и уведомлениях), без учёта фильтра project_id."""
+    # «Сделано» живёт в JSON meta — фильтр по статусу в Python (просьб у цеха немного: лимит ссылки 10 в час)
+    rows = list(db.scalars(_workshop_requests(current).order_by(ShareEvent.created_at.desc()).limit(1000)))
+    new_count = sum(1 for e in rows if _is_new(e))
+    if project_id is not None:
+        rows = [e for e in rows if e.project_id == project_id]
+    if status != "all":
+        rows = [e for e in rows if _is_new(e) == (status == "new")]
+    return ClientRequestPage(items=_requests_out(db, rows[:limit]), new_count=new_count, total=len(rows))
+
+
+@router.patch("/client-requests/{request_id}", response_model=ClientRequestOut,
+              summary="Отметить просьбу клиента «Сделано» (status=done) или вернуть в новые (status=new)")
+def patch_client_request(request_id: uuid.UUID, body: ClientRequestPatch, current: CurrentDep, db: DbDep) -> ClientRequestOut:
+    e = db.scalar(_workshop_requests(current).where(ShareEvent.id == request_id))
+    if e is None:
+        raise not_found("Просьба клиента")
+    meta = {k: v for k, v in (e.meta or {}).items() if k not in ("done_at", "done_by")}
+    if body.status == "done":
+        meta.update(done_at=(e.meta or {}).get("done_at") or utcnow().isoformat(), done_by=str(current.user.id))
+    e.meta = meta  # новый dict — SQLAlchemy видит изменение JSON
+    db.commit()
+    return _requests_out(db, [e])[0]
 
 
 @router.delete("/projects/{project_id}/share-links/{link_id}", response_model=Ok, summary="Отозвать ссылку")

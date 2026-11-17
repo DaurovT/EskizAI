@@ -89,9 +89,11 @@ def tree_schema() -> dict[str, Any]:
 
 
 @router.post("/models/validate", response_model=ValidateOut, summary="Проверить дерево модулей без сохранения")
-def validate(body: ValidateIn, _: CurrentDep) -> ValidateOut:
+def validate(body: ValidateIn, current: CurrentDep) -> ValidateOut:
+    from ..services.production import rules_for
+
     try:
-        built = build_tree(body.tree)
+        built = build_tree(body.tree, rules_for(current.workshop))
     except ApiError as e:
         if e.code == "invalid_tree":
             return ValidateOut(schema_valid=False, ok=False, schema_errors=e.details)
@@ -313,7 +315,9 @@ def get_part(project_id: uuid.UUID, number: int, current: CurrentDep, db: DbDep)
     if p.current_version_id is None:
         raise ApiError(404, "model_missing", "Модель ещё не построена")
     v = _get_version(db, p, p.current_version_id)
-    built = build_tree(v.tree)
+    from ..services.production import rules_for_project
+
+    built = build_tree(v.tree, rules_for_project(db, p))
     part = next((x for x in built.result.parts if x.number == number), None)
     if part is None:
         raise not_found("Деталь")

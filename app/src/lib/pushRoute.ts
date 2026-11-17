@@ -35,6 +35,8 @@ export function routeForPush(data: PushData | null | undefined, canOrder = true)
   if (data.order_id) return orderRoute(data, canOrder);
   const p = data.project_id;
   if (data.screen === 'profile' || data.kind === 'limit_one_left') return '/profile';
+  // SCR-58: просьба клиента — сразу её карточка (id события ссылки); старый push без id — просьбы проекта
+  if (data.kind === 'client_change_request' && typeof data.share_event_id === 'string') return `/client-requests/${data.share_event_id}`;
   if (!p) return null;
   switch (data.screen) {
     case 'price_requests': return `/project/${p}/price-requests`;

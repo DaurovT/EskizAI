@@ -82,13 +82,16 @@ class SheetCanvas(canvas.Canvas):
         self.sheet_title = ""
         self.sheet_scale = ""
         self.stamp = True
+        self.sheet_parts: list[int] = []  # номера деталей на листе чертежей деталей (оглавление комплекта)
         self.deferred: list[Callable[["SheetCanvas", list[str]], None]] = []
+        self.sheet_index: list[dict] = []  # после save(): [{n, title, parts}] — состав документа по листам
 
     # --- листы ---
     def sheet(self, title: str, scale: str = "", size: tuple[float, float] = A4L, stamp: bool = True) -> Box:
         """Начать лист: размер, наименование, масштаб. Возвращает поле для содержимого (над штампом)."""
         self.setPageSize(size)
         self.sheet_title, self.sheet_scale, self.stamp = title, scale, stamp
+        self.sheet_parts = []
         return self.content()
 
     def content(self) -> Box:
@@ -117,6 +120,8 @@ class SheetCanvas(canvas.Canvas):
             self.showPage()
         total = len(self._sheets)
         titles = [s["sheet_title"] for s in self._sheets]
+        index = [{"n": i, "title": st["sheet_title"], "parts": list(st.get("sheet_parts") or [])}
+                 for i, st in enumerate(self._sheets, start=1)]
         for i, state in enumerate(self._sheets, start=1):
             self.__dict__.update(state)
             self._frame_and_stamp(i, total)
@@ -124,6 +129,7 @@ class SheetCanvas(canvas.Canvas):
                 fn(self, titles)
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
+        self.sheet_index = index
 
     # --- рамка и штамп ---
     def _frame_and_stamp(self, n: int, total: int) -> None:

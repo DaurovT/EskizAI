@@ -41,9 +41,10 @@ def compute_range(version: ModelVersion | None, workshop: Workshop, measured: bo
         return None
     try:
         from .prices import price_book_for
+        from .production import rules_for
 
         # estimated — пометки «оценка» версии (размеры по фото, материал на глаз): от них ширина полосы
-        return estimate_range(version.tree, pricing_settings(workshop), measured=measured,
+        return estimate_range(version.tree, pricing_settings(workshop), measured=measured, rules=rules_for(workshop),
                               prices=price_book_for(workshop), estimated=list(version.estimated or []))
     except Exception:  # смета не должна ронять карточку проекта
         log.exception("estimate failed for version %s", version.id)

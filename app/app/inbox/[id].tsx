@@ -14,9 +14,9 @@ import type { InboxDrawingDetail, InboxSheet } from '../../src/api/types';
 import { useResource } from '../../src/hooks/useResource';
 import { useT } from '../../src/i18n';
 import { drawingKind, drawingTitle, expiryDate } from '../../src/lib/inbox';
+import { InboxWide } from '../../src/screens/InboxWide';
 import { OpenInDwgSheet } from '../../src/screens/OpenInDwg';
-import { pendingDesign } from '../../src/services/design';
-import { updateMeta } from '../../src/state/projectMeta';
+import { makeProjectFromDrawing, sheetKey } from '../../src/services/inboxProject';
 import { useOffline } from '../../src/state/net';
 import { showError } from '../../src/ui/dialogs';
 import { DrawingThumb, DwgAppIcon } from '../../src/ui/Drawing';
@@ -30,9 +30,15 @@ import { Ionicons } from '@expo/vector-icons';
 const UNITS: Record<string, [string, string]> = { mm: ['мм', 'mm'], cm: ['см', 'sm'], m: ['м', 'm'], in: ['дюйм', 'dyuym'], ft: ['фут', 'fut'] };
 const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {});
 const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
-const sheetKey = (s: InboxSheet) => s.id ?? s.number ?? null;
 
-export default function InboxItem() {
+export default function InboxItemRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  // широкий планшет (TInbox.dc.html): список, листы и холст на одном экране — с выбранным чертежом
+  const { wide } = useLayout();
+  return wide ? <InboxWide selected={id} /> : <InboxItem />;
+}
+
+function InboxItem() {
   const { id, state, dwg } = useLocalSearchParams<{ id: string; state?: string; dwg?: string }>();
   const { t, lang } = useT();
   const offline = useOffline();
@@ -94,13 +100,7 @@ export default function InboxItem() {
   const make = async () => {
     setBusy(true);
     try {
-      const r = await api.projectFromDrawing(d.id, sheet ? sheetKey(sheet) : null);
-      updateMeta(r.project_id, {
-        photos: r.photo_url ? [r.photo_url] : [], answers: {}, answered: [], notes: {}, design: null,
-        drawing: { inboxId: d.id, title, kind, sheet: r.sheet?.number ?? null, sheetName: r.sheet?.name ?? null },
-      });
-      pendingDesign.set((p) => ({ ...p, [r.project_id]: { text: r.text, photo_ids: r.photo_id ? [r.photo_id] : [] } }));
-      router.push(`/project/${r.project_id}/breakdown`);
+      await makeProjectFromDrawing(d, sheet);
     } catch (e) {
       showError(e, lang);
     } finally {

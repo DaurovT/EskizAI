@@ -2,8 +2,8 @@ import type { ChatMessage, ProductTree } from '../../api/types';
 import { KITCHEN_EDITOR_DEMO, KITCHEN_PHOTO_DEMO, SAMPLES } from '../../api/mock/data';
 import { chatView } from '../chatView';
 import {
-  BASE_KINDS, doorCount, drawerLines, duplicateAt, hasLift, hasOpenBottom, isFold, labelCode, moveAt, newModule, removeAt, schemeLayout, selFromPartKey, sumFixes,
-  wallKindOf, wallModHeight, withKind,
+  BASE_KINDS, BASE_PRESETS, NEW_PRESETS, WALL_PRESETS, applyPreset, baseParts, doorCount, drawerLines, duplicateAt, hasLift, hasOpenBottom, isFold, labelCode, midParts, moveAt,
+  newModule, presetOf, presetParts, removeAt, schemeLayout, selFromPartKey, sumFixes, tierParts, wallKindOf, wallModHeight, wallParts, withKind, type KPart,
 } from '../kitchenScheme';
 
 const straight = SAMPLES.kitchen_straight.tree;
@@ -214,5 +214,92 @@ describe('kitchenScheme: складной подъёмник (lift_type fold)', 
     expect(withKind({ ...fold, flaps: 2 }, 'wall', 'lift').flaps).toBeNull();
     expect(withKind(fold, 'wall', 'doors').lift_type).toBeUndefined();
     expect(withKind({ kind: 'doors', width: 600, opening: 'lift', flaps: 2 }, 'wall', 'lift').lift_type).toBeUndefined();
+  });
+});
+
+describe('kitchenScheme: типы модуля (KitchenEditor .types)', () => {
+  const wall = KITCHEN_PHOTO_DEMO.wall as never[];
+  const base = KITCHEN_PHOTO_DEMO.base as never[];
+  it('тип по модулю: самый точный — ниша, складной, два ряда, рамка СВЧ, ящики 1+2, посудомойка', () => {
+    expect(presetOf(wall[0], 'wall')).toBe('rows2');
+    expect(presetOf(wall[1], 'wall')).toBe('niche'); // подъёмный над нишей — «ниша под фасадом»
+    expect(presetOf(wall[2], 'wall')).toBe('mwf');
+    expect(presetOf({ kind: 'doors', width: 600, opening: 'lift', lift_type: 'fold' }, 'wall')).toBe('fold');
+    expect(presetOf({ kind: 'doors', width: 600, opening: 'lift', flaps: 2 }, 'wall')).toBe('lift');
+    expect(presetOf({ kind: 'appliance', width: 600 }, 'wall2')).toBe('appliance');
+    expect(presetOf(base[3], 'base')).toBe('dr12');
+    expect(presetOf({ kind: 'drawers', width: 450, drawers: 1, drawer_layout: 'small_top' }, 'base')).toBe('drawers');
+    expect(presetOf(base[1], 'base')).toBe('cargo');
+    expect(presetOf({ kind: 'appliance', width: 450, dw: true }, 'base2')).toBe('dw');
+    expect(presetOf({ kind: 'open', x: 0, width: 300 }, 'mid')).toBe('mid');
+  });
+  it('каждый тип списка применяется и узнаётся обратно', () => {
+    for (const k of WALL_PRESETS) expect([k, presetOf(applyPreset({ kind: 'doors', width: 600, rows: 2 }, 'wall', k), 'wall')]).toEqual([k, k]);
+    for (const k of BASE_PRESETS) expect([k, presetOf(applyPreset({ kind: 'doors', width: 600 }, 'base', k), 'base')]).toEqual([k, k]);
+    expect([...NEW_PRESETS].every((k) => (WALL_PRESETS as readonly string[]).includes(k) || (BASE_PRESETS as readonly string[]).includes(k))).toBe(true);
+  });
+  it('настройки других типов снимаются, своя ставится', () => {
+    expect(applyPreset(wall[1], 'wall', 'lift')).not.toHaveProperty('open_bottom');
+    expect(applyPreset({ kind: 'doors', width: 600, opening: 'lift', lift_type: 'fold' }, 'wall', 'lift')).not.toHaveProperty('lift_type');
+    expect(applyPreset({ kind: 'doors', width: 600 }, 'wall', 'fold')).toMatchObject({ kind: 'doors', opening: 'lift', lift_type: 'fold', flaps: null });
+    expect(applyPreset(wall[0], 'wall', 'niche')).toMatchObject({ kind: 'doors', open_bottom: 400 });
+    expect(applyPreset(wall[0], 'wall', 'niche')).not.toHaveProperty('rows');
+    expect(applyPreset(wall[1], 'wall', 'niche')).toMatchObject({ opening: 'lift', open_bottom: 480 }); // уже ниша — высота та же
+    expect(applyPreset(wall[2], 'wall', 'appliance')).not.toHaveProperty('niche_frame');
+    expect(applyPreset({ kind: 'open', width: 600, shelves: 2 }, 'wall', 'mwf')).toMatchObject({ kind: 'appliance', appliance: 'microwave', niche_frame: true });
+    expect(applyPreset(base[3], 'base', 'drawers')).not.toHaveProperty('drawer_layout');
+    expect(applyPreset({ kind: 'drawers', width: 600, drawers: 4 }, 'base', 'dr12')).toMatchObject({ drawers: 4, drawer_layout: 'small_top' });
+    expect(applyPreset({ kind: 'appliance', width: 600, dw: true }, 'base', 'appliance')).not.toHaveProperty('dw');
+  });
+  it('бутылочница — 150 мм; из бутылочницы в другой тип — 450', () => {
+    expect(applyPreset({ kind: 'doors', width: 600 }, 'base', 'cargo')).toEqual({ kind: 'cargo', width: 150 });
+    expect(applyPreset({ kind: 'cargo', width: 150 }, 'base', 'doors')).toEqual({ kind: 'doors', width: 450 });
+    expect(applyPreset({ kind: 'doors', width: 600 }, 'base', 'sink').width).toBe(600);
+  });
+});
+
+describe('kitchenScheme: рисунок модуля', () => {
+  const kinds = (ps: KPart[]) => ps.map((p) => p.c);
+  const inside = (ps: KPart[]) => ps.every((p) => p.l >= 0 && p.t >= 0 && p.l + p.w <= 100.01 && p.t + p.h <= 100.01);
+  it('ящики 1+2 — как в макете: стыки 20/60 %, ручки в каждом ящике', () => {
+    const ps = baseParts({ kind: 'drawers', width: 600, drawers: 3, drawer_layout: 'small_top' });
+    expect(ps.filter((p) => p.c === 'ln').map((p) => p.t)).toEqual([20, 60]);
+    expect(ps.filter((p) => p.c === 'hd').map((p) => p.t)).toEqual([8.4, 36, 76]);
+  });
+  it('бутылочница — бутылки и ручка; ПММ — одна ручка; мойка на две двери — стык и две ручки', () => {
+    expect(kinds(baseParts({ kind: 'cargo', width: 150 }))).toEqual(['bt', 'bt', 'bt', 'hd']);
+    expect(kinds(baseParts({ kind: 'appliance', width: 450, dw: true }))).toEqual(['hd']);
+    expect(kinds(baseParts({ kind: 'sink', width: 800 }))).toEqual(['ln', 'hd', 'hd']);
+    expect(baseParts({ kind: 'doors', width: 400, hinge: 'right' })).toEqual([{ c: 'hd', l: 13, t: 40, w: 3, h: 18 }]);
+  });
+  it('верхние: складной — стык, две ручки и механизм; два ряда — стык рядов; ниша — открытая часть снизу', () => {
+    expect(kinds(wallParts({ kind: 'doors', width: 600, opening: 'lift', lift_type: 'fold' }, straight))).toEqual(['ln', 'hd', 'hd', 'dk']);
+    expect(kinds(wallParts({ kind: 'doors', width: 600, opening: 'lift', flaps: 2 }, straight))).toEqual(['ln', 'hd', 'dk', 'hd', 'dk']);
+    const rows = wallParts({ kind: 'doors', width: 600, rows: 2, doors: 2 }, straight);
+    expect(rows.filter((p) => p.c === 'ln' && p.w === 100)).toHaveLength(1);
+    expect(rows.filter((p) => p.c === 'hd')).toHaveLength(4);
+    const niche = wallParts({ kind: 'doors', width: 600, open_bottom: 240 }, straight); // 240 из 720 — треть
+    const op = niche.find((p) => p.c === 'op')!;
+    expect(op.t + op.h).toBeCloseTo(100);
+    expect(op.h).toBeCloseTo(33.3, 0);
+  });
+  it('ниша СВЧ: в рамке — проём уже модуля, без рамки — во всю ширину; есть стекло и дисплей', () => {
+    const framed = wallParts({ kind: 'appliance', width: 600, appliance: 'microwave', niche_frame: true }, straight);
+    const plain = wallParts({ kind: 'appliance', width: 600, appliance: 'microwave' }, straight);
+    expect(framed.find((p) => p.c === 'op')!.l).toBe(8);
+    expect(plain.find((p) => p.c === 'op')!.w).toBe(100);
+    expect(kinds(framed)).toEqual(expect.arrayContaining(['mw', 'gl']));
+    expect(kinds(wallParts({ kind: 'appliance', width: 600, appliance: 'oven', above: 'none' }, straight))).toEqual(['op', 'mw', 'hd']);
+  });
+  it('все части внутри модуля; пустое место без рисунка', () => {
+    const tree = KITCHEN_PHOTO_DEMO;
+    for (const m of [...(tree.wall as never[]), ...(KITCHEN_EDITOR_DEMO.wall as never[])]) expect(inside(wallParts(m, tree))).toBe(true);
+    for (const m of [...(tree.base as never[]), ...(KITCHEN_EDITOR_DEMO.base as never[])]) expect(inside(baseParts(m))).toBe(true);
+    expect(wallParts({ kind: 'gap', width: 600 }, tree)).toEqual([]);
+    expect(inside(tierParts({ kind: 'doors', width: 800, top: { doors: 2 } }))).toBe(true);
+    expect(kinds(tierParts({ kind: 'doors', width: 450, top: { opening: 'lift' } }))).toEqual(['hd']);
+    expect(midParts({ kind: 'open', width: 300, shelves: 2 })).toHaveLength(3);
+    for (const k of WALL_PRESETS) expect(inside(presetParts('wall', k, straight))).toBe(true);
+    for (const k of BASE_PRESETS) expect(inside(presetParts('base', k, straight))).toBe(true);
   });
 });

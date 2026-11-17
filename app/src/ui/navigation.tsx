@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Keyboard, PanResponder, Platform, StyleSheet, Text, View, type LayoutChangeEvent, type ViewInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
+import { SideBar, type SideKey } from './Desktop';
 import { BrandLogo } from './Illus';
 import { haptics } from './haptics';
 import {
@@ -81,10 +82,26 @@ const TAB_ICONS: Record<string, [IconName, IconName]> = {
   profile: ['person-outline', 'person-outline'],
 };
 
-/** Плавающее стеклянное меню (.nav, Liquid Glass) на телефоне; на планшете — рейка слева (RailBar). */
+/**
+ * Плавающее стеклянное меню (.nav, Liquid Glass) на телефоне; на портрете планшета — рейка слева (RailBar);
+ * на широком планшете — боковая панель «десктопного стиля» (TProjects2.dc.html .side, src/ui/Desktop.tsx).
+ */
 export function TabBar(props: BottomTabBarProps) {
-  const { tablet: tab } = useLayout();
+  const { tablet: tab, wide } = useLayout();
+  if (wide) return <SideTabs {...props} />;
   return tab ? <RailBar {...props} /> : <BottomBar {...props} />;
+}
+
+function SideTabs({ state, emitter, navigateToTab }: BottomTabBarProps) {
+  const cur = state.routes[state.index]?.name;
+  return (
+    <SideBar active={(cur as SideKey) ?? null} onTab={(key) => {
+      const route = state.routes.find((r) => r.name === key);
+      if (!route) return;
+      const ev = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+      if (route.name !== cur && !ev.defaultPrevented) navigateToTab(route.key);
+    }} />
+  );
 }
 
 /** Пружина макета: cubic-bezier(.34,1.56,.64,1). */

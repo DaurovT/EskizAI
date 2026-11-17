@@ -8,7 +8,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
-from mebel_core import BuildResult, Kitchen, Product, build, parse_tree
+from mebel_core import BuildResult, Kitchen, Product, RuleSet, build, parse_tree
 from mebel_core.fixes import apply_fix
 from mebel_core.parts import Fix
 from mebel_core.viewer import viewer_model
@@ -83,11 +83,12 @@ def summarize(result: BuildResult, viewer: dict[str, Any], tree: dict[str, Any] 
     }
 
 
-def build_tree(tree: dict[str, Any]) -> Built:
+def build_tree(tree: dict[str, Any], rules: RuleSet | None = None) -> Built:
+    """rules — правила цеха (services.production.rules_for); None — по умолчанию."""
     product = validate_tree(tree)
     started = time.perf_counter()
     try:
-        result = build(product)
+        result = build(product, rules) if rules is not None else build(product)
         viewer = viewer_model(result)
     except Exception as e:  # ядро не должно падать, но правка не должна ронять API
         raise ApiError(422, "build_failed", f"Не удалось собрать модель: {e}") from e

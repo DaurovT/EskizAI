@@ -461,7 +461,9 @@ def order_csv(order_id: uuid.UUID, admin: OrdersDep, db: DbDep) -> Response:
     v = db.get(ModelVersion, o.version_id or p.frozen_version_id or p.current_version_id)
     if v is None:
         raise ApiError(409, "model_missing", "У проекта нет модели")
-    data = export_csv(build(parse_tree(v.tree)))
+    from ..services.production import rules_for_project
+
+    data = export_csv(build(parse_tree(v.tree), rules_for_project(db, p)))
     return Response(content=data, media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="order_{str(o.id)[:8]}_v{v.number}.csv"'})
 

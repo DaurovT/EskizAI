@@ -142,6 +142,13 @@ export function createMockApi(opts: MockOptions = {}): Api {
     kp_lead: '14 рабочих дней', kp_payment: 'Предоплата 50%, остаток после сборки', kp_warranty: '12 месяцев на корпус и фурнитуру',
     default_estimate_view: 'short', employee_estimate_views: ['total', 'short'], created_at: iso(30 * DAY),
   };
+  // Производство цеха (SCR-56) — как mebel_core.HINGE_BRANDS и PRODUCTION_DEFAULTS
+  let production: T.ProductionSettings & { saved: boolean } = { fastener: 'confirmat', confirmat_depth: 50, hinge_brand: 'blum', shelf_pin_grid: false, saved: false };
+  const HINGE_BRANDS: T.HingeBrandInfo[] = [
+    { id: 'blum', name: 'Blum', plate_pattern: 'along', plate_spacing_mm: 32, plate_line_mm: 37, cup_diameter_mm: 35, cup_depth_mm: 13, cup_from_edge_mm: 22.5 },
+    { id: 'hettich', name: 'Hettich', plate_pattern: 'along', plate_spacing_mm: 32, plate_line_mm: 37, cup_diameter_mm: 35, cup_depth_mm: 13.5, cup_from_edge_mm: 22.5 },
+    { id: 'gtv', name: 'GTV', plate_pattern: 'across', plate_spacing_mm: 32, plate_line_mm: 37, cup_diameter_mm: 35, cup_depth_mm: 12, cup_from_edge_mm: 22.5 },
+  ];
   const limits: T.LimitsOut = { plan: 'free', period: new Date().toISOString().slice(0, 7), free_limit: 3, free_used: 1, free_left: 2, pack_left: 0, unlimited: false, can_create_sketch: true };
   const employees: T.EmployeeOut[] = [
     { id: 'u-1', phone: '+998901234567', name: 'Рустам', role: 'owner', is_active: true, last_login_at: iso() },
@@ -457,6 +464,14 @@ export function createMockApi(opts: MockOptions = {}): Api {
       photos: [demoFile('приёмка.jpg', 'image/jpeg')], status: 'resolved', decision: 'partial', amount: 175_000,
       decision_comment: 'Поставщик переделает фасад, доставку оплачивает мастер.', created_at: iso(1.2 * DAY), resolved_at: iso(10 * 3600_000),
     });
+    // OrderChat.dc.html: принятая правка конструктора в переписке оплаченного заказа (цена без изменений)
+    const o1Lines = o1.items.map((i) => ({ key: i.key ?? i.name, name: i.name, unit: i.unit, qty: i.qty, total: i.amount }));
+    ox(o1.id).corrections.push({
+      id: 'cor-0', order_id: o1.id, author_name: DESIGNER, comment: 'Боковина 2382 по текстуре не входит в лист — развернул текстуру поперёк, добавил лист Дуб сонома за наш счёт.',
+      lines_before: o1Lines, lines_after: o1Lines.map((l) => (l.name === 'ЛДСП 18 Дуб сонома' ? { ...l, qty: 4 } : l)),
+      total_before: 14_850_000, total_after: 14_850_000, files: [demoFile('Раскрой_v2.pdf', 'application/pdf')],
+      status: 'approved', decided_at: iso(5.65 * DAY), created_at: iso(5.75 * DAY),
+    });
 
     const o3 = base('o-3', '1236', 'returned', 2 * DAY, {
       project_title: `${title} · пенал`, assignee: { id: 'st-1', name: DESIGNER },
@@ -565,6 +580,24 @@ export function createMockApi(opts: MockOptions = {}): Api {
     { id: 'n-4', kind: 'model_ready', title: 'Модель готова', body: 'Шкаф в нишу, спальня', data: null, status: null, project_id: 'p-niche', read: true, created_at: iso(DAY + 3 * 3600_000) },
     { id: 'n-5', kind: 'client_agreed', title: 'Клиент согласовал эскиз', body: 'Кухня Нигоры', data: null, status: null, project_id: 'p-kitchen', read: true, created_at: iso(9 * DAY) },
   ];
+
+  // ----- просьбы клиентов «Хочу изменить…» (ClientRequests.dc.html, SCR-58): 2 новых из 5 -----
+  const clientRequests: { id: string; project_id: string; text: string; ago: number; done: boolean; views: number; ar: boolean }[] = [
+    { id: 'cr-1', project_id: 'p-aziza', text: 'Среднюю дверь без зеркала, просто белую. И сверху ещё одну полку для коробок', ago: 40 * 60_000, done: false, views: 3, ar: true },
+    { id: 'cr-2', project_id: 'p-kupe', text: 'Можно ручки чёрные, как на фото, и столешницу светлее?', ago: DAY + 2 * 3600_000, done: false, views: 2, ar: false },
+    { id: 'cr-3', project_id: 'p-builtin', text: 'Сделайте на 20 см короче', ago: 3 * DAY, done: true, views: 1, ar: false },
+    { id: 'cr-4', project_id: 'p-kitchen', text: 'Посудомойку справа от мойки', ago: 14 * DAY, done: true, views: 4, ar: true },
+    { id: 'cr-5', project_id: 'p-aziza', text: 'Можно ручки чёрные и на 10 см ниже?', ago: 4 * DAY, done: true, views: 3, ar: true },
+  ];
+  const crOut = (r: (typeof clientRequests)[number]): T.ClientRequestOut => {
+    const p = projects.find((x) => x.id === r.project_id);
+    const c = clients.find((x) => x.id === p?.client_id);
+    return {
+      id: r.id, text: r.text, created_at: iso(r.ago), link_id: p?.links[0]?.id ?? 'l-demo', status: r.done ? 'done' : 'new',
+      done_at: r.done ? iso(r.ago / 2) : null, project_id: r.project_id, project_title: p?.title ?? null,
+      client_name: c?.name ?? null, client_phone: c?.phone ?? null, version_number: p ? curVersion(p)?.number ?? null : null, views: r.views, ar: r.ar,
+    };
+  };
 
   // ----- настройки уведомлений (Misc.dc.html) и платежи (PayHistory.dc.html) -----
   const NOTIF_TYPES: [T.NotificationTypeKey, string, string][] = [
@@ -784,7 +817,7 @@ export function createMockApi(opts: MockOptions = {}): Api {
 
   // ----- файлы -----
   const FILES: { kind: string; title: string; format: string; free?: boolean }[] = [
-    { kind: 'offer_pdf', title: 'Коммерческое предложение', format: 'pdf', free: true },
+    { kind: 'kp_pdf', title: 'Коммерческое предложение', format: 'pdf', free: true },
     { kind: 'spec_xlsx', title: 'Спецификация деталей', format: 'xlsx' },
     { kind: 'cut_pdf', title: 'Карты раскроя', format: 'pdf' },
     { kind: 'parts_csv', title: 'Онлайн-крой EMAN', format: 'csv' },
@@ -796,6 +829,29 @@ export function createMockApi(opts: MockOptions = {}): Api {
     { kind: 'estimate_xlsx', title: 'Смета мастера (Excel)', format: 'xlsx' },
     { kind: 'model_glb', title: '3D-модель (GLB)', format: 'glb' },
   ];
+  /** Оглавление комплекта как у ядра (exports/drawings.py): титул, виды, сборка, детали по 4 на лист, спецификация, раскрой. */
+  const drawingIndex = (v: T.VersionOut): T.DrawingSheet[] => {
+    const kitchen = v.tree.type === 'kitchen';
+    const groups = new Map<string, number[]>();
+    for (const part of v.viewer.parts) {
+      const key = `${part.name}|${Math.round(part.length)}|${Math.round(part.width)}|${part.material}`;
+      groups.set(key, [...(groups.get(key) ?? []), part.number]);
+    }
+    const packs: number[][] = [];
+    [...groups.values()].forEach((nums, i) => { if (i % 4 === 0) packs.push([]); packs[packs.length - 1].push(...nums); });
+    const cutting = nestingFromViewer(v.viewer, v.id, v.number).materials.flatMap((m) => m.sheets.map((_, i) => `Карта раскроя · ${m.material_name} · лист ${i + 1} из ${m.sheets.length}`));
+    const rows: [T.DrawingSection, string, number[]][] = [
+      ['cover', 'Комплект чертежей. Титульный лист', []],
+      ['general', kitchen ? 'Общий вид. Вид спереди, разрез' : 'Общий вид. Вид спереди, разрез, вид сверху', []],
+      ['general', 'Вид без фасадов. Секции, полки, ящики', []],
+      ...(kitchen ? [['general', 'План (вид сверху)', []], ['general', 'Развёртка стены А (от угла)', []]] as [T.DrawingSection, string, number[]][] : []),
+      ['assembly', kitchen ? 'Схема сборки по модулям (взрыв-схема)' : 'Схема сборки (взрыв-схема)', []],
+      ...packs.map((nums) => ['parts', 'Чертежи деталей', nums.sort((a, b) => a - b)] as [T.DrawingSection, string, number[]]),
+      ['spec', 'Спецификация деталей', []],
+      ...cutting.map((title) => ['cutting', title, []] as [T.DrawingSection, string, number[]]),
+    ];
+    return rows.map(([section, title, parts], i) => ({ n: i + 1, title, section, parts }));
+  };
   const fileOpen = (p: MProject, f: { free?: boolean }) => f.free || p.filesPaid || p.status === 'in_work' || p.status === 'delivered';
   const tinyPdf = (title: string) => {
     const txt = title.replace(/[^\x20-\x7e]/g, '?');
@@ -876,6 +932,19 @@ export function createMockApi(opts: MockOptions = {}): Api {
       workshop.default_estimate_view = pricing.default_estimate_view;
       workshop.employee_estimate_views = pricing.employee_estimate_views;
       return { ...pricing };
+    }),
+    getProduction: () => wait(() => {
+      if (role !== 'owner') throw new ApiError(403, 'forbidden', 'Это делает владелец цеха');
+      return { ...production, hinge_brands: HINGE_BRANDS };
+    }),
+    updateProduction: (body) => wait(() => {
+      if (role !== 'owner') throw new ApiError(403, 'forbidden', 'Это делает владелец цеха');
+      const next = { ...production, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v != null)) };
+      if (!['confirmat', 'dowel'].includes(next.fastener)) throw new ApiError(422, 'validation_error', 'Крепёж корпуса: confirmat или dowel');
+      if (![35, 40, 45, 50].includes(next.confirmat_depth)) throw new ApiError(422, 'validation_error', 'Глубина конфирмата: 35, 40, 45, 50 мм');
+      if (!HINGE_BRANDS.some((b) => b.id === next.hinge_brand)) throw new ApiError(422, 'validation_error', 'Марка петель: blum, hettich, gtv');
+      production = { ...next, saved: true };
+      return { ...production, hinge_brands: HINGE_BRANDS };
     }),
     listEmployees: () => wait(() => [...employees]),
     addEmployee: (phone, name) => api.inviteEmployee({ phone, name }),
@@ -1126,9 +1195,18 @@ export function createMockApi(opts: MockOptions = {}): Api {
       return link;
     }),
     listShareLinks: (id) => wait(() => [...getP(id).links]),
-    listClientRequests: (id) => wait(() => (getP(id).links.length
-      ? [{ id: 'cr1', text: 'Можно ручки чёрные и на 10 см ниже?', created_at: iso(3_600_000), link_id: getP(id).links[0].id }]
-      : [])),
+    listClientRequests: (id) => wait(() => { getP(id); return clientRequests.filter((r) => r.project_id === id).sort((a, b) => a.ago - b.ago).map(crOut); }),
+    listWorkshopClientRequests: (q) => wait(() => {
+      const all = [...clientRequests].sort((a, b) => a.ago - b.ago).filter((r) => !q?.project_id || r.project_id === q.project_id);
+      const items = all.filter((r) => !q?.status || q.status === 'all' || (q.status === 'done') === r.done);
+      return { items: items.map(crOut), new_count: clientRequests.filter((r) => !r.done).length, total: items.length };
+    }),
+    setClientRequestStatus: (rid, status) => wait(() => {
+      const r = clientRequests.find((x) => x.id === rid);
+      if (!r) throw new ApiError(404, 'not_found', 'Просьба клиента не найдена');
+      r.done = status === 'done';
+      return crOut(r);
+    }),
     getProjectAr: (id) => wait(() => {
       const p = getP(id);
       const v = curVersion(p);
@@ -1251,7 +1329,9 @@ export function createMockApi(opts: MockOptions = {}): Api {
     listFiles: (id) => wait(() => {
       const p = getP(id);
       if (!curVersion(p)) return [];
-      return FILES.map((f) => ({ kind: f.kind, title: f.title, format: f.format, free: !!f.free, available: fileOpen(p, f),
+      const idx = drawingIndex(curVersion(p)!);
+      const sheets = (kind: string) => (kind === 'production_set_pdf' ? idx.length : /cut/.test(kind) ? idx.filter((s) => s.section === 'cutting').length : null);
+      return FILES.map((f) => ({ kind: f.kind, title: f.title, format: f.format, free: !!f.free, available: fileOpen(p, f), sheets: sheets(f.kind),
         reason: fileOpen(p, f) ? null : 'Бесплатно при заказе материалов в EMAN или после оплаты файлов проекта' }));
     }),
     filesInfo: (id) => api.listFiles(id).then((files) => {
@@ -1264,6 +1344,23 @@ export function createMockApi(opts: MockOptions = {}): Api {
         access: { production: open, basis: open ? (p.filesPaid ? 'payment' : 'order') : null, pro_discount: pro },
         purchase: open ? null : { price: pro ? 22_500 : 45_000, full_price: 45_000, discount_pct: pro ? 50 : 0, pro_discount_pct: 50, currency: 'UZS' },
         files,
+      };
+    }),
+    getDrawingSet: (id) => wait(() => {
+      const p = getP(id);
+      const v = curVersion(p);
+      if (!v) throw new ApiError(409, 'model_missing', 'Модель ещё не построена');
+      const sheets = drawingIndex(v);
+      const sections: T.DrawingSetOut['sections'] = [];
+      for (const s of sheets) {
+        const last = sections[sections.length - 1];
+        if (last && last.key === s.section) last.count += 1; else sections.push({ key: s.section, first: s.n, count: 1 });
+      }
+      const open = fileOpen(p, {});
+      return {
+        version_id: v.id, version_number: v.number, frozen: !!p.frozen_version_id, kind: 'production_set_pdf',
+        file_name: `${translitKind(p)}_production_set_pdf.pdf`, available: open, locked: !open,
+        reason: open ? null : 'Файлы — после заказа в EMAN или оплаты', pages: sheets.length, sections, sheets,
       };
     }),
     downloadFile: (id, kind) => wait(async (): Promise<DownloadedFile> => {

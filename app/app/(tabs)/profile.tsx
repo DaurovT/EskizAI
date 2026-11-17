@@ -27,6 +27,7 @@ export default function Profile() {
   const limits = useResource(() => api.limits(), []);
   const employees = useResource(() => api.listEmployees(), [], { enabled: isOwner });
   const pricing = useResource(() => api.getPricing(), [], { enabled: isOwner });
+  const production = useResource(() => api.getProduction(), [], { enabled: isOwner });
   const [push, setPush] = useState<boolean | null>(null);
   const [langSheet, setLangSheet] = useState(false);
 
@@ -69,6 +70,10 @@ export default function Profile() {
         {isOwner ? (
           <ListItem compact style={s.pr} icon="document-outline" title={t('pf_prices')} chevron onPress={() => router.push('/settings/prices')}
             right={p ? <T num style={s.vv}>{p.labor_mode === 'percent' ? t('pf_labor', { n: p.labor_percent }) : ''}</T> : undefined} />
+        ) : null}
+        {isOwner ? (
+          <ListItem compact style={s.pr} icon="construct-outline" title={t('prod_row')} chevron onPress={() => router.push('/settings/production')}
+            right={production.data ? <T style={s.vv}>{`${t(production.data.fastener === 'dowel' ? 'prod_dowel' : 'prod_confirmat')} · ${production.data.hinge_brands.find((b) => b.id === production.data?.hinge_brand)?.name ?? ''}`}</T> : undefined} />
         ) : null}
         {isOwner ? <ListItem compact style={s.pr} icon="people-outline" title={t('profile_employees')} chevron onPress={() => router.push('/team')} right={<T num style={s.vv}>{String(staff)}</T>} /> : null}
         <ListItem compact style={s.pr} icon="notifications-outline" title={t('profile_push')} chevron

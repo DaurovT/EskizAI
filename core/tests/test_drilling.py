@@ -337,3 +337,81 @@ def test_big_kitchen_build_time() -> None:
     t0 = time.perf_counter()
     r = build(copy.deepcopy(t))
     assert len(r.parts) > 120 and time.perf_counter() - t0 < 0.5
+
+
+# ---------- Настройки производства цеха (SCR-56) ----------
+
+
+@pytest.mark.parametrize("name", ["wardrobe_2sec", "wardrobe_full", "kitchen_corner", "kupe_3doors"])
+def test_dowel_fastener_replaces_all_confirmats(name: str) -> None:
+    """Цех на шкантах: ни одного конфирмата, шкантов — по числу просверленных пар, присадка без проблем."""
+    from mebel_core.rules import production_rules
+
+    base = build(load(name))
+    r = build(load(name), production_rules({"fastener": "dowel"}))
+    assert hw(r, "confirmat") == 0 and not [h for p in r.parts for h in p.holes if h.purpose == "конфирмат"]
+    face = [h for p in r.parts for h in p.holes if h.purpose == "шкант" and h.face in ("A", "B")]
+    edge = [h for p in r.parts for h in p.holes if h.purpose == "шкант" and h.face not in ("A", "B")]
+    assert len(face) == len(edge) == hw(r, "dowel")
+    # соединений столько же: где был конфирмат — шкант
+    assert hw(r, "dowel") == hw(base, "dowel") + hw(base, "confirmat")
+    assert all(h.diameter == mm(8) and 0 < h.depth < p.thickness for p in r.parts for h in p.holes
+               if h.purpose == "шкант" and h.face in ("A", "B"))
+    assert not [i.message for i in r.issues if i.code.startswith("drill_") or i.code == "join_no_contact"]
+
+
+def test_dowel_fastener_joint_pairs_match() -> None:
+    from mebel_core.rules import production_rules
+
+    r = build(wardrobe_2doors(), production_rules({"fastener": "dowel"}))
+    edge_pts = {world(p, h.x, h.y, p.thickness / 2) for p in r.parts for h in p.holes
+                if h.purpose == "шкант" and h.face not in ("A", "B")}
+    for p in r.parts:
+        for h in p.holes:
+            if h.purpose == "шкант" and h.face in ("A", "B"):
+                assert world(p, h.x, h.y, face_z(p, h.face)) in edge_pts, (p.key, h)
+
+
+@pytest.mark.parametrize("depth", [35, 40, 45, 50])
+def test_confirmat_edge_depth_from_workshop(depth: int) -> None:
+    from mebel_core.rules import production_rules
+
+    r = build(wardrobe_2doors(), production_rules({"confirmat_depth": depth}))
+    edge = [h for p in r.parts for h in p.holes if h.purpose == "конфирмат" and h.face not in ("A", "B")]
+    assert edge and {h.depth for h in edge} == {mm(depth)}
+    assert r.rules_version.endswith(f"+c{depth}.blum.single")
+
+
+@pytest.mark.parametrize("brand,pattern,cup_depth", [("blum", "along", mm(13)), ("hettich", "along", mm(13.5)),
+                                                     ("gtv", "across", mm(12))])
+def test_hinge_brand_maps_to_plate_and_cup(brand: str, pattern: str, cup_depth: int) -> None:
+    from mebel_core.rules import HINGE_BRANDS, production_rules
+
+    rules = production_rules({"hinge_brand": brand})
+    assert rules.hinge_plate_pattern == pattern and rules.hinge_cup_depth == cup_depth
+    r = build(wardrobe_2doors(), rules)
+    door = next(p for p in r.parts if p.role == "door")
+    cups = [h for h in door.holes if h.purpose == "чашка петли"]
+    assert cups and {h.depth for h in cups} == {cup_depth}
+    assert {min(h.y, door.width - h.y) for h in cups} == {rules.hinge_cup_from_edge}
+    side = next(p for p in r.parts if p.key == "body.side.left")
+    plates = sorted({h.y for h in side.holes if h.purpose == "планка петли"})
+    assert plates == ([mm(37)] if pattern == "along" else [mm(37), mm(69)])
+    names = {h.name for h in r.hardware if h.kind == "hinge"}
+    assert names and all(n.endswith(f"· {HINGE_BRANDS[brand]['name']}") for n in names)
+
+
+def test_shelf_pin_grid_setting_and_defaults() -> None:
+    from mebel_core.rules import normalize_production, production_rules
+
+    assert production_rules(None) is DEFAULT_RULES and production_rules({}) is DEFAULT_RULES
+    assert production_rules({"shelf_pin_grid": True}).shelf_pin_rows == "system32"
+    assert production_rules({"shelf_pin_grid": False}).shelf_pin_rows == "single"
+    assert production_rules({"fastener": "dowel"}) is production_rules({"fastener": "dowel"})  # кэш
+    # Blum с конфирматом 50 — та же присадка, что по умолчанию (только марка в названии петли)
+    same = build(wardrobe_2doors(), production_rules({"hinge_brand": "blum"}))
+    base = build(wardrobe_2doors())
+    assert [p.holes for p in same.parts] == [p.holes for p in base.parts]
+    for bad in ({"fastener": "glue"}, {"confirmat_depth": 30}, {"hinge_brand": "noname"}):
+        with pytest.raises(ValueError):
+            normalize_production(bad)

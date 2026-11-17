@@ -47,6 +47,9 @@ class Workshop(Base):
     markup_services: Mapped[int] = mapped_column(Integer, default=0)  # %, услуги поставщика
     default_estimate_view: Mapped[str] = mapped_column(String(10), default=EstimateView.total)
     employee_estimate_views: Mapped[list[str]] = mapped_column(JSON, default=lambda: [EstimateView.total.value])
+    # Производство цеха (SCR-56): {"fastener", "confirmat_depth", "hinge_brand", "shelf_pin_grid"} — правила
+    # присадки для сборки версий, файлов, чертежей и DXF (mebel_core.production_rules); null — по умолчанию
+    production: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
 
     # Тариф (раздел 9 PRD)
     plan: Mapped[str] = mapped_column(String(10), default=Plan.free)

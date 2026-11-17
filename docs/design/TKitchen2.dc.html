@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Планшет · Редактор кухни</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+/*V3*/
+body{margin:0}
+a{color:#2F6B44;text-decoration:none}a:hover{color:#275C3A}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+.app{width:390px;height:844px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;flex-direction:column;position:relative;overflow:hidden;font-size:16px;line-height:22px;font-weight:400;letter-spacing:-.005em}
+.mono,.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.hdr{flex:none;display:flex;align-items:center;gap:10px;padding:12px 12px 4px;min-height:56px}
+.ht{flex:1;min-width:0;font-size:18px;line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:44px;height:44px;flex:none;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#21201F;position:relative}
+.ib.flat{background:transparent}
+.ib .badge{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#E5352B;box-shadow:0 0 0 2px #fff}
+.big{flex:none;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em;padding:4px 16px 0}
+.title{font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:16px;line-height:22px;color:#6E6B66}
+.cap{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.lbl{font-size:15px;line-height:20px;font-weight:600;color:#6E6B66;letter-spacing:0;text-transform:none}
+.body{flex:1;min-height:0;overflow:hidden;padding:8px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.grow{flex:1}
+.sheet{background:#fff;border-radius:28px;overflow:hidden;flex:none}
+.pad{padding:20px}
+.row{display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 20px;box-sizing:border-box;color:#21201F;position:relative}
+.row+.row{box-shadow:inset 0 1px 0 #F0EFEC}
+.row .tx{flex:1;min-width:0}
+.rt{font-size:16px;line-height:21px;font-weight:500}
+.rs{font-size:14px;line-height:19px;font-weight:400;color:#6E6B66}
+.rv{font-size:16px;line-height:21px;font-weight:600;white-space:nowrap;color:#21201F;font-variant-numeric:tabular-nums}
+.chev{flex:none;color:#B4B1AB}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.st{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:9px;font-size:13px;line-height:18px;font-weight:600;white-space:nowrap;background:#F2F1EE;color:#55524D}
+.st .dot{display:none}
+.st.c-green{background:#E6F1EA}.st.c-amber{background:#FFF0D4}.st.c-blue{background:#E6EEFF}.st.c-red{background:#FFE7E4}.st.c-gray{background:#F2F1EE}
+.d-green{background:#387D50}.d-amber{background:#E08A00}.d-blue{background:#1F4FBF}.d-red{background:#E5352B}.d-gray{background:#A3A09A}
+.c-green{color:#275C3A}.c-amber{color:#8A4B00}.c-blue{color:#1F4FBF}.c-red{color:#A1221A}.c-gray{color:#55524D}
+.foot{flex:none;display:flex;flex-direction:column;gap:8px;padding:10px 12px 30px}
+.foot.bar{background:#fff;border-radius:28px 28px 0 0;padding:16px 16px 30px}
+.fr{display:flex;gap:8px}
+.cta{height:56px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 20px;font-size:17px;line-height:22px;font-weight:600;box-sizing:border-box;white-space:nowrap}
+.fr>.cta,.fr>.soft{flex:1}
+.cta:hover{color:#fff;background:#2F6B44}
+.cta.val{justify-content:space-between;padding:0 8px 0 20px}
+.cta .v{height:40px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.cta.off{background:#E6E5E1;color:#8E8B85}
+.soft{height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 18px;font-size:17px;line-height:22px;font-weight:500;box-sizing:border-box;white-space:nowrap}
+.soft:hover{color:#21201F;background:#F7F7F5}
+.soft.sm,.cta.sm{height:44px;border-radius:14px;font-size:15px;padding:0 14px;flex:none}
+.soft.w{background:#fff}
+.txt{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:500;color:#2F6B44}
+.txt.red{color:#C62A20}
+.seg{display:flex;background:#E6E5E1;border-radius:14px;padding:3px;gap:2px;flex:none}
+.sg{flex:1;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:20px;font-weight:500;color:#21201F;white-space:nowrap;padding:0 8px}
+.sg.on{background:#fff;color:#21201F;box-shadow:0 1px 3px rgba(33,32,31,.10)}
+.chips{display:flex;gap:8px;overflow:hidden;flex:none;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.chip{height:40px;border-radius:20px;background:#fff;color:#21201F;display:inline-flex;align-items:center;gap:6px;padding:0 16px;font-size:15px;font-weight:500;white-space:nowrap;flex:none}
+.chip.on{background:#21201F;color:#fff}
+.chip .n{color:#9C9993}.chip.on .n{color:#A9A6A0}
+.opt{min-height:56px;border-radius:16px;background:#fff;color:#21201F;display:flex;align-items:center;gap:12px;padding:10px 16px;box-sizing:border-box;font-size:16px;font-weight:500}
+.opt.on{background:#21201F;color:#fff}
+.opt.on .rs{color:#B4B1AB}
+.fld{background:#fff;border-radius:16px;min-height:60px;padding:9px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.fld .fl{font-size:13px;line-height:17px;font-weight:400;color:#6E6B66;letter-spacing:0;text-transform:none}
+.fld .fv{font-size:17px;line-height:23px;font-weight:500;color:#21201F}
+.fld .ph{font-size:17px;line-height:23px;font-weight:400;color:#8E8B85}
+.fld.focus{background:#fff;box-shadow:inset 0 0 0 2px #21201F}
+.fld.err{background:#FFF5F4;box-shadow:inset 0 0 0 2px #E5352B}
+.fld.est{background:#FFF9EE;box-shadow:inset 0 0 0 2px #F3CF8F}
+.numf{display:flex;align-items:center;gap:8px}
+.numf .nval{flex:1;font-size:28px;line-height:32px;font-weight:600;font-variant-numeric:tabular-nums}
+.numf .nu{font-size:14px;color:#6E6B66}
+.pm{width:40px;height:40px;border-radius:12px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:500;color:#21201F;flex:none}
+.search{height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:10px;padding:0 16px;color:#8E8B85;font-size:16px;flex:none}
+.ban{border-radius:20px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex:none}
+.ban .bt{font-size:16px;line-height:21px;font-weight:600}
+.ban .bd{font-size:14px;line-height:19px;font-weight:400}
+.ban.ok{background:#E6F1EA;color:#1F4A2F}.ban.est{background:#FFF0D4;color:#6E3C00}.ban.info{background:#E6EEFF;color:#1A3F99}.ban.err{background:#FFE7E4;color:#8A1D16}.ban.n{background:#fff;color:#21201F}
+.ban .ba{margin-left:auto;align-self:center;font-size:15px;font-weight:600;color:inherit;min-height:44px;display:flex;align-items:center;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:8px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag.est{background:#FFF0D4;color:#8A4B00}.tag.info{background:#E6EEFF;color:#1F4FBF}.tag.ok{background:#E6F1EA;color:#275C3A}.tag.n{background:#F2F1EE;color:#55524D}.tag.err{background:#FFE7E4;color:#A1221A}
+.nav{flex:none;height:84px;background:#fff;border-radius:24px 24px 0 0;display:flex;align-items:flex-start;justify-content:space-around;padding:8px 4px 0;box-sizing:border-box}
+.nv{width:70px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;line-height:15px;font-weight:500;color:#8E8B85}
+.nv:hover{color:#21201F}
+.nv .ni{width:52px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.nv.on{color:#21201F}
+.nv.on .ni{background:#E6F1EA;color:#275C3A}
+.plus{width:52px;height:44px;border-radius:16px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.plus:hover{color:#fff;background:#2F6B44}
+.thumb{width:56px;height:56px;flex:none;border-radius:16px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.av{width:44px;height:44px;flex:none;border-radius:50%;background:#EDECE9;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:#21201F}
+.tile{width:44px;height:44px;flex:none;border-radius:14px;background:#F2F1EE;display:flex;align-items:center;justify-content:center;color:#21201F}
+.ic24{width:24px;height:24px;flex:none}
+.scrim{position:absolute;inset:0;background:rgba(33,32,31,.42);z-index:5}
+.bs{position:absolute;left:0;right:0;bottom:0;z-index:6;background:#F2F1EE;border-radius:28px 28px 0 0;padding:0 12px 30px;display:flex;flex-direction:column;gap:8px;box-shadow:0 -4px 24px rgba(33,32,31,.10)}
+.bs.white{background:#fff}
+.hdl{height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.hdl i{width:40px;height:5px;border-radius:3px;background:#D6D4CF;display:block}
+.toast{position:absolute;left:12px;right:12px;z-index:7;min-height:56px;border-radius:18px;background:#21201F;color:#fff;display:flex;align-items:center;gap:12px;padding:0 8px 0 18px;box-sizing:border-box;font-size:15px;font-weight:400}
+.toast .ta{margin-left:auto;min-height:44px;padding:0 12px;display:flex;align-items:center;font-weight:600;color:#8FD3A6}
+.lift{box-shadow:0 4px 16px rgba(33,32,31,.12)}
+.tog{width:51px;height:31px;border-radius:16px;background:#E1DFDB;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.tog.on{background:#387D50}.tog.on::after{left:22px}
+.hair{height:1px;background:#F0EFEC;flex:none}
+.big-n{font-size:28px;line-height:32px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;box-sizing:border-box;flex:none}
+.wood{background:repeating-linear-gradient(90deg,#E6D3B1 0 7px,#DCC59F 7px 9px)}
+.carc{border:3px solid #21201F;box-sizing:border-box;background:#21201F}
+/* inside white containers controls go gray */
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.ban.n,.dlg) :is(.soft,.chip:not(.on),.opt:not(.on),.fld:not(.focus):not(.err):not(.est),.search,.ib:not(.keep)){background:#F2F1EE}
+:is(.sheet,.foot.bar,.bs.white,.chat,.pad,.dlg) .seg{background:#EDECE9}
+/* motion v3: press + mount */
+.cta,.soft,.chip,.ib,.opt,.sg,.pm,.txt,.plus,.nv,.tile,a.row,button.row,a.sheet,.svc,.ans,.key,.qv,.tl,.vb,.dimb{transition:transform .12s cubic-bezier(.2,0,0,1),filter .12s,background-color .2s,color .2s,box-shadow .2s}
+.cta:active,.soft:active,.chip:active,.ib:active,.opt:active,.pm:active,.plus:active,.svc:active,.ans:active,.key:active,.qv:active,.tl:active,.vb:active,.dimb:active,a.sheet:active{transform:scale(.97);filter:brightness(.94)}
+a.row:active,button.row:active{background-color:#F7F7F5}
+.txt:active,.nv:active{opacity:.6}
+@keyframes v3up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes v3fin{from{opacity:0}to{opacity:1}}
+@keyframes v3tin{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3dlg{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes v3spin{to{transform:rotate(360deg)}}
+.scrim{animation:v3fin .2s ease-out both}
+.bs{animation:v3up .32s cubic-bezier(.32,.72,0,1) both}
+.toast{animation:v3tin .2s cubic-bezier(.2,0,0,1) both}
+.dlg{animation:v3dlg .2s cubic-bezier(.2,0,0,1) both}
+.spin{animation:v3spin .8s linear infinite}
+.chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
+@media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+
+
+/* tablet v3 */
+.tapp{width:1194px;height:834px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;position:relative;overflow:hidden;font-size:16px;line-height:22px;letter-spacing:-.005em}
+.tapp.port{width:834px;height:1194px;flex-direction:column}
+.rail{flex:none;width:92px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:20px 0 20px;gap:6px;box-sizing:border-box}
+.rail .logo{width:48px;height:48px;border-radius:14px;background:#387D50;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.rail .new{width:56px;height:56px;border-radius:18px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.rv2{width:76px;min-height:60px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;line-height:15px;font-weight:500;color:#8E8B85}
+.rv2 .ni{width:52px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.rv2.on{color:#21201F}.rv2.on .ni{background:#E6F1EA;color:#275C3A}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane{background:#fff;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.tbig{font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.025em}
+.pop{position:absolute;z-index:8;background:#fff;border-radius:24px;box-shadow:0 12px 40px rgba(33,32,31,.18),0 2px 6px rgba(33,32,31,.08);padding:14px;box-sizing:border-box}
+/*/V3*/
+.dk{width:1194px;height:834px;box-sizing:border-box;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;display:flex;font-size:14px;line-height:19px;overflow:hidden}
+.side{width:236px;flex:none;background:#E9E8E4;display:flex;flex-direction:column;gap:2px;padding:14px 10px 12px;box-sizing:border-box;border-right:1px solid #DEDCD7}
+.sbrand{display:flex;align-items:center;gap:8px;padding:2px 8px 12px;font-size:15px}
+.snew{height:34px;border-radius:9px;background:#387D50;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:600;margin:0 2px 10px}
+.snew:hover{color:#fff}
+.si{height:32px;border-radius:8px;display:flex;align-items:center;gap:10px;padding:0 10px;color:#3E3C39;font-size:14px;font-weight:500}
+.si:hover{background:#E1DFDA;color:#21201F}
+.si.on{background:#fff;color:#21201F;box-shadow:0 1px 2px rgba(33,32,31,.08)}
+.si .sl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si svg,.btn svg,.srch svg{flex:none}
+.sb{min-width:18px;height:18px;border-radius:9px;background:#387D50;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;box-sizing:border-box}
+.sacc{display:flex;gap:8px;align-items:center;padding:10px 8px 0;border-top:1px solid #DEDCD7;margin-top:6px;font-size:12px;line-height:15px;color:#6E6B66}
+.sacc b{color:#21201F;font-weight:600}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.tb{height:52px;flex:none;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid #E3E1DC;background:#F7F6F3}
+.tb .tt{font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.tb .ts{font-size:13px;color:#6E6B66;white-space:nowrap}
+.btn{height:32px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #DEDCD7;display:inline-flex;align-items:center;gap:6px;padding:0 11px;font-size:13px;font-weight:600;color:#21201F;white-space:nowrap}
+.btn.pri{background:#387D50;color:#fff;box-shadow:none}
+.btn.pri:hover{color:#fff}
+.btn.ic{width:32px;padding:0;justify-content:center}
+.sgm{display:inline-flex;background:#E6E5E1;border-radius:8px;padding:2px}
+.sgm button,.sgm a{height:28px;border-radius:6px;padding:0 11px;font-size:13px;font-weight:600;color:#55524D;display:flex;align-items:center}
+.sgm .on{background:#fff;color:#21201F;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.panes{flex:1;min-height:0;display:flex}
+.pane1{flex:none;border-right:1px solid #E3E1DC;display:flex;flex-direction:column;min-height:0;background:#FBFAF8}
+.ph{height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:12px;font-weight:700;color:#8E8B85;text-transform:uppercase;letter-spacing:.04em}
+.lr{display:flex;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid #EFEDE9;color:#21201F;cursor:pointer;text-align:left;width:100%;box-sizing:border-box}
+.lr:hover{background:#F2F1EE}
+.lr.on{background:#E6F1EA;box-shadow:inset 3px 0 0 #387D50}
+.lr .t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lr .s{font-size:12px;color:#6E6B66;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lr .tx{flex:1;min-width:0}
+.pill{display:inline-flex;align-items:center;height:20px;border-radius:6px;padding:0 7px;font-size:11px;font-weight:700;white-space:nowrap;background:#F2F1EE;color:#55524D}
+.pill.g{background:#E6F1EA;color:#275C3A}.pill.b{background:#E6EEFF;color:#1F4FBF}.pill.a{background:#FFF0D4;color:#8A4B00}
+.card{background:#fff;border:1px solid #E6E4DF;border-radius:12px}
+.kv2{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #F0EFEC;font-size:13px}
+.kv2 span:first-child{color:#6E6B66}
+.kv2 b{font-weight:600}
+.srch{height:32px;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #DEDCD7;display:flex;align-items:center;gap:8px;padding:0 10px;color:#8E8B85;font-size:13px}
+.dot2{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.mono{font-variant-numeric:tabular-nums}
+.grow{flex:1}
+.cap2{font-size:12px;line-height:16px;color:#6E6B66}
+.ed{width:1194px;height:834px;display:flex;flex-direction:column;background:#F2F1EE;font-family:Onest,system-ui,sans-serif;color:#21201F;font-size:14px;line-height:19px;overflow:hidden}
+.pal{width:256px;flex:none;border-right:1px solid #E3E1DC;background:#FBFAF8;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pt{display:flex;align-items:center;gap:8px;height:34px;white-space:nowrap;padding:0 12px;border-radius:8px;margin:0 8px;font-size:13px;font-weight:500;color:#21201F;cursor:pointer;width:calc(100% - 16px);text-align:left;box-sizing:border-box}
+.pt:hover{background:#F0EFEB}
+.pt.on{background:#21201F;color:#fff}
+.pt .nw{margin-left:auto;font-size:10px;font-weight:700;color:#275C3A;background:#E6F1EA;border-radius:5px;padding:1px 5px}
+.pt.on .nw{background:#387D50;color:#fff}
+.pt .gl2{width:22px;height:22px;border-radius:5px;background:#F4F2EC;box-shadow:inset 0 0 0 1.5px #8E8B85;flex:none;position:relative;overflow:hidden}
+.pt.on .gl2{background:#3A3936;box-shadow:inset 0 0 0 1.5px #8E8B85}
+.cvs{flex:1;min-width:0;position:relative;background:#F2F1EE;background-image:radial-gradient(#D5D3CE 1.1px,transparent 1.1px);background-size:16px 16px;display:flex;flex-direction:column}
+.kit{position:absolute;left:44px;right:44px;top:92px}
+.row6{display:grid;gap:3px;padding:3px;background:#21201F}
+.m{position:relative;overflow:hidden;cursor:pointer}
+.m.lo{background:#F4F2EC}.m.up{background:#F7F7F5}
+.m:hover{background:#ECEAE4}
+.m.on{background:#DCE6FF;box-shadow:inset 0 0 0 3px #1F4FBF}
+.m i{position:absolute;display:block}
+.ln{background:#8E8B85}.hd{background:#21201F;border-radius:2px}.dkk{background:#3A3936}.op{background:#E9E4D8;box-shadow:inset 0 3px 4px rgba(0,0,0,.14)}.gl{background:#CBDDF3}.mw{background:#2B2A28;border-radius:2px}.bt{background:#7FA88C;border-radius:3px 3px 1px 1px}
+.ct{height:12px;background:#8D8778;margin:44px -6px 0;border:3px solid #21201F;border-bottom:0}
+.dimr{display:grid;gap:3px;padding:0 3px;margin-top:10px}
+.dimr span{position:relative;text-align:center;font-size:12px;font-weight:600;color:#1F4FBF;font-variant-numeric:tabular-nums;padding-top:8px}
+.dimr span::before{content:"";position:absolute;left:0;right:0;top:3px;height:1px;background:#1F4FBF}
+.dimr span::after{content:"";position:absolute;left:0;right:0;top:0;height:7px;border-left:1px solid #1F4FBF;border-right:1px solid #1F4FBF}
+.dimr span.bad{color:#E5352B}
+.dtop{position:absolute;left:44px;right:44px;top:52px;text-align:center;font-size:13px;font-weight:700;color:#1F4FBF;font-variant-numeric:tabular-nums}
+.dtop::before{content:"";position:absolute;left:0;right:0;top:9px;height:1px;background:#1F4FBF}
+.dtop span{position:relative;background:#F2F1EE;padding:0 8px}
+.cmd{position:absolute;left:16px;right:16px;bottom:14px;height:44px;border-radius:12px;background:#fff;box-shadow:0 4px 18px rgba(33,32,31,.12);display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;color:#8E8B85;font-size:14px}
+.cmd .go{width:32px;height:32px;border-radius:8px;background:#21201F;color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.cmd .go:hover{color:#fff}
+.v3d{flex:1;display:flex;align-items:center;justify-content:center}
+.ins{width:320px;flex:none;border-left:1px solid #E3E1DC;background:#fff;display:flex;flex-direction:column;min-height:0}
+.ins .hd2{padding:12px 14px 8px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #EFEDE9}
+.ib2{flex:1;min-height:0;overflow:hidden;padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.lab2{font-size:12px;font-weight:700;color:#8E8B85;text-transform:uppercase;letter-spacing:.04em}
+.wrow{display:flex;align-items:center;gap:6px}
+.wrow .wv{flex:1;height:32px;border-radius:8px;box-shadow:inset 0 0 0 1px #DEDCD7;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.wrow.err .wv{box-shadow:inset 0 0 0 2px #E5352B;background:#FFF5F4}
+.err2{display:flex;gap:8px;align-items:flex-start;border-radius:8px;background:#FFF0EE;color:#A1221A;padding:8px 10px;font-size:13px;line-height:17px}
+.msg{max-width:88%;border-radius:12px;padding:7px 10px;font-size:13px;line-height:17px}
+.msg.me{align-self:flex-end;background:#21201F;color:#fff}
+.msg.ai{align-self:flex-start;background:#F2F1EE;color:#21201F}
+.chg{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.chg span{font-size:11px;font-weight:700;border-radius:5px;padding:1px 6px;background:#fff}
+.c-blue{color:#1F4FBF}.c-green{color:#275C3A}
+.sel2{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+.sel2 .pill{margin-left:auto}
+</style>
+</helmet>
+<div class="ed">
+<div class="tb">
+<a class="btn ic" href="TEditor.dc.html" aria-label="К проекту"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<span class="tt">Кухня · Дилноза</span><span class="ts">прямая 2800 · 5 + 6 модулей · версия 3</span>
+<span class="grow"></span>
+<div class="sgm" role="group" aria-label="Вид"><button class="{{vS}}" onClick="{{toS}}">Схема</button><button class="{{v3}}" onClick="{{to3}}">3D</button></div>
+<span class="grow"></span>
+<a class="btn" href="TEstimate.dc.html"><span class="cap2" style="font-size:12px">до замера</span><span class="mono">15,4–16,9 млн</span></a>
+<a class="btn pri" href="TSend.dc.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>Клиенту</a>
+</div>
+<div class="panes">
+<div class="pal">
+<div class="ph">Тип модуля</div>
+<sc-for list="{{types}}" as="t" hint-placeholder-count="8"><button class="pt {{t.on}}" onClick="{{t.pick}}"><span class="gl2"><sc-for list="{{t.parts}}" as="p" hint-placeholder-count="3"><i class="{{p.c}}" style="position:absolute;display:block;{{p.s}}"></i></sc-for></span>{{t.t}}<sc-if value="{{t.n}}" hint-placeholder-val="{{ false }}"><span class="nw">новое</span></sc-if></button></sc-for>
+<div style="padding:10px 14px 0" class="cap2">Выберите модуль на схеме, затем тип. Ширина и детали — справа</div>
+</div>
+<div class="cvs">
+<sc-if value="{{isScheme}}" hint-placeholder-val="{{ true }}">
+<div class="dtop"><span>2800 мм</span></div>
+<div class="kit" role="img" aria-label="Схема кухни 2800 мм">
+<div class="row6" style="height:150px;grid-template-columns:{{upCols}}">
+<sc-for list="{{uppers}}" as="m" hint-placeholder-count="5"><button class="m up {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}"><sc-for list="{{m.parts}}" as="p" hint-placeholder-count="3"><i class="{{p.c}}" style="{{p.s}}"></i></sc-for></button></sc-for>
+</div>
+<div class="dimr" style="grid-template-columns:{{upCols}}"><sc-for list="{{uppers}}" as="m" hint-placeholder-count="5"><span>{{m.w}}</span></sc-for></div>
+<div class="ct"></div>
+<div class="row6" style="height:176px;grid-template-columns:{{loCols}}">
+<sc-for list="{{lowers}}" as="m" hint-placeholder-count="6"><button class="m lo {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}"><sc-for list="{{m.parts}}" as="p" hint-placeholder-count="3"><i class="{{p.c}}" style="{{p.s}}"></i></sc-for></button></sc-for>
+</div>
+<div class="dimr" style="grid-template-columns:{{loCols}}"><sc-for list="{{lowers}}" as="m" hint-placeholder-count="6"><span class="{{m.bad}}">{{m.w}}</span></sc-for></div>
+</div>
+</sc-if>
+<sc-if value="{{is3d}}" hint-placeholder-val="{{ false }}">
+<div class="v3d" role="img" aria-label="Кухня в 3D"><svg width="560" height="390" viewBox="0 0 330 230" aria-hidden="true">
+<polygon points="20,70 230,10 310,40 100,100" fill="#F7F7F5" stroke="#21201F" stroke-width="1.6"/>
+<polygon points="20,70 100,100 100,150 20,120" fill="#E4E1D9" stroke="#21201F" stroke-width="1.6"/>
+<polygon points="100,100 310,40 310,90 100,150" fill="#FBFAF7" stroke="#21201F" stroke-width="1.6"/>
+<polygon points="20,150 100,180 310,120 230,96 " fill="#8D8778" stroke="#21201F" stroke-width="1.6"/>
+<polygon points="20,150 100,180 100,224 20,194" fill="#E4E1D9" stroke="#21201F" stroke-width="1.6"/>
+<polygon points="100,180 310,120 310,166 100,224" fill="#F4F2EC" stroke="#21201F" stroke-width="1.6"/>
+<g stroke="#21201F" stroke-width="1.2"><line x1="145" y1="137" x2="145" y2="88"/><line x1="190" y1="124" x2="190" y2="75"/><line x1="235" y1="111" x2="235" y2="62"/><line x1="145" y1="211" x2="145" y2="167"/><line x1="160" y1="207" x2="160" y2="163"/><line x1="205" y1="194" x2="205" y2="150"/><line x1="250" y1="181" x2="250" y2="137"/></g>
+<polygon points="190,124 235,111 235,92 190,105" fill="#2B2A28"/></svg></div>
+<div class="cap2" style="position:absolute;left:16px;top:14px">Вращение — перетаскиванием, тап по модулю — выбрать</div>
+</sc-if>
+<div class="cmd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg><span style="flex:1">Скажите ИИ, что поменять: «рядом с плитой бутылочницу 150»</span><a class="go" href="TKitchen2.dc.html" aria-label="Отправить"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a></div>
+</div>
+<div class="ins">
+<div class="hd2">
+<div class="sgm" style="display:flex"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button class="{{t.on}}" onClick="{{t.pick}}" style="flex:1;justify-content:center;padding:0 4px;font-size:12.5px">{{t.t}}</button></sc-for></div>
+</div>
+<div class="ib2">
+<sc-if value="{{isMod}}" hint-placeholder-val="{{ true }}">
+<div class="sel2">{{selLabel}}<span class="pill b">{{rowName}}</span></div>
+<div><div class="lab2" style="margin-bottom:6px">Ширина</div>
+<div class="wrow {{wCls}}"><button class="btn" onClick="{{wMinus}}">−50</button><span class="wv">{{selW}}&nbsp;<span style="font-size:12px;color:#6E6B66;font-weight:500">мм</span></span><button class="btn" onClick="{{wPlus}}">+50</button></div></div>
+<sc-if value="{{sumBad}}" hint-placeholder-val="{{ false }}"><div class="err2"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>Сумма нижних модулей <b class="mono">{{sum}}</b> мм ≠ стене 2800</span></div></sc-if>
+<div>
+<div class="kv2"><span>Фасад</span><b>Белый матовый</b></div>
+<div class="kv2"><span>Корпус</span><b>ЛДСП белая 16</b></div>
+<div class="kv2"><span>Высота</span><b class="mono">{{selH}}</b></div>
+<div class="kv2"><span>Глубина</span><b class="mono">{{selD}}</b></div>
+</div>
+<a class="btn" href="TMaterials.dc.html" style="align-self:flex-start">Материалы модуля</a>
+</sc-if>
+<sc-if value="{{isTop}}" hint-placeholder-val="{{ false }}">
+<div>
+<div class="kv2"><span>Столешница</span><b>Камень серый, 38 мм</b></div>
+<div class="kv2"><span>Вырез под мойку</span><b class="mono">780 × 480</b></div>
+<div class="kv2"><span>Вырез под варку</span><b class="mono">560 × 490</b></div>
+<div class="kv2"><span>Стеновая панель</span><b>в тон, 600 мм</b></div>
+</div>
+</sc-if>
+<sc-if value="{{isApp}}" hint-placeholder-val="{{ false }}">
+<div>
+<div class="kv2"><span>Духовка 600</span><b>низ 2</b></div>
+<div class="kv2"><span>Посудомойка 450</span><b>низ 4</b></div>
+<div class="kv2"><span>Микроволновка в рамке</span><b>верх 3</b></div>
+<div class="kv2"><span>Вытяжка встраиваемая</span><b>верх 2</b></div>
+</div>
+<div class="cap2">Технику клиент покупает сам, в смету не входит</div>
+</sc-if>
+<sc-if value="{{isChat}}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="msg me">Над варкой поставь складной подъёмник</div>
+<div class="msg ai">Поставил подъёмник в верхний модуль 2, 600 мм. Фасад делится на два, открывается вверх.<div class="chg"><span class="c-blue">верх 2</span><span class="c-green">+1,1 млн</span></div></div>
+<div class="msg me">Слева ящики 1+2</div>
+<div class="msg ai">Готово: 1 узкий ящик сверху и 2 глубоких снизу.<div class="chg"><span class="c-blue">низ 1</span><span class="c-green">+380 000</span></div></div>
+</div>
+<div class="cap2">Каждая правка — новая версия, вернуть можно из истории</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1194,"height":834}}'>
+class Component extends DCLogic {
+constructor(p){ super(p); this.state = { view: 's', tab: 0, sel: 'l0',
+ m: { l0:['dr12',600], l1:['oven',600], l2:['bottle',150], l3:['dw',450], l4:['sink',800], l5:['filler',200],
+      u0:['rows2',600], u1:['lift',600], u2:['mwf',600], u3:['niche',600], u4:['doors',400] } }; }
+renderVals() {
+const st = this.state, M = st.m;
+const P = (c, l, t, w, h) => ({ c, s: `left:${l}%;top:${t}%;width:${w}%;height:${h}%` });
+const parts = (type) => {
+ switch (type) {
+  case 'dr12': return [P('ln',0,22,100,1.5),P('ln',0,61,100,1.5),P('hd',38,9,24,3),P('hd',38,38,24,3),P('hd',38,77,24,3)];
+  case 'oven': return [P('ln',0,22,100,1.5),P('hd',38,8,24,3),P('mw',12,34,76,46),P('hd',30,88,40,3)];
+  case 'bottle': return [P('bt',22,30,16,48),P('bt',44,22,16,56),P('bt',66,34,16,44),P('hd',30,8,40,3)];
+  case 'dw': return [P('hd',30,8,40,3)];
+  case 'sink': return [P('ln',49.5,0,1,100),P('hd',40,40,3,18),P('hd',57,40,3,18)];
+  case 'filler': return [P('ln',30,0,1,100),P('ln',60,0,1,100)];
+  case 'doors': return [P('ln',49.5,0,1,100),P('hd',40,72,3,16),P('hd',57,72,3,16)];
+  case 'rows2': return [P('ln',49.5,0,1,100),P('ln',0,49,100,1.5),P('hd',40,30,3,12),P('hd',57,30,3,12),P('hd',40,78,3,12),P('hd',57,78,3,12)];
+  case 'lift': return [P('ln',0,49,100,1.5),P('hd',38,40,24,3),P('hd',38,88,24,3),P('dkk',47,12,6,16)];
+  case 'mwf': return [P('ln',0,44,100,1.5),P('hd',38,34,24,3),P('op',8,52,84,42),P('mw',16,57,58,32),P('gl',78,62,8,8)];
+  case 'niche': return [P('ln',0,66,100,1.5),P('hd',38,56,24,3),P('op',0,68,100,32)];
+  default: return [];
+ }
+};
+const NAMES = { dr12:'Ящики 1+2', oven:'Духовка + ящик', bottle:'Бутылочница', dw:'Посудомойка', sink:'Мойка, 2 двери', filler:'Добор', doors:'Двери', rows2:'Два ряда дверей', lift:'Подъёмник складной', mwf:'Рамка под СВЧ', niche:'Ниша под фасадом' };
+const NEW = { dr12:1, bottle:1, rows2:1, lift:1, mwf:1, niche:1 };
+const LO = ['l0','l1','l2','l3','l4','l5'], UP = ['u0','u1','u2','u3','u4'];
+const mk = (ids) => ids.map((id, i) => ({ label: NAMES[M[id][0]], on: id === st.sel ? 'on' : '', parts: parts(M[id][0]), pick: () => this.setState({ sel: id, tab: 0 }) }));
+const cols = (ids) => ids.map(id => M[id][1] + 'fr').join(' ');
+const isLo = st.sel.startsWith('l');
+const opts = isLo ? ['doors','dr12','bottle','oven','dw','sink','niche','filler'] : ['doors','rows2','lift','mwf','niche'];
+const cur = M[st.sel];
+const sum = LO.reduce((a, id) => a + M[id][1], 0);
+const setM = (patch) => this.setState({ m: { ...M, [st.sel]: patch } });
+const tabs = ['Модуль', 'Столешница', 'Техника', 'Чат'];
+const idx = (isLo ? 'Низ ' + (LO.indexOf(st.sel) + 1) : 'Верх ' + (UP.indexOf(st.sel) + 1));
+const H = isLo ? '850 мм' : '720 мм', Dp = isLo ? '560 мм' : '320 мм';
+const tparts = (o) => parts(o);
+return {
+ isScheme: st.view === 's', is3d: st.view === '3d', vS: st.view === 's' ? 'on' : '', v3: st.view === '3d' ? 'on' : '',
+ toS: () => this.setState({ view: 's' }), to3: () => this.setState({ view: '3d' }),
+ uppers: mk(UP).map((x, i) => ({ ...x, w: M[UP[i]][1] })), lowers: mk(LO).map((x, i) => ({ ...x, w: M[LO[i]][1], bad: sum !== 2800 && LO[i] === st.sel ? 'bad' : '' })),
+ upCols: cols(UP), loCols: cols(LO),
+ tabs: tabs.map((t, i) => ({ t, on: i === st.tab ? 'on' : '', pick: () => this.setState({ tab: i }) })),
+ isMod: st.tab === 0, isTop: st.tab === 1, isApp: st.tab === 2, isChat: st.tab === 3,
+ rowName: isLo ? 'нижний ряд' : 'верхний ряд',
+ types: opts.map(o => ({ t: NAMES[o], n: !!NEW[o], parts: tparts(o), on: cur[0] === o ? 'on' : '', pick: () => setM([o, o === 'bottle' ? 150 : (cur[0] === 'bottle' ? 450 : cur[1])]) })),
+ selLabel: idx + ' · ' + NAMES[cur[0]], selW: cur[1], selH: H, selD: Dp,
+ wCls: sum !== 2800 && isLo ? 'err' : '', sum, sumBad: isLo && sum !== 2800,
+ wMinus: () => setM([cur[0], Math.max(150, cur[1] - 50)]), wPlus: () => setM([cur[0], Math.min(1200, cur[1] + 50)])
+};
+}
+}
+</script>
+</body>
+</html>

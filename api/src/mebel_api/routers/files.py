@@ -24,6 +24,21 @@ def list_files(project_id: uuid.UUID, current: CurrentDep, db: DbDep, settings: 
     return fs.list_files(db, p, current.workshop, current.user.language, settings)
 
 
+@router.get("/projects/{project_id}/drawing-set", summary="Оглавление «Комплекта чертежей»: листы и разделы (SCR-57)")
+def drawing_set(project_id: uuid.UUID, current: CurrentDep, db: DbDep) -> dict:
+    """Листы PDF `production_set_pdf` по порядку штампа: `n` — номер листа, `title` — наименование из штампа,
+    `section` — раздел (cover · general · assembly · parts · spec · cutting), `parts` — номера деталей на листах
+    чертежей деталей. `sections` — разделы подряд (`first` — первый лист, `count`). Видно и до оплаты файлов;
+    `available` / `locked` — можно ли скачать сам PDF. Оглавление кэшируется по версии и правилам цеха."""
+    p = get_project(db, current, project_id)
+    version = fs.file_version(db, p)
+    if version is None:
+        raise ApiError(409, "model_missing", "Модель ещё не построена")
+    if not version.ok:
+        raise ApiError(409, "model_invalid", "В модели есть ошибки — исправьте их, чтобы получить файлы")
+    return fs.drawing_set_index(db, p, current.workshop, version, current.user.language)
+
+
 @router.get("/projects/{project_id}/files/{kind}", summary="Скачать файл пакета",
             responses={200: {"content": {"application/octet-stream": {}}}})
 def download(project_id: uuid.UUID, kind: str, current: CurrentDep, db: DbDep, settings: SettingsDep) -> Response:

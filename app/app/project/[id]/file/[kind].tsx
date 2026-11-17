@@ -29,7 +29,8 @@ const TABS: { key: Tab; re: RegExp }[] = [
 const tabOf = (kind: string): Tab | null => TABS.find((x) => x.re.test(kind))?.key ?? null;
 
 export default function FileViewer() {
-  const { id, kind, title } = useLocalSearchParams<{ id: string; kind: string; title?: string }>();
+  // part — номер детали: открыть чертёж сразу на ней (лист «Комплекта чертежей», SCR-57)
+  const { id, kind, title, part: partNo } = useLocalSearchParams<{ id: string; kind: string; title?: string; part?: string }>();
   const { t, lang } = useT();
   const file = useResource(() => api.downloadFile(id, kind), [id, kind]);
   const files = useResource(() => api.listFiles(id), [id]);
@@ -63,6 +64,10 @@ export default function FileViewer() {
 
   const viewer = model.data?.version.viewer;
   const parts = viewer?.parts ?? [];
+  useEffect(() => {
+    const i = partNo ? parts.findIndex((p) => String(p.number) === partNo) : -1;
+    if (i >= 0) setPartIdx(i);
+  }, [partNo, parts]);
   const pi = Math.min(partIdx, Math.max(0, parts.length - 1));
   const part = parts[pi];
   const go = (d: number) => { setPartIdx(Math.max(0, Math.min(parts.length - 1, pi + d))); setZoom(1); };

@@ -82,7 +82,7 @@ export default function Send() {
         <ButtonRow>
           <Button v="secondary" icon="link-outline" title={t('send_copy')} onPress={copy} disabled={offline || busy} style={{ flex: 1 }} textStyle={{ fontSize: 16 }} />
           <Button v="secondary" icon="document-outline" title={t('send_kp')} style={{ flex: 1 }} textStyle={{ fontSize: 16 }}
-            onPress={() => router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: 'offer_pdf', title: t('send_kp') } })} />
+            onPress={() => router.push({ pathname: '/project/[id]/file/[kind]', params: { id, kind: 'kp_pdf', title: t('send_kp') } })} />
         </ButtonRow>
       </>
     } footerStyle={{ paddingTop: 6 }}>

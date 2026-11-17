@@ -13,7 +13,7 @@ import { formatDayMonth } from '../src/lib/format';
 import { routeForPush } from '../src/lib/pushRoute';
 import { useSession } from '../src/state/session';
 import { ErrorState } from '../src/ui/ErrorState';
-import { Card, EmptyState, Hairline, IconButton, Loading, Press, Screen, T, type IconName } from '../src/ui/kit';
+import { Card, EmptyState, Hairline, IconButton, ListItem, Loading, Press, Screen, T, type IconName } from '../src/ui/kit';
 import { palette, tones, type Tone } from '../src/ui/theme';
 
 /** Вид события → иконка и цвет кружка. */
@@ -47,6 +47,8 @@ export default function Notifications() {
   const { canOrder } = useSession();
   const { t, lang } = useT();
   const { data, setData, error, loading, refreshing, reload, refresh } = useResource(() => api.listNotifications(), []);
+  // SCR-58: вход в «Просьбы клиентов» (по всему цеху) — строкой над событиями, когда просьбы есть
+  const reqs = useResource(() => api.listWorkshopClientRequests({ status: 'new' }).catch(() => null), []);
   if (loading && !data) return <Loading />;
   if (!data) return <ErrorState error={error} onRetry={reload} />;
 
@@ -74,6 +76,13 @@ export default function Notifications() {
         title: t('nt_title'),
         headerRight: () => <IconButton icon="settings-outline" label={t('nts_open')} onPress={() => router.push('/settings/notifications')} />,
       }} />
+      {reqs.data && (reqs.data.new_count > 0 || reqs.data.total > 0) ? (
+        <Card padded={false}>
+          <ListItem icon="chatbox-ellipses-outline" title={t('crq_title')} onPress={() => router.push('/client-requests')}
+            subtitle={reqs.data.new_count ? t('crq_new_n', { n: reqs.data.new_count }) : t('crq_hint')}
+            right={reqs.data.new_count ? <View style={s.cnt}><T style={s.cntT} num>{reqs.data.new_count}</T></View> : undefined} chevron />
+        </Card>
+      ) : null}
       {!data.length ? <EmptyState icon="notifications-outline" title={t('nt_empty')} text={t('nt_empty_text')} /> : null}
       {groups.map((g, gi) => (
         <View key={g.title + gi} style={{ gap: 8 }}>
@@ -112,4 +121,6 @@ const s = StyleSheet.create({
   tm: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 21 },
   tmText: { fontSize: 13, lineHeight: 21, fontWeight: '500', color: palette.faint },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: palette.green },
+  cnt: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: palette.green, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  cntT: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.white },
 });

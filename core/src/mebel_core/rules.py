@@ -5,7 +5,8 @@
 Помеченные «уточнить» — допущения, их нужно проверить с конструктором.
 """
 
-from typing import Literal
+from functools import lru_cache
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -51,6 +52,9 @@ class RuleSet(BaseModel):
     confirmat_face_depth: int = 0  # 0 — сквозное
     confirmat_edge_diameter: int = mm(5)
     confirmat_edge_depth: int = mm(50)  # уточнить с цехом: для 7×50 в ЛДСП 16 часто сверлят 35–45 мм
+    # Крепёж корпуса (настройки цеха SCR-56): confirmat — конфирматы 7×50; dowel — все соединения
+    # «торец в пласть» на шкантах Ø8 с клеем (цех собирает в ваймах), конфирматов нет
+    carcass_fastener: Literal["confirmat", "dowel"] = "confirmat"
     # Шкант вместо конфирмата, если пласть со стороны головки уже закрыта другой деталью
     # (полки на одной высоте по обе стороны перегородки: вторая — на шкантах с клеем)
     dowel_diameter: int = mm(8)
@@ -76,6 +80,7 @@ class RuleSet(BaseModel):
     hinge_plate_spacing: int = mm(32)
     hinge_plate_hole_diameter: int = mm(5)
     hinge_plate_hole_depth: int = mm(12)
+    hinge_brand: str = ""  # марка петель цеха (HINGE_BRANDS) — в названии петли в смете и ведомости
 
     # Направляющие ящиков: отверстия на боковине корпуса (или проставке) — от переднего торца направляющей.
     # По умолчанию — сетка 32 мм от 37 мм (перед, середина, зад); заменить таблицей производителя.
@@ -242,3 +247,60 @@ class RuleSet(BaseModel):
 
 
 DEFAULT_RULES = RuleSet()
+
+
+# ---------- Настройки производства цеха (SCR-56) ----------
+
+# Марка петель → присадка. Допущения (сверить с каталогами и цехом):
+# - Blum (CLIP top + крестообразная планка): чашка Ø35 глубиной 13, центр 22,5 от края двери
+#   (расстояние до края C = 5), планка — 2 отверстия на линии 37 мм через 32 мм вдоль кромки;
+# - Hettich (Sensys + крестообразная планка): та же сетка 37/32, чашка глубиной 13,5;
+# - GTV (эконом, прямая планка на 2 самореза): отверстия на 37 и 69 мм от переднего края на высоте
+#   чашки (across), чашка глубиной 12.
+# Крепёж чашки (саморезы / дюбели петли) не сверлится ни у одной марки — как раньше.
+HINGE_BRANDS: dict[str, dict[str, Any]] = {
+    "blum": {"name": "Blum", "hinge_plate_pattern": "along", "hinge_plate_spacing": mm(32),
+             "hinge_cup_from_edge": mm(22.5), "hinge_cup_depth": mm(13)},
+    "hettich": {"name": "Hettich", "hinge_plate_pattern": "along", "hinge_plate_spacing": mm(32),
+                "hinge_cup_from_edge": mm(22.5), "hinge_cup_depth": mm(13.5)},
+    "gtv": {"name": "GTV", "hinge_plate_pattern": "across", "hinge_plate_spacing": mm(32),
+            "hinge_cup_from_edge": mm(22.5), "hinge_cup_depth": mm(12)},
+}
+CONFIRMAT_DEPTHS = (35, 40, 45, 50)  # мм, в торец детали
+# Без сохранённых настроек — как DEFAULT_RULES (Blum совпадает с правилами по умолчанию)
+PRODUCTION_DEFAULTS: dict[str, Any] = {"fastener": "confirmat", "confirmat_depth": 50, "hinge_brand": "blum",
+                                       "shelf_pin_grid": False}
+
+
+def normalize_production(settings: dict[str, Any] | None) -> dict[str, Any]:
+    """Настройки цеха поверх значений по умолчанию; неизвестные значения — ValueError."""
+    out = {**PRODUCTION_DEFAULTS, **{k: v for k, v in (settings or {}).items() if k in PRODUCTION_DEFAULTS}}
+    if out["fastener"] not in ("confirmat", "dowel"):
+        raise ValueError(f"Крепёж корпуса: confirmat или dowel, не {out['fastener']!r}")
+    if out["confirmat_depth"] not in CONFIRMAT_DEPTHS:
+        raise ValueError(f"Глубина конфирмата: {', '.join(map(str, CONFIRMAT_DEPTHS))} мм")
+    if out["hinge_brand"] not in HINGE_BRANDS:
+        raise ValueError(f"Марка петель: {', '.join(HINGE_BRANDS)}")
+    out["shelf_pin_grid"] = bool(out["shelf_pin_grid"])
+    return out
+
+
+@lru_cache(maxsize=64)
+def _production_rules(fastener: str, depth: int, brand: str, grid: bool) -> RuleSet:
+    b = {k: v for k, v in HINGE_BRANDS[brand].items() if k != "name"}
+    tag = f"+{'c' + str(depth) if fastener == 'confirmat' else 'd'}.{brand}.{'s32' if grid else 'single'}"
+    return DEFAULT_RULES.model_copy(update={
+        **b, "hinge_brand": HINGE_BRANDS[brand]["name"], "carcass_fastener": fastener,
+        "confirmat_edge_depth": mm(depth), "shelf_pin_rows": "system32" if grid else "single",
+        "version": DEFAULT_RULES.version + tag,
+    })
+
+
+def production_rules(settings: dict[str, Any] | None) -> RuleSet:
+    """Правила сборки по настройкам производства цеха: крепёж, глубина конфирмата, марка петель,
+    сетка полкодержателей. None / пусто (цех не сохранял) — DEFAULT_RULES (тот же объект); сохранённые —
+    с маркой петель в названии и меткой в version («2026.11-draft+c45.blum.single»)."""
+    if not settings:
+        return DEFAULT_RULES
+    s = normalize_production(settings)
+    return _production_rules(s["fastener"], s["confirmat_depth"], s["hinge_brand"], s["shelf_pin_grid"])

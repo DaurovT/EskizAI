@@ -142,7 +142,18 @@ export const isMasterEstimate = (e: ProjectEstimate | null | undefined): e is Ma
 // --- projects ---
 export interface ClientBrief { id: string; name: string; phone: string | null }
 /** Просьба клиента «Хочу изменить…» со страницы ссылки. */
-export interface ClientRequestOut { id: string; text: string; created_at: string; link_id: string }
+/** Просьба клиента «Хочу изменить…» (SCR-58). status/done_at и контекст проекта — у новых серверов; старые отдают только текст. */
+export type ClientRequestStatus = 'new' | 'done';
+export interface ClientRequestOut {
+  id: string; text: string; created_at: string; link_id: string;
+  status?: ClientRequestStatus; done_at?: string | null;
+  project_id?: string | null; project_title?: string | null; client_name?: string | null; client_phone?: string | null;
+  /** Версия модели, которую клиент смотрел по ссылке; views — сколько раз открывал; ar — примерял в AR. */
+  version_number?: number | null; views?: number; ar?: boolean;
+}
+/** GET /client-requests: просьбы по всему цеху; new_count — новых по цеху (счётчики), total — после фильтра. */
+export interface ClientRequestPage { items: ClientRequestOut[]; new_count: number; total: number }
+export interface ClientRequestQuery { status?: ClientRequestStatus | 'all'; project_id?: string }
 export interface PhotoOut { id: string; kind: 'source' | 'measurement' | 'result'; url: string; content_type: string; size_bytes: number; created_at: string }
 export type ActionCode =
   | 'sketch' | 'share' | 'measure' | 'contract' | 'order' | 'deliver' | 'deliver_self_bought' | 'cancel' | 'unarchive';
@@ -287,7 +298,13 @@ export interface TaskAccepted { task_id: string }
 
 // --- AI (контракт параллельного агента) ---
 export interface DesignElement { name: string; kind: string; count: number; sure: boolean; note?: string | null }
-export interface DesignQuestion { id: string; text: string; options: string[]; default?: string | null; affects?: string[] | string | null }
+export interface DesignQuestion {
+  id: string; text: string; options: string[]; default?: string | null; affects?: string[] | string | null;
+  /** SCR-07: proposal — предложение замены (✦, «Заменить / Оставить»); нет — обычный вопрос (или по id alt_…, см. lib/clarify). */
+  kind?: 'question' | 'proposal' | null;
+  /** Плашки предложения: разница цены и срока («−640 000 сум», «−7 дней»). */
+  deltas?: string[] | null;
+}
 /** Предмет на фото, когда их несколько: рамка в долях ширины/высоты (0–1). */
 export interface DesignObject {
   label: string; photo: number; box: [number, number, number, number]; chosen: boolean;
@@ -342,10 +359,14 @@ export interface AiBudgetOut {
 }
 
 // --- files ---
-export type FileKind = string; // offer_pdf | spec_pdf | cut_pdf | parts_csv | dxf | hardware_xlsx | estimate_xlsx | glb …
+export type FileKind = string; // kp_pdf | spec_pdf | cut_pdf | parts_csv | dxf | hardware_xlsx | estimate_xlsx | glb …
 export interface FileItem {
   kind: FileKind; name?: string; title?: string; format?: string; size_bytes?: number | null;
   available: boolean; reason?: string | null; free?: boolean;
+  /** Группа на сервере: client | purchase | production | assembly | model3d. */
+  group?: string;
+  /** Листов в PDF (комплект чертежей, карты раскроя) — когда сервер уже строил оглавление; иначе null. */
+  sheets?: number | null;
   /** Имя файла для «Поделиться»: «Шкаф_Азиза_спецификация_v3.pdf». */
   file_name?: string | null; content_type?: string;
 }
@@ -358,6 +379,28 @@ export interface FilesOut {
   /** null — файлы уже открыты. */
   purchase?: FilesPurchase | null;
   files: FileItem[];
+}
+
+// --- производство цеха (SCR-56) и комплект чертежей (SCR-57) ---
+export type Fastener = 'confirmat' | 'dowel';
+export type HingeBrand = 'blum' | 'hettich' | 'gtv';
+export type ConfirmatDepth = 35 | 40 | 45 | 50;
+/** Как марка петель сверлится: планка along — 2 отверстия вдоль кромки двери, across — 37 и 37+spacing от края. */
+export interface HingeBrandInfo {
+  id: HingeBrand; name: string; plate_pattern: 'along' | 'across'; plate_spacing_mm: number; plate_line_mm: number;
+  cup_diameter_mm: number; cup_depth_mm: number; cup_from_edge_mm: number;
+}
+export interface ProductionSettings { fastener: Fastener; confirmat_depth: ConfirmatDepth; hinge_brand: HingeBrand; shelf_pin_grid: boolean }
+/** GET /workshops/me/production (владелец). saved=false — цех ещё не сохранял. */
+export interface ProductionOut extends ProductionSettings { saved: boolean; hinge_brands: HingeBrandInfo[] }
+export type DrawingSection = 'cover' | 'general' | 'assembly' | 'parts' | 'spec' | 'cutting' | 'other';
+export interface DrawingSheet { n: number; title: string; section: DrawingSection; parts: number[] }
+/** GET /projects/{id}/drawing-set: оглавление «Комплекта чертежей» (видно и до оплаты). */
+export interface DrawingSetOut {
+  version_id: string; version_number: number; frozen: boolean; kind: FileKind; file_name: string;
+  available: boolean; locked: boolean; reason: string | null; pages: number;
+  sections: { key: DrawingSection; first: number; count: number }[];
+  sheets: DrawingSheet[];
 }
 
 // --- orders (SCR-14/15/16/31) ---

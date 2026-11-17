@@ -1,24 +1,25 @@
 /**
- * SCR-07 Уточнения до эскиза (Clarify.dc.html): не больше 3 вопросов, ответы кнопками в ряд (.op), «Не знаю» = значение
- * по умолчанию с пометкой «оценка». Вопрос о предмете (несколько на фото) — рамки на фото.
- * Тап по ответу только выбирает его (можно передумать); «Собрать модель» отправляет все ответы разом, неотвеченное —
- * «не знаю» (по умолчанию, «оценка»). Раунды: ИИ пересчитал и спросил ещё — новые вопросы здесь же, отвеченные свёрнуты
- * сверху и не спрашиваются снова; вопросов больше нет — в редактор.
+ * SCR-07 Уточнения до эскиза (Clarify.dc.html): вопросы ИИ (?), пояснения (i) и предложения замены (✦, плашки цены и
+ * срока) одним списком. Варианты — сразу в строке (.an), «Не знаю» = значение по умолчанию с пометкой «оценка»;
+ * выбранный ответ сворачивается в «✓ ответ · изменить». Вопрос о предмете (несколько на фото) — рамки на фото.
+ * «Собрать модель» отправляет все ответы разом, неотвеченное — «не знаю». Раунды: ИИ пересчитал и спросил ещё —
+ * новые вопросы здесь же, отвеченные — сверху с ✓ и не спрашиваются снова; вопросов больше нет — в редактор.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { api } from '../../../src/api';
 import type { DesignOut, DesignQuestion } from '../../../src/api/types';
 import { useAiTask } from '../../../src/hooks/useAiTask';
 import { useT } from '../../../src/i18n';
+import { clarifyRows } from '../../../src/lib/clarify';
 import { applyDesign } from '../../../src/services/design';
 import { showError } from '../../../src/ui/dialogs';
 import { updateMeta, useMeta } from '../../../src/state/projectMeta';
 import { ErrorState } from '../../../src/ui/ErrorState';
 import { PhotoBoxes } from '../../../src/ui/PhotoBoxes';
-import { Button, Card, Loading, Press, Screen, T } from '../../../src/ui/kit';
+import { QLegend, QuestionItem } from '../../../src/ui/QuestionItem';
+import { Button, Card, Loading, Screen, T } from '../../../src/ui/kit';
 import { StackHeader14 } from '../../../src/ui/navigation';
 import { palette } from '../../../src/ui/theme';
 
@@ -28,7 +29,9 @@ const DONT_KNOW = 'не знаю';
 const SHOT: DesignQuestion[] = [
   { id: 'q_round', text: 'Правый торец скруглён. На всю высоту или только сверху?', options: ['На всю высоту', 'Только сверху'], default: 'На всю высоту' },
   { id: 'q_legs', text: 'Ножки металлические. Какая высота?', options: ['100 мм', '150 мм', '200 мм'], default: '150 мм' },
+  { id: 'alt_riffle', kind: 'proposal', text: 'Вместо фрезеровки МДФ — готовый фасад «Риффл» из каталога EMAN по вашим размерам.', options: ['Заменить', 'Оставить как на фото'], default: 'Оставить как на фото', deltas: ['−640 000 сум', '−7 дней'] },
 ];
+const SHOT_INFO = ['Петли подобрал с доводчиком: по 3 на каждую дверь высотой 2300.'];
 
 export default function Questions() {
   const { id, shot } = useLocalSearchParams<{ id: string; shot?: string }>();
@@ -40,19 +43,19 @@ export default function Questions() {
   // отвеченное в прошлых раундах не спрашиваем снова
   const qs = (meta.design?.status === 'questions' || shot ? meta.design?.questions ?? [] : []).filter((q) => !done.has(q.id)).slice(0, 6);
   const answers = meta.answers;
-  // тап — только выбор (повторный тап по выбранному снимает выбор); отправка — одной кнопкой
-  const setAnswer = (qid: string, v: string) => updateMeta(id, (m) => {
-    const next = { ...m.answers };
-    if (next[qid] === v) delete next[qid]; else next[qid] = v;
-    return { answers: next };
-  });
+  // выбранный ответ свёрнут в «✓ ответ · изменить»; «изменить» снова показывает варианты
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const setAnswer = (qid: string, v: string) => {
+    updateMeta(id, (m) => ({ answers: { ...m.answers, [qid]: v } }));
+    setOpen((o) => ({ ...o, [qid]: false }));
+  };
   const objects = meta.design?.objects ?? [];
 
   useEffect(() => {
     if (__DEV__ && shot) {
       updateMeta(id, (m) => ({
-        design: { ...(m.design ?? ({} as DesignOut)), status: 'questions', questions: SHOT, objects: [], answers: {} } as DesignOut,
-        answers: (shot === 'picked' ? { q_round: 'На всю высоту', q_legs: '150 мм' } : {}) as Record<string, string>,
+        design: { ...(m.design ?? ({} as DesignOut)), status: 'questions', questions: SHOT, objects: [], answers: {}, unclear: SHOT_INFO, differences: [] } as DesignOut,
+        answers: (shot === 'picked' ? { q_round: 'На всю высоту', q_legs: '150 мм' } : shot === 'one' ? { q_round: 'На всю высоту' } : {}) as Record<string, string>,
         answered: shot === 'round2' ? [{ id: 'q_ends', text: 'Торцы шкафа открытые?', value: 'Нет, в нише' }, { id: 'q_width', text: 'Какая ширина ниши?', value: '2000 мм' }] : [],
       }));
     }
@@ -89,7 +92,10 @@ export default function Questions() {
 
   const picked = qs.filter((q) => answers[q.id]).length;
   const total = answered.length + qs.length;
-  const pill = qs.length ? t('q_of', { i: Math.min(total, answered.length + picked + 1), n: total }) : '';
+  const pill = qs.length ? t('clr_answered_of', { i: answered.length + picked, n: total }) : '';
+  const info = [...(meta.design?.unclear ?? []), ...(meta.design?.differences ?? [])];
+  const rows = clarifyRows(qs.filter((q) => q.id !== 'object' || !objects.length), info);
+  const shown = (q: DesignQuestion, v: string) => (v === DONT_KNOW ? `${t('q_dont_know_short')}${q.default ? ` → ${q.default}` : ''}` : v);
   const header = (
     <Stack.Screen options={{
       title: t('q_title2'), header: (p) => <StackHeader14 {...p} />,
@@ -114,47 +120,40 @@ export default function Questions() {
           <View style={s.carc}>
             <Wood /><Wood /><View style={[s.wood, { backgroundColor: '#F2B66D', borderTopRightRadius: 28 }]} />
           </View>
-          <View style={[s.pill, { backgroundColor: palette.white }]}><T style={s.pillText}>{t('q_preview')}</T></View>
+          <View style={[s.pill, { backgroundColor: palette.white, height: 30, borderRadius: 15 }]}><T style={s.pillText}>{t('q_preview')}</T></View>
         </View>
       )}
-      {answered.length ? (
-        <Card style={{ paddingVertical: 12, paddingHorizontal: 16, gap: 6 }} accessibilityLabel={t('q_answered', { n: answered.length })}>
-          <T v="cap" style={{ fontSize: 13 }}>{t('q_answered', { n: answered.length })}</T>
-          {answered.map((a) => (
-            <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="checkmark-circle" size={18} color={palette.green} />
-              <T style={{ flex: 1, fontSize: 14, lineHeight: 19, color: palette.muted }} numberOfLines={1}>{a.text}</T>
-              <T style={{ fontSize: 14, lineHeight: 19, fontWeight: '600', maxWidth: '45%' }} numberOfLines={1}>{a.value}</T>
-            </View>
+      {answered.length || rows.length || objectQ ? (
+        <Card padded={false} style={{ borderRadius: 24 }}>
+          {answered.map((a, i) => (
+            <QuestionItem key={`a${a.id}`} kind="ok" text={a.text} done picked={a.value} first={i === 0} />
           ))}
+          {objectQ && objects.length ? (
+            <QuestionItem key="object" kind={answers.object ? 'ok' : 'q'} text={objectQ.text} done={!!answers.object} first={!answered.length}
+              picked={answers.object && !open.object ? answers.object : null} editLabel={t('clr_change')} onEdit={() => setOpen((o) => ({ ...o, object: true }))}
+              options={objectQ.options.map((o) => ({ label: o, on: answers.object === o, onPress: () => setAnswer('object', o) }))} />
+          ) : null}
+          {rows.map((r, i) => {
+            const first = !answered.length && !(objectQ && objects.length) && i === 0;
+            if (r.type === 'i') return <QuestionItem key={`i${i}`} kind="i" text={r.text} done first={first} />;
+            const q = r.q;
+            const v = answers[q.id];
+            const isOpen = !v || open[q.id];
+            const opts = [
+              ...q.options.map((o) => ({ label: o, on: v === o, onPress: () => setAnswer(q.id, o) })),
+              ...(r.type === 'q' ? [{ label: t('q_dont_know_short'), ghost: true, on: false, onPress: () => setAnswer(q.id, DONT_KNOW) }] : []),
+            ];
+            return (
+              <QuestionItem key={q.id} kind={v && !isOpen ? 'ok' : r.type} text={q.text} done={!!v && !isOpen} first={first} deltas={q.deltas}
+                picked={v && !isOpen ? shown(q, v) : null} editLabel={t('clr_change')} onEdit={() => setOpen((o) => ({ ...o, [q.id]: true }))} options={opts} />
+            );
+          })}
         </Card>
       ) : null}
-      {answered.length && qs.length ? <T v="cap" style={{ paddingHorizontal: 4, marginTop: 2 }}>{t('q_next_round')}</T> : null}
-      {qs.length ? <Card style={{ paddingVertical: 18, paddingHorizontal: 16, gap: 18 }}>
-        {qs.map((q) => {
-          const opts = q.options.length < 3 ? [...q.options, DONT_KNOW] : q.options;
-          const rows: string[][] = [];
-          for (let i = 0; i < opts.length; i += 3) rows.push(opts.slice(i, i + 3));
-          return (
-            <View key={q.id} style={{ gap: 10 }}>
-              <T style={s.qt}>{q.text}</T>
-              {rows.map((r, ri) => (
-                <View key={ri} style={{ flexDirection: 'row', gap: 6 }}>
-                  {r.map((o) => {
-                    const on = answers[q.id] === o;
-                    return (
-                      <Press key={o} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={o}
-                        onPress={() => setAnswer(q.id, o)} style={[s.op, on && { backgroundColor: palette.ink }]}>
-                        <T style={[s.opText, on && { color: palette.white }]} numberOfLines={1}>{o === DONT_KNOW ? t('q_dont_know_short') : o}</T>
-                      </Press>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-          );
-        })}
-      </Card> : null}
+      {answered.length && qs.length ? <T v="cap" style={{ paddingHorizontal: 6 }}>{t('q_next_round')}</T> : null}
+      {rows.length ? (
+        <QLegend items={[{ kind: 'q', label: t('clr_leg_q') }, { kind: 's', label: t('clr_leg_s') }, { kind: 'i', label: t('clr_leg_i') }]} />
+      ) : null}
     </Screen>
   );
 }
@@ -171,11 +170,7 @@ function Wood() {
 const s = StyleSheet.create({
   pill: { height: 32, borderRadius: 16, paddingHorizontal: 12, backgroundColor: palette.white, justifyContent: 'center' },
   pillText: { fontSize: 14, lineHeight: 18, fontWeight: '600', color: palette.muted2 },
-  prev: { height: 84, borderRadius: 28, backgroundColor: palette.wood, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 },
+  prev: { height: 84, borderRadius: 24, backgroundColor: palette.wood, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
   carc: { width: 88, height: 64, backgroundColor: palette.ink, padding: 2, gap: 2, flexDirection: 'row', borderTopRightRadius: 32 },
   wood: { flex: 1, backgroundColor: '#E1CDA8' },
-  qt: { fontSize: 17, lineHeight: 23, fontWeight: '600', paddingHorizontal: 4 },
-  // как .op flex:1 + white-space:nowrap: ширина по тексту, свободное место поровну
-  op: { flexGrow: 1, flexShrink: 1, flexBasis: 'auto', minHeight: 48, borderRadius: 14, backgroundColor: palette.ground, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  opText: { fontSize: 14, lineHeight: 19, fontWeight: '500', textAlign: 'center' },
 });

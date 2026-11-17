@@ -27,6 +27,9 @@ export interface Api {
   updateWorkshop(body: T.WorkshopUpdateIn): Promise<T.WorkshopOut>;
   getPricing(): Promise<T.PricingOut>;
   updatePricing(body: Partial<T.PricingOut>): Promise<T.PricingOut>;
+  /** Производство цеха (SCR-56, владелец): крепёж, глубина конфирмата, петли, сетка 32. */
+  getProduction(): Promise<T.ProductionOut>;
+  updateProduction(body: Partial<T.ProductionSettings>): Promise<T.ProductionOut>;
   listEmployees(): Promise<T.EmployeeOut[]>;
   /** Теперь создаёт приглашение (как inviteEmployee). */
   addEmployee(phone: string, name: string): Promise<T.InviteOut>;
@@ -103,6 +106,10 @@ export interface Api {
   createShareLink(projectId: string, body: T.ShareLinkIn): Promise<T.ShareLinkOut>;
   listShareLinks(projectId: string): Promise<T.ShareLinkOut[]>;
   listClientRequests(projectId: string): Promise<T.ClientRequestOut[]>;
+  /** SCR-58: просьбы клиентов по всему цеху (новые / сделанные / все), фильтр по проекту. */
+  listWorkshopClientRequests(q?: T.ClientRequestQuery): Promise<T.ClientRequestPage>;
+  /** «Сделано» (done) или вернуть в новые (new). */
+  setClientRequestStatus(requestId: string, status: T.ClientRequestStatus): Promise<T.ClientRequestOut>;
   /** AR мастера (SCR-47): текущая версия, размещение и подписанные ссылки GLB/USDZ; нет модели — 409 no_model. */
   getProjectAr(projectId: string): Promise<T.ProjectArOut>;
   // задачи и ИИ
@@ -125,6 +132,8 @@ export interface Api {
   /** Весь ответ списка файлов: доступ и цена «Скачать без заказа». */
   filesInfo(projectId: string): Promise<T.FilesOut>;
   downloadFile(projectId: string, kind: T.FileKind): Promise<DownloadedFile>;
+  /** Оглавление «Комплекта чертежей» (SCR-57): листы, разделы, доступ к PDF. */
+  getDrawingSet(projectId: string): Promise<T.DrawingSetOut>;
   // заказы (SCR-14/15/16/31)
   orderPreview(projectId: string, distanceKm?: number | null): Promise<T.OrderPreview>;
   createOrder(projectId: string, distanceKm?: number | null): Promise<T.OrderOut>;

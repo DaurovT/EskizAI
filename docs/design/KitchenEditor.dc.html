@@ -135,134 +135,221 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/* Liquid Glass */
+.ib:not([style*="background"]):not(.flat){background:none!important;isolation:isolate}
+.ib:not([style*="background"]):not(.flat)::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.ib:not([style*="background"]):not(.flat):active::before{transform:scale(1.08,.93)}
+.nav{position:absolute!important;left:12px;right:12px;bottom:26px;height:64px!important;border-radius:32px!important;background:none!important;align-items:center!important;justify-content:space-between!important;padding:0 8px!important;z-index:5;isolation:isolate;touch-action:none;user-select:none;-webkit-user-select:none}
+.nav::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.nav.drag::after{transform:scale(1.025,.96)}
+.nv{width:62px;gap:2px;font-size:11px;line-height:13px;font-weight:600;color:#55524D;-webkit-user-drag:none}
+.nv .ni{width:56px;height:32px}
+.nv.on{color:#275C3A}.nv.on .ni{background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 3px 10px -3px rgba(33,32,31,.22);color:#275C3A}
+.plus{width:54px;height:50px;border-radius:25px;margin-top:0;background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 8px 16px -8px rgba(40,50,35,.35),0 2px 4px rgba(40,50,35,.08);-webkit-user-drag:none}
+.plus::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96) 0%,rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96) 100%);-webkit-backdrop-filter:blur(12px) saturate(1.5);backdrop-filter:blur(12px) saturate(1.5);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.plus::after{content:"";position:absolute;inset:3.5px;z-index:-1;border-radius:22px;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.10),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.plus:hover{background:none!important;color:#12351A!important}.plus:active{transform:none!important;filter:none!important}.plus:active::before,.plus:active::after{transform:scale(1.06,.92)}
+.nav .lens{position:absolute;z-index:3;top:-10px;height:84px;width:76px;border-radius:42px;pointer-events:none;background:radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.32),rgba(255,255,255,.03) 60%),rgba(255,255,255,.05);-webkit-backdrop-filter:blur(.5px) saturate(1.5) contrast(1.06);backdrop-filter:blur(.5px) saturate(1.5) contrast(1.06);box-shadow:inset 0 1.5px 0 #fff,inset 0 -2px 3px rgba(255,255,255,.65),inset 0 0 0 1px rgba(255,255,255,.85),inset 3px 0 7px rgba(255,255,255,.45),inset -3px 0 7px rgba(255,255,255,.45),0 18px 36px -10px rgba(33,32,31,.40),0 0 0 1px rgba(33,32,31,.10)}
+.app:has(>.nav) .body{padding-bottom:104px}
+.tool{height:52px;border-radius:26px;padding:4px!important;gap:0!important;isolation:isolate;box-sizing:border-box}
+.tool::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.tool:has(.tl:active)::after{transform:scale(1.02,.96)}
+.tl{flex:1!important;justify-content:center;height:44px!important;border-radius:22px!important;background:none!important;box-shadow:none!important;padding:0 6px!important;font-weight:600!important}
+.tl:active{background:rgba(255,255,255,.6)!important;transform:none!important;filter:none!important}
+.vb{background:none!important;box-shadow:none!important;isolation:isolate;position:relative}
+.vb::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);backdrop-filter:blur(4px) saturate(2.2) brightness(1.05);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.5),0 0 0 .5px rgba(33,32,31,.10),0 10px 28px -8px rgba(33,32,31,.28);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.vb:active{transform:none!important;filter:none!important}.vb:active::before{transform:scale(1.07,.93)}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
-.tabs .seg{background:transparent !important;padding:0;gap:8px;box-shadow:none !important}
-.tabs .sg{flex:none;height:40px;border-radius:20px;background:#fff;padding:0 16px;font-size:15px;font-weight:500;box-shadow:0 4px 16px rgba(33,32,31,.10)}
-.tabs .sg.on{background:#21201F;color:#fff}
 .tpill{flex:1;min-width:0;background:#fff;border-radius:22px;height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 16px;box-shadow:0 4px 16px rgba(33,32,31,.12)}
 .tpill b{font-size:15px;line-height:19px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tpill span{font-size:13px;line-height:16px;color:#6E6B66;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.shx{font-size:17px;line-height:22px;font-weight:700;color:#21201F}
-.cv{position:absolute;left:0;right:0;top:0;height:380px;background:#F2F1EE;background-image:radial-gradient(#D5D3CE 1.1px,transparent 1.1px);background-size:16px 16px}
-.kit{position:absolute;left:10px;right:10px;top:112px}
-.mods{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding:3px;background:#21201F}
-.mod{display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;font-size:13px;line-height:16px;font-weight:500;color:#4A3D27;letter-spacing:-.03em;overflow:hidden;white-space:nowrap}
-.mod.lo{background:#F4F2EC;color:#55524D}
-.mod.up{background:#F7F7F5;color:#55524D}
-.mod.on{background:#DCE6FF;box-shadow:inset 0 0 0 3px #1F4FBF;color:#1F4FBF}
-.ct{height:10px;background:#8D8778;margin:24px -4px 0;border:3px solid #21201F;border-bottom:0}
+.vsw{display:flex;background:#fff;border-radius:22px;padding:3px;box-shadow:0 4px 16px rgba(33,32,31,.12);flex:none}
+.vsw button{height:38px;padding:0 13px;border-radius:19px;font-size:14px;font-weight:600;color:#6E6B66}
+.vsw button.on{background:#21201F;color:#fff}
+.cv{position:absolute;left:0;right:0;top:0;height:400px;background:#F2F1EE;background-image:radial-gradient(#D5D3CE 1.1px,transparent 1.1px);background-size:16px 16px}
+.kit{position:absolute;left:10px;right:10px;top:104px}
+.row6{display:grid;gap:3px;padding:3px;background:#21201F}
+.m{position:relative;overflow:hidden;cursor:pointer}
+.m.lo{background:#F4F2EC}.m.up{background:#F7F7F5}
+.m.on{background:#DCE6FF;box-shadow:inset 0 0 0 3px #1F4FBF}
+.m i{position:absolute;display:block}
+.ln{background:#8E8B85}
+.hd{background:#21201F;border-radius:2px}
+.dk{background:#3A3936}
+.op{background:#E9E4D8;box-shadow:inset 0 3px 4px rgba(0,0,0,.14)}
+.gl{background:#CBDDF3}
+.mw{background:#2B2A28;border-radius:2px}
+.bt{background:#7FA88C;border-radius:3px 3px 1px 1px}
+.ct{height:9px;background:#8D8778;margin:22px -4px 0;border:3px solid #21201F;border-bottom:0}
 .ct.on{background:#DCE6FF;border-color:#1F4FBF}
-.dimc{position:absolute;height:34px;padding:0 12px;border-radius:17px;background:#fff;color:#1F4FBF;display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;box-shadow:0 4px 16px rgba(33,32,31,.10);white-space:nowrap}
-.ceil{position:absolute;right:12px;top:68px;height:34px;padding:0 12px;border-radius:17px;background:#FFF0D4;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:#8A4B00}
-.tabs{position:absolute;left:12px;right:12px;top:322px;z-index:2}
-.es{position:absolute;left:0;right:0;bottom:0;top:382px;background:#fff;border-radius:28px 28px 0 0;box-shadow:0 -4px 24px rgba(33,32,31,.10);display:flex;flex-direction:column}
-.esb{flex:1;min-height:0;overflow:hidden;padding:18px 16px 8px;display:flex;flex-direction:column;gap:10px}
-.fld.g{background:#F2F1EE;box-shadow:none}
-.fld.g.err{box-shadow:inset 0 0 0 2px #E5352B}
-.numf .nv.s{display:block;width:auto;min-height:0;flex:1;font-size:24px;line-height:28px;font-weight:600;text-align:center;color:#21201F}
-.pm.w{width:50px;font-size:15px;font-weight:500;background:#fff}
-.kv{display:flex;align-items:center;gap:12px;min-height:46px;color:#21201F}
+.dimc{position:absolute;height:32px;padding:0 11px;border-radius:16px;background:#fff;color:#1F4FBF;display:flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(33,32,31,.10);white-space:nowrap}
+.mlab{position:absolute;left:12px;top:352px;right:12px;display:flex;justify-content:space-between;align-items:center}
+.mlab .ml{height:32px;padding:0 12px;border-radius:16px;background:#fff;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#1F4FBF;box-shadow:0 4px 16px rgba(33,32,31,.10)}
+.v3d{position:absolute;left:0;right:0;top:96px;height:250px;display:flex;align-items:center;justify-content:center}
+.es{position:absolute;left:0;right:0;bottom:0;top:398px;background:#fff;border-radius:28px 28px 0 0;box-shadow:0 -4px 24px rgba(33,32,31,.10);display:flex;flex-direction:column}
+.est{flex:none;padding:12px 12px 4px}
+.esb{flex:1;min-height:0;overflow:hidden;padding:8px 16px 6px;display:flex;flex-direction:column;gap:10px}
+.shx{font-size:17px;line-height:22px;font-weight:700;color:#21201F}
+.types{display:flex;flex-wrap:wrap;gap:6px}
+.ty{height:36px;border-radius:12px;background:#F2F1EE;padding:0 11px;font-size:14px;font-weight:500;color:#21201F;display:flex;align-items:center;gap:6px}
+.ty.on{background:#21201F;color:#fff}
+.ty .nw{font-size:11px;font-weight:700;color:#275C3A;background:#E6F1EA;border-radius:6px;padding:1px 5px}
+.ty.on .nw{background:#387D50;color:#fff}
+.wrow{display:flex;align-items:center;gap:8px;background:#F2F1EE;border-radius:14px;padding:6px}
+.wrow .pm{background:#fff;width:46px;font-size:14px}
+.wrow .wv{flex:1;text-align:center;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.wrow.err{box-shadow:inset 0 0 0 2px #E5352B;background:#FFF5F4}
+.kv{display:flex;align-items:center;gap:12px;min-height:42px;color:#21201F}
 .kv+.kv{box-shadow:inset 0 1px 0 #F0EFEC}
-.kv .k{flex:1;font-size:16px;font-weight:400;color:#6E6B66}
-.kv .v{font-size:16px;font-weight:500;text-align:right}
-.apl{display:flex;align-items:center;gap:12px;min-height:52px}
-.apl+.apl{box-shadow:inset 0 1px 0 #F0EFEC}
-.ap{width:40px;height:40px;border-radius:12px;background:#E6EEFF;color:#1F4FBF;display:flex;align-items:center;justify-content:center;flex:none}
-.cbar{flex:none;display:flex;gap:8px;padding:8px 16px 24px;align-items:center}
-.pr{flex:none;height:52px;padding:0 14px;border-radius:16px;background:#F2F1EE;display:flex;flex-direction:column;justify-content:center;color:#21201F}
-.inp{flex:1;min-width:0;height:52px;border-radius:26px;background:#F2F1EE;display:flex;align-items:center;gap:8px;padding:0 6px 0 16px;color:#6E6B66}
+.kv .k{flex:1;font-size:15px;color:#6E6B66}
+.kv .v{font-size:15px;font-weight:500;text-align:right}
+.msg{max-width:84%;border-radius:18px;padding:9px 13px;font-size:14px;line-height:19px}
+.msg.me{align-self:flex-end;background:#21201F;color:#fff;border-bottom-right-radius:6px}
+.msg.ai{align-self:flex-start;background:#F2F1EE;color:#21201F;border-bottom-left-radius:6px}
+.chg{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.chg span{font-size:12px;font-weight:600;border-radius:7px;padding:2px 7px;background:#fff}
+.cbar{flex:none;display:flex;gap:8px;padding:6px 16px 24px;align-items:center}
+.pr{flex:none;height:50px;padding:0 13px;border-radius:16px;background:#F2F1EE;display:flex;flex-direction:column;justify-content:center;color:#21201F}
+.inp{flex:1;min-width:0;height:46px;border-radius:23px;background:#F2F1EE;display:flex;align-items:center;gap:8px;padding:0 5px 0 14px;color:#6E6B66}
 .inp span{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.go{width:40px;height:40px;border-radius:20px;background:#21201F;color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.go{width:36px;height:36px;border-radius:18px;background:#21201F;color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
 .go:hover{color:#fff}
 </style>
 </helmet>
 <div class="app">
-<div class="cv" role="img" aria-label="Кухня прямая 2800 мм, нажмите на модуль">
-<span class="dimc" style="left:12px;top:68px">2800<span style="font-size:13px;opacity:.7">мм</span></span>
-<span class="ceil">потолок 2700 · оценка</span>
-<div class="kit">
-<div class="mods" style="height:72px">
-<sc-for list="{{uppers}}" as="m" hint-placeholder-count="6"><button class="mod up {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}">{{m.t}}</button></sc-for>
+<div class="cv"></div>
+<sc-if value="{{isScheme}}" hint-placeholder-val="{{ true }}">
+<span class="dimc" style="left:12px;top:64px">2800<span style="font-size:12px;opacity:.7">мм</span></span>
+<div class="kit" role="img" aria-label="Схема кухни 2800 мм, нажмите на модуль">
+<div class="row6" style="height:96px;grid-template-columns:{{upCols}}">
+<sc-for list="{{uppers}}" as="m" hint-placeholder-count="5"><button class="m up {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}"><sc-for list="{{m.parts}}" as="p" hint-placeholder-count="3"><i class="{{p.c}}" style="{{p.s}}"></i></sc-for></button></sc-for>
 </div>
 <div class="ct {{ctOn}}"></div>
-<div class="mods" style="height:84px">
-<sc-for list="{{lowers}}" as="m" hint-placeholder-count="6"><button class="mod lo {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}">{{m.t}}</button></sc-for>
+<div class="row6" style="height:104px;grid-template-columns:{{loCols}}">
+<sc-for list="{{lowers}}" as="m" hint-placeholder-count="6"><button class="m lo {{m.on}}" onClick="{{m.pick}}" aria-label="{{m.label}}"><sc-for list="{{m.parts}}" as="p" hint-placeholder-count="3"><i class="{{p.c}}" style="{{p.s}}"></i></sc-for></button></sc-for>
 </div>
 </div>
+<div class="mlab"><span class="ml">{{selLabel}}</span><span class="dimc" style="position:static">{{selW}}<span style="font-size:12px;opacity:.7">мм</span></span></div>
+</sc-if>
+<sc-if value="{{is3d}}" hint-placeholder-val="{{ false }}">
+<div class="v3d" role="img" aria-label="Кухня в 3D">
+<svg width="330" height="230" viewBox="0 0 330 230" aria-hidden="true">
+<polygon points="20,70 230,10 310,40 100,100" fill="#F7F7F5" stroke="#21201F" stroke-width="2"/>
+<polygon points="20,70 100,100 100,150 20,120" fill="#E4E1D9" stroke="#21201F" stroke-width="2"/>
+<polygon points="100,100 310,40 310,90 100,150" fill="#FBFAF7" stroke="#21201F" stroke-width="2"/>
+<polygon points="20,150 100,180 310,120 230,96 " fill="#8D8778" stroke="#21201F" stroke-width="2"/>
+<polygon points="20,150 100,180 100,224 20,194" fill="#E4E1D9" stroke="#21201F" stroke-width="2"/>
+<polygon points="100,180 310,120 310,166 100,224" fill="#F4F2EC" stroke="#21201F" stroke-width="2"/>
+<g stroke="#21201F" stroke-width="1.6"><line x1="145" y1="137" x2="145" y2="88"/><line x1="190" y1="124" x2="190" y2="75"/><line x1="235" y1="111" x2="235" y2="62"/><line x1="145" y1="211" x2="145" y2="167"/><line x1="160" y1="207" x2="160" y2="163"/><line x1="205" y1="194" x2="205" y2="150"/><line x1="250" y1="181" x2="250" y2="137"/></g>
+<polygon points="190,124 235,111 235,92 190,105" fill="#2B2A28"/>
+</svg>
 </div>
+<div class="mlab"><span class="ml">Вращение пальцем · тап по модулю</span><span></span></div>
+</sc-if>
 <div class="hdr" style="position:relative;z-index:2">
 <a class="ib lift" href="ProjectCard.dc.html" aria-label="К проекту"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
-<div class="tpill"><b>Кухня · Дилноза</b><span>прямая, 6 + 6 модулей</span></div><span style="width:44px;flex:none"></span>
+<div class="tpill"><b>Кухня · Дилноза</b><span>прямая 2800 · 5 + 6 модулей</span></div>
+<div class="vsw" role="group" aria-label="Вид"><button class="{{vS}}" onClick="{{toS}}">Схема</button><button class="{{v3}}" onClick="{{to3}}">3D</button></div>
 </div>
-<div class="tabs"><div class="seg">
-<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button class="sg {{t.on}}" onClick="{{t.pick}}">{{t.t}}</button></sc-for>
-</div></div>
 <div class="es">
+<div class="est"><div class="seg" style="background:#F2F1EE"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button class="sg {{t.on}}" onClick="{{t.pick}}" style="height:36px;font-size:14px">{{t.t}}</button></sc-for></div></div>
 <div class="esb">
 <sc-if value="{{isMod}}" hint-placeholder-val="{{ true }}">
-<div class="shx">{{modTitle}}</div>
-<div class="fld g {{wCls}}"><span class="fl">Ширина</span><div class="numf"><button class="pm w" onClick="{{wMinus}}" aria-label="минус 50">−50</button><span class="nv s">{{modW}}</span><span class="nu">мм</span><button class="pm w" onClick="{{wPlus}}" aria-label="плюс 50">+50</button></div></div>
-<div>
-<div class="kv"><span class="k">Наполнение</span><span class="v">{{modFill}}</span></div>
+<div class="types"><sc-for list="{{types}}" as="t" hint-placeholder-count="6"><button class="ty {{t.on}}" onClick="{{t.pick}}">{{t.t}}<sc-if value="{{t.n}}" hint-placeholder-val="{{ false }}"><span class="nw">новое</span></sc-if></button></sc-for></div>
+<div class="wrow {{wCls}}"><button class="pm" onClick="{{wMinus}}" aria-label="минус 50">−50</button><span class="wv">{{selW}} <span style="font-size:13px;color:#6E6B66;font-weight:500">мм</span></span><button class="pm" onClick="{{wPlus}}" aria-label="плюс 50">+50</button></div>
+<sc-if value="{{sumBad}}" hint-placeholder-val="{{ false }}"><div class="ban err" style="padding:10px 14px"><span style="flex:none;margin-top:1px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg></span><div class="bd">Сумма модулей <span class="mono">{{sum}}</span> мм ≠ стене 2800</div></div></sc-if>
 <a class="kv" href="Materials.dc.html"><span class="k">Фасад</span><span class="v">Белый матовый</span><span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></a>
-</div>
-<sc-if value="{{sumBad}}" hint-placeholder-val="{{ false }}"><div class="ban err"><span style="flex:none;margin-top:1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg></span><div class="bd" style="font-size:15px;line-height:20px">Сумма модулей <span class="mono">{{sum}}</span> мм ≠ стене 2800. Добавьте добор или измените модуль</div></div></sc-if>
-<sc-if value="{{sumOk}}" hint-placeholder-val="{{ true }}"><div class="ban ok" style="align-items:center;padding:12px 16px"><span style="flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><div class="bd" style="font-size:15px">Модули ровно по стене: <span class="mono">{{sum}}</span> мм</div></div></sc-if>
 </sc-if>
 <sc-if value="{{isTop}}" hint-placeholder-val="{{ false }}">
 <div>
 <div class="kv"><span class="k">Столешница</span><span class="v">Камень серый, 38 мм</span></div>
-<div class="kv"><span class="k">Длина × глубина</span><span class="v mono" style="font-size:14px">2800 × 600</span></div>
-<div class="kv"><span class="k">Вырез под мойку</span><span class="v"><span class="mono" style="font-size:14px">780 × 480</span> · модуль 5</span></div>
-<div class="kv"><span class="k">Вырез под варку</span><span class="v"><span class="mono" style="font-size:14px">560 × 490</span> · модуль 2</span></div>
+<div class="kv"><span class="k">Вырез под мойку</span><span class="v"><span class="mono" style="font-size:14px">780 × 480</span></span></div>
+<div class="kv"><span class="k">Вырез под варку</span><span class="v"><span class="mono" style="font-size:14px">560 × 490</span></span></div>
 <div class="kv"><span class="k">Стеновая панель</span><span class="v">в тон, 600 мм</span></div>
 </div>
-<div class="cap">Вырезы по выбранной технике. Столешница и панель из каталога EMAN</div>
 </sc-if>
 <sc-if value="{{isApp}}" hint-placeholder-val="{{ false }}">
 <div>
-<div class="apl"><span class="ap" style="font-size:13px;font-weight:600">дух</span><span style="flex:1;min-width:0"><span class="rt" style="display:block">Духовка встраиваемая 600</span><span class="rs">под варкой, модуль 2 · ниша 560×595</span></span></div>
-<div class="apl"><span class="ap" style="font-size:13px;font-weight:600">пмм</span><span style="flex:1;min-width:0"><span class="rt" style="display:block">Посудомойка 450</span><span class="rs">модуль 4 · фасад на всю высоту</span></span></div>
-<div class="apl"><span class="ap" style="font-size:13px;font-weight:600">выт</span><span style="flex:1;min-width:0"><span class="rt" style="display:block">Вытяжка встраиваемая 600</span><span class="rs">верхний модуль 2 · короб под воздуховод</span></span></div>
-<div class="apl"><span class="ap" style="font-size:13px;font-weight:600">хол</span><span style="flex:1;min-width:0"><span class="rt" style="display:block">Холодильник отдельно 600</span><span class="rs" style="display:flex;gap:8px;align-items:center">справа, зазор 30 мм <span class="st c-amber">уточнить</span></span></span></div>
+<div class="kv"><span class="k">Духовка 600</span><span class="v">модуль 2</span></div>
+<div class="kv"><span class="k">Посудомойка 450</span><span class="v">модуль 4</span></div>
+<div class="kv"><span class="k">Микроволновка в рамке</span><span class="v">верх 3</span></div>
+<div class="kv"><span class="k">Вытяжка встраиваемая</span><span class="v">верх 2</span></div>
 </div>
 <div class="cap">Технику клиент покупает сам, в смету не входит</div>
 </sc-if>
+<sc-if value="{{isChat}}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div class="msg me">Над варкой поставь складной подъёмник</div>
+<div class="msg ai">Поставил подъёмник в верхний модуль 2, 600 мм. Фасад делится на два, открывается вверх.<div class="chg"><span class="c-blue">верх 2</span><span class="c-green">+1,1 млн</span></div></div>
+<div class="msg me">Слева ящики 1+2</div>
+<div class="msg ai">Готово: 1 узкий ящик сверху и 2 глубоких снизу.<div class="chg"><span class="c-blue">низ 1</span><span class="c-green">+380 000</span></div></div>
 </div>
-<div style="flex:none;padding:8px 16px 0;box-shadow:0 -1px 0 #F0EFEC"><div class="inp"><span>«мойку под окно, слева сушка»</span><a class="go" href="Editor.dc.html" aria-label="Открыть чат"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a></div></div>
+</sc-if>
+</div>
+<div style="flex:none;padding:6px 16px 0"><div class="inp"><span>«рядом с плитой бутылочницу 150»</span><a class="go" href="KitchenEditor.dc.html" aria-label="Отправить"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a></div></div>
 <div class="cbar">
-<a class="pr" href="Estimate.dc.html"><span class="cap" style="font-size:13px;line-height:16px">до замера</span><span class="mono" style="font-size:16px;font-weight:700;line-height:20px">14,2–15,6 млн</span></a>
-<a class="cta" href="Send.dc.html" style="flex:1;height:52px">Клиенту<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></a>
+<a class="pr" href="Estimate.dc.html"><span class="cap" style="font-size:12px;line-height:15px">до замера</span><span class="mono" style="font-size:15px;font-weight:700;line-height:19px">15,4–16,9 млн</span></a>
+<a class="cta" href="Send.dc.html" style="flex:1;height:50px">Клиенту<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg></a>
 </div>
 </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-constructor(p){ super(p); this.state = { tab: 0, sel: 'l1', w: { l0: 400, l1: 600, l2: 400, l3: 450, l4: 800, l5: 150 } }; }
+constructor(p){ super(p); this.state = { view: 's', tab: 0, sel: 'l0',
+ m: { l0:['dr12',600], l1:['oven',600], l2:['bottle',150], l3:['dw',450], l4:['sink',800], l5:['filler',200],
+      u0:['rows2',600], u1:['lift',600], u2:['mwf',600], u3:['niche',600], u4:['doors',400] } }; }
 renderVals() {
-const st = this.state;
-const LW = st.w;
-const sum = Object.values(LW).reduce((a, b) => a + b, 0);
-const LN = [['l0','Ящики'],['l1','Варка'],['l2','Бутыл.'],['l3','ПММ'],['l4','Мойка'],['l5','Добор']];
-const UN = [['u0','Полки'],['u1','Вытяжка'],['u2','Полки'],['u3','Сушка'],['u4','Полки'],['u5','—']];
-const fill = { l0:'3 ящика', l1:'духовка + ящик', l2:'бутылочница 150', l3:'посудомойка 450', l4:'мойка, дверь', l5:'доборная панель', u0:'2 полки', u1:'вытяжка 600', u2:'2 полки', u3:'сушка', u4:'2 полки', u5:'пусто' };
-const mk = (arr) => arr.map(([id, t]) => ({ t, label: 'Модуль ' + t, on: (id === st.sel && st.tab === 0) ? 'on' : '',
-pick: () => this.setState({ sel: id, tab: 0 }) }));
-const names = ['Модуль', 'Столешница', 'Техника'];
-const isLower = st.sel.startsWith('l');
-const mw = isLower ? LW[st.sel] : 600;
-const setW = (d) => { if (!isLower) return; const n = { ...LW }; n[st.sel] = Math.max(150, Math.min(1200, n[st.sel] + d)); this.setState({ w: n }); };
+const st = this.state, M = st.m;
+const P = (c, l, t, w, h) => ({ c, s: `left:${l}%;top:${t}%;width:${w}%;height:${h}%` });
+const parts = (type) => {
+ switch (type) {
+  case 'dr12': return [P('ln',0,22,100,1.5),P('ln',0,61,100,1.5),P('hd',38,9,24,3),P('hd',38,38,24,3),P('hd',38,77,24,3)];
+  case 'oven': return [P('ln',0,22,100,1.5),P('hd',38,8,24,3),P('mw',12,34,76,46),P('hd',30,88,40,3)];
+  case 'bottle': return [P('bt',22,30,16,48),P('bt',44,22,16,56),P('bt',66,34,16,44),P('hd',30,8,40,3)];
+  case 'dw': return [P('hd',30,8,40,3)];
+  case 'sink': return [P('ln',49.5,0,1,100),P('hd',40,40,3,18),P('hd',57,40,3,18)];
+  case 'filler': return [P('ln',30,0,1,100),P('ln',60,0,1,100)];
+  case 'doors': return [P('ln',49.5,0,1,100),P('hd',40,72,3,16),P('hd',57,72,3,16)];
+  case 'rows2': return [P('ln',49.5,0,1,100),P('ln',0,49,100,1.5),P('hd',40,30,3,12),P('hd',57,30,3,12),P('hd',40,78,3,12),P('hd',57,78,3,12)];
+  case 'lift': return [P('ln',0,49,100,1.5),P('hd',38,40,24,3),P('hd',38,88,24,3),P('dk',47,12,6,16)];
+  case 'mwf': return [P('ln',0,44,100,1.5),P('hd',38,34,24,3),P('op',8,52,84,42),P('mw',16,57,58,32),P('gl',78,62,8,8)];
+  case 'niche': return [P('ln',0,66,100,1.5),P('hd',38,56,24,3),P('op',0,68,100,32)];
+  default: return [];
+ }
+};
+const NAMES = { dr12:'Ящики 1+2', oven:'Духовка + ящик', bottle:'Бутылочница', dw:'Посудомойка', sink:'Мойка, 2 двери', filler:'Добор', doors:'Двери', rows2:'Два ряда дверей', lift:'Подъёмник складной', mwf:'Рамка под СВЧ', niche:'Ниша под фасадом' };
+const NEW = { dr12:1, bottle:1, rows2:1, lift:1, mwf:1, niche:1 };
+const LO = ['l0','l1','l2','l3','l4','l5'], UP = ['u0','u1','u2','u3','u4'];
+const mk = (ids) => ids.map((id, i) => ({ label: NAMES[M[id][0]], on: id === st.sel && st.tab === 0 ? 'on' : '', parts: parts(M[id][0]), pick: () => this.setState({ sel: id, tab: 0 }) }));
+const cols = (ids) => ids.map(id => M[id][1] + 'fr').join(' ');
+const isLo = st.sel.startsWith('l');
+const opts = isLo ? ['doors','dr12','bottle','oven','dw','sink','niche','filler'] : ['doors','rows2','lift','mwf','niche'];
+const cur = M[st.sel];
+const sum = LO.reduce((a, id) => a + M[id][1], 0);
+const setM = (patch) => this.setState({ m: { ...M, [st.sel]: patch } });
+const tabs = ['Модуль', 'Столешница', 'Техника', 'Чат'];
+const idx = (isLo ? 'Низ ' + (LO.indexOf(st.sel) + 1) : 'Верх ' + (UP.indexOf(st.sel) + 1));
 return {
-lowers: mk(LN), uppers: mk(UN),
-tabs: names.map((t, i) => ({ t, on: i === st.tab ? 'on' : '', pick: () => this.setState({ tab: i }) })),
-isMod: st.tab === 0, isTop: st.tab === 1, isApp: st.tab === 2,
-ctOn: st.tab === 1 ? 'on' : '',
-modTitle: (isLower ? 'Нижний модуль · ' : 'Верхний модуль · ') + fill[st.sel],
-modW: mw, modFill: fill[st.sel], wCls: sum !== 2800 ? 'err' : '',
-sum, sumBad: sum !== 2800, sumOk: sum === 2800,
-wMinus: () => setW(-50), wPlus: () => setW(50)
+ isScheme: st.view === 's', is3d: st.view === '3d', vS: st.view === 's' ? 'on' : '', v3: st.view === '3d' ? 'on' : '',
+ toS: () => this.setState({ view: 's' }), to3: () => this.setState({ view: '3d' }),
+ uppers: mk(UP), lowers: mk(LO), upCols: cols(UP), loCols: cols(LO), ctOn: st.tab === 1 ? 'on' : '',
+ tabs: tabs.map((t, i) => ({ t, on: i === st.tab ? 'on' : '', pick: () => this.setState({ tab: i }) })),
+ isMod: st.tab === 0, isTop: st.tab === 1, isApp: st.tab === 2, isChat: st.tab === 3,
+ types: opts.map(o => ({ t: NAMES[o], n: !!NEW[o], on: cur[0] === o ? 'on' : '', pick: () => setM([o, o === 'bottle' ? 150 : (cur[0] === 'bottle' ? 450 : cur[1])]) })),
+ selLabel: idx + ' · ' + NAMES[cur[0]], selW: cur[1],
+ wCls: sum !== 2800 && isLo ? 'err' : '', sum, sumBad: isLo && sum !== 2800,
+ wMinus: () => setM([cur[0], Math.max(150, cur[1] - 50)]), wPlus: () => setM([cur[0], Math.min(1200, cur[1] + 50)])
 };
 }
 }

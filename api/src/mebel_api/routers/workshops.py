@@ -17,6 +17,8 @@ from ..schemas.workshops import (
     InviteOut,
     PricingOut,
     PricingUpdateIn,
+    ProductionOut,
+    ProductionUpdateIn,
     WorkshopOut,
     WorkshopOwnerOut,
     WorkshopUpdateIn,
@@ -147,6 +149,35 @@ def update_pricing(body: PricingUpdateIn, current: OwnerDep, db: DbDep) -> Works
     )
     db.commit()
     return w
+
+
+@router.get("/production", response_model=ProductionOut, summary="Производство цеха: присадка (владелец)")
+def get_production(current: OwnerDep) -> dict:
+    """Крепёж корпуса, глубина конфирмата, марка петель и сетка 32 мм — попадают в присадку версий, чертежи
+    деталей, «Комплект чертежей», DXF и смету (число конфирматов / шкантов). `saved=false` — значения по умолчанию.
+    `hinge_brands` — как каждая марка сверлится (схема планки в приложении)."""
+    from ..services.production import production_out
+
+    return production_out(current.workshop)
+
+
+@router.patch("/production", response_model=ProductionOut, summary="Изменить производство цеха (владелец)")
+def update_production(body: ProductionUpdateIn, current: OwnerDep, db: DbDep) -> dict:
+    """Частичное обновление; пустое поле (null) — не меняется. Действует на новые версии и все файлы, которые
+    строятся после сохранения. Изменение пишется в журнал действий."""
+    from ..services import production as prod
+
+    w = current.workshop
+    before = prod.settings_of(w)
+    try:
+        after = prod.update(w, {k: v for k, v in body.model_dump(exclude_unset=True).items() if v is not None})
+    except ValueError as e:
+        raise ApiError(422, "validation_error", str(e))
+    if after != before:
+        log_action(db, actor_type="user", actor_id=current.user.id, workshop_id=w.id, entity="workshop_production",
+                   entity_id=w.id, action="update", before=before, after=after)
+    db.commit()
+    return prod.production_out(w)
 
 
 @router.get("/employees", response_model=list[EmployeeOut], summary="Сотрудники цеха")

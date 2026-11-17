@@ -155,10 +155,10 @@ describe('мок API: путь мастера', () => {
     const { items } = await api.listProjects();
     const id = items.find((p) => p.status === 'sent')!.id;
     const files = await api.listFiles(id);
-    expect(files.find((f) => f.kind === 'offer_pdf')!.available).toBe(true);
+    expect(files.find((f) => f.kind === 'kp_pdf')!.available).toBe(true);
     expect(files.find((f) => f.kind === 'parts_dxf')!.available).toBe(false);
     await expect(api.downloadFile(id, 'parts_dxf')).rejects.toMatchObject({ status: 402 });
-    const f = await api.downloadFile(id, 'offer_pdf');
+    const f = await api.downloadFile(id, 'kp_pdf');
     expect(f.mimeType).toBe('application/pdf');
   });
 });

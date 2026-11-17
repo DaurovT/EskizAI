@@ -227,7 +227,8 @@ def _hinges(ctx: BuildContext, slot: Slot, door: Part, side: str, a: int, b: int
     hw = ctx.product.hardware
     kind_name = {"standard": "", "soft_close": " с доводчиком", "push": " push-to-open"}[hw.hinge]
     cls = HARDWARE_CLASS_NAMES[hw.hinge_class]
-    ctx.add_hardware("hinge", f"Петля {overlay} {r.hinge_angle}°{kind_name} ({cls})", count, path,
+    brand = f" · {r.hinge_brand}" if r.hinge_brand else ""  # марка петель цеха (SCR-56)
+    ctx.add_hardware("hinge", f"Петля {overlay} {r.hinge_angle}°{kind_name} ({cls}){brand}", count, path,
                      type=hw.hinge, hclass=hw.hinge_class)
 
 

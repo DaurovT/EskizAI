@@ -2,6 +2,7 @@
  * SCR-03 Проекты (Projects.dc.html) и пустой список (EmptyProjects.dc.html):
  * плитки «Новый по фото / По описанию / Архив», поиск, прилипающие фильтр-чипы с количеством, карточки проектов
  * с эскизом изделия, плашка лимита. Архив (archived) — тот же список без плиток и плашки.
+ * Широкий планшет — таблица с панелью проекта (TProjects2.dc.html, ProjectsTable.tsx).
  */
 import { Ionicons } from '@expo/vector-icons';
 import { router, Tabs, useLocalSearchParams } from 'expo-router';
@@ -21,11 +22,10 @@ import { showError } from '../ui/dialogs';
 import { ErrorState } from '../ui/ErrorState';
 import { Wood } from '../ui/Illus';
 import { Avatar, Badge, Banner, BigTitle, Card, Chip, ChipRow, EmptyState, GlassPress, IconButton, Loading, OfflineBanner, Press, Search, StatusBadge, T, glass, useTabBarSpace } from '../ui/kit';
-import { CenterColumn, Embedded, useLayout } from '../ui/layout';
-import { SplitEmpty, SplitView } from '../ui/SplitView';
+import { CenterColumn, useLayout } from '../ui/layout';
 import { SketchThumb } from '../ui/ProductSketch';
 import { palette, tones } from '../ui/theme';
-import { ProjectCardView } from './ProjectCard';
+import { ProjectsTable } from './ProjectsTable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ORDER: ProjectStatus[] = [...STATUS_FLOW.filter((s) => s !== 'delivered'), 'delivered', 'cancelled'];
@@ -117,7 +117,6 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
   const split = wide && !archived;
   const insets = useSafeAreaInsets();
   const navSpace = useTabBarSpace();
-  const [sel, setSel] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<ProjectStatus | 'all'>('all');
   const [busy, setBusy] = useState(false);
@@ -231,45 +230,10 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
   ) : null;
   const onRefresh = () => { refresh(); lim.reload(); inbox.reload(); };
 
+  // широкий планшет — таблица «десктопного стиля» с панелью проекта (TProjects2.dc.html); телефон — список ниже
   if (split) {
-    const cur = items.find((p) => p.id === sel) ?? items[0] ?? null;
-    return (
-      <SplitView
-        title={t('projects_title')}
-        right={<>
-          {inboxBtn}
-          <IconButton icon="archive-outline" label={t('projects_archive')} onPress={() => router.push('/archive')} />
-          <IconButton icon="notifications-outline" badge={unread} label={t('pl_notifications')} onPress={() => router.push('/notifications')} />
-        </>}
-        list={<>
-          <OfflineBanner />
-          {inboxBanner}
-          <Search value={q} onChangeText={setQ} placeholder={t('projects_search_ph')} />
-          {chipRow}
-          {/* карточки .pc на фоне колонки (как на телефоне), выбранная — с рамкой */}
-          <FlatList
-            data={items}
-            keyExtractor={(p) => p.id}
-            renderItem={({ item }) => <ProjectItem p={item} selected={item.id === cur?.id} onSelect={setSel} />}
-            ItemSeparatorComponent={CardGap}
-            style={{ flex: 1, marginHorizontal: -4 }}
-            contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: Math.max(insets.bottom, 20) }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListEmptyComponent={<EmptyState icon="search-outline" title={t('projects_none_found')} compact />}
-            ListFooterComponent={limitBanner ? <View style={{ paddingTop: 10 }}>{limitBanner}</View> : undefined}
-          />
-        </>}
-        detail={cur ? (
-          <Embedded key={cur.id} params={{ id: cur.id }} onChange={refresh} onGone={() => { setSel(null); refresh(); }}>
-            <ProjectCardView />
-          </Embedded>
-        ) : <SplitEmpty icon="folder-outline" />}
-      />
-    );
+    return <ProjectsTable all={all} order={ORDER} q={q} setQ={setQ} refreshing={refreshing} onRefresh={onRefresh} banner={inboxBanner} footer={limitBanner} />;
   }
-
   /*
    * Одна прокрутка (Projects.dc.html): плитки, плашка «Входящих» и поиск уезжают наверх, строка этапов прилипает
    * под заголовком «Проекты» (sticky, фон #F2F1EE), под ней листаются карточки; в конце — плашка тарифа,
@@ -329,8 +293,6 @@ export function ProjectsList({ archived = false }: { archived?: boolean }) {
     </View>
   );
 }
-
-const CardGap = () => <View style={{ height: 4 }} />;
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.ground },

@@ -19,8 +19,16 @@ import { ErrorState } from '../../src/ui/ErrorState';
 import { Card, Hairline, Press, Screen, Skeleton, T, Tag, dialog, toast } from '../../src/ui/kit';
 import { palette } from '../../src/ui/theme';
 import { TitleHeader } from '../../src/ui/TitleHeader';
+import { InboxWide } from '../../src/screens/InboxWide';
+import { useLayout } from '../../src/ui/layout';
 
-export default function Inbox() {
+export default function InboxRoute() {
+  // широкий планшет — TInbox.dc.html (src/screens/InboxWide.tsx)
+  const { wide } = useLayout();
+  return wide ? <InboxWide /> : <Inbox />;
+}
+
+function Inbox() {
   const { t, lang } = useT();
   const { state } = useLocalSearchParams<{ state?: string }>();
   const devState = __DEV__ ? state : undefined;

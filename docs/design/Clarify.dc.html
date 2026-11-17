@@ -135,42 +135,60 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 .spin{animation:v3spin .8s linear infinite}
 .chat,.sheetm{transition:height .35s cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.bs,.toast,.dlg{animation-name:v3fin}.cta:active,.soft:active,.chip:active,.ib:active{transform:none}}
+/*GLASS-GREEN*/
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]){background:none!important;color:#12351A!important;position:relative;isolation:isolate;box-shadow:0 10px 22px -10px rgba(40,50,35,.3),0 2px 5px rgba(40,50,35,.08)!important;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cta:not(.off),.plus{border-radius:999px!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::before{content:"";position:absolute;inset:0;z-index:-2;border-radius:inherit;pointer-events:none;border:1.2px solid rgba(80,92,76,.95);background:linear-gradient(180deg,rgba(240,244,234,.96),rgba(200,216,194,.92) 28%,rgba(176,198,170,.92) 62%,rgba(214,243,207,.96));transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"])::after{content:"";position:absolute;inset:4px;z-index:-1;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(190,198,175,.94),rgba(203,212,189,.94));box-shadow:inset 0 1px 1px rgba(60,70,50,.1),0 0 0 .5px rgba(120,140,110,.35);transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active{transform:none!important;filter:none!important}
+:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::before,:is(.cta:not(.off),.plus,:is(a,button)[style*="background:#387D50"]):active::after{transform:scale(1.03,.94)}
+.cta .v{background:rgba(232,238,224,.55)!important;color:#12351A;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px rgba(80,96,74,.22);text-shadow:none}
+.cta .spin{border-color:rgba(18,53,26,.22);border-top-color:#12351A}
 /*/V3*/
 
-.prev{height:84px;flex:none;border-radius:28px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;gap:18px;position:relative}
-.q{display:flex;flex-direction:column;gap:10px}
-.qt{font-size:17px;line-height:23px;font-weight:600}
-.ops{display:flex;gap:6px}
-.op{flex:1;min-height:48px;border-radius:14px;background:#F2F1EE;color:#21201F;font-size:14px;font-weight:500;padding:0 6px;line-height:19px;white-space:nowrap}
-.op.on{background:#21201F;color:#fff}
-.alt .op{background:#fff;color:#21201F}
-.alt .op.on{background:#21201F;color:#fff}
+.prev{height:84px;flex:none;border-radius:24px;background:#F4EBDD;display:flex;align-items:center;justify-content:center;gap:16px;position:relative}
+.qs{background:#fff;border-radius:24px;overflow:hidden;flex:none}
+.qi{display:flex;gap:12px;padding:13px 14px 13px 14px}
+.qi+.qi{box-shadow:inset 0 1px 0 #F0EFEC}
+.qic{width:28px;height:28px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;margin-top:1px}
+.qic.q{background:#E6EEFF;color:#1F4FBF}.qic.s{background:#FFF0D4;color:#8A4B00}.qic.i{background:#F2F1EE;color:#6E6B66}.qic.ok{background:#E6F1EA;color:#275C3A}
+.qb{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.qt{font-size:15px;line-height:20px;font-weight:500;color:#21201F}
+.qt.done{color:#6E6B66}
+.ans{display:flex;flex-wrap:wrap;gap:6px}
+.an{height:34px;border-radius:11px;background:#F2F1EE;padding:0 11px;font-size:14px;font-weight:500;color:#21201F;display:flex;align-items:center;gap:5px}
+.an.on{background:#21201F;color:#fff}
+.an.ghost{background:transparent;color:#8E8B85;padding:0 6px}
+.picked{display:inline-flex;align-items:center;gap:6px;height:30px;border-radius:10px;background:#E6F1EA;color:#275C3A;font-size:14px;font-weight:600;padding:0 10px;align-self:flex-start}
+.picked .chg{font-weight:500;color:#2F6B44;opacity:.75;font-size:13px}
+.dl{display:flex;gap:6px}
+.dl span{font-size:12px;font-weight:600;border-radius:7px;padding:3px 7px;background:#FFF0D4;color:#6E3C00}
+.leg{display:flex;gap:12px;padding:0 6px;font-size:12px;color:#6E6B66;align-items:center}
+.leg b{display:inline-flex;width:16px;height:16px;border-radius:5px;align-items:center;justify-content:center;font-size:10px;font-weight:800;margin-right:4px}
 </style>
 </helmet>
 <div class="app">
-<div class="hdr" style="padding-top:14px"><a class="ib" href="Recognition.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><span class="grow"></span><span class="st" style="background:#fff;height:32px;border-radius:16px;padding:0 12px;font-size:14px">Вопрос 3 из 7</span></div>
-<div style="padding:4px 20px 8px" class="big">Уточним детали</div>
+<div class="hdr" style="padding-top:14px"><a class="ib" href="Recognition.dc.html" aria-label="Назад"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a><span class="grow"></span><span class="st" style="background:#fff;height:32px;border-radius:16px;padding:0 12px;font-size:14px">Отвечено {{done}} из 3</span></div>
+<div style="padding:4px 20px 6px" class="big">Уточним детали</div>
 <div class="body" style="gap:8px;padding-top:0">
-<div class="prev" role="img" aria-label="Модель, подсвечен правый торец">
+<div class="prev" role="img" aria-label="Модель, подсвечено то, о чём вопрос">
 <div aria-hidden="true" class="carc" style="width:88px;height:64px;border-width:2px;border-radius:0 32px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:2px"><i class="wood"></i><i class="wood"></i><i style="background:#F2B66D;border-radius:0 28px 0 0"></i></div>
-<span class="st" style="background:#fff;height:32px;border-radius:16px">Подсвечено, о чём вопрос</span>
+<span class="st" style="background:#fff;height:30px;border-radius:15px">{{hl}}</span>
 </div>
-<div class="sheet pad" style="display:flex;flex-direction:column;gap:18px;padding:18px 16px">
-<div class="q">
-<div class="qt" style="padding:0 4px">Правый торец скруглён. На всю высоту или только сверху?</div>
-<div class="ops"><sc-for list="{{a1}}" as="o" hint-placeholder-count="3"><button class="{{o.cl}}" onClick="{{o.pick}}">{{o.t}}</button></sc-for></div>
+<div class="qs">
+<sc-for list="{{items}}" as="q" hint-placeholder-count="5">
+<div class="qi">
+<span class="qic {{q.ic}}">{{q.sym}}</span>
+<div class="qb">
+<div class="qt {{q.tc}}">{{q.t}}</div>
+<sc-if value="{{q.hasDl}}" hint-placeholder-val="{{ false }}"><div class="dl"><span>−640 000 сум</span><span>−7 дней</span></div></sc-if>
+<sc-if value="{{q.showPicked}}" hint-placeholder-val="{{ false }}"><button class="picked" onClick="{{q.edit}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>{{q.val}}<span class="chg">изменить</span></button></sc-if>
+<sc-if value="{{q.showOpts}}" hint-placeholder-val="{{ true }}"><div class="ans"><sc-for list="{{q.opts}}" as="o" hint-placeholder-count="3"><button class="an {{o.cl}}" onClick="{{o.pick}}">{{o.t}}</button></sc-for></div></sc-if>
 </div>
-<div class="q">
-<div class="qt" style="padding:0 4px">Ножки металлические. Какая высота?</div>
-<div class="ops"><sc-for list="{{a2}}" as="o" hint-placeholder-count="3"><button class="{{o.cl}}" onClick="{{o.pick}}">{{o.t}}</button></sc-for></div>
 </div>
+</sc-for>
 </div>
-<div class="ban est alt" style="flex-direction:column;align-items:stretch;gap:10px">
-<div style="display:flex;gap:10px;align-items:center"><span style="display:flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg></span><span class="bt" style="flex:1">Предлагаю замену</span></div>
-<div style="display:flex;gap:6px;margin-top:-2px"><span class="st" style="background:#fff;color:#6E3C00">−640 000 сум</span><span class="st" style="background:#fff;color:#6E3C00">−7 дней</span></div>
-<div class="bd" style="font-size:14px;line-height:20px">Фрезеровка и покраска МДФ в EMAN дают +7 дней. Готовый фасад «Риффл» из каталога EMAN по вашим размерам быстрее и дешевле.</div>
-<div class="ops"><button class="{{altA}}" onClick="{{takeAlt}}">Заменить</button><button class="{{altK}}" onClick="{{keepAlt}}">Оставить как на фото</button></div>
-</div>
+<div class="leg"><span><b style="background:#E6EEFF;color:#1F4FBF">?</b>вопрос</span><span><b style="background:#FFF0D4;color:#8A4B00">✦</b>предложение</span><span><b style="background:#F2F1EE;color:#6E6B66">i</b>информация</span></div>
 </div>
 <div class="foot" style="gap:2px;padding-top:6px">
 <a class="cta" href="Editor.dc.html">Собрать модель</a>
@@ -180,17 +198,30 @@ a.row:active,button.row:active{background-color:#F7F7F5}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
-constructor(p){ super(p); this.state = { a1: 0, a2: 1, alt: null }; }
+constructor(p){ super(p); this.state = { a: { 0: 0, 2: null, 3: null }, open: {} }; }
 renderVals() {
-const mk = (xs, key) => xs.map((t, i) => ({ t, cl: this.state[key] === i ? 'op on' : 'op', pick: () => this.setState({ [key]: i }) }));
-return {
-a1: mk(['На всю высоту', 'Только сверху', 'Не знаю'], 'a1'),
-a2: mk(['100 мм', '150 мм', '200 мм'], 'a2'),
-altA: this.state.alt === true ? 'op on' : 'op',
-altK: this.state.alt === false ? 'op on' : 'op',
-takeAlt: () => this.setState({ alt: true }),
-keepAlt: () => this.setState({ alt: false })
-};
+const st = this.state;
+const Q = [
+ { k: 'q', t: 'Правый торец скруглён. На всю высоту или только сверху?', o: ['На всю высоту', 'Только сверху'], hl: 'Подсвечен правый торец' },
+ { k: 'i', t: 'Петли подобрал с доводчиком: по 3 на каждую дверь высотой 2300.' },
+ { k: 'q', t: 'Ножки металлические. Какая высота?', o: ['100 мм', '150 мм', '200 мм'], hl: 'Подсвечены ножки' },
+ { k: 's', t: 'Вместо фрезеровки МДФ — готовый фасад «Риффл» из каталога EMAN по вашим размерам.', o: ['Заменить', 'Оставить как на фото'], dl: true, hl: 'Подсвечены фасады' }
+];
+const sym = { q: '?', s: '✦', i: 'i' };
+let active = Q.findIndex((q, i) => q.o && (st.a[i] === null || st.a[i] === undefined));
+const items = Q.map((q, i) => {
+ const v = st.a[i];
+ const answered = q.o && v !== null && v !== undefined && !st.open[i];
+ return {
+  ic: answered ? 'ok' : q.k, sym: answered ? '✓' : sym[q.k], t: q.t, tc: answered || q.k === 'i' ? 'done' : '',
+  hasDl: !!q.dl && !answered, showPicked: !!answered, val: answered ? q.o[v] : '',
+  edit: () => this.setState({ open: { ...st.open, [i]: true } }),
+  showOpts: !!q.o && !answered,
+  opts: (q.o || []).map((t, j) => ({ t, cl: v === j ? 'on' : '', pick: () => this.setState({ a: { ...st.a, [i]: j }, open: { ...st.open, [i]: false } }) })).concat(q.k === 'q' ? [{ t: 'Не знаю', cl: 'ghost', pick: () => this.setState({ a: { ...st.a, [i]: 0 } }) }] : [])
+ };
+});
+const done = [0, 2, 3].filter(i => st.a[i] !== null && st.a[i] !== undefined).length;
+return { items, done, hl: active >= 0 ? Q[active].hl : 'Всё уточнено' };
 }
 }
 </script>
