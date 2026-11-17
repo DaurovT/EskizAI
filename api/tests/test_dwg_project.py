@@ -230,3 +230,13 @@ def test_sheet_text_is_compact_on_big_sheets():
     text = inbox_project.sheet_text("Цех", {"id": "s1", "number": "1", "name": "План"}, ds, None)
     assert len(text) <= inbox_project.MAX_TEXT
     assert text.count("×") <= 40 and "Габариты: 6039." in text
+
+
+def test_text_uses_single_dimensions_from_dwg():
+    """Отдельные размеры Eskiz DWG ({"v": 2400, "dir": "v"}) попадают в текст и в габариты."""
+    ds = {"id": "s1", "name": "Шкаф", "dimensions": {
+        "chains": [{"dir": "h", "values": "600 ×2", "sum": 1200}, {"dir": "v", "values": "200 ×3", "sum": 600}],
+        "single": [{"v": 1200, "dir": "h"}, {"v": 618, "dir": "h"}, {"v": 2400, "dir": "v"}, {"v": 70, "dir": "v"}]}}
+    text = inbox_project.sheet_text("Шкаф", {"id": "s1", "name": "Шкаф"}, ds, None, "ru")
+    assert "Габариты: 1200 × 2400." in text
+    assert "Размеры: 1200, 618, 2400, 70." in text

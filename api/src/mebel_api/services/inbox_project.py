@@ -116,12 +116,14 @@ def _chain(c: dict[str, Any], lb: dict[str, str]) -> str | None:
     return f"{s} ({', '.join(extra)})" if extra else s
 
 
-def _overall(chains: list[dict[str, Any]]) -> str | None:
-    """Габарит по самым длинным горизонтальной и вертикальной цепочкам."""
+def _overall(chains: list[dict[str, Any]], singles: list[Any] = ()) -> str | None:
+    """Габарит по самым длинным горизонтальным и вертикальным размерам: цепочки и отдельные размеры
+    (у отдельного размера значение в `v` — формат Eskiz DWG — или `mm`)."""
     best: dict[str, float] = {}
-    for c in chains:
+    items = list(chains) + [d for d in singles if isinstance(d, dict)]
+    for c in items:
         d = c.get("dir")
-        v = c.get("overall") if isinstance(c.get("overall"), (int, float)) else c.get("sum")
+        v = next((c.get(k) for k in ("overall", "sum", "v", "mm") if isinstance(c.get(k), (int, float))), None)
         if d in ("h", "v") and isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0:
             best[d] = max(best.get(d, 0), float(v))
     if not best:
@@ -133,7 +135,7 @@ def _single(dims: dict[str, Any]) -> list[str]:
     out = []
     for d in _list(dims.get("single")):
         if isinstance(d, dict):
-            v = _num(d.get("mm")) or _num(d.get("value")) or _s(d.get("text"), 20)
+            v = _num(d.get("v")) or _num(d.get("mm")) or _num(d.get("value")) or _s(d.get("text"), 20)
             n = d.get("count") or d.get("n")
             if v:
                 out.append(f"{v} ×{n}" if isinstance(n, int) and not isinstance(n, bool) and n > 1 else v)
@@ -174,7 +176,7 @@ def sheet_text(title: str, sheet: dict[str, Any] | None, ds: dict[str, Any], man
 
     dims = _dict(ds.get("dimensions"))
     chains = [c for c in _list(dims.get("chains")) if isinstance(c, dict)]
-    overall = _overall(chains)
+    overall = _overall(chains, _list(dims.get("single")))
     if overall:
         lines.append(f"{lb['overall']}: {overall}.")
     frame = [_num(v) for v in _list(ds.get("frame_mm"))[:2]]
