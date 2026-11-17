@@ -14,7 +14,9 @@
         "NSCameraUsageDescription": "Камера нужна, чтобы сфотографировать мебель или замер / Kamera mebel yoki o‘lchovni suratga olish uchun kerak",
         "NSPhotoLibraryUsageDescription": "Галерея нужна, чтобы выбрать фото мебели / Galereya mebel suratini tanlash uchun kerak",
         "NSLocalNetworkUsageDescription": "Нужно для связи с сервером Eskiz Mebel в вашей сети / Tarmoqdagi Eskiz Mebel serveriga ulanish uchun",
-        "LSApplicationQueriesSchemes": ["eskizdwg"]
+        "LSApplicationQueriesSchemes": [
+          "eskizdwg"
+        ]
       },
       "appleTeamId": "XQ35SJRLQH"
     },
@@ -22,7 +24,7 @@
       "package": "uz.mebel.master",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#387D50"
+        "backgroundColor": "#1DAF62"
       },
       "permissions": [
         "CAMERA",

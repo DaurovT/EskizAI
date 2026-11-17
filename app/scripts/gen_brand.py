@@ -93,19 +93,19 @@ def splash(size: int = 780) -> Image.Image:
 
 def main() -> None:
     a = APP / "assets"
-    tile(1024, square=True).convert("RGB").save(a / "icon.png")  # iOS скругляет сам
-    fg = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))  # Android: знак в безопасной зоне (66%)
-    m = mark(560)
-    fg.alpha_composite(m, ((1024 - 560) // 2, (1024 - 560) // 2))
-    fg.save(a / "adaptive-icon.png")
+    # значок приложения — из макета «Значки Eskiz · стиль Apple» (assets/brand/app-icon-1024.png, отрисован из app-icon.svg);
+    # знак-шкаф ниже — для заставки, логотипа и favicon
+    app_icon = Image.open(a / "brand/app-icon-1024.png").convert("RGB")
+    app_icon.save(a / "icon.png")
+    # Android adaptive-icon.png делается из того же значка (см. историю), здесь не трогаем
     splash(780).save(a / "splash-icon.png")
     mark(336).save(a / "brand/mark.png")
     mark(168, lines=DWG_LINES, stroke=STROKE * 1.15).save(a / "brand/dwg-mark.png")
     tile(96).save(a / "brand/logo.png")
-    tile(48).save(a / "favicon.png")
+    app_icon.resize((48, 48), Image.LANCZOS).save(a / "favicon.png")
     ios = APP / "ios/EskizAI/Images.xcassets"
     if ios.exists():  # нативный проект собран заранее (prebuild не запускаем) — кладём картинки и туда
-        tile(1024, square=True).convert("RGB").save(ios / "AppIcon.appiconset/App-Icon-1024x1024@1x.png")
+        app_icon.save(ios / "AppIcon.appiconset/App-Icon-1024x1024@1x.png")
         for name, s in (("image.png", 260), ("image@2x.png", 520), ("image@3x.png", 780)):
             splash(780).resize((s, s), Image.LANCZOS).save(ios / "SplashScreenLogo.imageset" / name)
     print("ok")
