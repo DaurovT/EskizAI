@@ -4,6 +4,7 @@
 
     python scripts/inbox_import.py --share-token TOKEN  /tmp/file.eskiz   # мастер — автор ссылки клиента
     python scripts/inbox_import.py --user-id UUID       /tmp/file.eskiz
+    python scripts/inbox_import.py --phone +998901234567 /tmp/file.eskiz
 """
 
 import argparse
@@ -26,6 +27,7 @@ def main() -> None:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--share-token")
     g.add_argument("--user-id")
+    g.add_argument("--phone", help="номер мастера, например +998901234567")
     ap.add_argument("package")
     a = ap.parse_args()
 
@@ -39,6 +41,12 @@ def main() -> None:
             if link is None or link.created_by is None:
                 raise SystemExit("ссылка не найдена или без автора")
             user_id = link.created_by
+        elif a.phone:
+            from mebel_api.services.auth_codes import normalize_phone
+            u = s.scalar(select(User).where(User.phone == normalize_phone(a.phone)))
+            if u is None:
+                raise SystemExit("пользователь с таким номером не найден")
+            user_id = u.id
         else:
             user_id = uuid.UUID(a.user_id)
         if s.get(User, user_id) is None:
