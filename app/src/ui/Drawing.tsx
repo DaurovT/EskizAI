@@ -44,12 +44,7 @@ export function DrawingThumb({ uri, width = 64, height = 46, selected, style }: 
   );
 }
 
-/** Плитка приложения Eskiz DWG: тёмная #1F2937 со знаком DWG. */
-export function DwgAppIcon({ size = 40, radius }: { size?: number; radius?: number }) {
-  const m = Math.round(size * 0.6);
-  return (
-    <View style={{ width: size, height: size, borderRadius: radius ?? Math.round(size * 0.23), backgroundColor: '#1F2937', alignItems: 'center', justifyContent: 'center' }}>
-      <Image source={require('../../assets/brand/dwg-mark.png')} style={{ width: m, height: m }} accessibilityIgnoresInvertColors />
-    </View>
-  );
+/** Значок Eskiz DWG — готовая плитка из его макета (свой фон и скругление 40/180), во весь размер, без рамки. */
+export function DwgAppIcon({ size = 40 }: { size?: number; radius?: number }) {
+  return <Image source={require('../../assets/brand/dwg-mark.png')} style={{ width: size, height: size }} accessibilityIgnoresInvertColors />;
 }

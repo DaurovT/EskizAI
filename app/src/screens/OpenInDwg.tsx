@@ -68,7 +68,7 @@ export function OpenInDwgSheet({ visible, onClose, source, getLink, force }: {
         </Group>
       ) : (
         <View style={{ gap: 10, paddingHorizontal: 4 }}>
-          <DwgAppIcon size={56} radius={12} />
+          <DwgAppIcon size={68} />
           <T style={{ fontSize: 20, lineHeight: 26, fontWeight: '700' }}>{t('odw_install_title')}</T>
           <T style={{ color: palette.muted, lineHeight: 21 }}>{t('odw_install_text')}</T>
           {/* значок только своего магазина (правила App Store не разрешают ссылаться на другие платформы) */}
