@@ -80,7 +80,8 @@
           "backgroundColor": "#387D50",
           "imageWidth": 260
         }
-      ]
+      ],
+      "./plugins/withDwgQueries"
     ],
     "experiments": {
       "typedRoutes": false,
