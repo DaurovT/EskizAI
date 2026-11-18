@@ -99,3 +99,21 @@ def test_reference_data_for_screens(client):
     assert s["akfa__6000_qvt"]["chambers"] == 4 and s["akfa__6000_trio"]["chambers"] == 3
     assert s["akfa__6000_qvt"]["depth_mm"] == 60 and not s["akfa__6000_qvt"]["demo_passport"]
     assert client.get("/oyna/fx/usd").json()["rate"] == 12010.45
+
+
+def test_client_html_page(client):
+    oid = client.post("/oyna/orders", json={"address": "Чиланзар 9", "client": {"name": "Азиз"}}).json()["id"]
+    client.put(f"/oyna/orders/{oid}/positions/{uuid.uuid4()}", json={"doc": tmpl(client, "T03", room="Кухня")})
+    q = client.post(f"/oyna/orders/{oid}/quotes", json={"lang": "ru"}).json()
+    html = {"Accept": "text/html"}
+    page = client.get(q["url"], headers=html)
+    assert page.headers["content-type"].startswith("text/html") and "Согласен" in page.text and "4-12-4" in page.text
+    assert "Roziman" in client.get(q["url"] + "?lang=uz", headers=html).text
+    r = client.post(f"{q['url']}/agree?lang=ru", content="variant=1", headers={"Content-Type": "application/x-www-form-urlencoded"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    done = client.get(q["url"], headers=html).text
+    assert "Согласовано" in done and "Стандарт" in done
+    client.post(f"/oyna/orders/{oid}/quotes/{q['version']}/revoke")
+    assert "Предложение недоступно" in client.get(q["url"], headers=html).text
+    assert client.get("/q/nope", headers=html).status_code == 404

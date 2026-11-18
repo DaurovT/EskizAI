@@ -8,8 +8,10 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from urllib.parse import parse_qs
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 from oyna_core import commands
@@ -20,7 +22,7 @@ from oyna_core.order import calc_order
 from oyna_core.price import round_to
 from oyna_core.render import render_svg
 
-from . import store
+from . import client_page, store
 from .auth import Ctx, ctx, need_company
 from .settings import settings
 
@@ -444,8 +446,13 @@ def describe(doc: dict, lang: str) -> dict:
     names = EXTRA_UZ if lang == "uz" else EXTRA_RU
     ex = [names[k] for k in names if (doc.get("extras") or {}).get(k)]
     dec = lambda x: cat.decors.get(x, {}).get("name_uz" if lang == "uz" else "name_ru", x)
+    preset = cat.glass_presets.get(s["glass"])
+    glass = preset["formula"].split(" ")[0] if preset else s["glass"]          # g4_12_4i → 4-12-4i
+    if preset and preset["glass_code"].endswith("i") and not glass.endswith("i"):
+        glass += "i"
+    fit = cat.fitting_systems.get(s["fittings"], {}).get("title", s["fittings"]).split(" — ")[0].split(" (")[0]
     return {"system": f"{sysrow.get('brand', '')} {sysrow.get('series', '')}".strip(), "chambers": p.get("chambers"),
-            "glass": s["glass"], "fittings": cat.fitting_systems.get(s["fittings"], {}).get("title", s["fittings"]).split(" — ")[0],
+            "glass": glass, "fittings": fit,
             "decor": f"{dec(s['color_out'])} / {dec(s['color_in'])}", "extras": ex}
 
 
@@ -513,13 +520,33 @@ def revoke_quote(order_id: str, version: int, cx: Ctx = Depends(ctx)):
         return {"revoked": True, "version": version}
 
 
+def _wants_html(request: Request) -> bool:
+    return "text/html" in request.headers.get("accept", "")
+
+
 @router.get("/q/{token}", tags=["КП"])
-def public_quote(token: str):
-    """Страница КП для клиента (S11): последняя версия, без себестоимости. Отозванная — статус revoked с контактами цеха."""
+def public_quote(token: str, request: Request, lang: str | None = None, v: int | None = None):
+    """Страница КП для клиента (S11): последняя версия, без себестоимости. Отозванная — статус revoked с контактами цеха.
+    Браузер (Accept: text/html) получает HTML-страницу по макету, приложение — JSON."""
+    data = _public(token)
+    if not _wants_html(request):
+        if data["status"] == "not_found":
+            raise HTTPException(404, "ссылка недействительна")
+        return data
+    if data.get("status") != "active":
+        return HTMLResponse(client_page.invalid(data if data.get("company") else None, token, lang or "ru"),
+                            status_code=200 if data.get("company") else 404)
+    return HTMLResponse(client_page.page(data, token, lang, v))
+
+
+def _public(token: str) -> dict:
     if not store.dsn():
         raise HTTPException(503, "хранение не настроено")
     with store.conn() as c:
-        q, latest = _guard(lambda: store.quote_by_token(c, token))
+        try:
+            q, latest = store.quote_by_token(c, token)
+        except store.NotFound:
+            return {"status": "not_found"}
         o = c.execute("SELECT o.address, o.status, co.name AS company, co.phone AS company_phone, co.logo_url, co.plan, "
                       "cl.name AS client FROM orders o JOIN companies co ON co.id = o.company_id "
                       "LEFT JOIN clients cl ON cl.id = o.client_id WHERE o.id = %s", (q["order_id"],)).fetchone()
@@ -537,9 +564,23 @@ def public_quote(token: str):
 @router.post("/q/{token}/accept", tags=["КП"])
 def accept_quote(token: str, body: AcceptIn):
     """«Согласен»: фиксирует вариант; если КП старше порога цеха и цены выросли — предупреждение (FR-Q5)."""
+    return _accept(token, body.variant)
+
+
+@router.post("/q/{token}/agree", tags=["КП"], include_in_schema=False)
+async def agree_form(token: str, request: Request, lang: str = "ru"):
+    """«Согласен» со страницы клиента — обычная HTML-форма, затем снова страница (уже «Согласовано»)."""
+    form = parse_qs((await request.body()).decode())
+    variant = int((form.get("variant") or ["0"])[0])
+    _accept(token, variant)
+    return RedirectResponse(f"/q/{token}?lang={lang}", status_code=303)
+
+
+def _accept(token: str, variant: int) -> dict:
     if not store.dsn():
         raise HTTPException(503, "хранение не настроено")
     cat = _cat()
+    body = AcceptIn(variant=variant)
     with store.conn() as c:
         q, latest = _guard(lambda: store.quote_by_token(c, token))
         if latest["revoked_at"]:

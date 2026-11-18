@@ -1,0 +1,10 @@
+# Блок для общего Caddyfile проекта Eskiz Mebel (/opt/mebel/deploy/Caddyfile) — добавляет сессия Eskiz Mebel
+# после подтверждения владельца. Сниппет (common) уже определён в том Caddyfile.
+# Caddyfile смонтирован одним файлом — после правки: docker restart mebel-caddy-1.
+api.oyna.eskizai.uz {
+	import common
+	request_body {
+		max_size 20MB
+	}
+	reverse_proxy oyna-api:8000
+}
