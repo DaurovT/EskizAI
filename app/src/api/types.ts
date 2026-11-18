@@ -42,6 +42,8 @@ export type Command = { cmd: string; [k: string]: unknown };
 export type Violation = {
   code: string; severity: Severity; title: string; msg?: string; path?: string; fix?: string;
   accepted: boolean; accepted_by?: string; accepted_by_name?: string; accepted_at?: string;
+  /** price — ценовые (P.*, D.1, 7.7): показываются в расчёте, не в счётчике предупреждений окна */
+  scope?: 'construction' | 'price';
 };
 export type CellGeo = {
   path: string; type: CellType; axis: [number, number, number, number]; light: [number, number];
@@ -93,7 +95,7 @@ export type Conflict = { conflict: true; server: { doc: Doc; rev: number; delete
 export type SyncResult = { orders: { id: string; status: 'ok' }[]; positions: { position_id: string; status: 'ok' | 'conflict' | 'error'; rev?: number; server?: Conflict['server']; error?: string }[] };
 
 // ---------- справочники ----------
-export type Template = { id: string; name: string; kind: Doc['kind']; default_w: number; default_h: number; category: string; ready: boolean; fixed_parts: { path: string; size: number }[] };
+export type Template = { id: string; name: string; short?: string; kind: Doc['kind']; default_w: number; default_h: number; category: string; ready: boolean; fixed_parts: { path: string; size: number }[] };
 export type Measure = { ok: boolean; frame_w?: number; frame_h?: number; opening_w?: number; opening_h?: number; gap_mm?: number;
   issues: { code: string; severity: Severity | 'warn'; msg: string; fix?: string; field?: string }[] };
 export type Kit = { name: string; setup: Setup };

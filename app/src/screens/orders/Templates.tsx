@@ -118,7 +118,7 @@ export default function Templates() {
                     {docs[t.id] ? <Schema doc={docs[t.id]} width={cardW - 24} maxHeight={72} dims={false} /> : <WindowThumb width={56} height={50} />}
                   </View>
                   <View style={{ minHeight: 36, justifyContent: 'center' }}>
-                    <Txt size={14} w={600} center style={{ lineHeight: 18 }} color={t.ready ? C.ink : C.muted}>{t.name}</Txt>
+                    <Txt size={14} w={600} center style={{ lineHeight: 18 }} color={t.ready ? C.ink : C.muted}>{t.short ?? t.name}</Txt>
                   </View>
                   <Txt size={11} color={C.muted}>{t.id}</Txt>
                   {!t.ready ? <View style={{ position: 'absolute', top: 8, right: 8 }}><Tag kind="n" title="скоро" /></View> : null}
@@ -182,7 +182,7 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
   const fitErr = fresh ? vs.find((v) => v.code === '1.4')
     : geo?.error ? ({ code: '1.4', severity: 'block', title: geo.error, accepted: false } as Violation) : undefined;
   const blocks = vs.filter((v) => (v.severity === 'block' || v.severity === 'lock') && !v.accepted && v.code !== '1.4');
-  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted);
+  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted && v.scope !== 'price');
 
   const vertical = doc?.frame.root.split !== 'h';
   const fixedSum = t.fixed_parts.filter((p) => !p.path.includes('.')).reduce((s, p) => s + p.size, 0);

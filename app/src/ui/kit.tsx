@@ -195,18 +195,25 @@ export function Button({ title, onPress, kind = 'primary', icon, loading, disabl
 
 /** Заливка «стеклянной голубой» кнопки (.cta:not(.off)::before/::after в макете). */
 export function GlassBlue() {
+  // размер — по onLayout: проценты в react-native-svg не пересчитываются, когда кнопка растягивается после первой отрисовки
+  const [box, setBox] = useState({ w: 0, h: 0 });
   return (
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Defs>
-        <LinearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#ECF3FC" stopOpacity={0.96} />
-          <Stop offset="0.28" stopColor="#C2D6F0" stopOpacity={0.92} />
-          <Stop offset="0.62" stopColor="#A6C4EA" stopOpacity={0.92} />
-          <Stop offset="1" stopColor="#CEE6FD" stopOpacity={0.96} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill="url(#gb)" />
-    </Svg>
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}
+      onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (width !== box.w || height !== box.h) setBox({ w: width, h: height }); }}>
+      {box.w ? (
+        <Svg width={box.w} height={box.h}>
+          <Defs>
+            <LinearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor="#ECF3FC" stopOpacity={0.96} />
+              <Stop offset="0.28" stopColor="#C2D6F0" stopOpacity={0.92} />
+              <Stop offset="0.62" stopColor="#A6C4EA" stopOpacity={0.92} />
+              <Stop offset="1" stopColor="#CEE6FD" stopOpacity={0.96} />
+            </LinearGradient>
+          </Defs>
+          <Rect x={0} y={0} width={box.w} height={box.h} fill="url(#gb)" />
+        </Svg>
+      ) : null}
+    </View>
   );
 }
 

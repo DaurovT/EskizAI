@@ -130,7 +130,7 @@ def summary(doc: dict, co) -> dict:
     return {"total": p.get("total"), "area_m2": round((p.get("area_m2") or doc["frame"]["w"] * doc["frame"]["h"] / 1e6) * qty, 3),
             "per_m2": p.get("per_m2"), "cost": p.get("cost"), "qty": qty, "can_quote": r["can_quote"],
             "complete": p.get("complete", False), "demo": p.get("demo", False),
-            "warns": sum(1 for v in r["violations"] if v["severity"] == "warn" and not v.get("accepted"))}
+            "warns": sum(1 for v in r["violations"] if v["severity"] == "warn" and not v.get("accepted") and v.get("scope") != "price")}
 
 
 def _pos_out(c, row: dict, co, role: str, names: dict) -> dict:
@@ -146,7 +146,7 @@ def _pos_out(c, row: dict, co, role: str, names: dict) -> dict:
             "label": f"{sysrow.get('brand', '')} {sysrow.get('series', '')} · {_cat().decors.get(s['color_out'], {}).get('name_ru', s['color_out'])}".strip(),
             "total": p.get("total"), "per_m2": p.get("per_m2"), "area_m2": p.get("area_m2"), "demo": p.get("demo"),
             "complete": p.get("complete"), "can_quote": r["can_quote"], "violations": r["violations"],
-            "warns": sum(1 for v in r["violations"] if v["severity"] == "warn" and not v.get("accepted")),
+            "warns": sum(1 for v in r["violations"] if v["severity"] == "warn" and not v.get("accepted") and v.get("scope") != "price"),
             "updated_at": store.iso(row["updated_at"]), "updated_by": store.user_name(c, row.get("updated_by"))}
 
 

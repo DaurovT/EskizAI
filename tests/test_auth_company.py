@@ -48,6 +48,7 @@ def test_onboarding_settings_prices_members(client):
 
     # S13: настройки, работы, стекольщик
     assert client.patch("/oyna/company", headers=H(tok), json={"skew_warn_mm": 15}).json()["company"]["skew_warn_mm"] == 15
+    assert client.patch("/oyna/company", headers=H(tok), json={"usd_rate": None}).json()["company"]["usd_rate"] is None
     client.put("/oyna/company/works", headers=H(tok), json={"dismantle": 40000, "slopes": 45000, "sill_install": 25000,
                                                            "drip_install": 15000, "install_door": 150000})
     gp = client.put("/oyna/company/glass-prices", headers=H(tok), json={"g4_12_4": 150000, "4i-16-4": 210000}).json()

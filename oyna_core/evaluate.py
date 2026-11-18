@@ -21,6 +21,7 @@ class Violation:
     accepted: bool = False
     accepted_by: str = ""
     accepted_at: str = ""
+    scope: str = "construction"          # construction | price — ценовые (P.*, D.1, 7.7) не про конструкцию окна
 
     def as_dict(self) -> dict:
         return {k: v for k, v in self.__dict__.items() if v not in ("", None) or k in ("code", "severity")}
@@ -52,8 +53,9 @@ class Eval:
             return
         acc = next((a for a in self.doc.get("accepted_warnings", [])
                     if a.get("rule") == code and a.get("path", "") in ("", path)), None) if r["severity"] == "warn" else None
+        scope = "price" if r.get("group") == "price" or code in ("7.6", "7.7") else "construction"
         self.violations.append(Violation(code, r["severity"], r["title"], msg, path, fix, acc is not None,
-                                         (acc or {}).get("by", ""), (acc or {}).get("at", "")))
+                                         (acc or {}).get("by", ""), (acc or {}).get("at", ""), scope))
 
     def has(self, code: str) -> bool:
         return any(v.code == code for v in self.violations)

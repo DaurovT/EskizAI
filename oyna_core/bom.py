@@ -221,7 +221,9 @@ def build_bom(ev: Eval) -> list[Line]:
                 st = "demo"
             # «оценка» (коэффициенты) — не прайс стекольщика: у боевого цеха это «нет цены», пока он не внесёт свой прайс
             status = {"найдено": "price", "оценка": "demo" if ev.company.demo_prices else "none"}.get(st, st)
-            ln = Line("glass", f"Стеклопакет {g.spec}", calc_area, "m2", code=g.preset or g.formula, path=cg.path,
+            label = cat.glass_presets[g.preset]["formula"].split(" ")[0] + ("i" if g.preset.endswith("i") and not cat.glass_presets[g.preset]["formula"].split(" ")[0].endswith("i") else "") \
+                if g.preset else g.formula
+            ln = Line("glass", f"Стеклопакет {label}", calc_area, "m2", code=g.preset or g.formula, article=label, path=cg.path,
                       note=f"{cg.glass_w:.0f}×{cg.glass_h:.0f} мм, {area:.3f} м²; {how}"
                            + ("; нужен прайс стекольщика цеха" if status == "none" else ""))
             ln.unit_price, ln.price_unit = pr, "m2"

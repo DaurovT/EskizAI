@@ -270,7 +270,7 @@ export default function Editor() {
   const info = isLocal ? localCalc : server;
   const vs = isOffline || !info ? [] : info.violations;
   const errors = vs.filter(isErr);
-  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted);
+  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted && v.scope !== 'price');
   const room = doc.room || 'Позиция';
   const qty = doc.qty ?? 1;
 
@@ -627,7 +627,7 @@ function Issues({ doc, vs, offline: off, room, order, pos, onBack, onPick, onFix
   onBack: () => void; onPick: (path?: string) => void; onFix: (fx: FixAction) => void; onCommand: (c: Command[]) => void;
 }) {
   const errors = vs.filter(isErr);
-  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted);
+  const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted && v.scope !== 'price');
   const accepted = vs.filter((v) => v.severity === 'warn' && v.accepted);
   const hints = vs.filter((v) => v.severity === 'hint' || v.severity === 'auto_add');
   const group = (title: string, list: Violation[], kind: 'err' | 'est' | 'n' | 'info') => list.length ? (
