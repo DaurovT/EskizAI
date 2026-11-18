@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Eskiz Oyna",
+    "slug": "eskiz-oyna",
+    "scheme": "eskizoyna",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F3EF",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "uz.eskiz.oyna",
+      "appleTeamId": "XQ35SJRLQH",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Камера нужна, чтобы сфотографировать проём / Kamera deraza o'rnini suratga olish uchun kerak",
+        "NSPhotoLibraryUsageDescription": "Галерея нужна, чтобы выбрать фото проёма / Galereya surat tanlash uchun kerak",
+        "NSLocalNetworkUsageDescription": "Нужно для связи с сервером Eskiz Oyna в вашей сети"
+      }
+    },
+    "android": {
+      "package": "uz.eskiz.oyna",
+      "permissions": [
+        "CAMERA"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#387D50"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Галерея нужна, чтобы выбрать фото проёма",
+          "cameraPermission": "Камера нужна, чтобы сфотографировать проём"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#387D50",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "icon": "./assets/icon.png"
+  }
+}
