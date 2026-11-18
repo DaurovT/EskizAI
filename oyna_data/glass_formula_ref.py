@@ -70,6 +70,7 @@ def price(g: dict) -> tuple[int, str]:
         s += P["low_e"] * p["low_e"] + P["tempered"] * p["tempered"] + P["tinted"] * p["tinted"]
         s += P["matte"] * p["matte"] + P["triplex"] * p["triplex"]
     s += P["argon"] * sum(sp["argon"] for sp in g["spacers"])
+    s += P.get("spacer_extra_per_mm", 0) * sum(max(0, sp["mm"] - 12) for sp in g["spacers"])
     return int(s), "по надбавкам glass_formula.json"
 
 

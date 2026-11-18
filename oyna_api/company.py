@@ -35,7 +35,7 @@ class CompanyIn(BaseModel):
     address: str | None = None
     mode: Literal["manufacturer", "dealer"] = "manufacturer"
     dealer_coef: float | None = None
-    markup_kind: Literal["percent", "per_m2"] = "percent"
+    markup_kind: Literal["percent", "margin", "per_m2"] = "percent"
     markup_value: float = 30
     usd_rate: float | None = None
     lang_default: Literal["ru", "uz"] = "ru"
@@ -53,7 +53,7 @@ class CompanyPatch(BaseModel):
     logo_url: str | None = None
     mode: Literal["manufacturer", "dealer"] | None = None
     dealer_coef: float | None = None
-    markup_kind: Literal["percent", "per_m2"] | None = None
+    markup_kind: Literal["percent", "margin", "per_m2"] | None = None
     markup_value: float | None = None
     usd_rate: float | None = None
     install_gap_mm: int | None = Field(None, ge=0, le=60)

@@ -44,7 +44,7 @@ def test_typo_check():
 
 def test_glass_parse_and_system_fit():
     ok = c.post("/oyna/glass/parse", json={"formula": "6t-14-4i", "system": "akfa__7000_akfa_eko"}).json()
-    assert ok["ok"] and ok["fits_system"] and ok["price_sum_m2"] == 320000
+    assert ok["ok"] and ok["fits_system"] and ok["price_sum_m2"] == 495000
     no = c.post("/oyna/glass/parse", json={"formula": "6t-14-4i", "system": "akfa__6000_qvt"}).json()
     assert no["code"] == "4.6"
     bad = c.post("/oyna/glass/parse", json={"formula": "4-40-4"}).json()

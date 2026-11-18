@@ -1,6 +1,6 @@
 """Цена позиции (FR-P3…P7): себестоимость → режим дилера → наценка → скидка → округление.
 
-P = round_N((C · (1 + m) или C + m_м² · S) · (1 − d)), где C = материалы (× (1 + коэф. дилера)) + работы.
+P = round_N((C · (1 + m) | C / (1 − m) | C + m_м² · S) · (1 − d)) — наценка на себестоимость, доля маржи в цене или за м², где C = материалы (× (1 + коэф. дилера)) + работы.
 """
 from __future__ import annotations
 
@@ -26,9 +26,11 @@ def price_position(ev: Eval, lines: list[Line], discount_pct: float = 0.0, today
     if co.mode == "dealer":
         materials *= 1 + (co.dealer_coef or 0)          # FR-P7: заказ у производителя
     cost = (materials + works) * qty
-    if co.markup_kind == "per_m2":
+    if co.markup_kind == "per_m2":                       # сумма за м²
         before = cost + co.markup_value * area * qty
-    else:
+    elif co.markup_kind == "margin":                     # доля маржи в цене: 30% → цена = себестоимость / 0,7
+        before = cost / (1 - min(co.markup_value, 95) / 100)
+    else:                                                # percent: наценка на себестоимость: 30% → × 1,3
         before = cost * (1 + co.markup_value / 100)
     total = round_to(before * (1 - discount_pct / 100), co.rounding_sum)
     per_m2 = total / (area * qty) if area else 0

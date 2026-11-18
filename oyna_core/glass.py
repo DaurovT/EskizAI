@@ -143,6 +143,7 @@ def price_m2(g: Glass, cat: Catalog, company=None) -> tuple[float | None, str, s
         s += P["low_e"] * p.low_e + P["tempered"] * p.tempered + P["tinted"] * p.tinted
         s += P["matte"] * p.matte + P["triplex"] * p.triplex
     s += P["argon"] * sum(sp["argon"] for sp in g.spacers)
+    s += P.get("spacer_extra_per_mm", 0) * sum(max(0, sp["mm"] - 12) for sp in g.spacers)
     how = "по надбавкам цеха" if status_custom == "найдено" else "по надбавкам glass_formula.json"
     return float(s), status_custom, how
 

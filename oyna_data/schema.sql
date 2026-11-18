@@ -10,7 +10,7 @@ CREATE TABLE companies (
   logo_url      text,
   mode          text NOT NULL DEFAULT 'manufacturer' CHECK (mode IN ('manufacturer','dealer')), -- сам варю / заказываю у производителя
   dealer_coef   numeric(6,3),            -- для dealer: материалы × (1 + coef)
-  markup_kind   text NOT NULL DEFAULT 'percent' CHECK (markup_kind IN ('percent','per_m2')),
+  markup_kind   text NOT NULL DEFAULT 'percent' CHECK (markup_kind IN ('percent','margin','per_m2')), -- на себестоимость | доля маржи в цене | сумма за м²
   markup_value  numeric(12,2) NOT NULL DEFAULT 0,
   usd_rate      numeric(12,2),           -- свой курс; NULL = курс ЦБ
   install_gap_mm int NOT NULL DEFAULT 20,     -- монтажный шов с каждой стороны: рама = проём − 2 × шов

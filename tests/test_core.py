@@ -89,7 +89,7 @@ def test_nested_transom():
 def test_glass_formula():
     g = parse("6t-14-4i", CAT)
     assert (g.thickness_mm, g.weight_kg_m2, g.chambers) == (24, 25, 1)
-    assert price_m2(g, CAT)[0] == 320000
+    assert price_m2(g, CAT)[0] == 495000
     assert parse("6з-14-4и", CAT).panes[0].tempered
     with pytest.raises(GlassError):
         parse("4-30-4", CAT)
@@ -158,6 +158,16 @@ def test_real_company_blocks_without_prices():
 def test_role_hides_cost():
     r = calc(t("T03"), CAT, DEMO, role="measurer")
     assert "cost" not in r["price"] and all("cost" not in l for l in r["bom"])
+
+
+def test_markup_modes():
+    d = commands.set_extras(t("T03"), install=False)
+    pct, margin = Company.demo(), Company.demo()
+    margin.markup_kind = "margin"
+    a, b = calc(d, CAT, pct)["price"], calc(d, CAT, margin)["price"]
+    assert a["total"] == pytest.approx(a["cost"] * 1.3, abs=1000)          # 30% на себестоимость
+    assert b["total"] == pytest.approx(b["cost"] / 0.7, abs=1000)          # 30% — доля маржи в цене
+    assert b["total"] > a["total"]
 
 
 def test_dealer_mode_more_expensive():
