@@ -1,0 +1,53 @@
+{
+  "_note": "ДЕМО-цех для разработки и показа поставщикам. demo_prices = true: где нет цены, ядро берёт demo_price_sum, ставит предупреждение D.1 и метку «ДЕМО» на КП. Все числа — ДЕМО.",
+  "company": {
+    "name": "Демо-цех",
+    "mode": "manufacturer",
+    "dealer_coef": 0.25,
+    "markup_kind": "percent",
+    "markup_value": 30,
+    "usd_rate": 12010.45,
+    "install_gap_mm": 20,
+    "rounding_sum": 1000,
+    "lang_default": "ru",
+    "demo_prices": true,
+    "skew_warn_mm": 10,
+    "quote_price_check_days": 14,
+    "discount_limit_pct": {
+      "manager": 10
+    }
+  },
+  "kits": [
+    {
+      "name": "Эконом",
+      "setup": {
+        "system": "akfa__6000_trio",
+        "color_out": "white",
+        "color_in": "white",
+        "glass": "g4_12_4",
+        "fittings": "fornax"
+      }
+    },
+    {
+      "name": "Стандарт",
+      "setup": {
+        "system": "akfa__6000_qvt",
+        "color_out": "white",
+        "color_in": "white",
+        "glass": "g4_12_4i",
+        "fittings": "fornax"
+      }
+    },
+    {
+      "name": "Тёплый",
+      "setup": {
+        "system": "akfa__7000_akfa_eko",
+        "color_out": "white",
+        "color_in": "white",
+        "glass": "g4_10_4_10_4",
+        "fittings": "fornax"
+      }
+    }
+  ],
+  "_dealer_note": "dealer_coef 0.25 — ДЕМО: открытых данных, как производители дают цену дилерам, нет (открытый вопрос PRD)"
+}

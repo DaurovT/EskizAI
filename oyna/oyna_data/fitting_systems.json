@@ -1,0 +1,79 @@
+{
+  "_note": "Паспорта наборов фурнитуры — ключ совместимости с системой профиля (правило 7.2). Набор доступен системе, только если systems.fitting_groove есть в grooves И material_class есть в materials. Детали и размеры — в fitting_rules.csv (fitting_system = ключ). Предел веса — правило 3.1; если в наборе есть тяжёлые петли (option_group hinge), берётся предел выбранных петель.",
+  "_grooves": {
+    "euro_pvc": "евро-паз ПВХ (ось 9/13 мм): все ПВХ-системы и алюминий с «ПВХ-пазом» (Alutex PZ-50 PVC, Termal 55 PVC)",
+    "euro_alu": "евро-паз алюминия (14/18, 15/20): тёплый алюминий, BKC50, Neo ADC-50, серии «Evro»",
+    "alu_plain": "без евро-паза: Aldoks и аналоги — поворотные створки на простых петлях"
+  },
+  "fornax": {
+    "title": "Fornax (Yelken Group, Турция) — поворотно-откидная ПВХ",
+    "grooves": ["euro_pvc"],
+    "materials": ["pvc", "alu_cold", "alu_thermo"],
+    "openings": ["tilt_turn", "turn", "tilt"],
+    "sash_w_mm": [286, 1600],
+    "sash_h_mm": [585, 2400],
+    "max_sash_kg": 100,
+    "in_catalog": "Romchi: Akfa «Pvc.Dvoy.Otk.Fornax» — комплект, испанолеты, ножницы до 1000, средние запоры, накладки; ручки Akfa «Exclusive ruchka (Import)»",
+    "status": "каталог Fornax TR-2026; вес 100 кг — TR, в RU-каталоге 80/130 кг (петля Ø6)",
+    "default": true
+  },
+  "generic": {
+    "title": "Типовая поворотно-откидная ПВХ (без бренда)",
+    "grooves": ["euro_pvc"],
+    "materials": ["pvc"],
+    "openings": ["tilt_turn", "turn", "tilt", "door"],
+    "sash_w_mm": [400, 1400],
+    "sash_h_mm": [500, 2400],
+    "max_sash_kg": 90,
+    "in_catalog": "нет — цены ДЕМО (demo_price_sum)",
+    "status": "типовое"
+  },
+  "maco_mm": {
+    "title": "MACO Multi-Matic (Австрия) — справочный",
+    "grooves": ["euro_pvc"],
+    "materials": ["pvc"],
+    "openings": ["tilt_turn", "tilt"],
+    "sash_w_mm": [320, 1600],
+    "sash_h_mm": [360, 2450],
+    "max_sash_kg": 100,
+    "max_sash_kg_heavy": 130,
+    "in_catalog": "нет в Romchi — цены ДЕМО; набор нужен как эталон правил и для цехов, которые работают на Maco",
+    "status": "каталог Maco Multi-Matic: стандарт 100 кг, усиленные петли 120–180 кг"
+  },
+  "fapim_galicube": {
+    "title": "Fapim Galicube (Италия) — поворотно-откидная для алюминия",
+    "grooves": ["euro_alu"],
+    "materials": ["alu_cold", "alu_thermo"],
+    "openings": ["tilt_turn"],
+    "sash_w_mm": [402, 1700],
+    "sash_h_mm": [400, 2400],
+    "max_sash_kg": 100,
+    "in_catalog": "только ножницы с диапазонами (yandex pro100); остальное ДЕМО",
+    "status": "диапазоны ножниц найдены; предел веса и высота — ДЕМО"
+  },
+  "alu_tr_a3400": {
+    "title": "Турецкая П/О для алюминия, серия A3400 (Romchi «(Tr)»)",
+    "grooves": ["euro_alu"],
+    "materials": ["alu_cold", "alu_thermo"],
+    "openings": ["tilt_turn", "turn"],
+    "sash_w_mm": [400, 1400],
+    "sash_h_mm": [500, 2400],
+    "max_sash_kg": 100,
+    "max_sash_kg_heavy": 160,
+    "in_catalog": "Romchi: аксессуары BKC50, Termo 70, Lega Thermo, Craf Termo, Alutex PZ-50 Evro",
+    "status": "петли 100/160 кг — из названий в Romchi; диапазоны ножниц — ДЕМО",
+    "default": true
+  },
+  "alu_uz": {
+    "title": "Узбекская фурнитура для холодного алюминия (Akfa «(Uz)», Ekopen)",
+    "grooves": ["alu_plain"],
+    "materials": ["alu_cold"],
+    "openings": ["turn", "door"],
+    "sash_w_mm": [300, 1000],
+    "sash_h_mm": [300, 1800],
+    "max_sash_kg": 80,
+    "in_catalog": "Romchi: Akfa alu aksessuari (Uz) — петли, ручки, ответки, дверные петли",
+    "status": "пределы — по паспорту Aldoks (окно 1800×1000, 80 кг); откидных створок нет",
+    "default": true
+  }
+}

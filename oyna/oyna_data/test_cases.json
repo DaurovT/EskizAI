@@ -1,0 +1,525 @@
+{
+  "_note": "Проверки ядра. Цены не проверяются, пока нет верных данных — только правила. expect — «содержит»: перечисленные коды обязаны сработать, другие тоже могут (например, TC01 даст ещё 1.3). stage — этап PRD, на котором тест должен проходить (1 — ядро и правила, 2 — расчёт и цена). Ключи expect: block / warn / hint / auto_add — «содержит»; *_absent — правило не должно сработать; bom_has / bom_absent — коды fitting_rules в спецификации; price_group — вычисленная ценовая группа. commands — команды ядра, применяемые к позиции перед проверкой (cmd + аргументы). warn_at / warn_absent_at — то же, но в конкретной ячейке (путь).",
+  "cases": [
+    {
+      "id": "TC01",
+      "desc": "Окно 9 км × 10 см",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 9000000,
+          "h": 100,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "1.2"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC02",
+      "desc": "Введено в см: 120 × 150",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 120,
+          "h": 150,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "1.2"
+        ],
+        "hint": [
+          "1.7"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC03",
+      "desc": "Створка 1450 мм шириной",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 1500,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "2.2"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC04",
+      "desc": "Типовое двухстворчатое 1400×1300",
+      "template": "T03",
+      "w": 1400,
+      "h": 1300,
+      "expect": {
+        "block": [],
+        "auto_add": [
+          "5.1",
+          "5.2"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC05",
+      "desc": "Две створки рядом без импоста",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 1400,
+          "h": 1300,
+          "root": {
+            "split": "none",
+            "parts": [
+              {
+                "cell": {
+                  "type": "sash",
+                  "open": "turn"
+                }
+              },
+              {
+                "cell": {
+                  "type": "sash",
+                  "open": "turn"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "6.1"
+        ]
+      },
+      "stage": 1,
+      "note": "split none = деление без профиля (может прийти из ИИ или импорта); в редакторе такого не собрать"
+    },
+    {
+      "id": "TC06",
+      "desc": "Москитка на глухой",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed",
+              "mosquito": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "9.1"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC07",
+      "desc": "Высокая створка 1500 мм — средний прижим",
+      "pos": {
+        "kind": "window",
+        "frame": {
+          "w": 800,
+          "h": 1600,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "auto_add": [
+          "3.3"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC08",
+      "desc": "Размер не кратен 5",
+      "template": "T01",
+      "w": 703,
+      "h": 1300,
+      "expect": {
+        "warn": [
+          "1.6"
+        ]
+      },
+      "stage": 1
+    },
+    {
+      "id": "TC09",
+      "desc": "Позиция без цены: Windo 6000 QVT, «Внешний внутренний», штапик под стеклопакет",
+      "note": "в каталоге нет цены у it03070 (Shtapik Paket, Windo 6000 QVT, Внешний внутренний); декор снаружи «золотой дуб», внутри белый → ценовая группа «Внешний внутренний»",
+      "expect": {
+        "block": [
+          "P.1"
+        ]
+      },
+      "stage": 2,
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "windo__6000_qvt",
+          "color_out": "golden_oak",
+          "color_in": "white",
+          "glass": "g4_12_4",
+          "fittings": "generic"
+        },
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "TC10",
+      "desc": "Расчёт сверяется с реальными заказами цеха",
+      "note": "заполнить 3–5 заказов цеха-партнёра: спецификация + цена; допуск ±5%",
+      "expect": {},
+      "stage": 2
+    },
+    {
+      "id": "TC11",
+      "stage": 1,
+      "desc": "Fornax (ПВХ-паз) на холодном алюминии Aldoks (без евро-паза)",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__aldoks",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "g4_12_4",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 800,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "7.2"
+        ]
+      }
+    },
+    {
+      "id": "TC12",
+      "stage": 1,
+      "desc": "Fornax на алюминии с ПВХ-пазом — допустимо",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "alutex__pz_50_pvc",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "g4_12_4",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 800,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": []
+      },
+      "note": "проверяется только отсутствие 7.2"
+    },
+    {
+      "id": "TC13",
+      "stage": 1,
+      "desc": "4-16-4 (24 мм) в Akfa 6000 QVT — не входит в штапик (макс. 20 мм)",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__6000_qvt",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "g4_16_4",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "4.6"
+        ]
+      }
+    },
+    {
+      "id": "TC14",
+      "stage": 1,
+      "desc": "Своя формула 6t-14-4i (24 мм) в Akfa 7000 Eko — входит",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__7000_akfa_eko",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "6t-14-4i",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": []
+      },
+      "note": "толщина 24, вес 25 кг/м², цена 495 000/м² (цены 18.11.2026) (glass_formula_ref.py)"
+    },
+    {
+      "id": "TC15",
+      "stage": 1,
+      "desc": "Своя формула с рамкой 30 мм",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__7000_akfa_eko",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "4-30-4",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "block": [
+          "4.9"
+        ]
+      }
+    },
+    {
+      "id": "TC16",
+      "stage": 1,
+      "desc": "Балконный блок T09: нижняя глухая часть окна (ниже 800 мм от пола) со стеклопакетом по умолчанию",
+      "template": "T09",
+      "expect": {
+        "warn_at": {
+          "1.1": [
+            "4.7"
+          ]
+        }
+      },
+      "commands": [
+        {
+          "cmd": "set_cell",
+          "path": "1.1",
+          "type": "fixed"
+        }
+      ]
+    },
+    {
+      "id": "TC17",
+      "stage": 1,
+      "desc": "То же, но нижней ячейке задано cell.fill = закалённый 4t-12-4 (20 мм — входит в Akfa 6000)",
+      "template": "T09",
+      "expect": {
+        "warn_absent_at": {
+          "1.1": [
+            "4.7"
+          ]
+        }
+      },
+      "commands": [
+        {
+          "cmd": "set_cell",
+          "path": "1.1",
+          "type": "fixed"
+        },
+        {
+          "cmd": "set_fill",
+          "path": "1.1",
+          "fill": {
+            "kind": "glass",
+            "glass": "4t-12-4"
+          }
+        }
+      ],
+      "note": "4.7 на стекле двери (путь 0) остаётся — это правильно; 6t-12-4 (22 мм) в Akfa 6000 не входит (4.6)"
+    },
+    {
+      "id": "TC18",
+      "stage": 2,
+      "desc": "Декор: снаружи золотой дуб, внутри белый, Akfa 6000 QVT — ценовая группа «Внешний внутренний»",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__6000_qvt",
+          "color_out": "golden_oak",
+          "color_in": "white",
+          "glass": "g4_12_4",
+          "fittings": "fornax"
+        },
+        "frame": {
+          "w": 1000,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        }
+      },
+      "expect": {
+        "price_group": "Внешний внутренний"
+      },
+      "note": "ДОПУЩЕНИЕ о смысле группы — см. decors.json"
+    },
+    {
+      "id": "TC19",
+      "stage": 2,
+      "desc": "Тёплый алюминий Termo 70, створка 1050×2300 со стеклопакетом 8-12-8-12-8 (~110 кг) — петли A3400 сменились на 160 кг",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__termo_70",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "8-12-8-12-8",
+          "fittings": "alu_tr_a3400"
+        },
+        "frame": {
+          "w": 1050,
+          "h": 2300,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "bom_has": [
+          "alu_tr_a3400.tilt_turn.hinge_set_160"
+        ],
+        "block_absent": [
+          "3.1"
+        ]
+      },
+      "note": "стёкла 24 мм → 60 кг/м²; стекло ≈1,74 м² → ~104 кг + профиль ~9 кг ≈ 113 кг: выше 100 (A3400F.401), ниже 160 (A3420F.1); толщина 48 мм входит в штапик Termo 70 (36–50)"
+    },
+    {
+      "id": "TC20",
+      "stage": 2,
+      "desc": "Ручка Hoppe Hamburg вместо Roto Lux через setup.options",
+      "pos": {
+        "kind": "window",
+        "setup": {
+          "system": "akfa__6000_qvt",
+          "color_out": "white",
+          "color_in": "white",
+          "glass": "g4_12_4",
+          "fittings": "fornax",
+          "options": {
+            "handle": "euro_pvc.tilt_turn.handle_hoppe_hamburg"
+          }
+        },
+        "frame": {
+          "w": 800,
+          "h": 1300,
+          "root": {
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true
+            }
+          }
+        }
+      },
+      "expect": {
+        "bom_has": [
+          "euro_pvc.tilt_turn.handle_hoppe_hamburg"
+        ],
+        "bom_absent": [
+          "euro_pvc.tilt_turn.handle_roto_lux"
+        ]
+      }
+    }
+  ]
+}

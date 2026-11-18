@@ -1,0 +1,690 @@
+{
+  "_note": "Уровень 1: ориентиры общей практики, не данные конкретной системы. Проверить у технолога цеха. Источник: документ «Eskiz Oyna — правила проверки конструкций (уровень 1)». Правила P.* добавлены по функционалу.",
+  "severity": {
+    "block": "нельзя в смету",
+    "warn": "предупреждение, можно принять",
+    "auto_add": "автоматически добавить в смету",
+    "hint": "подсказка",
+    "lock": "интерфейс не даёт выбрать"
+  },
+  "rules": [
+    {
+      "code": "1.1",
+      "group": "input",
+      "title": "Размер — целое положительное число в мм",
+      "params": {
+        "min_exclusive": 0
+      },
+      "severity": "block"
+    },
+    {
+      "code": "1.2",
+      "group": "input",
+      "title": "Сторона оконного блока в диапазоне",
+      "params": {
+        "min": 300,
+        "max": 3000
+      },
+      "severity": "block"
+    },
+    {
+      "code": "1.3",
+      "group": "input",
+      "title": "Сторона блока > 2500 мм — нужен импост или деление на блоки",
+      "params": {
+        "gt": 2500
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "1.4",
+      "group": "input",
+      "title": "Сумма секций равна общему размеру",
+      "params": {
+        "tolerance_mm": 0
+      },
+      "severity": "block"
+    },
+    {
+      "code": "1.5",
+      "group": "input",
+      "title": "Минимальная секция между импостами (глухая)",
+      "params": {
+        "min": 200
+      },
+      "severity": "block"
+    },
+    {
+      "code": "1.6",
+      "group": "input",
+      "title": "Размер не кратен 5 мм — возможна опечатка",
+      "params": {
+        "multiple_of": 5
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "1.7",
+      "group": "input",
+      "title": "Обе стороны < 300 — возможно, введено в см",
+      "params": {
+        "both_lt": 300
+      },
+      "severity": "hint"
+    },
+    {
+      "code": "2.1",
+      "group": "sash",
+      "title": "Створка меньше минимума по типу открывания",
+      "params": {
+        "table": "sash_limits"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.2",
+      "group": "sash",
+      "title": "Створка больше максимума по стороне или площади",
+      "params": {
+        "table": "sash_limits",
+        "hint": "разделите импостом"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.3",
+      "group": "sash",
+      "title": "Нарушена пропорция створки",
+      "params": {
+        "table": "sash_limits"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "2.4",
+      "group": "sash",
+      "title": "Створка в пределах 10% от максимума",
+      "params": {
+        "ratio": 0.9
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "3.1",
+      "group": "weight",
+      "title": "Вес створки больше предела фурнитуры",
+      "params": {
+        "hint": "усиленная фурнитура или импост",
+        "limits_source": "fitting_systems.<набор>.max_sash_kg; если выбраны тяжёлые петли (option_group hinge) — их предел (A3420F: 160 кг)"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "3.2",
+      "group": "weight",
+      "title": "Вес створки > 80% предела фурнитуры",
+      "params": {
+        "ratio": 0.8
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "3.3",
+      "group": "weight",
+      "title": "Высота створки > 1200 мм — добавить средний прижим",
+      "params": {
+        "gt": 1200,
+        "add": "middle_lock"
+      },
+      "severity": "auto_add",
+      "note": "для фурнитуры, где средний запор со стороны петель — базовая деталь (Fornax), он и так есть в спецификации; правило добавляет его только системам, где он опционален"
+    },
+    {
+      "code": "4.1",
+      "group": "glass",
+      "title": "Минимальная сторона стеклопакета",
+      "params": {
+        "min": 150
+      },
+      "severity": "block"
+    },
+    {
+      "code": "4.2",
+      "group": "glass",
+      "title": "Площадь при стекле 4 мм — нужно 5–6 мм",
+      "params": {
+        "glass_mm": 4,
+        "max_m2": 2.5
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "4.3",
+      "group": "glass",
+      "title": "Площадь при стекле 5–6 мм",
+      "params": {
+        "glass_mm": [
+          5,
+          6
+        ],
+        "max_m2": 4.0
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "4.4",
+      "group": "glass",
+      "title": "Площадь одного стеклопакета",
+      "params": {
+        "max_m2": 6.0
+      },
+      "severity": "block"
+    },
+    {
+      "code": "4.5",
+      "group": "glass",
+      "title": "Соотношение сторон стеклопакета",
+      "params": {
+        "max_ratio": 6
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "4.6",
+      "group": "glass",
+      "title": "Толщина стеклопакета помещается в систему (есть штапик)",
+      "params": {
+        "source": "passport.beads; толщина своей формулы — glass_formula.json"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "4.7",
+      "group": "glass",
+      "title": "Стекло ниже 800 мм от пола или в двери — закалённое/триплекс",
+      "params": {
+        "below_floor_mm": 800,
+        "fix": "предложить cell.fill = закалённое (6t…) или триплекс для этой ячейки"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "4.8",
+      "group": "glass",
+      "title": "Тип стеклопакета не соответствует классу системы",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "5.1",
+      "group": "reinf",
+      "title": "Импост ПВХ армируется всегда",
+      "params": {},
+      "severity": "auto_add"
+    },
+    {
+      "code": "5.2",
+      "group": "reinf",
+      "title": "Белый ПВХ: армировать элементы длиннее 700 мм",
+      "params": {
+        "gt": 700
+      },
+      "severity": "auto_add"
+    },
+    {
+      "code": "5.3",
+      "group": "reinf",
+      "title": "Ламинированный и цветной ПВХ: армировать все элементы",
+      "params": {},
+      "severity": "auto_add"
+    },
+    {
+      "code": "5.4",
+      "group": "reinf",
+      "title": "Импост > 2000 мм — усиленное замкнутое армирование",
+      "params": {
+        "gt": 2000
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "5.5",
+      "group": "reinf",
+      "title": "Импост > 3000 мм — статический соединитель или деление",
+      "params": {
+        "gt": 3000,
+        "applies_to": "assembly"
+      },
+      "severity": "block",
+      "note": "в одной раме импост не длиннее 3000 мм (правило 1.2), поэтому правило срабатывает только на составных конструкциях и соединительных профилях"
+    },
+    {
+      "code": "5.6",
+      "group": "reinf",
+      "title": "На импост опираются две тяжёлые створки",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "5.7",
+      "group": "reinf",
+      "title": "Этаж > 9 или открытый фасад — ветровая нагрузка",
+      "params": {
+        "floor_gt": 9
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "6.1",
+      "group": "geometry",
+      "title": "Две открывающиеся створки рядом без импоста и штульпа",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "6.2",
+      "group": "geometry",
+      "title": "Петли створки на импосте, к которому примыкает створка с ручкой",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "6.3",
+      "group": "geometry",
+      "title": "Ручка со стороны петель / противоречивая схема",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "6.4",
+      "group": "geometry",
+      "title": "Створка у стены не откроется на 90° из-за глубокого откоса",
+      "params": {
+        "needs": "slope_depth"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "6.5",
+      "group": "geometry",
+      "title": "Створка упирается в подоконник, батарею, мебель",
+      "params": {
+        "needs": "nearby"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "6.6",
+      "group": "geometry",
+      "title": "Откидная створка слишком узкая для ножниц",
+      "params": {
+        "source": "fitting_rules"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "6.7",
+      "group": "geometry",
+      "title": "Поворотно-откидная створка в штульповой паре со стороны штульпа",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "6.8",
+      "group": "geometry",
+      "title": "Ручка выше 1900 мм или ниже 800 мм от пола",
+      "params": {
+        "min": 800,
+        "max": 1900
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "6.9",
+      "group": "geometry",
+      "title": "Открываемая створка без детского замка со 2 этажа (жилое)",
+      "params": {
+        "floor_gte": 2
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "6.10",
+      "group": "geometry",
+      "title": "Все створки глухие в жилой комнате",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "7.1",
+      "group": "compat",
+      "title": "Все профили конструкции из одной системы",
+      "params": {},
+      "severity": "lock"
+    },
+    {
+      "code": "7.2",
+      "group": "compat",
+      "title": "Фурнитура подходит к пазу системы",
+      "params": {
+        "source": "fitting_systems.json: grooves + materials против systems.fitting_groove + material_class"
+      },
+      "severity": "lock",
+      "note": "в интерфейсе несовместимый набор не показывается; если пришёл из ИИ/импорта/смены системы — блок с предложением набора по умолчанию для паза системы"
+    },
+    {
+      "code": "7.3",
+      "group": "compat",
+      "title": "Толщина стеклопакета в фальц, штапик по толщине",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "7.4",
+      "group": "compat",
+      "title": "Холодный и тёплый алюминий не смешиваются в блоке",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "7.5",
+      "group": "compat",
+      "title": "Цвет/ламинация доступны для системы",
+      "params": {
+        "source": "decors.json → ценовая группа по price_group_rule; группа должна быть в systems.colors"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "7.6",
+      "group": "compat",
+      "title": "Позиция есть в актуальном прайсе",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "7.7",
+      "group": "compat",
+      "title": "Прайс старше 30 дней",
+      "params": {
+        "days": 30
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "8.1",
+      "group": "door",
+      "title": "Ширина дверной створки",
+      "params": {
+        "min": 600,
+        "max": 1100
+      },
+      "severity": "block"
+    },
+    {
+      "code": "8.2",
+      "group": "door",
+      "title": "Высота дверной створки",
+      "params": {
+        "min": 1800,
+        "max": 2400
+      },
+      "severity": "block"
+    },
+    {
+      "code": "8.3",
+      "group": "door",
+      "title": "Вес дверной створки против предела дверных петель",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "8.4",
+      "group": "door",
+      "title": "Балконная дверь без порога или с порогом не той высоты",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "8.5",
+      "group": "door",
+      "title": "Балконный блок: низ окна выше порога двери",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "8.6",
+      "group": "door",
+      "title": "Оконная фурнитура на входной двери",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "8.7",
+      "group": "door",
+      "title": "Входная дверь ПВХ с интенсивным потоком — лучше алюминий",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "8.8",
+      "group": "door",
+      "title": "Нижняя часть двери со стеклом — закалённое/триплекс/сэндвич",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "9.1",
+      "group": "kit",
+      "title": "Москитная сетка на неоткрывающейся створке или не с той стороны",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "9.2",
+      "group": "kit",
+      "title": "Нет подоконника/отлива/откосов при монтаже «под ключ»",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "9.3",
+      "group": "kit",
+      "title": "Нет демонтажа при замене",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "9.4",
+      "group": "kit",
+      "title": "Нет монтажных материалов при включённом монтаже",
+      "params": {},
+      "severity": "auto_add"
+    },
+    {
+      "code": "9.5",
+      "group": "kit",
+      "title": "Блок равен проёму — не вычтен монтажный зазор",
+      "params": {
+        "gap_mm": [
+          15,
+          30
+        ],
+        "note": "монтажный шов с каждой стороны"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "9.6",
+      "group": "kit",
+      "title": "Высокий этаж без работы снаружи",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "9.7",
+      "group": "kit",
+      "title": "Нестандартная форма без стоимости гибки/резки",
+      "params": {},
+      "severity": "warn"
+    },
+    {
+      "code": "P.1",
+      "group": "price",
+      "title": "Нет цены у позиции — КП не отправляется",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "P.2",
+      "group": "price",
+      "title": "Цена за м² вне рыночного коридора",
+      "params": {
+        "min_sum_m2": 380000,
+        "max_sum_m2": 2600000
+      },
+      "severity": "warn",
+      "note": "нижняя граница снижена с 500 000: Akfa/Ecopen с монтажом на OLX 11.2026 — 400–440 тыс. сум/м²; обычный ПВХ дороже 1,5 млн/м² не найден, верх 2,6 млн — запас под тёплый алюминий"
+    },
+    {
+      "code": "D.1",
+      "group": "price",
+      "title": "В расчёте есть ДЕМО-цены — не реальные цены поставщика",
+      "params": {
+        "only_if": "companies.demo_prices"
+      },
+      "severity": "warn",
+      "note": "при demo_prices = true заменяет блок P.1: вместо «нет цены» берётся demo_price_sum; КП получает метку «ДЕМО». У боевого цеха demo_prices = false и P.1 блокирует как раньше"
+    },
+    {
+      "code": "4.9",
+      "group": "glass",
+      "title": "Своя формула стеклопакета не разбирается или вне ограничений (стекло 3–12 мм, рамка 6–24 мм, до 3 камер)",
+      "params": {
+        "source": "glass_formula.json grammar.limits"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "5.8",
+      "group": "reinf",
+      "title": "Для системы нет армирования в каталоге — взято универсальное другого бренда (ДЕМО)",
+      "params": {
+        "source": "reinforcement_map.status"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "7.8",
+      "group": "compat",
+      "title": "Набор фурнитуры не поддерживает тип открывания или размер створки",
+      "params": {
+        "source": "fitting_systems.openings, sash_w_mm, sash_h_mm"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "7.9",
+      "group": "compat",
+      "title": "Выбран вариант детали не из выбранного набора или не той группы",
+      "params": {
+        "source": "fitting_rules.code, option_group"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "7.10",
+      "group": "compat",
+      "title": "Декор недоступен у системы (нет ценовой группы)",
+      "params": {
+        "source": "decors.json + systems.colors"
+      },
+      "severity": "lock"
+    }
+  ],
+  "sash_limits": {
+    "turn": {
+      "w": [
+        400,
+        1300
+      ],
+      "h": [
+        500,
+        2400
+      ],
+      "max_m2": 2.5,
+      "h_le_w": 2.5,
+      "w_le_h": 1.5
+    },
+    "tilt_turn": {
+      "w": [
+        400,
+        1300
+      ],
+      "h": [
+        500,
+        2400
+      ],
+      "max_m2": 2.5,
+      "h_le_w": 2.5,
+      "w_le_h": 1.5
+    },
+    "tilt": {
+      "w": [
+        400,
+        1600
+      ],
+      "h": [
+        300,
+        1200
+      ],
+      "max_m2": 2.0,
+      "h_le_w": 1.0
+    },
+    "shtulp": {
+      "w": [
+        400,
+        900
+      ],
+      "h": [
+        500,
+        2400
+      ],
+      "max_m2": 2.0,
+      "h_le_w": 2.5,
+      "w_le_h": 1.5
+    },
+    "sliding": {
+      "w": [
+        500,
+        1500
+      ],
+      "h": [
+        500,
+        2400
+      ],
+      "max_m2": 3.0,
+      "h_le_w": 3.0
+    },
+    "door": {
+      "w": [
+        600,
+        1100
+      ],
+      "h": [
+        1800,
+        2400
+      ]
+    }
+  },
+  "weights": {
+    "glass_kg_per_m2_per_mm": 2.5,
+    "fitting_limits_kg": {
+      "standard": 90,
+      "reinforced": 140,
+      "alu_thermo_tr_100": 100,
+      "alu_thermo_tr_160": 160
+    },
+    "_formula": "вес створки по Maco: ШСФ × ВСФ × (суммарная толщина стёкол × 2,5 кг/м²) + профиль; считать по размеру створки по фальцу, а не по стеклу"
+  }
+}
