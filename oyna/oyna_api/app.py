@@ -140,8 +140,9 @@ def templates():
                 if "node" in part:
                     walk(part["node"], pp)
         walk(root)
-        out.append({**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")},
-                    "category": CATEGORY.get(t["kind"], t["kind"]), "ready": ready, "fixed_parts": fixed})
+        out.append({**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")}, "short": t.get("short", t["name"]),
+                    "category": CATEGORY.get(t["kind"], t["kind"]), "ready": ready, "fixed_parts": fixed,
+                    "root": t["root"]})                    # дерево — миниатюра рисуется на телефоне без запроса
     return out
 
 

@@ -1,0 +1,59 @@
+# Eskiz Oyna на общем VPS с Eskiz Mebel и Temir — отдельный compose-проект «oyna» со своей базой.
+#   cd /opt/oyna && sudo docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --build
+#
+# Снаружи — только через общий Caddy проекта Eskiz Mebel: API подключён к сети mebel_default под именем oyna-api
+# (имена api/postgres/dgn-api там заняты). Порты на хост не публикуются. /opt/mebel и /opt/dgn не трогаем.
+
+name: oyna
+
+services:
+  oyna-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oyna
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD не задан}
+      POSTGRES_DB: oyna
+    volumes:
+      - oyna_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oyna -d oyna"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [internal]
+
+  oyna-api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    image: oyna-api:latest
+    restart: unless-stopped
+    depends_on:
+      oyna-db:
+        condition: service_healthy
+    environment:
+      OYNA_ENV: prod
+      OYNA_DSN: host=oyna-db port=5432 user=oyna password=${POSTGRES_PASSWORD} dbname=oyna
+      OYNA_JWT_SECRET: ${OYNA_JWT_SECRET:?OYNA_JWT_SECRET не задан}
+      OYNA_ADMIN_TOKEN: ${OYNA_ADMIN_TOKEN:?OYNA_ADMIN_TOKEN не задан}
+      OYNA_CODE_PROVIDER: ${OYNA_CODE_PROVIDER:-eskiz}
+      ESKIZ_EMAIL: ${ESKIZ_EMAIL:-}
+      ESKIZ_PASSWORD: ${ESKIZ_PASSWORD:-}
+      ESKIZ_SENDER: ${ESKIZ_SENDER:-4546}
+      ESKIZ_TEMPLATE: ${ESKIZ_TEMPLATE:-IQLabs Confirmation code: {code}}
+      OYNA_PUBLIC_URL: ${OYNA_PUBLIC_URL:-https://api.oyna.eskizai.uz}
+      OYNA_FONT: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+      OYNA_FONT_BOLD: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+    networks:
+      internal: {}
+      mebel_default:
+        aliases: [oyna-api]
+
+volumes:
+  oyna_pgdata:
+
+networks:
+  internal: {}
+  mebel_default:
+    external: true

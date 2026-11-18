@@ -164,7 +164,9 @@ def get_company(cx: Ctx = Depends(ctx)):
 @router.patch("", summary="Изменить настройки цеха")
 def patch_company(body: CompanyPatch, cx: Ctx = Depends(ctx)):
     cid = need_company(cx); require(cx, "owner")
-    data = body.model_dump(exclude_none=True)
+    data = body.model_dump(exclude_unset=True)          # явный null сбрасывает поле: usd_rate → курс ЦБ, logo_url, dealer_coef
+    nullable = {"usd_rate", "logo_url", "dealer_coef", "phone", "inn", "address"}
+    data = {k: v for k, v in data.items() if v is not None or k in nullable}
     with store.conn() as c:
         if data:
             c.execute(f"UPDATE companies SET {', '.join(f'{k} = %s' for k in data)} WHERE id = %s", list(data.values()) + [cid])
