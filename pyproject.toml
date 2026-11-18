@@ -1,0 +1,17 @@
+[project]
+name = "oyna-core"
+version = "0.1.0"
+description = "Eskiz Oyna — ядро расчёта окон и дверей: модель, команды, проверки, спецификация, цена"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn>=0.29"]
+dev = ["pytest", "httpx", "fastapi>=0.110", "uvicorn>=0.29"]
+
+[tool.setuptools]
+packages = ["oyna_core", "oyna_api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

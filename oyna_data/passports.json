@@ -1,0 +1,332 @@
+{
+  "_note": "ДЕМО: типовое значение, НЕ проверено — заменить данными из техкаталога системы",
+  "pvc_60": {
+    "title": "ПВХ 58–60 мм (5200/5800/6000)",
+    "bar_mm": 6000,
+    "cut_mm": 4,
+    "weld_mm": 3,
+    "bf": 64,
+    "bi": 84,
+    "bs": 77,
+    "ov": 8,
+    "imp_add": 5,
+    "g": 5,
+    "r": 14,
+    "glass_max_mm": 32,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        20,
+        24
+      ],
+      "bead_triple": [
+        28,
+        32
+      ]
+    },
+    "reinforce": "always",
+    "profile_kg_m": {
+      "frame": 1.6,
+      "sash": 1.7,
+      "mullion": 1.9,
+      "reinf": 0.9
+    },
+    "fitting_groove": "13mm",
+    "verified": false
+  },
+  "pvc_70": {
+    "title": "ПВХ 70 мм (6500/7000/7200/7600)",
+    "bar_mm": 6000,
+    "cut_mm": 4,
+    "weld_mm": 3,
+    "bf": 66,
+    "bi": 86,
+    "bs": 79,
+    "ov": 8,
+    "imp_add": 5,
+    "g": 5,
+    "r": 14,
+    "glass_max_mm": 42,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        24,
+        32
+      ],
+      "bead_triple": [
+        36,
+        42
+      ]
+    },
+    "reinforce": "always",
+    "profile_kg_m": {
+      "frame": 1.8,
+      "sash": 1.9,
+      "mullion": 2.1,
+      "reinf": 1.0
+    },
+    "fitting_groove": "13mm",
+    "verified": false
+  },
+  "alu_cold": {
+    "title": "Алюминий холодный (Aldoks, BKC50, ADC-50, PZ-50…)",
+    "bar_mm": 6000,
+    "cut_mm": 4,
+    "weld_mm": 0,
+    "bf": 45,
+    "bi": 55,
+    "bs": 55,
+    "ov": 7,
+    "imp_add": 0,
+    "g": 4,
+    "r": 12,
+    "glass_max_mm": 28,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        20,
+        24
+      ]
+    },
+    "reinforce": "none",
+    "profile_kg_m": {
+      "frame": 0.9,
+      "sash": 1.0,
+      "mullion": 1.1
+    },
+    "fitting_groove": "alu",
+    "verified": false
+  },
+  "alu_thermo": {
+    "title": "Алюминий тёплый (Termo 55–80, Asistal, Alutermo)",
+    "bar_mm": 6000,
+    "cut_mm": 4,
+    "weld_mm": 0,
+    "bf": 55,
+    "bi": 70,
+    "bs": 70,
+    "ov": 7,
+    "imp_add": 0,
+    "g": 4,
+    "r": 14,
+    "glass_max_mm": 40,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        24,
+        32
+      ],
+      "bead_triple": [
+        36,
+        40
+      ]
+    },
+    "reinforce": "none",
+    "profile_kg_m": {
+      "frame": 1.3,
+      "sash": 1.4,
+      "mullion": 1.5
+    },
+    "fitting_groove": "alu",
+    "verified": false
+  },
+  "_systems_note": "Паспорта конкретных систем (ключ = system_code) поверх класса: inherits — класс, поля из него, которые не переопределены, остаются ДЕМО. verified_fields — поля, взятые из официальных данных Akfa (akfagroup.com, каталог IMZO). Размеры сечений (bf, bi, bs, ov, weld, imp_add, g, r) Akfa не публикует — тех. каталог по запросу: t.me/akfa_support, +998 71 203 00 00.",
+  "akfa__6000_qvt": {
+    "inherits": "pvc_60",
+    "bar_mm": 6000,
+    "glass_min_mm": 6,
+    "glass_max_mm": 20,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        20,
+        20
+      ]
+    },
+    "reinforce": "always",
+    "reinf_mm": 1.2,
+    "fitting_axis_mm": 9,
+    "rebate_h_mm": 24,
+    "default_glass": "g4_12_4",
+    "depth_mm": 60,
+    "seal_contours": 2,
+    "max_door_sash_mm": [
+      900,
+      2000
+    ],
+    "max_door_sash_kg": 110,
+    "verified": false,
+    "title": "Akfa Quattro 6000 (QVT)",
+    "chambers": 4,
+    "wall_mm": 2.2,
+    "max_window_sash_mm": [
+      850,
+      1750
+    ],
+    "max_window_sash_kg": 70,
+    "verified_fields": [
+      "depth_mm",
+      "chambers",
+      "glass_min_mm",
+      "glass_max_mm",
+      "reinf_mm",
+      "wall_mm",
+      "max_window_sash_mm",
+      "max_window_sash_kg",
+      "max_door_sash_mm",
+      "max_door_sash_kg",
+      "seal_contours"
+    ],
+    "sources": [
+      "https://akfagroup.com/quattro-6000",
+      "akfaaluminium.com/download/about_eng.pdf",
+      "akfaaluminium.com/download/catalog_production.pdf (IMZO, с. 16)"
+    ],
+    "_assumed": "bar_mm 6000 — по рынку (Ekopen «цена за 6 метров»); fitting_axis_mm 9 и rebate_h_mm 24 — по аналогии с Akfa 5800/7000 (winpro.ru, 2010); в каталоге IMZO макс. створка 1800×650 — брать меньшее"
+  },
+  "akfa__6000_trio": {
+    "inherits": "pvc_60",
+    "bar_mm": 6000,
+    "glass_min_mm": 6,
+    "glass_max_mm": 20,
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        20,
+        20
+      ]
+    },
+    "reinforce": "always",
+    "reinf_mm": 1.2,
+    "fitting_axis_mm": 9,
+    "rebate_h_mm": 24,
+    "default_glass": "g4_12_4",
+    "depth_mm": 60,
+    "seal_contours": 2,
+    "max_door_sash_mm": [
+      900,
+      2000
+    ],
+    "max_door_sash_kg": 110,
+    "verified": false,
+    "title": "Akfa Trio 6000",
+    "chambers": 3,
+    "wall_mm": 2.8,
+    "max_window_sash_mm": [
+      900,
+      1850
+    ],
+    "max_window_sash_kg": 80,
+    "verified_fields": [
+      "depth_mm",
+      "chambers",
+      "glass_min_mm",
+      "glass_max_mm",
+      "reinf_mm",
+      "wall_mm",
+      "max_window_sash_mm",
+      "max_window_sash_kg",
+      "max_door_sash_mm",
+      "max_door_sash_kg"
+    ],
+    "sources": [
+      "https://akfagroup.com/trio-6000",
+      "akfaaluminium.com/download/catalog_production.pdf (IMZO, с. 20)"
+    ],
+    "_assumed": "опционально 3-й контур уплотнения; IMZO даёт макс. створку 1800×800 — брать меньшее"
+  },
+  "akfa__aldoks": {
+    "inherits": "alu_cold",
+    "title": "Akfa Aldox (Aldoks), холодный алюминий",
+    "depth_mm": 45.5,
+    "glass_min_mm": 4,
+    "glass_max_mm": 20,
+    "max_window_sash_mm": [
+      1000,
+      1800
+    ],
+    "max_window_sash_kg": 80,
+    "max_door_sash_mm": [
+      1500,
+      2500
+    ],
+    "max_door_sash_kg": 140,
+    "bar_mm": 6000,
+    "bf": 45,
+    "verified": false,
+    "verified_fields": [
+      "depth_mm",
+      "glass_min_mm",
+      "glass_max_mm",
+      "max_window_sash_mm",
+      "max_window_sash_kg",
+      "max_door_sash_mm",
+      "max_door_sash_kg"
+    ],
+    "sources": [
+      "https://akfagroup.com/aldox",
+      "ekopen.uz/alyuminiy-profil (хлыст 6 м)"
+    ],
+    "_assumed": "bf 45 — по дилеру (alubest.altaplast.uz); у казахстанского клона Alugal Aldoks видимая ширина глухой части 58,5, импоста 76,5, стенка 1,1 мм; штапики по толщине — из диапазона стекла 4–20 мм",
+    "beads": {
+      "bead_single": [
+        4,
+        6
+      ],
+      "bead_igu": [
+        20,
+        20
+      ]
+    }
+  },
+  "akfa__termo_70": {
+    "inherits": "alu_thermo",
+    "title": "Akfa Termo 70 (BKT 70), тёплый алюминий",
+    "depth_mm": 70,
+    "bs_depth_mm": 75.5,
+    "glass_min_mm": 20,
+    "glass_max_mm": 50,
+    "thermo_break_mm": 24,
+    "bar_mm": 6000,
+    "verified": false,
+    "verified_fields": [
+      "depth_mm",
+      "bs_depth_mm",
+      "glass_min_mm",
+      "glass_max_mm",
+      "thermo_break_mm"
+    ],
+    "sources": [
+      "https://akfagroup.com/bkt70"
+    ],
+    "_assumed": "фурнитурный паз не опубликован; в Romchi к Termo 70 продаются турецкие петли A3400F/A3420F (евро-паз) — принят евро-паз. Аксессуары Termo 70 в Romchi собраны частично (series_incomplete). Альтернатива — Termo 65 (паз EURO 14-18 опубликован), но её нет в Romchi; штапики по толщине — из диапазона 20–50 мм, одинарного стекла нет",
+    "beads": {
+      "bead_igu": [
+        20,
+        32
+      ],
+      "bead_triple": [
+        36,
+        50
+      ]
+    }
+  }
+}

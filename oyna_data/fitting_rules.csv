@@ -1,0 +1,95 @@
+code,fitting_system,opening,part_code,part_name,w_from,w_to,h_from,h_to,option_group,is_default,qty,cams,when,item_article,demo_price_sum,status,source
+generic.tilt_turn.scissors_s,generic,tilt_turn,scissors_s,Ножницы короткие,435,535,,,,,1,0,,,28000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+generic.tilt_turn.scissors_m,generic,tilt_turn,scissors_m,Ножницы средние,535,1200,,,,,1,1,,,29000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+generic.tilt_turn.scissors_l,generic,tilt_turn,scissors_l,Ножницы длинные,1200,1400,,,,,1,1,,,31000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+generic.tilt_turn.scissors_extra,generic,tilt_turn,scissors_extra,Дополнительные ножницы,1301,,,,,,1,0,weight>100,,29000,каталог Maco,"Maco Multi-Matic, с. 82–83: при ШСФ от 1301 мм или весе створки > 100 кг"
+fapim_galicube.tilt_turn.scissors_s,fapim_galicube,tilt_turn,scissors_s,Ножницы короткие 1448Ai,402,750,,,,,1,,,,28000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+fapim_galicube.tilt_turn.scissors_m,fapim_galicube,tilt_turn,scissors_m,Ножницы средние 1448BR,572,1200,,,,,1,,,,29000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+fapim_galicube.tilt_turn.scissors_l,fapim_galicube,tilt_turn,scissors_l,Ножницы длинные 1448C,816,1700,,,,,1,,,,33000,найдено,https://yandex.com.tr/maps/org/pro100/216371676310/prices/
+generic.tilt_turn.hinge_set,generic,tilt_turn,hinge_set,Комплект петель (верх+низ),,,,,,,1,0,,,35000,типовое,
+generic.tilt_turn.middle_lock,generic,tilt_turn,middle_lock,Средний прижим/запор на стороне петель,,,1201,,,,1,1,,,18000,правило 3.3,
+generic.tilt_turn.strike_plate,generic,tilt_turn,strike_plate,Ответная планка (под каждую цапфу),,,,,,,cams,0,,,5000,правило каталогов,Maco/Roto: одна ответная планка на каждую запорную цапфу; cams = сумма цапф выбранных деталей (привод + угловые + ножницы + средние запоры)
+generic.tilt_turn.tilt_turn_drive,generic,tilt_turn,tilt_turn_drive,Поворотно-откидной привод,,,,,,,1,,,,30000,типовое,
+generic.turn.hinge_set,generic,turn,hinge_set,Комплект петель (верх+низ),,,,,,,1,0,,,35000,типовое,
+generic.turn.middle_lock,generic,turn,middle_lock,Средний прижим/запор на стороне петель,,,1201,,,,1,1,,,18000,правило 3.3,
+generic.turn.strike_plate,generic,turn,strike_plate,Ответная планка (под каждую цапфу),,,,,,,cams,0,,,5000,правило каталогов,одна ответная планка на каждую запорную цапфу
+generic.tilt.transom_scissors,generic,tilt,transom_scissors,Фрамужные ножницы,,,,,,,2,0,,,25000,типовое,
+generic.tilt.tilt_hinge_3,generic,tilt,tilt_hinge_3,Третья откидная петля,1000,,,,,,1,0,,,10000,каталог Maco,"Maco Multi-Matic, с. 40: в ПВХ-окнах при ШСФ от 1000 мм нужна третья откидная петля"
+generic.door.door_hinge,generic,door,door_hinge,Дверная петля,,,,,,,ceil(h/800)+1,0,,,40000,ДЕМО-формула,
+generic.door.door_lock,generic,door,door_lock,Дверной замок + ручка,,,,,,,1,0,,,250000,типовое,
+fornax.tilt_turn.set,fornax,tilt_turn,set,Комплект Fornax (неразмерная часть),,,,,,,1,2,,Komplekt (Fornax),,найдено,Romchi 53 031 сум. Состав в прайсе не указан; вывод по каталогу Fornax RU с. 14: угловая передача 181.010 (1 цапфа) + откидной запор 184.010 (1 цапфа) + верхняя и нижняя петлевые группы + блокиратор 189.600 + ответные планки. Подтвердить у Romchi
+fornax.tilt_turn.drive_gr01,fornax,tilt_turn,drive_gr01,Испанолет GR01 585–1000,,,585,884,,,1,0,,,24000,нет в Romchi,"Fornax TR-2026 «Çift Açılım Sistemleri (Pvc)», fornax.com.tr, с. 24; у производителя есть, в прайсе Romchi нет"
+fornax.tilt_turn.drive_gr02,fornax,tilt_turn,drive_gr02,Испанолет GR02 885–1300,,,885,1300,,,1,1,,Ispanilet 885-1300 Fornax,,найдено,"Romchi 26 576 сум; арт. 185.021.001; по ВСФ, сторона ручки; Fornax TR-2026 «Çift Açılım Sistemleri (Pvc)», fornax.com.tr, с. 24"
+fornax.tilt_turn.drive_gr03,fornax,tilt_turn,drive_gr03,Испанолет GR03 1185–1600,,,1301,1600,,,1,1,,Ispanilet 1185-1600 (Fornax),,найдено,Romchi 29 716 сум; арт. 185.021.301; в старом RU-каталоге 2 цапфы
+fornax.tilt_turn.drive_gr04,fornax,tilt_turn,drive_gr04,Испанолет GR04 1385–1800,,,1601,1800,,,1,2,,Ispanilet 1385-1800 Fornax,,найдено,Romchi 31 770 сум; арт. 185.021.501
+fornax.tilt_turn.drive_gr05,fornax,tilt_turn,drive_gr05,Испанолет GR05 1585–2000,,,1801,2000,,,1,2,,Ispanilet 1585-2000 (Fornax),,найдено,Romchi 41 555 сум; арт. 185.021.701
+fornax.tilt_turn.drive_gr06,fornax,tilt_turn,drive_gr06,Испанолет GR06 1985–2400,,,2001,2400,,,1,2,,Ispanilet 1985-2400 Fornax,,найдено,Romchi 45 179 сум; арт. 185.022.101
+fornax.tilt_turn.scissors_gr1,fornax,tilt_turn,scissors_gr1,Ножницы GR1 395–600,395,600,,,,,1,0,,Komplekt Nojnits Rami I Stvorki 395-600 Fornax,,найдено,"Romchi 27 059 сум; арт. 182.010.401; по ШСФ; Fornax TR-2026 «Çift Açılım Sistemleri (Pvc)», fornax.com.tr, с. 36"
+fornax.tilt_turn.scissors_gr2,fornax,tilt_turn,scissors_gr2,Ножницы GR2 595–800,601,800,,,,,1,0,,Komplekt Nojnits Rami I Stvorki 595-800 (Fornax),,найдено,Romchi 28 992 сум; арт. 182.010.501; вариант GR2-1 — 1 цапфа
+fornax.tilt_turn.scissors_gr3,fornax,tilt_turn,scissors_gr3,Ножницы GR3 795–1000,801,1000,,,,,1,1,,Kamplekt Nojnits Rami I Stvorki 795-1000 (Fornax),,найдено,Romchi 28 992 сум; арт. 182.010.801
+fornax.tilt_turn.scissors_gr4,fornax,tilt_turn,scissors_gr4,Ножницы GR4 995–1200,1001,1200,,,,,1,1,,,31000,нет в Romchi,"арт. 182.011.001; у производителя есть, в Romchi нет — цену вводит цех"
+fornax.tilt_turn.scissors_gr5,fornax,tilt_turn,scissors_gr5,Ножницы GR5 1195–1400,1201,1400,,,,,1,1,,,33000,нет в Romchi,арт. 182.011.201
+fornax.tilt_turn.scissors_gr6,fornax,tilt_turn,scissors_gr6,Ножницы GR6 1395–1600,1401,1600,,,,,1,1,,,35000,нет в Romchi,"арт. 182.011.401; предел системы по ширине 1600 мм, вес до 100 кг (TR)"
+fornax.tilt_turn.middle_lock_gr00,fornax,tilt_turn,middle_lock_gr00,Средний запор GR00 400–800 (сторона петель),,,400,699,,,1,1,,,13000,нет в Romchi,"Fornax TR-2026 «Çift Açılım Sistemleri (Pvc)», fornax.com.tr, с. 40; в системе Fornax средний запор на вертикали со стороны петель — базовая деталь, ставится всегда (стыкуется с ножницами)"
+fornax.tilt_turn.middle_lock_gr01,fornax,tilt_turn,middle_lock_gr01,Средний запор GR01 700–1150 (сторона петель),,,700,1150,,,1,2,,Zamok Sredni 700-1150 (Fornax),,найдено,Romchi 15 341 сум; арт. 183.010.x; по ВСФ
+fornax.tilt_turn.middle_lock_gr02,fornax,tilt_turn,middle_lock_gr02,Средний запор GR02 1150–1500 (сторона петель),,,1151,1500,,,1,2,,Zamok Sredni 1150-1500 Fornax,,найдено,Romchi 17 878 сум; в RU-каталоге GR02 = 1150–1350
+fornax.tilt_turn.middle_lock_gr03,fornax,tilt_turn,middle_lock_gr03,Средний запор GR03 1350–1800 (сторона петель),,,1501,1849,,,1,3,,Zamok Sredni 1350-1800 (Fornax),,найдено,"Romchi 21 744 сум; в прайсе 1350–1800, у производителя GR03 = 1500–1850 — диапазон до 1849 взят по каталогу, проверить"
+fornax.tilt_turn.middle_lock_gr04,fornax,tilt_turn,middle_lock_gr04,Средний запор GR04 1850–2100 (сторона петель),,,1850,2100,,,1,3,,Zamok Sredni 1850-2100 (Fornax),,найдено,Romchi 32 978 сум
+fornax.tilt_turn.middle_lock_gr05,fornax,tilt_turn,middle_lock_gr05,Средний запор GR05 2100–2400 (сторона петель),,,2101,2400,,,1,4,,,38000,нет в Romchi,"у производителя есть, в Romchi нет — цену вводит цех"
+fornax.tilt_turn.middle_lock_horizontal,fornax,tilt_turn,middle_lock_horizontal,Средний запор по горизонтали (низ створки),700,1600,,,extra_lock,0,1,,опция: широкая створка,,17000,типовое,Fornax RU с. 17–18: тот же запор ставится по низу и стыкуется с откидным запором; подбор по ШСФ по той же таблице; когда обязателен — каталог не говорит
+fornax.tilt_turn.hinge_cap,fornax,tilt_turn,hinge_cap,Накладки на петли,,,,,hinge_cap,1,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka Petlya (Oq) (Fornax),,найдено,"Romchi 5 194 сум (белые), цветные 5 194–8 576; по цвету профиля"
+fornax.tilt_turn.hinge_cap_zoldub,fornax,tilt_turn,hinge_cap_zoldub,Накладки на петли — золотой дуб,,,,,hinge_cap,0,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka Petlya (ZolDub) (Fornax),,найдено,"Romchi; ставятся, если декор внутри — золотой дуб"
+fornax.tilt_turn.hinge_cap_mahagon,fornax,tilt_turn,hinge_cap_mahagon,Накладки на петли — махагон,,,,,hinge_cap,0,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka Petlya (Mahagon) (Fornax),,найдено,"Romchi; ставятся, если декор внутри — махагон"
+fornax.tilt_turn.hinge_cap_tem_kor,fornax,tilt_turn,hinge_cap_tem_kor,Накладки на петли — тёмно-коричневый,,,,,hinge_cap,0,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka Petlya (Tem Kor) (Fornax),,найдено,"Romchi; ставятся, если декор внутри — тёмно-коричневый"
+fornax.tilt_turn.hinge_cap_seriy,fornax,tilt_turn,hinge_cap_seriy,Накладки на петли — серый / антрацит,,,,,hinge_cap,0,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka Petlya (Seriy) (Fornax),,найдено,"Romchi; ставятся, если декор внутри — серый / антрацит"
+fornax.tilt_turn.hinge_cap_bronza,fornax,tilt_turn,hinge_cap_bronza,Накладки на петли — бронза,,,,,hinge_cap,0,2,0,auto: по декору внутри (decors.json → fornax_cap),Krishka petlya (Bronza) (Fornax),,найдено,"Romchi; ставятся, если декор внутри — бронза"
+fornax.tilt_turn.strike_plate,fornax,tilt_turn,strike_plate,Ответная планка,,,,,,,cams,0,,,5000,правило каталогов,одна на каждую цапфу: комплект (2) + испанолет + ножницы + средний запор; предположительно входят в комплект — проверить
+maco_mm.tilt_turn.drive_430,maco_mm,tilt_turn,drive_430,ПО-механизм DM15 430,,,360,430,,,1,0,,,45000,каталог Maco,"Maco Multi-Matic, с. 60, арт. 209370"
+maco_mm.tilt_turn.drive_660,maco_mm,tilt_turn,drive_660,ПО-механизм DM15 660,,,431,660,,,1,0,,,48000,каталог Maco,"Maco, с. 60, арт. 209371"
+maco_mm.tilt_turn.drive_840,maco_mm,tilt_turn,drive_840,ПО-механизм DM15 840,,,661,840,,,1,1,,,52000,каталог Maco,"Maco, с. 60, арт. 212118"
+maco_mm.tilt_turn.drive_1090,maco_mm,tilt_turn,drive_1090,ПО-механизм DM15 1090,,,841,1090,,,1,1,,,56000,каталог Maco,"Maco, с. 60, арт. 209373"
+maco_mm.tilt_turn.drive_1340,maco_mm,tilt_turn,drive_1340,ПО-механизм DM15 1340,,,1091,1340,,,1,1,,,60000,каталог Maco,"Maco, с. 60, арт. 209375"
+maco_mm.tilt_turn.drive_1590,maco_mm,tilt_turn,drive_1590,ПО-механизм DM15 1590,,,1341,1590,,,1,2,,,66000,каталог Maco,"Maco, с. 60, арт. 209377"
+maco_mm.tilt_turn.drive_1700,maco_mm,tilt_turn,drive_1700,ПО-механизм DM15 1700,,,1591,1700,,,1,2,,,70000,каталог Maco,"Maco, с. 60, арт. 209379"
+maco_mm.tilt_turn.drive_1950,maco_mm,tilt_turn,drive_1950,ПО-механизм DM15 1950,,,1701,1950,,,1,3,,,80000,каталог Maco,"Maco, с. 60, арт. 209383"
+maco_mm.tilt_turn.drive_2200,maco_mm,tilt_turn,drive_2200,ПО-механизм DM15 2200,,,1951,2200,,,1,3,,,86000,каталог Maco,"Maco, с. 60, арт. 209385"
+maco_mm.tilt_turn.drive_2450,maco_mm,tilt_turn,drive_2450,ПО-механизм DM15 2450,,,2201,2450,,,1,4,,,95000,каталог Maco,"Maco, с. 60, арт. 209387"
+maco_mm.tilt_turn.corner_drive,maco_mm,tilt_turn,corner_drive,Угловой переключатель с 1 цапфой,320,1800,360,2800,,,2,1,,,15000,каталог Maco,"Maco, с. 72–73, арт. 222201/211974; кол-во 2 — типовая схема П/О створки (Roto NT: угловой + поворотно-откидной угловой)"
+maco_mm.tilt_turn.corner_drive_short,maco_mm,tilt_turn,corner_drive_short,Угловой переключатель короткий,220,319,275,359,,,2,1,,,15000,каталог Maco,"Maco, с. 72, арт. 222203; для узких створок"
+maco_mm.tilt_turn.scissors_400,maco_mm,tilt_turn,scissors_400,Ножницы 400,320,400,,,,,1,0,,,40000,каталог Maco,"Maco, с. 82, арт. 211694"
+maco_mm.tilt_turn.scissors_600,maco_mm,tilt_turn,scissors_600,Ножницы 600,401,600,,,,,1,0,,,42000,каталог Maco,"Maco, с. 82, арт. 211695"
+maco_mm.tilt_turn.scissors_800,maco_mm,tilt_turn,scissors_800,Ножницы 800,601,800,,,,,1,0,,,45000,каталог Maco,"Maco, с. 82, арт. 211696; вариант с цапфой 630–800 — арт. 211697"
+maco_mm.tilt_turn.scissors_1050,maco_mm,tilt_turn,scissors_1050,Ножницы 1050,801,1050,,,,,1,1,,,50000,каталог Maco,"Maco, с. 82, арт. 211698"
+maco_mm.tilt_turn.scissors_1300,maco_mm,tilt_turn,scissors_1300,Ножницы 1300,1051,1300,,,,,1,1,,,55000,каталог Maco,"Maco, с. 82, арт. 211699"
+maco_mm.tilt_turn.middle_lock_h_1280,maco_mm,tilt_turn,middle_lock_h_1280,Средний запор на стороне петель 1280,,,1201,1280,,,1,1,,,25000,каталог Maco,"Maco, с. 78, арт. 211924 (801–1280, 1 цапфа); порог установки ВСФ > 1200 — правило 3.3"
+maco_mm.tilt_turn.middle_lock_h_1500,maco_mm,tilt_turn,middle_lock_h_1500,Средний запор на стороне петель 1500,,,1281,1500,,,1,2,,,30000,каталог Maco,"Maco, с. 78, арт. 228399"
+maco_mm.tilt_turn.middle_lock_h_2000,maco_mm,tilt_turn,middle_lock_h_2000,Средний запор на стороне петель 2000,,,1501,2000,,,1,3,,,38000,каталог Maco,"Maco, с. 78, арт. 228400"
+maco_mm.tilt_turn.middle_lock_h_2200,maco_mm,tilt_turn,middle_lock_h_2200,Средний запор на стороне петель 2200,,,2001,2200,,,1,3,,,42000,каталог Maco,"Maco, с. 78, арт. 228402"
+maco_mm.tilt_turn.middle_lock_h_2450,maco_mm,tilt_turn,middle_lock_h_2450,Средний запор на стороне петель 2450,,,2201,2450,,,1,4,,,48000,каталог Maco,"Maco, с. 78, арт. 228404"
+maco_mm.tilt_turn.middle_lock_w_1280,maco_mm,tilt_turn,middle_lock_w_1280,Средний запор на горизонтали 1280,801,1280,,,,,1,1,,,25000,каталог Maco,"Maco, с. 78, арт. 211924; нужен ли при ШСФ > 800 — типовая практика, проверить у технолога"
+maco_mm.tilt_turn.middle_lock_w_1500,maco_mm,tilt_turn,middle_lock_w_1500,Средний запор на горизонтали 1500,1281,1500,,,,,1,2,,,30000,каталог Maco,"Maco, с. 78, арт. 228399"
+maco_mm.tilt_turn.hinge_set,maco_mm,tilt_turn,hinge_set,Комплект петель (верх+низ),,,,,,,1,0,,,60000,типовое,
+maco_mm.tilt_turn.strike_plate,maco_mm,tilt_turn,strike_plate,Ответная планка,,,,,,,cams,0,,,6000,правило каталогов,одна на каждую цапфу
+maco_mm.tilt.tilt_hinge_3,maco_mm,tilt,tilt_hinge_3,Третья откидная петля,1000,,,,,,1,0,,,12000,каталог Maco,"Maco, с. 40"
+alu_tr_a3400.tilt_turn.hinge_set_100,alu_tr_a3400,tilt_turn,hinge_set_100,Петли П/О на 100 кг (A3400F.401),,,,,hinge,1,1,0,auto: weight<=100,(A3400F.401) Dv.Otk.100 kg(Qora) (Tr),,найдено,"Romchi, Akfa BKC50 аксессуары, 195 333 сум; тёплый/холодный алюминий с евро-пазом"
+alu_tr_a3400.tilt_turn.hinge_set_160,alu_tr_a3400,tilt_turn,hinge_set_160,Петли П/О на 160 кг (A3420F.1),,,,,hinge,0,1,0,auto: weight>100,(A3420F.1) Dv. Otk 160kg (Qora) (Tr),,найдено,"Romchi 341 864 сум; ставится, если вес створки > 100 кг"
+alu_tr_a3400.tilt_turn.scissors_s,alu_tr_a3400,tilt_turn,scissors_s,Ножницы короткие (A3400.20),,535,,,,,1,,,(A3400.20) Nojnitsa Korotkiy (Tr),,найдено,"Romchi 138 920–140 369 сум; диапазоны ШСФ в прайсе не указаны — взяты как у generic, проверить"
+alu_tr_a3400.tilt_turn.scissors_m,alu_tr_a3400,tilt_turn,scissors_m,Ножницы средние (A3400.21),536,1200,,,,,1,,,(A3400.21) Nojnitsa Sredniy (Tr),,найдено,Romchi 142 423 сум; диапазон — как у generic
+alu_tr_a3400.tilt_turn.scissors_l,alu_tr_a3400,tilt_turn,scissors_l,Ножницы длинные (A3400.22),1201,1400,,,,,1,,,(A3400.22) Nojnitsa Dlinniy (Tr),,найдено,Romchi 144 960 сум; диапазон — как у generic
+alu_tr_a3400.tilt_turn.middle_pressure,alu_tr_a3400,tilt_turn,middle_pressure,Средний прижим со стороны петель (A3400F.31),,,1201,,,,1,0,,(A3400F.31) Dv. Otk Zadniy Sred Prijim (Tr),,найдено,Romchi 115 968 сум; порог ВСФ > 1200 — правило 3.3
+alu_tr_a3400.tilt_turn.handle,alu_tr_a3400,tilt_turn,handle,Ручка П/О (A6011.10 Comfort),,,,,,,1,0,handle,(A6011.10) Ruchka COMFORT Okon Dv Otk (Qora) (Tr),,найдено,Romchi 102 438 сум
+alu_tr_a3400.tilt_turn.anti_burglary_cam,alu_tr_a3400,tilt_turn,anti_burglary_cam,Противовзломная цапфа (A3400.35),,,,,security,0,2,1,опция,(A3400.35) Protivazlomniy Tsalfa (Tr),,найдено,Romchi 96 640 сум; опция
+alu_uz.turn.hinge,alu_uz,turn,hinge,Петля оконная (Uz),,,,,,,2,0,,Petlya (300sht) (Uz),,найдено,"Romchi, Akfa alu аксессуары (Uz), 7 852–8 697 сум за шт; «300sht» — упаковка; 2 петли на створку — типовая практика холодного алюминия, 3 при ВСФ > 1200 не подтверждено"
+alu_uz.turn.handle,alu_uz,turn,handle,Ручка Lux Fortuna (Uz),,,,,,,1,0,handle,Ruchka Lux Fortuna (20sht) (Uz),,найдено,Romchi 36 481 сум
+alu_uz.turn.strike,alu_uz,turn,strike,Ответка 153 (Uz),,,,,,,1,0,,Otvetka 153 (500cht) (Uz),,найдено,Romchi 4 228–4 469 сум за шт
+alu_uz.door.door_hinge,alu_uz,door,door_hinge,Петля дверная алюминиевая (Uz),,,,,,,3,0,,Petlya Dvernaya Alyumin. (Uz),,найдено,Romchi 40 709–41 917 сум; 3 петли на дверную створку — типовая практика
+euro_pvc.tilt_turn.handle_roto_lux,*euro_pvc,tilt_turn,handle_roto_lux,Ручка Roto Lux,,,,,handle,1,1,0,handle,Ruchka Okon (Roto Lux) (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 53 031 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.tilt_turn.handle_hoppe_hamburg,*euro_pvc,tilt_turn,handle_hoppe_hamburg,Ручка Hoppe Hamburg,,,,,handle,0,1,0,handle,Ruchka Okon hoppe Hamburg (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 56 413 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.tilt_turn.handle_swin,*euro_pvc,tilt_turn,handle_swin,Ручка Roto Swing,,,,,handle,0,1,0,handle,Ruchka Okon Roto (SWIN) (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 57 380 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.tilt_turn.handle_hoppe_toulon,*euro_pvc,tilt_turn,handle_hoppe_toulon,Ручка Hoppe Toulon,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe Toulon (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 67 164 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.tilt_turn.handle_hoppe_ny,*euro_pvc,tilt_turn,handle_hoppe_ny,Ручка Hoppe New York,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe NY (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», нет цены — ДЕМО из каталога сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.turn.handle_roto_lux,*euro_pvc,turn,handle_roto_lux,Ручка Roto Lux,,,,,handle,1,1,0,handle,Ruchka Okon (Roto Lux) (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 53 031 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.turn.handle_hoppe_hamburg,*euro_pvc,turn,handle_hoppe_hamburg,Ручка Hoppe Hamburg,,,,,handle,0,1,0,handle,Ruchka Okon hoppe Hamburg (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 56 413 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.turn.handle_swin,*euro_pvc,turn,handle_swin,Ручка Roto Swing,,,,,handle,0,1,0,handle,Ruchka Okon Roto (SWIN) (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 57 380 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.turn.handle_hoppe_toulon,*euro_pvc,turn,handle_hoppe_toulon,Ручка Hoppe Toulon,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe Toulon (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 67 164 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+euro_pvc.turn.handle_hoppe_ny,*euro_pvc,turn,handle_hoppe_ny,Ручка Hoppe New York,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe NY (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», нет цены — ДЕМО из каталога сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"

@@ -1,0 +1,179 @@
+{
+  "_note": "Декоры (что видит клиент) и ценовые группы прайса (колонка color в catalog_items). setup.color_out / color_in — id декора. Ценовая группа считается по правилу price_group_rule и должна быть в systems.colors, иначе декор недоступен (правило 7.5, lock). Декоры — ДЕМО-набор по тому, что встречается в Romchi (цвета накладок Fornax, «Antratsit J306», объявления «дуб Mokko»); список уточнить у поставщика плёнки.",
+  "price_groups": {
+    "pvc": {
+      "Белый": "белый профиль с обеих сторон",
+      "Внешний внутренний": "ДОПУЩЕНИЕ: ламинация с одной стороны (дешевле «Ламинации»: Akfa 6000 QVT рама 311 301 против 362 520 сум)",
+      "Ламинация": "ДОПУЩЕНИЕ: ламинация с двух сторон",
+      "Эксклюзив": "особые плёнки (однотонные и металлик); цена в Romchi обычно как у «Ламинации» или выше"
+    },
+    "alu": {
+      "Белый": "порошковая покраска RAL 9016",
+      "Цветной": "порошковая покраска по RAL, кроме белого",
+      "Ламинация": "плёнка или сублимация под дерево",
+      "Вакуум": "ДОПУЩЕНИЕ: вакуумное металлизированное покрытие (под золото/бронзу/хром) — проверить у поставщика",
+      "Эксклюзив": "особые покрытия"
+    }
+  },
+  "price_group_rule": {
+    "pvc": [
+      "обе стороны white → «Белый»",
+      "хотя бы одна сторона exclusive → «Эксклюзив»",
+      "одна сторона lamination, другая white → «Внешний внутренний»",
+      "обе стороны lamination → «Ламинация»"
+    ],
+    "alu": [
+      "алюминий красится целиком: группа по более дорогой стороне",
+      "порядок цены: Белый < Цветной ≈ Вакуум < Ламинация < Эксклюзив (по Romchi: Aldoks балконная рама 695 928 / 813 104 / 802 836 / 981 379; BKC50 створка 658 480 / 713 565 / 738 329 / 861 424 / 990 680)"
+    ],
+    "fallback": "если вычисленной группы нет у системы — декор заблокирован (7.5); ИИ и подбор предлагают ближайший доступный"
+  },
+  "decors": [
+    {
+      "id": "white",
+      "name_ru": "Белый",
+      "name_uz": "Oq",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "white",
+      "hex": "#F4F4F2",
+      "fornax_cap": "Krishka Petlya (Oq) (Fornax)",
+      "note": "для алюминия = RAL 9016"
+    },
+    {
+      "id": "golden_oak",
+      "name_ru": "Золотой дуб",
+      "name_uz": "Oltin eman",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "lamination",
+      "hex": "#B5793A",
+      "fornax_cap": "Krishka Petlya (ZolDub) (Fornax)"
+    },
+    {
+      "id": "mahogany",
+      "name_ru": "Махагон",
+      "name_uz": "Maxagon",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "lamination",
+      "hex": "#6B2E1F",
+      "fornax_cap": "Krishka Petlya (Mahagon) (Fornax)"
+    },
+    {
+      "id": "dark_oak",
+      "name_ru": "Тёмный дуб",
+      "name_uz": "To'q eman",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "lamination",
+      "hex": "#4A3325",
+      "fornax_cap": "Krishka Petlya (Tem Kor) (Fornax)"
+    },
+    {
+      "id": "walnut",
+      "name_ru": "Орех",
+      "name_uz": "Yong'oq",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "lamination",
+      "hex": "#7A4E2D",
+      "fornax_cap": "Krishka Petlya (Tem Kor) (Fornax)"
+    },
+    {
+      "id": "mokko",
+      "name_ru": "Дуб мокко",
+      "name_uz": "Mokko",
+      "material": [
+        "pvc"
+      ],
+      "kind": "lamination",
+      "hex": "#5C4033",
+      "fornax_cap": "Krishka Petlya (Tem Kor) (Fornax)"
+    },
+    {
+      "id": "anthracite",
+      "name_ru": "Антрацит (J306)",
+      "name_uz": "Antratsit",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "exclusive",
+      "hex": "#383E42",
+      "fornax_cap": "Krishka Petlya (Seriy) (Fornax)"
+    },
+    {
+      "id": "grey",
+      "name_ru": "Серый",
+      "name_uz": "Kulrang",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "exclusive",
+      "hex": "#8A8D8F",
+      "fornax_cap": "Krishka Petlya (Seriy) (Fornax)"
+    },
+    {
+      "id": "bronze",
+      "name_ru": "Бронза",
+      "name_uz": "Bronza",
+      "material": [
+        "pvc",
+        "alu"
+      ],
+      "kind": "exclusive",
+      "hex": "#8C6A3F",
+      "fornax_cap": "Krishka petlya (Bronza) (Fornax)"
+    },
+    {
+      "id": "ral9016",
+      "name_ru": "Белый RAL 9016",
+      "name_uz": "Oq RAL 9016",
+      "material": [
+        "alu"
+      ],
+      "kind": "white",
+      "hex": "#F1F0EA"
+    },
+    {
+      "id": "ral_any",
+      "name_ru": "Цвет по RAL",
+      "name_uz": "RAL bo'yicha rang",
+      "material": [
+        "alu"
+      ],
+      "kind": "powder",
+      "hex": null,
+      "note": "номер RAL вводит менеджер"
+    },
+    {
+      "id": "vacuum_gold",
+      "name_ru": "Вакуум «золото»",
+      "name_uz": "Vakuum oltin",
+      "material": [
+        "alu"
+      ],
+      "kind": "vacuum",
+      "hex": "#C9A44C"
+    }
+  ],
+  "alu_kind_to_group": {
+    "white": "Белый",
+    "powder": "Цветной",
+    "lamination": "Ламинация",
+    "vacuum": "Вакуум",
+    "exclusive": "Эксклюзив"
+  }
+}

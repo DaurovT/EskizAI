@@ -1,0 +1,89 @@
+{
+  "_note": "ДЕМО, если не указано иное: типовое значение, НЕ проверено — заменить данными из техкаталога системы",
+  "seal_m_per_kg": {
+    "default": 25,
+    "range": [
+      20,
+      30
+    ],
+    "evidence": [
+      "ТПУ-004: 300 м = 14,1 кг (~21 м/кг)",
+      "Rehau: 50 м = 1,65 кг (~30 м/кг)",
+      "Romchi, EPDM (Uz) 5025: 125 м = 5 кг (25 м/кг)",
+      "Romchi, EPDM (Uz) 5107: 100 м = 5 кг (20 м/кг)",
+      "Romchi, EPDM (Uz) 5108: 180 м = 15 кг (12 м/кг — толстый профиль)",
+      "KBE 228: 50 м = 1,9 кг (~26 м/кг)"
+    ],
+    "status": "по найденным данным",
+    "by_article_note": "если в названии позиции есть метры и кг (pack_m, pack_kg) — норма берётся из позиции, default — только когда их нет"
+  },
+  "seal_contours": "периметр створок (притвор) + периметр стеклопакетов × 2",
+  "per_window": {
+    "foam_can_per_m_perimeter": 0.12,
+    "anchor_per_m_perimeter": 2,
+    "tape_m_per_m_perimeter": 2,
+    "silicone_tube_per_window": 0.3,
+    "status": "ДЕМО"
+  },
+  "reinforcement": {
+    "offset_from_corner_mm": 50,
+    "screw_step_mm": 350,
+    "status": "ДЕМО"
+  },
+  "mullion_connectors_per_mullion": 2,
+  "sill_overhang_mm_each_side": 50,
+  "drip_overhang_mm_each_side": 50,
+  "glazing_pads_per_glass": 6,
+  "seal_price_check": {
+    "akfa_epdm_sum_per_kg": [
+      44454,
+      45582
+    ],
+    "uz_epdm_sum_per_kg": 54700,
+    "china_fob_usd_per_kg": [
+      3.8,
+      4.0
+    ],
+    "note": "цены Romchi на уплотнитель — за бухту (unit = pack, pack_kg); после деления совпадают с оптом Китая по курсу 12 010 сум/$"
+  },
+  "reference_prices_sum": {
+    "_note": "ориентиры розницы Ташкента для работ «под ключ»; в катaлоге Romchi этих позиций нет",
+    "foam_750ml": {
+      "range": [
+        51300,
+        97790
+      ],
+      "default": 72000,
+      "source": "prom.uz (Tytan STD 72 644, Tytan 65 97 790, EPA 71 500 — 04.08.2026; Akfix 805 51–52 тыс.)"
+    },
+    "psul_m": {
+      "value": 7000,
+      "status": "ДЕМО",
+      "source": "flagma.uz 2022: 5 000 сум/м + рост цен"
+    },
+    "vapor_tape_m": {
+      "value": 10000,
+      "source": "flagma.uz, 2025–2026"
+    },
+    "anchor_plate_pcs": {
+      "value": 3000,
+      "status": "ДЕМО",
+      "source": "оконных анкерных пластин с ценой не найдено; общие перфорированные пластины 8 980–9 356 сум (flagma)"
+    },
+    "drip_galvanized_m": {
+      "value": 30000,
+      "status": "ДЕМО",
+      "source": "для ширины до 250 мм; оцинк. лист 56 700 сум/м² (prom.uz 04.2026) + гибка; flagma «от 17 000»"
+    },
+    "silicone_tube": {
+      "value": 35000,
+      "status": "ДЕМО",
+      "source": "не искали"
+    }
+  },
+  "sill_bar_mm": {
+    "value": 6000,
+    "status": "ДЕМО",
+    "note": "длина хлыста подоконника Akfa не подтверждена"
+  }
+}

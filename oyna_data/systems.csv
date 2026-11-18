@@ -1,0 +1,114 @@
+system_code,brand,series,material_class,passport_class,colors,has_frame,has_sash,has_mullion,has_door_profiles,items,items_without_price,price_updated,series_incomplete,usable_for_calc,fitting_groove
+akfa__5200_qvt,Akfa,5200 QVT,pvc,pvc_60,Белый,1,1,1,0,6,0,2026-11-01,0,1,euro_pvc
+akfa__5800_trio,Akfa,5800 Trio,pvc,pvc_60,Белый|Внешний внутренний,1,1,1,1,20,1,2026-11-01,0,1,euro_pvc
+akfa__6000_qvt,Akfa,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,30,0,2026-11-02,0,1,euro_pvc
+akfa__6000_trio,Akfa,6000 Trio,pvc,pvc_60,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,56,14,2026-11-02,0,1,euro_pvc
+akfa__6500_penta,Akfa,6500 Penta,pvc,pvc_70,Белый|Ламинация|Эксклюзив,1,1,1,1,45,1,2026-11-01,0,1,euro_pvc
+akfa__7000_akfa_eko,Akfa,7000 Akfa (Eko),pvc,pvc_70,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,36,2,2026-10-18,0,1,euro_pvc
+akfa__7000_engelberg,Akfa,7000 Engelberg,pvc,pvc_70,Белый|Ламинация|Эксклюзив,1,1,1,1,45,6,2026-11-01,0,1,euro_pvc
+akfa__aldoks,Akfa,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Ламинация|Цветной,1,1,1,1,72,7,2026-11-01,0,1,alu_plain
+akfa__bkc50,Akfa,BKC50,alu_cold,alu_cold,Белый|Вакуум|Ламинация|Цветной|Эксклюзив,1,1,1,1,130,12,2026-11-01,0,1,euro_alu
+akfa__neo_adc_50,Akfa,Neo ADC-50,alu_cold,alu_cold,Белый|Вакуум|Ламинация|Цветной,1,1,1,1,96,0,2026-11-11,0,1,euro_alu
+akfa__termo_70,Akfa,Termo 70,alu_thermo,alu_thermo,Белый|Ламинация|Цветной|Эксклюзив,1,1,1,1,112,0,2026-11-01,0,1,euro_alu
+akfa__podokonnik,Akfa,Podokonnik,sill,,Белый|Ламинация|Эксклюзив,0,0,0,0,24,0,2026-10-09,0,0,
+akfa__5800_trio_aksessuarlari,Akfa,5800 Trio aksessuarlari,pvc_accessory,,,0,0,0,0,5,0,2025-07-10,0,0,
+akfa__6000_qvt_aksessuarlari,Akfa,6000 QVT aksessuarlari,pvc_accessory,,,0,0,0,0,10,1,2026-05-04,0,0,
+akfa__6000_trio_aksessuarlari,Akfa,6000 Trio aksessuarlari,pvc_accessory,,,0,0,0,0,10,1,2026-05-04,0,0,
+akfa__6500_penta_aksessuarlari,Akfa,6500 Penta aksessuarlari,pvc_accessory,,,0,0,0,0,10,1,2026-05-04,0,0,
+akfa__7000_akfa_eko_aksessuarlari,Akfa,7000 Akfa (Eko) aksessuarlari,pvc_accessory,,,0,0,0,0,9,0,2026-05-04,0,0,
+akfa__7000_engelberg_aksessuarlari,Akfa,7000 Engelberg aksessuarlari,pvc_accessory,,,0,0,0,0,9,0,2026-05-04,0,0,
+akfa__pvc_epdm_uz,Akfa,Pvc. EPDM (Uz),seal,,,0,0,0,0,7,0,2025-08-07,0,0,
+akfa__rezina_tpv,Akfa,Rezina TPV,seal,,,0,0,0,0,7,0,2025-09-11,0,0,
+akfa__adc50_neo_aksessuarlari,Akfa,ADC50 Neo Aksessuarlari,alu_accessory,,,0,0,0,0,5,0,2026-11-08,0,0,
+akfa__alu_aksessuar_tr,Akfa,Alu. Aksessuar Tr,alu_accessory,,,0,0,0,0,33,0,2025-07-03,0,0,
+akfa__alu_aksessuari_uz,Akfa,Alu. Aksessuari Uz,alu_accessory,,Белый|Цветной,0,0,0,0,22,0,2025-07-03,0,0,
+akfa__bkc50_aksessuarlari,Akfa,BKC50 aksessuarlari,alu_accessory,,,0,0,0,0,17,0,2026-11-01,0,0,
+akfa__exclusive_ruchka_import,Akfa,Exclusive ruchka (Import),hardware,,Белый,0,0,0,0,5,1,2025-07-03,0,0,
+akfa__pvc_dvoy_otk_fornax,Akfa,Pvc.Dvoy.Otk.Fornax,hardware,,,0,0,0,0,19,0,2025-07-03,0,0,
+akfa__stanok,Akfa,Stanok,machine,,,0,0,0,0,12,0,2025-05-19,0,0,
+akfa__termo_70_aksessuarlari,Akfa,Termo 70 aksessuarlari,alu_accessory,,,0,0,0,0,16,0,2026-08-06,1,0,
+ekopen__forward,Ekopen,Forward,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,27,2,2026-05-20,0,1,euro_pvc
+ekopen__lambri,Ekopen,Lambri,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,0,0,0,0,6,0,2025-07-17,0,0,euro_pvc
+ekopen__life,Ekopen,Life,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,18,0,2026-05-20,0,1,euro_pvc
+ekopen__prime,Ekopen,Prime,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,18,2,2026-05-20,0,1,euro_pvc
+ekopen__qoshimcha_profil_6000mm,Ekopen,Qo'shimcha profil (6000mm),pvc,pvc_60,Белый|Внешний внутренний|Ламинация,0,0,0,0,24,9,2025-07-17,0,0,euro_pvc
+ekopen__qoshimcha_profil_7000mm,Ekopen,Qo'shimcha profil (7000mm),pvc,pvc_70,Белый|Внешний внутренний|Ламинация,0,0,0,0,24,9,2025-07-18,0,0,euro_pvc
+ekopen__aldoks,Ekopen,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,36,2,2026-05-20,0,1,alu_plain
+ekopen__metall_optima_5200,Ekopen,Metall Optima 5200,pvc_accessory,,,0,0,0,0,4,0,2025-07-17,0,0,
+ekopen__tokcha,Ekopen,Tokcha,sill,,Белый|Ламинация,0,0,0,0,8,0,2025-07-17,0,0,
+ekopen__alyumin_aksesuarlari,Ekopen,Alyumin aksesuarlari,alu_accessory,,,0,0,0,0,27,0,2025-07-17,0,0,
+ekopen__forward_aksessuarlari,Ekopen,Forward aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2025-07-17,0,0,
+ekopen__life_aksessuarlari,Ekopen,Life aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2025-07-17,0,0,
+ekopen__prime_aksessuarlari,Ekopen,Prime aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2025-07-17,0,0,
+rossen__5200_qvt,Rossen,5200 QVT,pvc,pvc_60,Белый,1,1,1,0,5,0,2026-05-20,0,1,euro_pvc
+rossen__6000_qvt,Rossen,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,28,0,2026-05-20,0,1,euro_pvc
+rossen__7000_penta,Rossen,7000 PENTA,pvc,pvc_70,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,28,0,2025-11-26,0,1,euro_pvc
+rossen__tokcha,Rossen,Tokcha,sill,,Белый|Ламинация,0,0,0,0,18,2,2025-11-11,0,0,
+craf__aldoks,Craf,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,57,10,2026-05-20,0,1,alu_plain
+craf__fasadniy,Craf,Fasadniy,alu_cold,alu_cold,Вакуум,1,0,0,0,8,0,2026-05-13,0,0,alu_plain
+craf__thermo,Craf,Thermo,alu_thermo,alu_thermo,Вакуум|Цветной,1,1,1,1,34,0,2026-07-17,0,1,euro_alu
+craf__aksessuarlar,Craf,Aksessuarlar,alu_accessory,,,0,0,0,0,39,1,2026-01-02,1,0,
+craf__termo_aksessuarlari,Craf,Termo aksessuarlari,alu_accessory,,,0,0,0,0,36,0,2026-09-15,1,0,
+lega__elegant_7600_pvh_6_kamera,Lega,Elegant 7600 PVH 6 kamera,pvc,pvc_70,Белый|Ламинация,1,1,1,1,24,0,2026-08-21,0,1,euro_pvc
+lega__evo_6000_quatro,Lega,Evo 6000 Quatro,pvc,pvc_60,Белый|Ламинация,1,1,1,1,26,0,2026-08-21,0,1,euro_pvc
+lega__aldoks_ld_45,Lega,Aldoks LD 45,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,78,4,2026-07-09,0,1,alu_plain
+lega__termo_le_80,Lega,Termo LE 80,alu_thermo,alu_thermo,Белый|Вакуум|Ламинация|Цветной,1,1,1,1,136,2,2026-10-16,0,1,euro_alu
+lega__termo_ls_55,Lega,Termo LS 55,alu_thermo,alu_thermo,Белый|Вакуум|Ламинация|Цветной,1,1,1,1,104,2,2026-10-16,0,1,euro_alu
+lega__7600_elegant_pvh_aksessuarlari,Lega,7600 elegant PVH aksessuarlari,pvc_accessory,,,0,0,0,0,1,0,2026-09-25,0,0,
+lega__evo_6000_quatro_aksessuarlari,Lega,EVO 6000 Quatro Aksessuarlari,pvc_accessory,,,0,0,0,0,1,0,2026-09-25,0,0,
+lega__aksessuar_thermo_le_80,Lega,Aksessuar Thermo LE 80,alu_accessory,,,0,0,0,0,37,0,2026-08-05,0,0,
+lega__aksessuar_thermo_ls_55,Lega,Aksessuar Thermo LS 55,alu_accessory,,,0,0,0,0,32,0,2026-08-05,0,0,
+tayhu__6000_pro,Tayhu,6000 Pro,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,2,2026-10-22,0,1,euro_pvc
+tayhu__7000_pro,Tayhu,7000 Pro,pvc,pvc_70,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,2,2026-10-22,0,1,euro_pvc
+tower_plast__6000_qvt,Tower Plast,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,0,2026-05-20,0,1,euro_pvc
+tower_plast__7000_penta,Tower Plast,7000 Penta,pvc,pvc_70,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,1,1,1,28,0,2026-08-25,0,1,euro_pvc
+alutex__aldoks,Alutex,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,60,6,2026-10-03,0,1,alu_plain
+alutex__pz_50_pvc,Alutex,Pz-50 (PVC),alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,60,3,2026-10-16,0,1,euro_pvc
+alutex__pz_50_evro,Alutex,Pz-50 (Evro),alu_cold,alu_cold,Белый|Вакуум|Цветной,1,0,1,1,45,0,2026-10-16,0,0,euro_alu
+alutex__termal_55_evro,Alutex,Termal 55 (EVRO),alu_thermo,alu_thermo,Белый|Вакуум|Цветной,1,1,1,1,57,0,2026-10-16,0,1,euro_alu
+alutex__termal_55_pvc,Alutex,Termal 55 (PVC),alu_thermo,alu_thermo,Белый|Вакуум|Цветной,1,1,1,1,57,3,2026-10-16,0,1,euro_pvc
+alutex__termal_70,Alutex,Termal 70,alu_thermo,alu_thermo,Белый|Вакуум|Цветной,1,1,1,1,63,0,2026-10-16,0,1,euro_alu
+alutex__pz_50_evro_aksessuarlari,Alutex,Pz-50 (EVRO) Aksessuarlari,alu_accessory,,,0,0,0,0,28,1,2026-10-15,0,0,
+alutex__pz_50_pvc_aksessuarlari,Alutex,Pz-50 (PVC) Aksessuarlari,alu_accessory,,,0,0,0,0,30,0,2026-10-15,0,0,
+alutex__termal_55_evro_aksessuarlari,Alutex,Termal 55 (EVRO) Aksessuarlari,alu_accessory,,,0,0,0,0,33,1,2026-09-30,0,0,
+alutex__termal_55_pvc_aksessuarlari,Alutex,Termal 55 (PVC) Aksessuarlari,alu_accessory,,,0,0,0,0,30,1,2026-09-25,1,0,
+alutex__termal_70_aksessuarlari,Alutex,Termal 70 Aksessuarlari,alu_accessory,,,0,0,0,0,27,0,2026-09-25,0,0,
+akpa__6000_qvt,Akpa,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Цветной,1,1,1,1,21,0,2026-10-29,0,1,euro_pvc
+akpa__penta_7000,Akpa,Penta 7000,pvc,pvc_70,Белый|Внешний внутренний|Цветной,1,1,1,1,21,0,2026-10-30,0,1,euro_pvc
+akpa__tokcha,Akpa,Tokcha,sill,,Белый|Ламинация,0,0,0,0,18,3,2026-01-02,0,0,
+artplast__comfort_6000,Artplast,Comfort 6000,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,0,2026-10-28,0,1,euro_pvc
+artplast__premium_7000,Artplast,Premium 7000,pvc,pvc_70,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,0,2026-10-28,0,1,euro_pvc
+artplast__trio_5200,Artplast,Trio 5200,pvc,pvc_60,Белый,1,1,1,1,7,0,2026-10-28,0,1,euro_pvc
+artplast__tokchalar,Artplast,Tokchalar,sill,,Белый|Ламинация,0,0,0,0,18,0,2026-09-18,0,0,
+alubest__aldoks,Alubest,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,57,6,2026-09-09,0,1,alu_plain
+alubest__alutermo_65,Alubest,ALUTERMO 65,alu_thermo,alu_thermo,Ламинация|Цветной,1,1,1,1,32,0,2026-10-24,0,1,euro_alu
+alubest__alutermo_70,Alubest,ALUTERMO 70,alu_thermo,alu_thermo,Ламинация|Цветной,1,1,1,1,32,0,2026-10-24,0,1,euro_alu
+alubest__alutermo_65_aksessuarlari,Alubest,ALUTERMO 65 Aksessuarlari,alu_accessory,,,0,0,0,0,36,0,2026-10-24,0,0,
+alubest__alutermo_70_aksessuarlari,Alubest,ALUTERMO 70 Aksessuarlari,alu_accessory,,,0,0,0,0,34,0,2026-10-24,0,0,
+biko__6000_3_x_kamerali,Biko,6000 3-x kamerali,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,24,0,2025-12-19,0,1,euro_pvc
+biko__6000_4_x_kamerali,Biko,6000 4-x kamerali,pvc,pvc_60,Белый|Внешний внутренний|Ламинация|Цветной,1,1,1,1,32,5,2025-12-19,0,1,euro_pvc
+biko__7000_5_x_kamerali,Biko,7000 5-x kamerali,pvc,pvc_70,Белый|Внешний внутренний|Ламинация|Цветной,1,1,1,1,28,0,2025-12-19,0,1,euro_pvc
+biko__aksessuarlar_6000_3va4_kamerali,Biko,Aksessuarlar 6000 3va4 kamerali,pvc_accessory,,,0,0,0,0,5,0,2025-11-16,0,0,
+biko__tokchalar,Biko,Tokchalar,sill,,Белый|Ламинация,0,0,0,0,16,0,2025-11-17,0,0,
+vetro_plast__6000_qvt,Vetro Plast,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация|Эксклюзив,1,0,1,1,32,2,2026-11-17,0,0,euro_pvc
+alix__aldox,Alix,Aldox,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,45,4,2026-08-14,0,1,alu_plain
+alix__aksessuarlar,Alix,Aksessuarlar,alu_accessory,,,0,0,0,0,39,0,2026-06-08,1,0,
+alposs_asistal__asistal_thermo_62,Alposs (Asistal),Asistal Thermo 62,alu_thermo,alu_thermo,Ламинация,1,1,1,1,21,0,2026-08-04,0,1,euro_alu
+alposs_asistal__asistal_thermo_78,Alposs (Asistal),Asistal Thermo 78,alu_thermo,alu_thermo,Ламинация,1,1,1,1,19,0,2026-08-21,0,1,euro_alu
+alposs_asistal__asistal_62_eco_aksessuarlari,Alposs (Asistal),Asistal 62 Eco Aksessuarlari,alu_accessory,,,0,0,0,0,34,0,2026-08-04,0,0,
+alposs_asistal__asistal_termo_78_aksessuarlari,Alposs (Asistal),Asistal Termo 78 aksessuarlari,alu_accessory,,,0,0,0,0,36,0,2026-08-04,1,0,
+alta_plast__5200_qvt,Alta Plast,5200 QVT,pvc,pvc_60,Белый,1,1,1,0,6,0,2026-09-23,0,1,euro_pvc
+alta_plast__6000_qvt,Alta Plast,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,24,0,2026-09-23,0,1,euro_pvc
+alta_plast__7200_premium,Alta Plast,7200 Premium,pvc,pvc_70,Белый|Внешний внутренний|Ламинация,1,1,1,0,18,0,2026-09-23,0,1,euro_pvc
+alta_plast__podokonnik,Alta Plast,Podokonnik,sill,,Белый|Ламинация,0,0,0,0,10,0,2026-09-09,0,0,
+windo__6000_qvt,Windo,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,2,2026-10-19,0,1,euro_pvc
+thermo_silver__termo_64,Thermo Silver,Termo 64,alu_thermo,alu_thermo,Ламинация|Цветной,1,1,1,1,38,0,2026-08-21,0,1,euro_alu
+thermo_silver__termo_64_aksessuarlari,Thermo Silver,Termo 64 Aksessuarlari,alu_accessory,,,0,0,0,0,39,0,2026-08-21,1,0,
+retpen__5200_qvt,Retpen,5200 QVT,pvc,pvc_60,Белый,1,1,1,1,6,0,2026-04-09,0,1,euro_pvc
+retpen__6000_eko,Retpen,6000 EKO,pvc,pvc_60,Белый|Ламинация,1,1,1,1,14,0,2026-05-20,0,1,euro_pvc
+retpen__6000_qvt,Retpen,6000 QVT,pvc,pvc_60,Белый|Внешний внутренний|Ламинация,1,1,1,1,21,0,2026-05-20,0,1,euro_pvc
+retpen__aldoks,Retpen,Aldoks,alu_cold,alu_cold,Белый|Вакуум|Цветной,1,1,1,1,27,0,2026-05-20,0,1,alu_plain
+retpen__podokonnik,Retpen,Podokonnik,sill,,Белый|Ламинация,0,0,0,0,16,0,2025-08-05,0,0,
+retpen__5200_qvt_aksessuarlari,Retpen,5200 QVT aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2026-04-09,0,0,
+retpen__6000_eko_aksessuarlari,Retpen,6000 EKO aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2026-04-09,0,0,
+retpen__6000_qvt_aksessuarlari,Retpen,6000 QVT aksessuarlari,pvc_accessory,,,0,0,0,0,3,0,2026-03-11,0,0,
