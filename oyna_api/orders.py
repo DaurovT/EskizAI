@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -18,6 +18,7 @@ from oyna_core.order import calc_order
 from oyna_core.render import render_svg
 
 from . import store
+from .auth import Ctx, ctx, need_company
 
 router = APIRouter()
 Role = Literal["owner", "manager", "measurer"]
@@ -26,12 +27,6 @@ Role = Literal["owner", "manager", "measurer"]
 def _cat():
     from .app import CAT
     return CAT
-
-
-def _ctx(x_company):
-    if not store.dsn():
-        raise HTTPException(503, "хранение не настроено (OYNA_DSN)")
-    return x_company or "demo"
 
 
 def _guard(fn):
@@ -106,28 +101,26 @@ def _pos_out(row: dict, cat, co, role: str) -> dict:
 
 # ---------------- заказы ----------------
 @router.post("/oyna/orders", tags=["заказы"])
-def create_order(body: OrderIn, x_company: str | None = Header(None)):
-    comp = _ctx(x_company)
+def create_order(body: OrderIn, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, _ = _guard(lambda: store.load_company(c, comp))
         return store.jsonable(store.create_order(c, cid, body.model_dump(), body.id))
 
 
 @router.get("/oyna/orders", tags=["заказы"])
-def list_orders(status: str | None = None, q: str | None = None, x_company: str | None = Header(None)):
-    comp = _ctx(x_company)
+def list_orders(status: str | None = None, q: str | None = None, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, _ = _guard(lambda: store.load_company(c, comp))
         return [store.jsonable(r) for r in store.list_orders(c, cid, status, q)]
 
 
 @router.get("/oyna/orders/{order_id}", tags=["заказы"])
-def get_order(order_id: str, x_company: str | None = Header(None), x_role: Role = Header("owner")):
-    comp = _ctx(x_company)
+def get_order(order_id: str, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, co = _guard(lambda: store.load_company(c, comp))
+        co = cx.company
         o = _guard(lambda: store.get_order_row(c, cid, order_id))
-        pos = [_pos_out(p, _cat(), co, x_role) for p in store.positions(c, order_id)]
+        pos = [_pos_out(p, _cat(), co, cx.role) for p in store.positions(c, order_id)]
         quotes = list(c.execute("SELECT version, public_token, sent_at, accepted_at, accepted_variant, demo FROM quotes "
                                 "WHERE order_id = %s ORDER BY version DESC", (order_id,)))
         return {"order": store.jsonable(o), "positions": pos, "quotes": [store.jsonable(q) for q in quotes],
@@ -135,35 +128,32 @@ def get_order(order_id: str, x_company: str | None = Header(None), x_role: Role 
 
 
 @router.patch("/oyna/orders/{order_id}", tags=["заказы"])
-def patch_order(order_id: str, body: OrderPatch, x_company: str | None = Header(None)):
-    comp = _ctx(x_company)
+def patch_order(order_id: str, body: OrderPatch, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, _ = _guard(lambda: store.load_company(c, comp))
         return store.jsonable(_guard(lambda: store.update_order(c, cid, order_id, body.model_dump(exclude_none=True))))
 
 
 # ---------------- позиции и синхронизация ----------------
 @router.put("/oyna/orders/{order_id}/positions/{position_id}", tags=["позиции"])
-def put_position(order_id: str, position_id: str, body: PositionPut, x_company: str | None = Header(None),
-                 x_role: Role = Header("owner")):
+def put_position(order_id: str, position_id: str, body: PositionPut, cx: Ctx = Depends(ctx)):
     """Сохранить позицию (в т. ч. созданную офлайн). Конфликт ревизий → 409 с серверной версией."""
-    comp = _ctx(x_company)
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, co = _guard(lambda: store.load_company(c, comp))
+        co = cx.company
         try:
             row = _guard(lambda: store.put_position(c, cid, order_id, position_id, body.doc, body.base_rev,
                                                     body.deleted, body.force, body.sort))
         except store.Conflict as e:
             return JSONResponse(status_code=409, content={"conflict": True, "server": e.server, "client": body.doc})
-        return _pos_out(row, _cat(), co, x_role)
+        return _pos_out(row, _cat(), co, cx.role)
 
 
 @router.post("/oyna/orders/{order_id}/positions/{position_id}/commands", tags=["позиции"])
-def position_commands(order_id: str, position_id: str, body: PosCommands, x_company: str | None = Header(None),
-                      x_role: Role = Header("owner")):
-    comp = _ctx(x_company)
+def position_commands(order_id: str, position_id: str, body: PosCommands, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx)
     with store.conn() as c:
-        cid, co = _guard(lambda: store.load_company(c, comp))
+        co = cx.company
         cur = c.execute("SELECT * FROM order_positions WHERE id = %s AND order_id = %s", (position_id, order_id)).fetchone()
         if not cur:
             raise HTTPException(404, "позиция не найдена")
@@ -172,16 +162,15 @@ def position_commands(order_id: str, position_id: str, body: PosCommands, x_comp
             row = store.put_position(c, cid, order_id, position_id, doc, body.base_rev if body.base_rev is not None else cur["rev"])
         except store.Conflict as e:
             return JSONResponse(status_code=409, content={"conflict": True, "server": e.server, "client": doc})
-        return _pos_out(row, _cat(), co, x_role)
+        return _pos_out(row, _cat(), co, cx.role)
 
 
 @router.post("/oyna/sync", tags=["позиции"])
-def sync(body: SyncIn, x_company: str | None = Header(None)):
+def sync(body: SyncIn, cx: Ctx = Depends(ctx)):
     """Пакет изменений с телефона после появления сети: заказы и позиции. Каждая позиция — ok или conflict."""
-    comp = _ctx(x_company)
+    cid = need_company(cx)
     out = {"orders": [], "positions": []}
     with store.conn() as c:
-        cid, _ = _guard(lambda: store.load_company(c, comp))
         for o in body.orders:
             out["orders"].append({"id": str(store.create_order(c, cid, o.model_dump(), o.id)["id"]), "status": "ok"})
         for p in body.positions:
@@ -209,12 +198,12 @@ def _variants(cat, co, docs: list[dict], kits: list[dict], discount: float) -> l
 
 
 @router.post("/oyna/orders/{order_id}/quotes", tags=["КП"])
-def create_quote(order_id: str, body: QuoteIn, x_company: str | None = Header(None)):
+def create_quote(order_id: str, body: QuoteIn, cx: Ctx = Depends(ctx)):
     """Новая версия КП с замороженными ценами, курсом и версией прайса (FR-Q4). Неполная цена — 409 (P.1)."""
-    comp = _ctx(x_company)
+    cid = need_company(cx)
     cat = _cat()
     with store.conn() as c:
-        cid, co = _guard(lambda: store.load_company(c, comp))
+        co = cx.company
         o = _guard(lambda: store.get_order_row(c, cid, order_id))
         docs = [p["doc"] for p in store.positions(c, order_id)]
         if not docs:
@@ -265,7 +254,7 @@ def accept_quote(token: str, body: AcceptIn):
         _, co = store.load_company(c, comp)
         warning = None
         days = (datetime.now(timezone.utc) - latest["sent_at"]).days if latest["sent_at"] else 0
-        if days > 14:
+        if days > co.quote_price_check_days:
             v = latest["variants"][body.variant]
             docs = [p["doc"] for p in store.positions(c, str(latest["order_id"]))]
             now = calc_order(docs, cat, co, kit={"name": v["kit"], "setup": v["setup"]}, role="measurer")["total"]

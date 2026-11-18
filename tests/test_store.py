@@ -86,6 +86,14 @@ def test_full_flow(client):
     old = client.get(q["url"]).json()
     assert q2["version"] == 2 and not old["is_latest"] and old["version"] == 2 and old["lang"] == "uz"
 
+    # документы S12: КП (цех и клиент), лист для цеха, монтажный лист, заявка поставщику
+    for kind in ("quote", "shop", "install", "supplier"):
+        r = client.get(f"/oyna/orders/{oid}/documents/{kind}.pdf")
+        assert r.status_code == 200 and r.content.startswith(b"%PDF") and len(r.content) > 3000, (kind, r.text[:200])
+    pub = client.get(f"{q2['url']}/pdf")
+    assert pub.status_code == 200 and pub.content.startswith(b"%PDF")
+    assert client.get(f"/oyna/orders/{oid}/documents/shop.pdf", headers={"X-Role": "measurer"}).status_code == 403
+
     # «Согласен»
     a = client.post(f"{q2['url']}/accept", json={"variant": 0}).json()
     assert a["accepted"] and a["warning"] is None

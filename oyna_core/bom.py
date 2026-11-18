@@ -43,6 +43,9 @@ class Line:
 def _price_item(ev: Eval, it: dict | None) -> tuple[float | None, str]:
     if not it:
         return None, "none"
+    own = ev.company.item_prices.get((it["item_id"], it["color"]))
+    if own is not None:
+        return float(own), "price"                       # цена цеха поверх базовой (FR-C4)
     if it.get("price_sum"):
         return float(it["price_sum"]), "price"
     if ev.company.demo_prices and it.get("demo_price_sum"):
@@ -210,11 +213,11 @@ def build_bom(ev: Eval) -> list[Line]:
         elif isinstance(g, Glass):
             area = cg.glass_w * cg.glass_h / 1e6
             calc_area = max(area, min_area(cat))
-            pr, st, how = price_m2(g, cat)
+            pr, st, how = price_m2(g, cat, ev.company)
             if pr is None and ev.company.demo_prices:
                 g2 = parse(g.formula, cat)
                 g2.preset = None
-                pr, _, how = price_m2(g2, cat)
+                pr, _, how = price_m2(g2, cat, ev.company)
                 st = "demo"
             # «оценка» (коэффициенты) — не прайс стекольщика: у боевого цеха это «нет цены», пока он не внесёт свой прайс
             status = {"найдено": "price", "оценка": "demo" if ev.company.demo_prices else "none"}.get(st, st)

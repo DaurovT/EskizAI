@@ -4,13 +4,13 @@
 чтобы работать параллельно. Хранение заказов (positions/{id}, quotes, /q/{token}) — следующим шагом с PostgreSQL.
 
 Запуск:  .venv/bin/uvicorn oyna_api.app:app --reload --port 8030
-Цех и роль: заголовки X-Company (demo | real, по умолчанию demo) и X-Role (owner | manager | measurer).
+Цех и роль: Bearer-токен (/auth/verify-code). В разработке без токена — заголовки X-Company (demo | real | uuid) и X-Role.
 """
 from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -26,11 +26,7 @@ from oyna_core.render import render_svg
 app = FastAPI(title="Eskiz Oyna API", version="0.1.0",
               description="Ядро расчёта окон: команды, проверки, спецификация, цена, КП-варианты, раскрой, замены.")
 CAT = Catalog()
-COMPANIES = {"demo": Company.demo(), "real": Company()}
-
-
-def company_of(x_company: str | None) -> Company:
-    return COMPANIES.get(x_company or "demo", COMPANIES["demo"])
+from .auth import Ctx, ctx  # noqa: E402
 
 
 Role = Literal["owner", "manager", "measurer"]
@@ -80,47 +76,46 @@ def _bad(e: Exception):
 
 # ---------------- позиция ----------------
 @app.post("/oyna/positions/from-template", tags=["позиция"])
-def from_template(body: FromTemplateIn, x_company: str | None = Header(None)):
+def from_template(body: FromTemplateIn, cx: Ctx = Depends(ctx)):
     try:
         doc = commands.create_from_template(CAT, body.template, body.w, body.h, setup=body.setup, room=body.room)
     except CommandError as e:
         _bad(e)
-    return {"doc": doc, "result": validate(doc, CAT, company_of(x_company))}
+    return {"doc": doc, "result": validate(doc, CAT, cx.company)}
 
 
 @app.post("/oyna/positions/commands", tags=["позиция"])
-def apply_commands(body: CommandsIn, x_company: str | None = Header(None)):
+def apply_commands(body: CommandsIn, cx: Ctx = Depends(ctx)):
     """Применить пакет команд → новое изделие + нарушения (поток расчёта, PRD 5)."""
     try:
         doc = commands.apply(body.doc, body.commands)
     except (CommandError, KeyError, IndexError, TypeError) as e:
         _bad(e)
-    return {"doc": doc, "result": validate(doc, CAT, company_of(x_company))}
+    return {"doc": doc, "result": validate(doc, CAT, cx.company)}
 
 
 @app.post("/oyna/positions/validate", tags=["позиция"])
-def validate_pos(body: DocIn, x_company: str | None = Header(None)):
-    return validate(body.doc, CAT, company_of(x_company))
+def validate_pos(body: DocIn, cx: Ctx = Depends(ctx)):
+    return validate(body.doc, CAT, cx.company)
 
 
 @app.post("/oyna/positions/calc", tags=["позиция"])
-def calc_pos(body: DocIn, x_company: str | None = Header(None), x_role: Role = Header("owner")):
+def calc_pos(body: DocIn, cx: Ctx = Depends(ctx)):
     """Проверки + спецификация + цена. Себестоимость — только владельцу."""
-    return calc(body.doc, CAT, company_of(x_company), role=x_role)
+    return calc(body.doc, CAT, cx.company, role=cx.role)
 
 
 @app.post("/oyna/positions/render.svg", tags=["позиция"], response_class=Response)
-def render(body: DocIn, view: Literal["inside", "outside"] = "inside", size: int = 560,
-           x_company: str | None = Header(None)):
-    svg = render_svg(body.doc, CAT, company_of(x_company), view=view, max_px=size)
+def render(body: DocIn, view: Literal["inside", "outside"] = "inside", size: int = 560, cx: Ctx = Depends(ctx)):
+    svg = render_svg(body.doc, CAT, cx.company, view=view, max_px=size)
     return Response(svg, media_type="image/svg+xml")
 
 
 @app.post("/oyna/positions/alternatives", tags=["замены"])
-def alts(body: AltIn, x_company: str | None = Header(None)):
+def alts(body: AltIn, cx: Ctx = Depends(ctx)):
     """Совместимые замены с разницей в цене; несовместимые — в locked с причиной (FR-F8)."""
     try:
-        return alternatives(body.doc, CAT, company_of(x_company), body.what, body.path, body.same_material)
+        return alternatives(body.doc, CAT, cx.company, body.what, body.path, body.same_material)
     except (ValueError, KeyError) as e:
         _bad(e)
 
@@ -200,8 +195,8 @@ def glass_parse(body: GlassIn):
 
 # ---------------- замер ----------------
 @app.post("/oyna/measure/frame", tags=["замер"])
-def measure_frame(body: MeasureIn, x_company: str | None = Header(None)):
-    return frame_from_opening(body.widths, body.heights, company_of(x_company), CAT)
+def measure_frame(body: MeasureIn, cx: Ctx = Depends(ctx)):
+    return frame_from_opening(body.widths, body.heights, cx.company, CAT)
 
 
 @app.get("/oyna/measure/check", tags=["замер"])
@@ -211,21 +206,21 @@ def measure_check(value: int):
 
 # ---------------- заказ ----------------
 @app.post("/oyna/orders/calc", tags=["заказ"])
-def order_calc(body: OrderIn, x_company: str | None = Header(None), x_role: Role = Header("owner")):
-    return calc_order(body.positions, CAT, company_of(x_company), body.discount_pct, body.kit, role=x_role)
+def order_calc(body: OrderIn, cx: Ctx = Depends(ctx)):
+    return calc_order(body.positions, CAT, cx.company, body.discount_pct, body.kit, role=cx.role)
 
 
 @app.post("/oyna/orders/quote-variants", tags=["заказ"])
-def order_variants(body: OrderIn, x_company: str | None = Header(None), x_role: Role = Header("owner")):
+def order_variants(body: OrderIn, cx: Ctx = Depends(ctx)):
     """До 3 вариантов комплектации для КП (комплектации цеха)."""
-    return quote_variants(body.positions, CAT, company_of(x_company), discount_pct=body.discount_pct, role=x_role)
+    return quote_variants(body.positions, CAT, cx.company, discount_pct=body.discount_pct, role=cx.role)
 
 
 @app.post("/oyna/orders/cutting", tags=["заказ"])
-def order_cut(body: OrderIn, x_company: str | None = Header(None), x_role: Role = Header("owner")):
-    if x_role != "owner":
+def order_cut(body: OrderIn, cx: Ctx = Depends(ctx)):
+    if cx.role not in ("owner", "production"):
         raise HTTPException(403, "раскрой — для владельца и производства")
-    return order_cutting(body.positions, CAT, company_of(x_company))
+    return order_cutting(body.positions, CAT, cx.company)
 
 
 @app.get("/health")
@@ -237,3 +232,19 @@ def health():
 from .orders import router as _orders_router  # noqa: E402
 
 app.include_router(_orders_router)
+
+# вход, цех, каталог
+from .auth import router as _auth_router  # noqa: E402
+from .catalog import load_overrides, router as _catalog_router  # noqa: E402
+from .company import router as _company_router  # noqa: E402
+from .docs import router as _docs_router  # noqa: E402
+
+app.include_router(_auth_router)
+app.include_router(_company_router)
+app.include_router(_catalog_router)
+app.include_router(_docs_router)
+
+
+@app.on_event("startup")
+def _startup():
+    load_overrides()

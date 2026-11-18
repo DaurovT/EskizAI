@@ -17,7 +17,12 @@ CREATE TABLE companies (
   rounding_sum  int NOT NULL DEFAULT 1000,
   lang_default  text NOT NULL DEFAULT 'ru' CHECK (lang_default IN ('ru','uz')),
   skew_warn_mm  int NOT NULL DEFAULT 10,      -- FR-M5: порог перекоса проёма
-  demo_prices   boolean NOT NULL DEFAULT false, -- true: где нет цены, берётся demo_price_sum + предупреждение D.1 + метка «ДЕМО» на КП
+  demo_prices   boolean NOT NULL DEFAULT false,
+  waste_pct     numeric(5,2) NOT NULL DEFAULT 10, -- отход профиля в цене позиции (FR-P2)
+  quote_price_check_days int NOT NULL DEFAULT 14,   -- FR-Q5: через сколько дней проверять рост цен при «Согласен»
+  inn           text,                         -- реквизиты для КП
+  address       text,
+  plan          text NOT NULL DEFAULT 'free' CHECK (plan IN ('free','pro')),  -- брендированное КП, раскрой — pro -- true: где нет цены, берётся demo_price_sum + предупреждение D.1 + метка «ДЕМО» на КП
   created_at    timestamptz NOT NULL DEFAULT now()
 );
 
@@ -200,6 +205,37 @@ CREATE TABLE templates (
   kind        text NOT NULL,
   default_w   int, default_h int,
   root        jsonb NOT NULL
+);
+
+-- ===== Вход (код по SMS, как в Eskiz Temir) =====
+CREATE TABLE auth_codes (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone       text NOT NULL,                  -- +998XXXXXXXXX
+  code_hash   text NOT NULL,                  -- HMAC(секрет, телефон:код) — сам код не хранится
+  attempts    int NOT NULL DEFAULT 0,
+  ip          text,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  expires_at  timestamptz NOT NULL,
+  consumed_at timestamptz
+);
+CREATE INDEX ON auth_codes (phone, created_at DESC);
+
+CREATE TABLE refresh_tokens (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid REFERENCES users(id) ON DELETE CASCADE,
+  company_id  uuid REFERENCES companies(id) ON DELETE SET NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  expires_at  timestamptz NOT NULL,
+  revoked_at  timestamptz
+);
+
+-- Разметка ролей каталога вручную (очередь role = other, FR-C2): поверх автоматической из build.py
+CREATE TABLE catalog_role_overrides (
+  item_id     text PRIMARY KEY REFERENCES catalog_items(id),
+  role        text NOT NULL,
+  unit        text,
+  by_user     uuid REFERENCES users(id),
+  updated_at  timestamptz NOT NULL DEFAULT now()
 );
 
 -- ===== Заказы =====

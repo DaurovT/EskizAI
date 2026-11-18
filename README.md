@@ -20,6 +20,10 @@
 | `oyna_core/measure.py` | Мастер замера: рама по 3 замерам, перекос, опечатки |
 | `oyna_core/render.py` | SVG-схема: вид изнутри/снаружи, знаки открывания по ГОСТ, размеры, подсветка нарушений |
 | `oyna_api/app.py` | FastAPI поверх ядра: расчёт, справочники, замер, замены (без базы) |
+| `oyna_api/auth.py`, `settings.py` | Вход по коду из SMS (Eskiz; в разработке код в лог, `00000`), access/refresh-токены, роли из `company_members`; в dev без токена — заголовки `X-Company` / `X-Role` |
+| `oyna_api/company.py` | Цех: создание на первом входе (S02), настройки (S13), работы, комплектации (проверяются ядром), системы, прайс стекольщика и свои надбавки, свои цены поверх базовых (FR-C4), сотрудники |
+| `oyna_api/catalog.py` | Каталог (S14): бренды → серии → позиции с ценами цеха, очередь разметки, разметка ролей администратором (`X-Admin-Token`) |
+| `oyna_api/docs.py` | PDF (S12): КП (`/oyna/orders/{id}/documents/quote.pdf`, клиенту — `/q/{token}/pdf`), лист для цеха (раскрой — в Pro), монтажный лист, заявка поставщику |
 | `oyna_api/orders.py`, `store.py` | Заказы, позиции с ревизиями, синхронизация офлайн-замера (409 с обеими версиями), версии КП с замороженными ценами, публичная страница `/q/{token}`, «Согласен» с проверкой роста цен |
 | `tests/` | `test_cases.py` — прогон `oyna_data/test_cases.json`; `test_core.py`, `test_api.py`; `test_store.py` — полный путь заказа на PostgreSQL |
 
@@ -27,10 +31,11 @@
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install pytest httpx fastapi uvicorn
-.venv/bin/pip install "psycopg[binary]"
+.venv/bin/pip install "psycopg[binary]" pyjwt reportlab svglib
 .venv/bin/pytest -q                                          # 58 тестов без базы
-OYNA_TEST_DSN="host=127.0.0.1 port=5432 user=postgres dbname=postgres" .venv/bin/pytest -q   # + 3 теста хранения
+OYNA_TEST_DSN="host=127.0.0.1 port=5432 user=postgres dbname=postgres" .venv/bin/pytest -q   # + 6 тестов хранения, входа и цеха
 # с базой: psql -f oyna_data/schema.sql; python oyna_data/seed_import.py "$DSN"
+# переменные: OYNA_ENV=prod, OYNA_JWT_SECRET, OYNA_CODE_PROVIDER=eskiz, ESKIZ_EMAIL, ESKIZ_PASSWORD, OYNA_ADMIN_TOKEN, OYNA_FONT
 OYNA_DSN="$DSN" .venv/bin/uvicorn oyna_api.app:app --reload --port 8030      # http://localhost:8030/docs
 ```
 
@@ -63,8 +68,8 @@ T03 1400×1300, Akfa Quattro 6000, Fornax, 4-12-4, демо-цех (наценк
 
 ## Дальше
 
-- Вход по SMS (общий аккаунт Eskiz) вместо заголовков `X-Company` / `X-Role`; роли из `company_members`.
-- PDF КП и листа для цеха, отправка в Telegram.
+- Единый аккаунт семейства Eskiz (сейчас у Oyna свои пользователи, вход как в Temir).
+- Отправка КП в Telegram (сейчас — ссылка и PDF, поделиться с телефона).
 - Выкладка на VPS рядом с Eskiz Mebel / Temir (своя база).
 - 3D (GLB), раздвижные, составные, арки (PRD 7.12).
 - Эталонные заказы цеха-партнёра для сверки ±5% (TC10).

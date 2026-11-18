@@ -47,8 +47,13 @@ class Company:
     skew_warn_mm: int = 10
     demo_prices: bool = False
     waste_pct: float = 10.0              # отход профиля при расчёте позиции по метрам (FR-P2)
+    quote_price_check_days: int = 14     # FR-Q5
+    plan: str = "free"                   # free | pro (брендированное КП, раскрой)
     work_rates: dict = field(default_factory=dict)   # work_code -> (unit, price)
     kits: list = field(default_factory=list)
+    item_prices: dict = field(default_factory=dict)  # (item_id, color) -> цена цеха поверх базовой (FR-C4)
+    glass_prices: dict = field(default_factory=dict) # glass_code -> цена за м² у стекольщика цеха
+    glass_pricing: dict = field(default_factory=dict) # переопределение надбавок glass_formula.json: ключ -> значение
 
     @classmethod
     def demo(cls, data_dir: Path = DEFAULT_DATA) -> "Company":
@@ -127,6 +132,19 @@ class Catalog:
     @cached_property
     def consumables(self) -> dict:
         return _json(self.dir / "consumables.json")
+
+    def apply_role_overrides(self, rows: list[dict]) -> None:
+        """Ручная разметка ролей из админки каталога (S14): {item_id, role, unit?}."""
+        by_id = {it["item_id"]: it for it in self.items}
+        for r in rows:
+            it = by_id.get(r["item_id"])
+            if it:
+                it["role"] = r["role"]
+                if r.get("unit"):
+                    it["unit"] = r["unit"]
+                it["needs_review"] = "0"
+        for k in ("_by_sys_role_color", "_by_article", "_by_sys_article"):
+            self.__dict__.pop(k, None)
 
     @cached_property
     def works(self) -> dict[str, dict]:

@@ -61,10 +61,17 @@ def load_company(c, company: str) -> tuple[str, Company]:
             for k in c.execute("SELECT * FROM kits WHERE company_id = %s ORDER BY name <> 'Эконом', name", (r["id"],))]
     order = {"Эконом": 0, "Стандарт": 1, "Тёплый": 2}
     kits.sort(key=lambda k: order.get(k["name"], 9))
+    items = {(x["item_id"], x["color"]): float(x["price_sum"])
+             for x in c.execute("SELECT item_id, color, price_sum FROM company_prices WHERE company_id = %s", (r["id"],))}
+    glass = {x["glass_code"]: float(x["price_sum_m2"]) for x in c.execute(
+        "SELECT glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s", (r["id"],))}
+    gp = c.execute("SELECT data FROM glass_pricing WHERE company_id = %s ORDER BY updated_at DESC LIMIT 1", (r["id"],)).fetchone()
     co = Company(name=r["name"], mode=r["mode"], dealer_coef=float(r["dealer_coef"] or 0), markup_kind=r["markup_kind"],
                  markup_value=float(r["markup_value"]), usd_rate=float(r["usd_rate"]) if r["usd_rate"] else None,
                  install_gap_mm=r["install_gap_mm"], rounding_sum=r["rounding_sum"], skew_warn_mm=r["skew_warn_mm"],
-                 demo_prices=r["demo_prices"], work_rates=works, kits=kits)
+                 demo_prices=r["demo_prices"], waste_pct=float(r["waste_pct"]),
+                 quote_price_check_days=r["quote_price_check_days"], plan=r["plan"], work_rates=works, kits=kits,
+                 item_prices=items, glass_prices=glass, glass_pricing=(gp or {}).get("data") or {})
     return str(r["id"]), co
 
 

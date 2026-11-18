@@ -119,20 +119,32 @@ def _parse_formula(formula: str, cat: Catalog) -> Glass:
     return Glass(spec=formula, formula=f, panes=panes, spacers=spacers)
 
 
-def price_m2(g: Glass, cat: Catalog) -> tuple[float | None, str, str]:
-    """Цена за м²: (цена, статус, как посчитано). Пресет без цены → (None, 'НЕТ ДАННЫХ', …)."""
+def price_m2(g: Glass, cat: Catalog, company=None) -> tuple[float | None, str, str]:
+    """Цена за м²: (цена, статус, как посчитано). Сначала прайс стекольщика цеха, потом базовый пресет,
+    потом надбавки (свои у цеха или базовые). Пресет без цены → (None, 'НЕТ ДАННЫХ', …)."""
+    own = getattr(company, "glass_prices", {}) or {}
+    for key in (g.preset, g.formula):
+        if key and key in own:
+            return float(own[key]), "найдено", "прайс стекольщика цеха"
     if g.preset:
         row = cat.glass_presets[g.preset]
         if row["price_sum_m2"]:
             return float(row["price_sum_m2"]), row["price_status"], f"пресет {g.preset}"
     P = {k: v["value"] for k, v in cat.glass_formula["pricing_sum_m2"].items()}
+    own_rules = getattr(company, "glass_pricing", {}) or {}
+    P.update({k: float(v) for k, v in own_rules.items() if k in P})
+    if own_rules and set(own_rules) >= {"base_single_chamber"}:
+        status_custom = "найдено"
+    else:
+        status_custom = "оценка"
     s = P["single_pane_4mm"] if g.single else P["base_single_chamber"] + P["extra_chamber"] * (g.chambers - 1)
     for p in g.panes:
         s += max(0.0, p.glass_mm - 4 * (2 if p.triplex else 1)) * P["pane_extra_per_mm"]
         s += P["low_e"] * p.low_e + P["tempered"] * p.tempered + P["tinted"] * p.tinted
         s += P["matte"] * p.matte + P["triplex"] * p.triplex
     s += P["argon"] * sum(sp["argon"] for sp in g.spacers)
-    return float(s), "оценка", "по надбавкам glass_formula.json"
+    how = "по надбавкам цеха" if status_custom == "найдено" else "по надбавкам glass_formula.json"
+    return float(s), status_custom, how
 
 
 def fits_beads(g: Glass, passport: dict) -> str | None:
