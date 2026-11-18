@@ -29,6 +29,7 @@ export default function RootLayout() {
             <Stack.Screen name="order/[id]/alternatives" options={SHEET} />
             <Stack.Screen name="order/[id]/swap" options={SHEET} />
             <Stack.Screen name="order/[id]/conflict" options={SHEET} />
+            <Stack.Screen name="resume" options={SHEET} />
           </Stack>
         </AuthProvider>
       </SafeAreaProvider>

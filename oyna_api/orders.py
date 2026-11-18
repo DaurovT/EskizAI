@@ -317,7 +317,8 @@ def order_calc(order_id: str, kit: str | None = None, cx: Ctx = Depends(ctx)):
             g["lines"][l.get("article") or l["name"]] += l["qty"] * q
             g["status"].add(l.get("price_status", ""))
             if l.get("price_status") == "none":
-                missing.append({"item_id": l.get("item_id"), "name": l["name"], "article": l.get("article"), "position": d.get("room")})
+                missing.append({"item_id": l.get("item_id"), "name": l["name"], "article": l.get("article"), "kind": l["kind"],
+                                "color": r["price_group"], "position_id": d.get("id"), "position": d.get("room")})
     p = cat.passport((docs[0].get("setup") or {}).get("system", "akfa__6000_qvt")) if docs else {}
     bars = {i["article"]: i["bars"] for i in cut_order(rows_for_cut, p.get("bar_mm", 6000), p.get("cut_mm", 4))["items"]} if docs else {}
     owner = cx.role == "owner"
