@@ -13,11 +13,11 @@ CREATE TABLE companies (
   markup_kind   text NOT NULL DEFAULT 'percent' CHECK (markup_kind IN ('percent','per_m2')),
   markup_value  numeric(12,2) NOT NULL DEFAULT 0,
   usd_rate      numeric(12,2),           -- свой курс; NULL = курс ЦБ
-  install_gap_mm int NOT NULL DEFAULT 20,
+  install_gap_mm int NOT NULL DEFAULT 20,     -- монтажный шов с каждой стороны: рама = проём − 2 × шов
   rounding_sum  int NOT NULL DEFAULT 1000,
   lang_default  text NOT NULL DEFAULT 'ru' CHECK (lang_default IN ('ru','uz')),
   skew_warn_mm  int NOT NULL DEFAULT 10,      -- FR-M5: порог перекоса проёма
-  demo_prices   boolean NOT NULL DEFAULT false,
+  demo_prices   boolean NOT NULL DEFAULT true,  -- новый цех стартует на ДЕМО-ценах (метка «ДЕМО» на КП), выключает владелец
   waste_pct     numeric(5,2) NOT NULL DEFAULT 10, -- отход профиля в цене позиции (FR-P2)
   quote_price_check_days int NOT NULL DEFAULT 14,   -- FR-Q5: через сколько дней проверять рост цен при «Согласен»
   inn           text,                         -- реквизиты для КП
@@ -260,7 +260,9 @@ CREATE TABLE orders (
   created_by  uuid REFERENCES users(id),
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
-  client_rev  bigint NOT NULL DEFAULT 0       -- для синхронизации офлайн-замера
+  client_rev  bigint NOT NULL DEFAULT 0,      -- для синхронизации офлайн-замера
+  kit_name    text,                           -- выбранная комплектация заказа («Стандарт»)
+  quote_outdated boolean NOT NULL DEFAULT false -- позиции менялись после согласования — нужно новое КП
 );
 
 CREATE TABLE order_positions (
@@ -271,6 +273,7 @@ CREATE TABLE order_positions (
   photos      text[] DEFAULT '{}',
   accepted_warnings jsonb NOT NULL DEFAULT '[]', -- [{"rule":"2.3","by":uuid,"at":ts}]; копия doc.accepted_warnings для запросов и листа цеха — источник истины doc, сервер обновляет при сохранении
   rev         bigint NOT NULL DEFAULT 1,      -- ревизия для синхронизации офлайн-замера (PRD 5)
+  summary     jsonb NOT NULL DEFAULT '{}',    -- кэш расчёта для списка заказов: total, area_m2, units, can_quote, complete, demo
   deleted     boolean NOT NULL DEFAULT false, -- удаление тоже синхронизируется
   updated_by  uuid REFERENCES users(id),
   updated_at  timestamptz NOT NULL DEFAULT now()
@@ -282,7 +285,9 @@ CREATE TABLE extra_lines (                    -- строки сопутству
   name        text NOT NULL,
   unit        text NOT NULL,
   qty         numeric(10,3) NOT NULL,
-  price_sum   numeric(14,2) NOT NULL
+  price_sum   numeric(14,2) NOT NULL,             -- цена за единицу для клиента
+  sort        int NOT NULL DEFAULT 0,
+  created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE quotes (                         -- версии КП с замороженными ценами
@@ -298,6 +303,7 @@ CREATE TABLE quotes (                         -- версии КП с замор
   sent_at     timestamptz,
   accepted_at timestamptz,
   accepted_variant int,                       -- какой вариант комплектации выбрал клиент («Согласен»)
+  revoked_at  timestamptz,                    -- ссылку отозвали — клиент видит «предложение недоступно»
   UNIQUE (order_id, version)
 );
 

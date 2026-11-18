@@ -200,8 +200,36 @@ def accept_warning(doc: dict, rule: str, user: str, path: str = "", at: str | No
     return d
 
 
+def unaccept_warning(doc: dict, rule: str, path: str = "") -> dict:
+    """Отменить принятие предупреждения (EditorIssues: «принято · отменить»)."""
+    d = clone(doc)
+    d["accepted_warnings"] = [a for a in d.get("accepted_warnings", [])
+                              if not (a.get("rule") == rule and a.get("path", "") == path)]
+    return d
+
+
+def set_qty(doc: dict, qty: int) -> dict:
+    if not isinstance(qty, int) or qty < 1:
+        raise CommandError("qty ≥ 1")
+    d = clone(doc)
+    d["qty"] = qty
+    return d
+
+
+def set_meta(doc: dict, **meta) -> dict:
+    """Помещение и данные проёма: room, kind, opening{width,height,floor_offset,quarter_mm,wall,slope_depth_mm,nearby,floor}."""
+    bad = set(meta) - {"room", "kind", "opening"}
+    if bad:
+        raise CommandError(f"неизвестные поля: {', '.join(sorted(bad))}")
+    d = clone(doc)
+    if "opening" in meta:
+        d.setdefault("opening", {}).update(meta.pop("opening") or {})
+    d.update(meta)
+    return d
+
+
 COMMANDS = {f.__name__: f for f in (set_size, split, merge, set_part_size, set_cell, set_fill, set_setup,
-                                    set_option, set_extras, mirror, accept_warning)}
+                                    set_option, set_extras, mirror, accept_warning, unaccept_warning, set_qty, set_meta)}
 
 
 def apply(doc: dict, commands: list[dict]) -> dict:

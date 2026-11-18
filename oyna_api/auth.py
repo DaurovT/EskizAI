@@ -178,7 +178,8 @@ def request_code(body: PhoneIn, request: Request):
                   (phone, hash_code(s, phone, code), request.client.host if request.client else None,
                    now() + timedelta(seconds=s.code_ttl_s)))
         sender(s).send(phone, code)
-    return {"phone": phone, "expires_in": s.code_ttl_s, "resend_in": s.code_resend_s, "length": s.code_length}
+    return {"phone": phone, "expires_in": s.code_ttl_s, "resend_in": s.code_resend_s, "length": s.code_length,
+            "attempts": s.code_max_attempts}
 
 
 @router.post("/verify-code", summary="Подтвердить код и войти")
@@ -198,7 +199,7 @@ def verify_code(body: VerifyIn):
                 c.execute("UPDATE auth_codes SET attempts = attempts + 1 WHERE id = %s", (row["id"],))
                 c.commit()
                 left = s.code_max_attempts - row["attempts"] - 1
-                raise HTTPException(400, f"Неверный код. Осталось попыток: {left}")
+                raise HTTPException(400, {"msg": f"Неверный код. Осталось попыток: {left}", "attempts_left": left})
         if row:
             c.execute("UPDATE auth_codes SET consumed_at = now() WHERE id = %s", (row["id"],))
         u = c.execute("SELECT id FROM users WHERE phone = %s", (phone,)).fetchone()
@@ -278,7 +279,7 @@ def ctx(authorization: str | None = Header(None), x_company: str | None = Header
             if not m:
                 raise HTTPException(403, "Доступ к цеху закрыт")
             cid, co = store.load_company(c, p["cid"])
-        return Ctx(co, cid, m["role"], p["sub"])
+        return Ctx(_with_fx(co), cid, m["role"], p["sub"])
     if not s.dev_headers:
         raise HTTPException(401, "Войдите по номеру телефона")
     role = x_role if x_role in ROLES else "owner"
@@ -292,7 +293,17 @@ def ctx(authorization: str | None = Header(None), x_company: str | None = Header
             cid, co = store.load_company(c, comp)
         except store.NotFound as e:
             raise HTTPException(404, str(e))
-    return Ctx(co, cid, role)
+    return Ctx(_with_fx(co), cid, role)
+
+
+def _with_fx(co: Company) -> Company:
+    """Свой курс цеха или курс ЦБ (FR-P3: сум и $ по курсу цеха; NULL = курс ЦБ)."""
+    if co.usd_rate is None:
+        from .fx import usd
+        r = usd()
+        if r:
+            co.usd_rate = r["rate"]
+    return co
 
 
 def require(cx: Ctx, *roles: str) -> None:

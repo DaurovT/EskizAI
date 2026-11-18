@@ -13,7 +13,7 @@ def test_health():
 
 def test_measure_flow_to_position_and_calc():
     m = c.post("/oyna/measure/frame", json={"widths": [1440, 1446, 1452], "heights": [1340, 1338, 1351]}).json()
-    assert m["ok"] and m["frame_w"] == 1420 and any(i["code"] == "M.skew" for i in m["issues"])
+    assert m["ok"] and m["frame_w"] == 1400 and any(i["code"] == "M.skew" for i in m["issues"])
     p = c.post("/oyna/positions/from-template", json={"template": "T03", "w": m["frame_w"], "h": m["frame_h"], "room": "Кухня"}).json()
     doc = p["doc"]
     r = c.post("/oyna/positions/commands", json={"doc": doc, "commands": [

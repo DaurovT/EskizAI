@@ -28,7 +28,7 @@ def test_login_limits_and_errors(client):
     assert client.post("/auth/request-code", json={"phone": phone}).status_code == 200
     assert client.post("/auth/request-code", json={"phone": phone}).status_code == 429          # повтор раньше 60 с
     bad = client.post("/auth/verify-code", json={"phone": phone, "code": "99999"})
-    assert bad.status_code == 400 and "Осталось попыток: 4" in bad.json()["detail"]
+    assert bad.status_code == 400 and bad.json()["detail"]["attempts_left"] == 4
     assert client.post("/auth/request-code", json={"phone": "12345"}).status_code == 422
 
 

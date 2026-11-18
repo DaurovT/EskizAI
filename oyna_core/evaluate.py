@@ -19,6 +19,8 @@ class Violation:
     path: str = ""
     fix: str = ""
     accepted: bool = False
+    accepted_by: str = ""
+    accepted_at: str = ""
 
     def as_dict(self) -> dict:
         return {k: v for k, v in self.__dict__.items() if v not in ("", None) or k in ("code", "severity")}
@@ -48,9 +50,10 @@ class Eval:
         r = self.cat.rules.get(code, {"severity": "block", "title": code})
         if any(v.code == code and v.path == path for v in self.violations):
             return
-        accepted = r["severity"] == "warn" and any(
-            a.get("rule") == code and a.get("path", "") in ("", path) for a in self.doc.get("accepted_warnings", []))
-        self.violations.append(Violation(code, r["severity"], r["title"], msg, path, fix, accepted))
+        acc = next((a for a in self.doc.get("accepted_warnings", [])
+                    if a.get("rule") == code and a.get("path", "") in ("", path)), None) if r["severity"] == "warn" else None
+        self.violations.append(Violation(code, r["severity"], r["title"], msg, path, fix, acc is not None,
+                                         (acc or {}).get("by", ""), (acc or {}).get("at", "")))
 
     def has(self, code: str) -> bool:
         return any(v.code == code for v in self.violations)

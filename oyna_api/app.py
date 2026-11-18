@@ -121,19 +121,42 @@ def alts(body: AltIn, cx: Ctx = Depends(ctx)):
 
 
 # ---------------- справочники ----------------
+CATEGORY = {"window": "window", "balcony_block": "balcony", "door": "door", "sliding": "sliding", "assembly": "assembly"}
+
+
 @app.get("/oyna/templates", tags=["справочники"])
 def templates():
-    return [{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")} for t in CAT.templates.values()]
+    """ready = ядро считает этот шаблон (раздвижные, составные, арки — после MVP); fixed — зафиксированные части."""
+    out = []
+    for t in CAT.templates.values():
+        root = t["root"]
+        ready = not any(k in root for k in ("sliding", "assembly")) and root.get("shape") in (None, "rect")
+        fixed = []
+        def walk(node, path=""):
+            for i, part in enumerate(node.get("parts", [])):
+                pp = f"{path}.{i}" if path else str(i)
+                if isinstance(part.get("size"), (int, float)):
+                    fixed.append({"path": pp, "size": part["size"]})
+                if "node" in part:
+                    walk(part["node"], pp)
+        walk(root)
+        out.append({**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")},
+                    "category": CATEGORY.get(t["kind"], t["kind"]), "ready": ready, "fixed_parts": fixed})
+    return out
 
 
 @app.get("/oyna/systems", tags=["справочники"])
-def systems(material: str | None = None):
+def systems(material: str | None = None, q: str | None = None):
     out = []
     for code, s in CAT.systems.items():
         if s["usable_for_calc"] != "1" or (material and s["material_class"] != material):
             continue
+        if q and q.lower() not in f"{s['brand']} {s['series']}".lower():
+            continue
         p = CAT.passport(code)
         out.append({"code": code, "brand": s["brand"], "series": s["series"], "material": s["material_class"],
+                    "depth_mm": p.get("depth_mm"), "chambers": p.get("chambers"),
+                    "demo_passport": not p.get("verified_fields"),
                     "colors": CAT.system_colors(code), "fitting_groove": s["fitting_groove"],
                     "fittings": CAT.compatible_fitting_sets(code), "glass_range_mm": list(p.get("beads", {}).values()),
                     "passport_verified_fields": p.get("verified_fields", [])})
@@ -221,6 +244,12 @@ def order_cut(body: OrderIn, cx: Ctx = Depends(ctx)):
     if cx.role not in ("owner", "production"):
         raise HTTPException(403, "раскрой — для владельца и производства")
     return order_cutting(body.positions, CAT, cx.company)
+
+
+@app.get("/oyna/fx/usd", tags=["справочники"], summary="Курс доллара ЦБ (для цеха без своего курса)")
+def fx_usd():
+    from .fx import usd
+    return usd() or {"rate": None, "source": "unavailable"}
 
 
 @app.get("/health")

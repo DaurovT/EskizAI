@@ -29,7 +29,7 @@ def frame_from_opening(widths: list[int], heights: list[int], company: Company |
                        cat: Catalog | None = None) -> dict:
     """3 ширины (верх/середина/низ) и 3 высоты (лево/центр/право) → габарит рамы.
 
-    Рама = минимум замеров − монтажный зазор цеха (install_gap_mm — суммарно на размер, как в правиле 9.5),
+    Рама = минимум замеров − 2 × монтажный зазор цеха (install_gap_mm — шов с каждой стороны),
     округление вниз до 5 мм. Перекос — разница замеров больше порога цеха (skew_warn_mm).
     """
     company = company or Company()
@@ -42,7 +42,7 @@ def frame_from_opening(widths: list[int], heights: list[int], company: Company |
     if any(x["severity"] == "block" for x in issues):
         return {"ok": False, "issues": issues}
     gap = company.install_gap_mm
-    w, h = min(widths) - gap, min(heights) - gap
+    w, h = min(widths) - 2 * gap, min(heights) - 2 * gap
     w5, h5 = w - w % 5, h - h % 5                     # рама в мм кратно 5 — вниз, чтобы влезла
     for name, arr in (("ширине", widths), ("высоте", heights)):
         d = max(arr) - min(arr)

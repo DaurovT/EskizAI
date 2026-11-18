@@ -78,10 +78,11 @@ def check_input(ev) -> None:
     if op.get("width") and op.get("height"):
         ow = min(op["width"]) if isinstance(op["width"], list) else op["width"]
         oh = min(op["height"]) if isinstance(op["height"], list) else op["height"]
-        gap_min = ev.cat.rules["9.5"]["params"]["gap_mm"][0]
-        if ow - w < gap_min or oh - h < gap_min:
-            ev.add("9.5", f"проём {ow}×{oh}, блок {w}×{h}: зазор меньше {gap_min} мм",
-                   fix=f"блок {ow - ev.company.install_gap_mm}×{oh - ev.company.install_gap_mm} мм")
+        gap_min = ev.cat.rules["9.5"]["params"]["gap_mm"][0]        # шов с каждой стороны
+        gap = ev.company.install_gap_mm
+        if (ow - w) / 2 < gap_min or (oh - h) / 2 < gap_min:
+            ev.add("9.5", f"проём {ow}×{oh}, блок {w}×{h}: шов меньше {gap_min} мм с каждой стороны",
+                   fix=f"блок {ow - 2 * gap}×{oh - 2 * gap} мм")
     fl = _floor(ev)
     if fl and fl > ev.cat.rules["5.7"]["params"]["floor_gt"]:
         ev.add("5.7", f"этаж {fl}", fix="проверьте ветровую нагрузку, усиленное армирование")

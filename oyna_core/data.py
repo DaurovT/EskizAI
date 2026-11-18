@@ -42,7 +42,7 @@ class Company:
     markup_kind: str = "percent"         # percent | per_m2
     markup_value: float = 0.0
     usd_rate: float | None = None
-    install_gap_mm: int = 20
+    install_gap_mm: int = 20            # монтажный шов на КАЖДУЮ сторону: рама = проём − 2 × зазор
     rounding_sum: int = 1000
     skew_warn_mm: int = 10
     demo_prices: bool = False

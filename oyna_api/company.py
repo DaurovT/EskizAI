@@ -19,7 +19,7 @@ from .settings import settings
 
 router = APIRouter(prefix="/oyna/company", tags=["цех"])
 
-FIELDS = ("name", "phone", "inn", "address", "logo_url", "mode", "dealer_coef", "markup_kind", "markup_value", "usd_rate",
+FIELDS = ("demo_prices", "name", "phone", "inn", "address", "logo_url", "mode", "dealer_coef", "markup_kind", "markup_value", "usd_rate",
           "install_gap_mm", "rounding_sum", "lang_default", "skew_warn_mm", "waste_pct", "quote_price_check_days")
 
 
@@ -39,6 +39,7 @@ class CompanyIn(BaseModel):
     markup_value: float = 30
     usd_rate: float | None = None
     lang_default: Literal["ru", "uz"] = "ru"
+    demo_prices: bool = Field(True, description="стартовать на ДЕМО-ценах (метка «ДЕМО» на КП), пока цех не внёс свои")
     systems: list[str] = Field(default_factory=lambda: ["akfa__6000_qvt"])
     works: dict[str, float] = {}
     kits: list[dict[str, Any]] | None = None
@@ -61,6 +62,7 @@ class CompanyPatch(BaseModel):
     skew_warn_mm: int | None = Field(None, ge=0, le=100)
     waste_pct: float | None = Field(None, ge=0, le=50)
     quote_price_check_days: int | None = Field(None, ge=1, le=365)
+    demo_prices: bool | None = None
 
 
 class Kit(BaseModel):
@@ -132,10 +134,11 @@ def create_company(body: CompanyIn, authorization: str | None = Header(None)):
             raise HTTPException(422, f"комплектация «{k['name']}»: " + "; ".join(errs))
     with store.conn() as c:
         cid = str(c.execute(
-            """INSERT INTO companies (name, phone, inn, address, mode, dealer_coef, markup_kind, markup_value, usd_rate, lang_default)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+            """INSERT INTO companies (name, phone, inn, address, mode, dealer_coef, markup_kind, markup_value, usd_rate, lang_default,
+                                     demo_prices)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
             (body.name, body.phone, body.inn, body.address, body.mode, body.dealer_coef, body.markup_kind, body.markup_value,
-             body.usd_rate, body.lang_default)).fetchone()["id"])
+             body.usd_rate, body.lang_default, body.demo_prices)).fetchone()["id"])
         c.execute("INSERT INTO company_members (company_id, user_id, role) VALUES (%s,%s,'owner')", (cid, p["sub"]))
         for code in body.systems:
             c.execute("INSERT INTO company_systems (company_id, system_code) VALUES (%s,%s) ON CONFLICT DO NOTHING", (cid, code))
