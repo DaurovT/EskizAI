@@ -760,12 +760,12 @@ function StepIn({ step, children }: { step: number; children: ReactNode }) {
   const prev = useRef(step);
   const dir = useRef(1);
   if (prev.current !== step) { dir.current = step > prev.current ? 1 : -1; prev.current = step; a.setValue(0); }
-  // 0,4 с после смены шага нажатия не принимаем: «Далее» на клавиатуре и «Далее» следующего шага стоят
+  // 0,65 с после смены шага нажатия не принимаем: «Далее» на клавиатуре и «Далее» следующего шага стоят
   // в одном месте — быстрый двойной тап проскакивал шаг (деление)
   const [locked, setLocked] = useState(false);
   useEffect(() => {
     setLocked(true);
-    const t = setTimeout(() => setLocked(false), 400);
+    const t = setTimeout(() => setLocked(false), 650);
     Animated.timing(a, { toValue: 1, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     return () => clearTimeout(t);
   }, [step, a]);
