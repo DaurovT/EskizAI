@@ -77,7 +77,7 @@ def money(v) -> str:
 
 
 def schema(doc: dict, cat, co, width_mm: float = 38):
-    d = svg2rlg(io.BytesIO(render_svg(doc, cat, co, max_px=420, dims=True).encode()))
+    d = svg2rlg(io.BytesIO(render_svg(doc, cat, co, max_px=420, dims=True, highlight=False).encode()))
     if d is None:
         return Paragraph("—", styles()["small"])
     k = width_mm * mm / d.width
@@ -143,7 +143,7 @@ def quote_pdf(company: dict, order: dict, q: dict, cat, co) -> bytes:
     if q.get("demo"):
         story += [Spacer(1, 4), Paragraph(L["demo"], S["demo"])]
     for i, v in enumerate(q["variants"]):
-        story.append(Paragraph(f"{L['variant']} {i + 1}: {v['kit']}", S["h2"]))
+        head = Paragraph(f"{L['variant']} {i + 1}: {v['kit']}", S["h2"])
         rows = [["№", L["schema"], L["room"], L["size"], L["qty"], L["price"]]]
         for n, p in enumerate(v["positions"], 1):
             img = svg2rlg(io.BytesIO(p["svg"].encode())) if p.get("svg") else None
@@ -155,9 +155,10 @@ def quote_pdf(company: dict, order: dict, q: dict, cat, co) -> bytes:
         rows.append(["", "", "", "", L["total"], money(v["total"])])
         t = grid(rows, [8, 40, 40, 30, 16, 36])
         t.setStyle(TableStyle([("FONT", (4, -1), (-1, -1), fonts()[1], 9.5)]))
-        story.append(t)
+        block = [head, t]
         if v.get("total_usd"):
-            story.append(Paragraph(f"≈ {v['total_usd']:,.0f} $".replace(",", " "), S["small"]))
+            block.append(Paragraph(f"≈ {v['total_usd']:,.0f} $".replace(",", " "), S["small"]))
+        story.append(KeepTogether(block))                    # заголовок варианта не остаётся один внизу страницы
     story += [Spacer(1, 8), Paragraph(L["valid"], S["small"])]
     if not pro:
         story.append(Paragraph(L["badge"], S["small"]))       # FR-Q9: бесплатное КП — с меткой Eskiz

@@ -30,7 +30,8 @@ def _severity(ev) -> dict:
 
 
 def render_svg(doc: dict, cat: Catalog, company: Company | None = None, view: str = "inside",
-               max_px: int = 560, dims: bool = True) -> str:
+               max_px: int = 560, dims: bool = True, highlight: bool = True) -> str:
+    """highlight=False — без подсветки нарушений (КП и документы для клиента)."""
     ev = evaluate(doc, cat, company)
     fr = doc.get("frame", {})
     frames = [(p, x) for p, x in zip(ev.parts, ev.offsets)] if ev.parts else [(ev, 0.0)]
@@ -52,7 +53,7 @@ def render_svg(doc: dict, cat: Catalog, company: Company | None = None, view: st
     mirror = view == "outside"
     X = (lambda x: pad + (W - x) * k) if mirror else (lambda x: pad + x * k)
     Y = lambda y: pad + y * k
-    sev = _severity(ev)
+    sev = _severity(ev) if highlight else {}
     profile = side_hex(cat, ev.setup, "in" if view == "inside" else "out") or "#F4F4F2"
     mcolor = MUNTIN.get("white")
     out = []

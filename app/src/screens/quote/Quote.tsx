@@ -317,9 +317,11 @@ function Preview({ order, company, lines, cap }: { order: OrderFull; company: Co
         <Txt size={14} color={C.muted}>КП · {date(new Date().toISOString())}</Txt>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-        {[0, 1, 2].map((i) => (
-          <View key={i} style={{ flex: 1, height: 70, borderRadius: 12, backgroundColor: '#F7F7F5', alignItems: 'center', justifyContent: 'center' }}>
-            {docs[i] && thumbW ? <Schema doc={docs[i].doc} width={Math.min(thumbW - 16, 70)} maxHeight={56} dims={false} /> : null}
+        {/* только реальные изделия (до 3), без пустых плиток; больше трёх — «+N» */}
+        {docs.slice(0, 3).map((d, i) => (
+          <View key={i} style={{ flex: 1, maxWidth: 120, height: 70, borderRadius: 12, backgroundColor: '#F7F7F5', alignItems: 'center', justifyContent: 'center' }}>
+            {thumbW ? <Schema doc={d.doc} width={Math.min(thumbW - 16, 70)} maxHeight={56} dims={false} /> : null}
+            {i === 2 && docs.length > 3 ? <Txt size={13} w={600} color={C.muted} style={{ position: 'absolute', right: 8, bottom: 6 }}>+{docs.length - 3}</Txt> : null}
           </View>
         ))}
       </View>
