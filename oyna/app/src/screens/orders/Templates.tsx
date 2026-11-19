@@ -174,7 +174,9 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
   const [err, setErr] = useState<string | null>(null);
   const wn = parseInt(w, 10) || 0, hn = parseInt(h, 10) || 0;
   const key = `${wn}x${hn}`;
-  const valid = wn >= MIN && wn <= MAX && hn >= MIN && hn <= MAX;
+  // сборка (угловое, эркер, лоджия) — ширина развёртки, до 20 м; одно окно — до MAX
+  const maxW = t.kind === 'assembly' ? 20000 : MAX;
+  const valid = wn >= MIN && wn <= maxW && hn >= MIN && hn <= MAX;
 
   // проверка на сервере — с задержкой после ввода
   const seq = useRef(0);
@@ -276,7 +278,7 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
           <Ban kind="err" icon="warn" title={blocks[0].title} text={blocks[0].fix ? `${blocks[0].msg ?? ''} ${blocks[0].fix}`.trim() : blocks[0].msg} />
         ) : (
           <>
-            {!valid ? <Txt size={14} color={C.muted} style={{ paddingHorizontal: 6 }}>Ширина 300–6000 мм, высота 300–3500 мм</Txt>
+            {!valid ? <Txt size={14} color={C.muted} style={{ paddingHorizontal: 6 }}>{`Ширина ${num(MIN)}–${num(maxW)} мм, высота ${num(MIN)}–${num(MAX)} мм`}</Txt>
               : fixedSum ? <Txt size={14} color={C.muted} style={{ paddingHorizontal: 6 }}>{`Часть ${num(fixedSum)} мм зафиксирована, остальное делится поровну`}</Txt> : null}
             {warns.length ? <Ban kind="est" icon="warn" title={warns[0].title} text={warns.length > 1 ? `и ещё ${warns.length - 1} — проверьте в редакторе` : warns[0].msg} /> : null}
             {offlineCheck ? <Txt size={14} color={C.muted} style={{ paddingHorizontal: 6 }}>Нет интернета — проверим и посчитаем, когда появится сеть</Txt> : null}

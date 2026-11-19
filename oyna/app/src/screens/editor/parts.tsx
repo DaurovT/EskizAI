@@ -332,6 +332,7 @@ export const refs = {
 export const TYPE_TITLE: Record<Cell['type'], string> = { fixed: 'Глухая', sash: 'Створка', door_sash: 'Дверная', panel: 'Панель' };
 export const OPEN_TITLE: Record<string, string> = {
   turn: 'Поворотная', tilt_turn: 'П-О', tilt: 'Откидная', sliding: 'Раздвижная', top_hung: 'Подвесное', pivot: 'Среднеподвесное',
+  psk: 'PSK (параллельно-сдвижная)', hs: 'HS (подъёмно-сдвижная)', folding: 'Гармошка',
 };
 export const SHAPE_TITLE: Record<Shape, string> = {
   rect: 'Прямоугольник', arch: 'Арка', circle: 'Круг', trapezoid: 'Трапеция', bevel: 'Скос угла', triangle: 'Треугольник',

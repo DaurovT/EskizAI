@@ -437,7 +437,7 @@
       "id": "T15",
       "name": "Лоджия П-образная (3 рамы, углы 90°)",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 6000,
       "default_h": 1400,
       "root": {
         "assembly": [
@@ -1417,7 +1417,7 @@
       "id": "T45",
       "name": "Угловое окно 90°",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 2400,
       "default_h": 1400,
       "root": {
         "assembly": [
@@ -1473,7 +1473,7 @@
       "id": "T46",
       "name": "Эркер 3 грани 135°",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 3400,
       "default_h": 1500,
       "root": {
         "assembly": [
@@ -1544,7 +1544,7 @@
       "id": "T47",
       "name": "Эркер 5 граней 144°",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 4400,
       "default_h": 1500,
       "root": {
         "assembly": [
@@ -1637,7 +1637,7 @@
       "id": "T48",
       "name": "Полукруглый эркер 7 граней 154°",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 4900,
       "default_h": 1500,
       "root": {
         "assembly": [
@@ -1839,7 +1839,7 @@
       "id": "T50",
       "name": "Витраж с дверью",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 3400,
       "default_h": 2450,
       "root": {
         "assembly": [
@@ -2206,7 +2206,7 @@
       "id": "T56",
       "name": "Лоджия Г-образная (2 рамы, угол 90°)",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 3600,
       "default_h": 1400,
       "root": {
         "assembly": [
@@ -2294,7 +2294,7 @@
       "id": "T57",
       "name": "Лоджия прямая (3 рамы)",
       "kind": "assembly",
-      "default_w": 0,
+      "default_w": 4800,
       "default_h": 1400,
       "root": {
         "assembly": [

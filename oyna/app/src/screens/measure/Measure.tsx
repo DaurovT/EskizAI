@@ -234,7 +234,7 @@ const KIND_ICON: Record<string, Doc> = {
   window: simpleWindow(1300, 1200, 2),
   balcony_block: presetDoc(PRESETS.find((p) => p.id === 'T09')!, 1800, 1400),
   door: presetDoc(PRESETS.find((p) => p.id === 'T11')!, 700, 1400),
-  loggia: loggiaDoc(3000, 1400, 800),
+  loggia: loggiaDoc(3000, 1400, 700, 1, 2),   // иконка: боковые глухие, фронт — 2 части
 };
 const WALLS = [{ value: 'brick', title: 'Кирпич' }, { value: 'concrete', title: 'Бетон' }, { value: 'aerated', title: 'Газоблок' }, { value: 'wood', title: 'Дерево' }];
 const SLOPES = [100, 150, 200, 250, 300, 400];

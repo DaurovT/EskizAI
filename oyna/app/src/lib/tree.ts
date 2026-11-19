@@ -727,7 +727,8 @@ export function docFromTemplate(t: Template, w?: number, h?: number): Doc | null
 }
 
 /** Лоджия (§9.5): П-образная сборка из трёх рам с углами 90° + doc.loggia — для мастера замера без сети. */
-export function loggiaDoc(w = 4200, h = 1400, sideW = 1200): Doc {
+/** sideN / frontN — частей в боковых и фронтальной раме (для иконки — меньше, иначе в 72 px сплошная штриховка) */
+export function loggiaDoc(w = 4200, h = 1400, sideW = 1200, sideN = 2, frontN = 3): Doc {
   const leaf = (i: number): Cell => (i === 1 ? { type: 'sash', open: 'tilt_turn', hinge: 'left', handle: true, mosquito: true } : { type: 'fixed' });
   const front = Math.max(600, w - 2 * sideW);
   const frame = (fw: number, n: number): Frame => ({
@@ -735,7 +736,7 @@ export function loggiaDoc(w = 4200, h = 1400, sideW = 1200): Doc {
   });
   const d: Doc = {
     kind: 'assembly', qty: 1, extras: {}, accepted_warnings: [], loggia: { outrigger_mm: 0, roof: false, cladding: null, parapet: null },
-    frame: { w: 0, h, root: { assembly: [{ frame: frame(sideW, 2) }, { joint: 'angle', angle: 90 }, { frame: frame(front, 3) }, { joint: 'angle', angle: 90 }, { frame: frame(sideW, 2) }] } },
+    frame: { w: 0, h, root: { assembly: [{ frame: frame(sideW, sideN) }, { joint: 'angle', angle: 90 }, { frame: frame(front, frontN) }, { joint: 'angle', angle: 90 }, { frame: frame(sideW, sideN) }] } },
   };
   return rebuild(d, asmFrames(d), rawJoints(d));
 }
