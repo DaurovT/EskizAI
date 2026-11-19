@@ -21,7 +21,7 @@ import {
 import { Ban, CompanyOut, dims, ExtraSheet, KbSheet, NotSent, nItems, OptCard, PIcon, Pill, PosTile, SoftSm, st, Tag } from './parts';
 
 type Loaded =
-  | { kind: 'server'; full: OrderFull; local: LocalPosition[] }
+  | { kind: 'server'; full: OrderFull; local: LocalPosition[]; conflicts?: string[] }
   | { kind: 'local'; order: LocalOrder | null; local: LocalPosition[]; offline: boolean };
 
 /** Комплектации цеха для переключателя «Эконом / Стандарт / Тёплый» — один раз за запуск. */
@@ -43,7 +43,7 @@ export default function Order() {
     const local = Object.values(snap.positions).filter((p) => p.order_id === id && !p.deleted);
     const get = () => api.get<OrderFull>(`/oyna/orders/${id}`);
     try {
-      return { kind: 'server', full: await get(), local };
+      return { kind: 'server', full: await get(), local, conflicts: Object.keys(snap.conflicts).filter((k) => snap.conflicts[k].order_id === id) };
     } catch (e) {
       if (!(e instanceof ApiError) || !(e.status === 404 || e.isNetwork)) throw e;
       // заказ создан на телефоне и ещё не отправлен — пробуем отправить и прочитать снова
@@ -120,6 +120,7 @@ export default function Order() {
   const positions = f.positions.filter((p) => !p.deleted);
   const serverIds = new Set(positions.map((p) => p.id));
   const dirty = new Set(data.local.filter((p) => p.dirty).map((p) => p.id));
+  const conflicts = new Set(data.conflicts ?? []);
   const localOnly = data.local.filter((p) => !serverIds.has(p.id));
   const empty = !positions.length && !f.extras.length && !localOnly.length;
   const blockedIdx = f.blocked_positions.map((pid) => positions.findIndex((p) => p.id === pid) + 1).filter((n) => n > 0);
@@ -195,7 +196,8 @@ export default function Order() {
 
             <Card style={{ marginHorizontal: 0 }}>
               {positions.map((p, i) => (
-                <PosRow key={p.id} p={p} first={i === 0} dirty={dirty.has(p.id)} agreed={agreed} onPress={() => openPos(p.id)} />
+                <PosRow key={p.id} p={p} first={i === 0} dirty={dirty.has(p.id)} agreed={agreed}
+                  conflict={conflicts.has(p.id)} onPress={() => (conflicts.has(p.id) ? router.push(`/order/${id}/conflict?pos=${p.id}`) : openPos(p.id))} />
               ))}
               {localOnly.map((p, i) => <LocalPosRow key={p.id} p={p} first={!positions.length && i === 0} onPress={() => openPos(p.id, p.step)} />)}
               {f.extras.map((e, i) => (
@@ -313,7 +315,7 @@ function RowBox({ first, onPress, left, children }: { first: boolean; onPress?: 
   ) : <View style={style}>{inner}</View>;
 }
 
-function PosRow({ p, first, dirty, agreed, onPress }: { p: PositionOut; first: boolean; dirty: boolean; agreed: boolean; onPress: () => void }) {
+function PosRow({ p, first, dirty, agreed, conflict, onPress }: { p: PositionOut; first: boolean; dirty: boolean; agreed: boolean; conflict?: boolean; onPress: () => void }) {
   const errors = p.violations.filter((v) => (v.severity === 'block' || v.severity === 'lock') && !v.accepted);
   const accepted = p.violations.filter((v) => v.severity === 'warn' && v.accepted);
   const firstErr = errors[0];
@@ -327,14 +329,15 @@ function PosRow({ p, first, dirty, agreed, onPress }: { p: PositionOut; first: b
       </View>
       <Txt size={14} color={C.muted} lines={2} style={{ fontVariant: ['tabular-nums'] }}>{sub}</Txt>
       {p.qty > 1 && !firstErr ? <Txt size={13} color={C.muted} lines={1}>{p.label}</Txt> : null}
-      {errors.length || p.warns || (agreed && accepted.length) || p.demo || !p.complete || dirty ? (
+      {errors.length || p.warns || (agreed && accepted.length) || p.demo || !p.complete || dirty || conflict ? (
         <View style={st.pills}>
           {errors.length ? <Pill color="red" title={`${errors.length} ${errors.length === 1 ? 'ошибка' : errors.length < 5 ? 'ошибки' : 'ошибок'}`} /> : null}
           {p.warns ? <Pill color="amber" title={errors.length ? String(p.warns) : `${p.warns} предупр.`} /> : null}
           {!p.warns && accepted.length && accepted[0].accepted_by_name ? <Pill color="gray" title={`принято: ${accepted[0].accepted_by_name}`} /> : null}
           {!p.complete && !errors.length ? <Pill color="red" title="нет цены" /> : null}
           {p.demo ? <Tag title="ДЕМО" /> : null}
-          {dirty ? <NotSent /> : null}
+          {/* правка с телефона и на сервере разные — мастер выбирает (иначе вечное «не отправлен») */}
+          {conflict ? <Pill color="red" title="две версии — выбрать" /> : dirty ? <NotSent /> : null}
         </View>
       ) : null}
     </RowBox>

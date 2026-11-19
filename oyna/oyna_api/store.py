@@ -209,6 +209,12 @@ def user_name(c, user_id) -> dict | None:
     return {"id": str(u["id"]), "name": u["name"] or u["phone"]} if u else None
 
 
+def _same_doc(a: dict, b: dict) -> bool:
+    """Тот же документ позиции (порядок ключей не важен)."""
+    import json
+    return json.dumps(a, sort_keys=True, ensure_ascii=False) == json.dumps(b, sort_keys=True, ensure_ascii=False)
+
+
 def put_position(c, company_id: str, order_id: str, position_id: str, doc: dict, base_rev: int | None,
                  deleted: bool = False, force: bool = False, sort: int | None = None, summary: dict | None = None,
                  user_id: str | None = None) -> dict:
@@ -225,6 +231,9 @@ def put_position(c, company_id: str, order_id: str, position_id: str, doc: dict,
         if str(cur["order_id"]) != order_id:
             raise NotFound("позиция из другого заказа")
         if not force and base_rev is not None and base_rev < cur["rev"]:
+            # повтор той же правки (ответ сервера потерялся в сети, телефон шлёт снова) — не конфликт
+            if not deleted and not cur["deleted"] and _same_doc(cur["doc"], doc):
+                return cur
             raise Conflict({"doc": cur["doc"], "rev": cur["rev"], "deleted": cur["deleted"],
                             "updated_at": cur["updated_at"].isoformat(), "updated_by": user_name(c, cur["updated_by"])})
         row = c.execute(

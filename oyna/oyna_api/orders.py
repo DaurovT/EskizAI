@@ -26,6 +26,8 @@ from . import client_page, store
 from .auth import Ctx, ctx, need_company
 from .settings import settings
 
+import logging
+_log = logging.getLogger("uvicorn.error")
 router = APIRouter()
 STATUSES = ("measure", "quoted", "agreed", "production", "ready", "installed", "closed", "cancelled")
 
@@ -427,8 +429,10 @@ def sync(body: SyncIn, cx: Ctx = Depends(ctx)):
                                          summary=summary(p.doc, cx.company), user_id=_who(cx))
                 out["positions"].append({"position_id": p.position_id, "status": "ok", "rev": row["rev"]})
             except store.Conflict as e:
+                _log.warning("sync conflict pos=%s order=%s base_rev=%s server_rev=%s", p.position_id, p.order_id, p.base_rev, e.server.get("rev"))
                 out["positions"].append({"position_id": p.position_id, "status": "conflict", "server": e.server})
             except store.NotFound as e:
+                _log.warning("sync error pos=%s order=%s: %s", p.position_id, p.order_id, e)
                 out["positions"].append({"position_id": p.position_id, "status": "error", "error": str(e)})
     return out
 

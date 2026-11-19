@@ -84,6 +84,11 @@ def test_order_screens(client):
     c409 = client.put(f"/oyna/orders/{oid}/positions/{p1}", json={"doc": tmpl(client, "T03"), "base_rev": 1})
     assert c409.status_code == 409 and "updated_at" in c409.json()["server"]
 
+    # повтор той же правки со старой ревизией (ответ потерялся в сети) — не конфликт
+    cur = next(p for p in client.get(f"/oyna/orders/{oid}").json()["positions"] if p["id"] == p1)
+    again = client.put(f"/oyna/orders/{oid}/positions/{p1}", json={"doc": cur["doc"], "base_rev": 1})
+    assert again.status_code == 200 and again.json()["rev"] == cur["rev"]
+
     # отзыв ссылки
     client.post(f"/oyna/orders/{oid}/quotes/{q['version']}/revoke")
     gone = client.get(q["url"]).json()
