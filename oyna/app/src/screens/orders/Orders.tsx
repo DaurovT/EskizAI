@@ -216,11 +216,12 @@ function build(d: Loaded, status: OrderStatus | undefined, q: string) {
   for (const p of Object.values(d.snap.positions)) {
     if (p.deleted) continue;
     (localPos[p.order_id] ??= []).push(p);
-    if (p.dirty) pendingIds.add(p.order_id);
+    if (p.dirty && p.step === undefined) pendingIds.add(p.order_id);   // черновик замера — не «не отправлен»
   }
-  for (const o of Object.values(d.snap.orders)) if (!o.synced) pendingIds.add(o.id);
+  for (const o of Object.values(d.snap.orders)) if (!o.synced && localPos[o.id]?.some((p) => p.step === undefined)) pendingIds.add(o.id);
   // заказ создан на телефоне и ещё не ушёл на сервер (или ушёл, но список с сервера старый)
-  const localOnly = Object.values(d.snap.orders).filter((o) => !o.synced && !serverIds.has(o.id) && !allServer.has(o.id));
+  // пустой заказ (ни окна, ни черновика замера) в списке не показываем — мастер передумал на «Новый заказ»
+  const localOnly = Object.values(d.snap.orders).filter((o) => !o.synced && !serverIds.has(o.id) && !allServer.has(o.id) && (localPos[o.id]?.length ?? 0) > 0);
   const local = (!status || status === 'measure')
     ? localOnly.filter((o) => matches(q, o.client?.name, o.address, o.client?.phone)).sort((a, b) => b.created_at.localeCompare(a.created_at))
     : [];

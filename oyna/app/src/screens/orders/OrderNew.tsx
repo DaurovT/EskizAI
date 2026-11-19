@@ -68,7 +68,10 @@ export default function OrderNew() {
         setExtraFor(o.id);
         return;
       }
-      void offline.sync().catch(() => { /* без сети — уйдёт позже */ });
+      // заказ НЕ отправляем сразу: уйдёт вместе с первым окном (замер/шаблон сами вызывают sync).
+      // Иначе брошенный замер оставлял пустой «Без клиента» в списке.
+      // под замером/шаблонами — экран заказа, а не эта форма: «Назад» из итога ведёт в заказ, а не в пустой «Новый заказ»
+      router.replace(`/order/${o.id}`);
       router.push(way === 'measure' ? `/order/${o.id}/measure` : `/order/${o.id}/templates`);
     } finally {
       setBusy(null);

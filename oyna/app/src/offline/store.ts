@@ -90,13 +90,18 @@ export const offline = {
   },
   async pendingCount(): Promise<number> {
     await load();
-    return Object.values(state.orders).filter((o) => !o.synced).length + Object.values(state.positions).filter((p) => p.dirty).length;
+    // черновики замера (step задан) не отправляются — это «незаконченный замер», а не «не отправлено»
+    const hasPos = (id: string) => Object.values(state.positions).some((p) => p.order_id === id && !p.deleted && p.step === undefined);
+    return Object.values(state.orders).filter((o) => !o.synced && hasPos(o.id)).length
+      + Object.values(state.positions).filter((p) => p.dirty && p.step === undefined).length;
   },
 
   /** Отправить всё несинхронизированное. Возвращает число отправленных и конфликтов. */
   async sync(): Promise<{ sent: number; conflicts: number; offline?: boolean }> {
     await load();
-    const orders = Object.values(state.orders).filter((o) => !o.synced);
+    // заказ без окон (только черновик замера или вовсе пусто) на сервер не шлём — ждём первое окно
+    const hasPos = (id: string) => Object.values(state.positions).some((p) => p.order_id === id && !p.deleted && p.step === undefined);
+    const orders = Object.values(state.orders).filter((o) => !o.synced && hasPos(o.id));
     const positions = Object.values(state.positions).filter((p) => p.dirty && p.step === undefined);
     if (!orders.length && !positions.length) return { sent: 0, conflicts: 0 };
     let res: SyncResult;
