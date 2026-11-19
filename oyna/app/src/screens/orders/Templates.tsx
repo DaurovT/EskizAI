@@ -240,7 +240,9 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
         }
       }
       await offline.savePosition(orderId, out, { id: pid, base_rev: null });
-      void offline.sync().catch(() => { /* уйдёт, когда появится сеть */ });
+      // новый заказ уходит на сервер вместе с первым окном — ждём (≤4 с), чтобы редактор открылся уже с ценой,
+      // а не «считаем…» полминуты; без сети — не ждём, окно на телефоне
+      await Promise.race([offline.sync().catch(() => undefined), new Promise((r) => setTimeout(r, 4000))]);
       onAdded();
     } catch (e) {
       setErr(errorText(e));

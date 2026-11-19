@@ -477,6 +477,16 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
       const [w, h, mw, mh] = [sz[1], sz[2], lim[1], lim[2]].map(Number);
       if (w > mw) { dir = 'v'; n = Math.max(2, Math.ceil(w / mw)); } else if (h > mh) { dir = 'h'; n = Math.max(2, Math.ceil(h / mh)); }
     }
+    // на 2 по ширине: не пополам (узкая створка не проходит по ножницам, 6.6), а створка пошире + глухая ≥ 400 мм
+    if (n === 2 && dir === 'v' && box && sz && lim) {
+      const outerW = box.x1 - box.x0;
+      const over = outerW - Number(sz[1]);                       // рама/импост вокруг створки
+      const sash = Math.round(Math.max(outerW / 2, Math.min(Number(lim[1]) + over, outerW - 400)) / 5) * 5;
+      if (sash > outerW / 2 && outerW - sash >= 300) {
+        const sizes: (number | 'eq')[] = [sash, 'eq'];   // створка остаётся первой частью (split), глухая — вторая
+        return { title: 'Створка + глухая', icon: 'window', commands: [{ cmd: 'split', path, dir, n: 2, sizes }] };
+      }
+    }
     return { title: `Разделить на ${n}`, icon: 'window', commands: [{ cmd: 'split', path, dir, n }] };
   }
   return null;

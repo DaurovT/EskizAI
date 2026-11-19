@@ -185,7 +185,7 @@ export default function Orders() {
           <Card style={{ marginHorizontal: 0 }}>
             {view.local.map((o, i) => <LocalRow key={o.id} order={o} positions={view.localPos[o.id] ?? []} first={i === 0} onPress={() => router.push(`/order/${o.id}`)} />)}
             {view.rows.map((r, i) => (
-              <ServerRow key={r.id} row={r} first={i === 0 && !view.local.length} pending={view.pendingIds.has(r.id)} onPress={() => router.push(`/order/${r.id}`)} />
+              <ServerRow key={r.id} row={r} first={i === 0 && !view.local.length} pending={view.pendingIds.has(r.id)} conflict={view.conflictIds.has(r.id)} onPress={() => router.push(`/order/${r.id}`)} />
             ))}
           </Card>
         ) : (
@@ -225,7 +225,8 @@ function build(d: Loaded, status: OrderStatus | undefined, q: string) {
   const local = (!status || status === 'measure')
     ? localOnly.filter((o) => matches(q, o.client?.name, o.address, o.client?.phone)).sort((a, b) => b.created_at.localeCompare(a.created_at))
     : [];
-  return { rows: d.rows, local, localOnly, localPos, pendingIds };
+  const conflictIds = new Set(Object.values(d.snap.conflicts).map((c) => c.order_id));
+  return { rows: d.rows, local, localOnly, localPos, pendingIds, conflictIds };
 }
 
 function RowShell({ first, onPress, children, doc }: { first: boolean; onPress: () => void; children: ReactNode; doc?: LocalPosition['doc'] }) {
@@ -240,7 +241,7 @@ function RowShell({ first, onPress, children, doc }: { first: boolean; onPress: 
   );
 }
 
-function ServerRow({ row, first, pending, onPress }: { row: OrderRow; first: boolean; pending: boolean; onPress: () => void }) {
+function ServerRow({ row, first, pending, conflict, onPress }: { row: OrderRow; first: boolean; pending: boolean; conflict?: boolean; onPress: () => void }) {
   const sub = [row.address, row.units ? nItems(row.units) : null, row.area_m2 ? m2(row.area_m2) : null].filter(Boolean).join(' · ');
   return (
     <RowShell first={first} onPress={onPress} doc={row.first_doc ?? undefined}>
@@ -254,7 +255,7 @@ function ServerRow({ row, first, pending, onPress }: { row: OrderRow; first: boo
         {row.status === 'quoted' && row.quote_sent_at ? <Txt size={13} color={C.muted}>{date(row.quote_sent_at).slice(0, 5)}</Txt> : null}
         {row.missing_price_positions > 0 ? <Pill color="red" title={`нет цены: ${row.missing_price_positions}`} /> : null}
         {row.demo ? <Tag title="ДЕМО" /> : null}
-        {pending ? <NotSent /> : null}
+        {conflict ? <Pill color="red" title="две версии — выбрать" /> : pending ? <NotSent /> : null}
       </View>
     </RowShell>
   );
