@@ -129,6 +129,7 @@ def get_order_row(c, company_id: str, order_id: str) -> dict:
 LIST_SQL = """SELECT o.*, cl.name AS client_name, cl.phone AS client_phone, cl.telegram AS client_telegram,
         agg.positions, agg.units, agg.total, agg.area_m2, agg.missing_price_positions, agg.blocked_positions, agg.demo,
         COALESCE((SELECT sum(e.qty * e.price_sum) FROM extra_lines e WHERE e.order_id = o.id), 0) AS extras_total,
+        (SELECT p1.doc FROM order_positions p1 WHERE p1.order_id = o.id AND NOT p1.deleted ORDER BY p1.sort, p1.updated_at LIMIT 1) AS first_doc,
         lq.version AS quote_version, lq.sent_at AS quote_sent_at, lq.accepted_at,
         lq.variants -> lq.accepted_variant ->> 'kit' AS accepted_kit,
         (lq.variants -> lq.accepted_variant ->> 'total')::numeric AS accepted_total

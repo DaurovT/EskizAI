@@ -23,18 +23,23 @@ async function load(id: string) {
   const pending = () => Object.values(snap.positions).filter((p) => p.order_id === id && p.dirty && p.step === undefined).length
     + (snap.orders[id] && !snap.orders[id].synced ? 1 : 0);
   if (pending() > 0) {                                      // сначала отправить замер — иначе цена без него
-    try { await offline.sync(); } catch { /* покажем как есть */ }
+    // ждём отправку не дольше 4 с: в очереди могут висеть и другие заказы — мастер стоит перед клиентом
+    try { await Promise.race([offline.sync(), new Promise((r) => setTimeout(r, 4000))]); } catch { /* покажем как есть */ }
     snap = await offline.snapshot();
   }
   let full: OrderFull | null = null, net = true;
-  try {
-    full = await api.get<OrderFull>(`/oyna/orders/${id}`);
-  } catch (e) {
+  // заказ и цены по комплектациям — одновременно, а не по очереди
+  const [fr, vr] = await Promise.allSettled([
+    api.get<OrderFull>(`/oyna/orders/${id}`),
+    api.get<Variant[]>(`/oyna/orders/${id}/variants`),
+  ]);
+  if (fr.status === 'fulfilled') full = fr.value;
+  else {
+    const e = fr.reason;
     if (e instanceof ApiError && e.isNetwork) net = false;
     else if (!(e instanceof ApiError && e.status === 404 && snap.orders[id])) throw e;
   }
-  let variants: Variant[] = [];
-  if (full) { try { variants = await api.get<Variant[]>(`/oyna/orders/${id}/variants`); } catch { variants = []; } }
+  const variants: Variant[] = full && vr.status === 'fulfilled' ? vr.value : [];
 
   const rows = new Map<string, Pos>();
   for (const p of full?.positions ?? []) if (!p.deleted) rows.set(p.id, { id: p.id, doc: p.doc, total: p.total, unsent: false });

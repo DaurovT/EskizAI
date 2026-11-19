@@ -6,7 +6,7 @@
  */
 import { router, useLocalSearchParams } from 'expo-router';
 import { ComponentRef, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import type { Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull, Shape } from '@/api/types';
@@ -141,11 +141,13 @@ function Wizard({ orderId, pos, stepParam }: { orderId: string; pos: string; ste
       <WizardHeader title={title} onClose={close} doc={shown > 1 ? doc : null} onSchema={() => goto(4)} />
       <Progress step={shown} onPress={goto} />
       <Txt style={[st.cap, { paddingHorizontal: 20, paddingTop: 14 }]}>Шаг {shown} из {STEPS}</Txt>
+      <StepIn step={shown}>
       {shown === 1 ? <RoomStep doc={doc} run={run} goto={goto} showToast={showToast} /> : null}
       {shown === 2 ? <OpeningStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
       {shown === 3 ? <SizeStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
       {shown === 4 ? <SplitStep doc={doc} run={run} persist={persist} goto={goto} orderId={orderId} pos={pos} /> : null}
       {shown === 5 ? <ExtrasStep doc={doc} run={run} onDone={finish} floorDefault={orderFloor} /> : null}
+      </StepIn>
       <Sheet visible={step === 6} onClose={() => { setStep(5); router.setParams({ step: '5' }); }}>
         <View style={{ paddingHorizontal: 12, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8 }}>
@@ -751,3 +753,22 @@ const s = StyleSheet.create({
   fldEst: { backgroundColor: C.estField, borderColor: C.estLine },
   caret: { width: 2, height: 20, backgroundColor: C.accent, marginLeft: 1 },
 });
+
+/** Лёгкий въезд шага (180 мс): вперёд — справа, назад — слева. Видно, что экран сменился, и не тормозит ввод. */
+function StepIn({ step, children }: { step: number; children: ReactNode }) {
+  const a = useRef(new Animated.Value(1)).current;
+  const prev = useRef(step);
+  const dir = useRef(1);
+  if (prev.current !== step) { dir.current = step > prev.current ? 1 : -1; prev.current = step; a.setValue(0); }
+  // 0,4 с после смены шага нажатия не принимаем: «Далее» на клавиатуре и «Далее» следующего шага стоят
+  // в одном месте — быстрый двойной тап проскакивал шаг (деление)
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    setLocked(true);
+    const t = setTimeout(() => setLocked(false), 400);
+    Animated.timing(a, { toValue: 1, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    return () => clearTimeout(t);
+  }, [step, a]);
+  const tx = a.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] });
+  return <Animated.View pointerEvents={locked ? 'none' : 'auto'} style={{ flex: 1, opacity: a, transform: [{ translateX: tx }] }}>{children}</Animated.View>;
+}
