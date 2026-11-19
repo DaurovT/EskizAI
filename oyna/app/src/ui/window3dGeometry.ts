@@ -50,6 +50,9 @@ export type SashRig = {
   mode: 'rotX' | 'rotY' | 'slide';
   /** угол при t = 1 (рад) или сдвиг по x (м) для slide */
   amount: number;
+  /** поворотно-откидная: второе положение — откидывание вокруг нижней кромки */
+  tiltAnim?: Group;
+  tiltAmount?: number;
 };
 
 export type WindowModel = {
@@ -60,14 +63,18 @@ export type WindowModel = {
   dispose(): void;
 };
 
-/** Открывание при t ∈ [0, 1] (0 — закрыто). */
-export function applyOpen(model: WindowModel, t: number) {
+/** Открывание: tTurn — поворот (и все прочие виды), tTilt — откидывание поворотно-откидных; 0 — закрыто, 1 — открыто. */
+export function applyOpen(model: WindowModel, tTurn: number, tTilt = 0) {
   for (const s of model.sashes) {
     s.anim.rotation.set(0, 0, 0);
     s.anim.position.set(0, 0, 0);
-    if (s.mode === 'rotX') s.anim.rotation.x = s.amount * t;
-    else if (s.mode === 'rotY') s.anim.rotation.y = s.amount * t;
-    else { s.anim.position.x = s.amount * t; s.anim.position.z = 0.03 * t; } // откатная — во внутренний полоз
+    if (s.tiltAnim) {
+      s.tiltAnim.rotation.set(0, 0, 0);
+      s.anim.rotation.y = s.amount * tTurn;
+      s.tiltAnim.rotation.x = (s.tiltAmount ?? 0) * tTilt;
+    } else if (s.mode === 'rotX') s.anim.rotation.x = s.amount * Math.max(tTurn, tTilt);
+    else if (s.mode === 'rotY') s.anim.rotation.y = s.amount * tTurn;
+    else { s.anim.position.x = s.amount * tTurn; s.anim.position.z = 0.03 * tTurn; } // откатная — во внутренний полоз
   }
 }
 
@@ -470,8 +477,17 @@ function buildFrame(f: FrameX, env: Env): Group {
     const anim = new Group();
     const body = new Group();
     body.position.set(-X(px), -Y(py), -pz * M);
-    pivot.add(anim); anim.add(body); root.add(pivot);
-    env.sashes.push({ anim, mode, amount });
+    pivot.add(anim); anim.add(body);
+    if (op === 'tilt_turn' && mode === 'rotY') {
+      // откидывание: вся створка (с узлом поворота) наклоняется вокруг нижней кромки внутрь
+      const tp = new Group(); tp.position.set(X((sb.x0 + sb.x1) / 2), Y(sb.y1), zs1 * M);
+      const tAnim = new Group(); const wrap = new Group(); wrap.position.set(-tp.position.x, -tp.position.y, -tp.position.z);
+      tp.add(tAnim); tAnim.add(wrap); wrap.add(pivot); root.add(tp);
+      env.sashes.push({ anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT });
+    } else {
+      root.add(pivot);
+      env.sashes.push({ anim, mode, amount });
+    }
 
     if (!valid(hole, S)) { prism(body, S, null, zs0, zs1); continue; } // слишком мелкая — сплошная
     prism(body, S, hole, zs0, zs1);
@@ -495,6 +511,21 @@ function buildFrame(f: FrameX, env: Env): Group {
         box(body, hm, cx - 40, cy - 13, cx + 32, cy + 13, z, z + 8);
         box(body, hm, cx - 8, cy - 8, cx + 8, cy + 8, z + 8, z + 20);
         box(body, hm, cx - 8, cy - 9, cx + 110, cy + 9, z + 18, z + 30); // рычаг вдоль профиля
+      }
+    }
+
+    // петли (накладки) — на стороне петель, по две: у поворотных сбоку сверху/снизу, у откидной — снизу, у подвесной — сверху
+    if (op !== 'pivot' && op !== 'sliding' && op !== 'psk' && op !== 'hs' && op !== 'folding') {
+      const hs = op === 'tilt' ? 'bottom' : op === 'top_hung' ? 'top' : hinge;
+      const L = 90, W = 22, z0 = zs1 - 2, z1 = zs1 + 14;
+      const ends: [number, number][] = hs === 'left' || hs === 'right'
+        ? [[sb.y0 + 70, sb.y0 + 70 + L], [sb.y1 - 70 - L, sb.y1 - 70]]
+        : [[sb.x0 + 70, sb.x0 + 70 + L], [sb.x1 - 70 - L, sb.x1 - 70]];
+      for (const [a, b] of ends) {
+        if (hs === 'left') box(root, mats.handle, sb.x0 - W / 2, a, sb.x0 + W / 2, b, z0, z1);
+        else if (hs === 'right') box(root, mats.handle, sb.x1 - W / 2, a, sb.x1 + W / 2, b, z0, z1);
+        else if (hs === 'top') box(root, mats.handle, a, sb.y0 - W / 2, b, sb.y0 + W / 2, z0, z1);
+        else box(root, mats.handle, a, sb.y1 - W / 2, b, sb.y1 + W / 2, z0, z1);
       }
     }
   }
@@ -569,9 +600,10 @@ export function buildWindow(doc: Doc, colorOut: string, colorIn: string, depthMm
   const mats: Mats = {
     out: new MeshStandardMaterial({ color: cOut, roughness: 0.6, metalness: 0 }),
     in: new MeshStandardMaterial({ color: cIn, roughness: 0.6, metalness: 0 }),
-    handle: lightness(cIn) > 0.8
-      ? new MeshStandardMaterial({ color: cIn, roughness: 0.4, metalness: 0.05 })
-      : new MeshStandardMaterial({ color: new Color('#C3C8CE'), roughness: 0.35, metalness: 0.6 }),
+    // фурнитура всегда контрастная к профилю: белая ручка на белой створке в 3D не была видна совсем
+    handle: lightness(cIn) > 0.6
+      ? new MeshStandardMaterial({ color: new Color('#9EA4AB'), roughness: 0.3, metalness: 0.7 })
+      : new MeshStandardMaterial({ color: new Color('#D9DCDF'), roughness: 0.3, metalness: 0.6 }),
     white: new MeshStandardMaterial({ color: new Color('#F4F2EE'), roughness: 0.5, metalness: 0 }),
     gold: new MeshStandardMaterial({ color: new Color('#C9A24A'), roughness: 0.35, metalness: 0.7 }),
   };
@@ -618,7 +650,7 @@ export function buildWindow(doc: Doc, colorOut: string, colorIn: string, depthMm
   all.push(edgeMat);
   const edgeOf = new Map<BufferGeometry, EdgesGeometry>();
   const profile: Mesh[] = [];
-  root.traverse((o) => { const m = o as Mesh; if (m.isMesh && (m.material === mats.out || m.material === mats.in)) profile.push(m); });
+  root.traverse((o) => { const m = o as Mesh; if (m.isMesh && (m.material === mats.out || m.material === mats.in || m.material === mats.handle)) profile.push(m); });
   for (const m of profile) {
     let e = edgeOf.get(m.geometry);
     if (!e) { e = new EdgesGeometry(m.geometry, 25); edgeOf.set(m.geometry, e); geos.push(e); }

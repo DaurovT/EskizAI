@@ -67,7 +67,7 @@ export default function Editor() {
   const [selected, setSelected] = useState<string | null>(null);
   const [view, setView] = useState<'inside' | 'outside'>('inside');
   const [is3d, setIs3d] = useState(false);          // 3D-вид вместо схемы (сторона — view)
-  const [open3d, setOpen3d] = useState(false);      // створки приоткрыты в 3D
+  const [open3d, setOpen3d] = useState<'closed' | 'turn' | 'tilt'>('closed');   // 3D: закрыто → повернуть → откинуть
   const [reset3d, setReset3d] = useState(0);        // «к исходному виду»
   const [depth, setDepth] = useState<number | undefined>(undefined);
   const [mode, setMode] = useState<'edit' | 'issues'>('edit');
@@ -387,7 +387,8 @@ export default function Editor() {
             {/* кнопки строкой над моделью — поверх они закрывали низ окна */}
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
               <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
-              <Soft small title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
+              <Soft small title={open3d === 'closed' ? 'Повернуть' : open3d === 'turn' ? 'Откинуть' : 'Закрыть'} icon="window"
+                onPress={() => setOpen3d(open3d === 'closed' ? 'turn' : open3d === 'turn' ? 'tilt' : 'closed')} />
               <Soft small title="Вид" icon="undo" onPress={() => setReset3d((n) => n + 1)} />
             </View>
             <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
