@@ -394,7 +394,7 @@ export const OPEN_TITLE: Record<string, string> = {
   psk: 'PSK (параллельно-сдвижная)', hs: 'HS (подъёмно-сдвижная)', folding: 'Гармошка',
 };
 export const SHAPE_TITLE: Record<Shape, string> = {
-  rect: 'Прямоугольник', arch: 'Арка', circle: 'Круг', trapezoid: 'Трапеция', bevel: 'Скос угла', triangle: 'Треугольник',
+  rect: 'Обычная', arch: 'Арка', circle: 'Круг', trapezoid: 'Трапеция', bevel: 'Скос угла', triangle: 'Треугольник',
 };
 export const GLASS_DECOR_TITLE: Record<string, string> = {
   none: 'Нет', matte: 'Матовое', tinted: 'Тонированное', mirror: 'Зеркальное', pattern: 'Узорчатое', stained: 'Витраж',

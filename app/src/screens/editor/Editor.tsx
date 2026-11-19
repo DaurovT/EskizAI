@@ -7,7 +7,7 @@
  */
 import NetInfo from '@react-native-community/netinfo';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
+import { ComponentRef, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -292,6 +292,7 @@ export default function Editor() {
   const goKit = (path?: string) => router.push(`/order/${id}/kit?pos=${posId}${path !== undefined ? `&path=${path}` : ''}`);
 
   // ---------------------------------------------------------------- разметка
+  const setupChips = useSetupChips(doc ?? null, presets, server?.label?.split(' · ')[0]);   // хук — до ранних return
   if (phase === 'loading' || (phase === 'ready' && !doc)) return <Screen><Loading /></Screen>;
   if (phase === 'error' || !doc) {
     return (
@@ -306,7 +307,7 @@ export default function Editor() {
   const vs = isOffline || !info ? [] : info.violations;
   const errors = vs.filter(isErr);
   const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted && v.scope !== 'price');
-  const room = doc.room || 'Позиция';
+  const room = doc.room || 'Окно';
   const qty = doc.qty ?? 1;
 
   const doFix = (fx: FixAction) => {
@@ -350,9 +351,6 @@ export default function Editor() {
             <Txt w={600} size={18} lines={1} style={{ flexShrink: 1 }}>{room}</Txt>
             {qty > 1 ? <Txt size={14} color={C.muted}>× {qty}</Txt> : null}
           </View>
-          <View style={{ opacity: canUndo ? 1 : 0.4 }}><IconButton name="undo" label="Отменить" onPress={canUndo ? undo : undefined} /></View>
-          <View style={{ opacity: canRedo ? 1 : 0.4 }}><IconButton name="redo" label="Повторить" onPress={canRedo ? redo : undefined} /></View>
-          <IconButton name="more" label="Ещё" onPress={() => setMenu(true)} />
         </View>
         {isOffline ? (
           <View style={{ marginHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.dark }}>
@@ -364,9 +362,6 @@ export default function Editor() {
           <Seg<View3> items={[{ value: 'inside', title: 'Схема' }, { value: 'outside', title: 'Снаружи' }, { value: '3d', title: '3D' }]}
             value={is3d ? '3d' : view} onChange={(v) => { if (v === '3d') setIs3d(true); else { setIs3d(false); setView(v); } }} style={{ width: 240 }} />
         </View>
-        {!isOffline && !isLocal ? (
-          <SetupBar doc={doc} presets={presets} sysFallback={server?.label?.split(' · ')[0]} onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)} />
-        ) : null}
         {errors.length || warns.length ? (
           <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingTop: 10 }}>
             {errors.length ? (
@@ -412,7 +407,7 @@ export default function Editor() {
 
         {/* .bs — нижний лист */}
         <View style={[st.bs, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
-          {sel === null ? <View style={st.hdl}><View style={st.hdlBar} /></View> : null}
+          {sel === null && aSel ? <View style={st.hdl}><View style={st.hdlBar} /></View> : null}
           {sel !== null ? (
             <CellPanel key={sel} doc={doc} path={sel} presets={presets} onClose={() => setSelected(null)}
                 snaps={[96, Math.round(win.height * 0.42), Math.round(win.height * 0.78)]}
@@ -431,45 +426,55 @@ export default function Editor() {
                 <JointPanel doc={doc} index={aSel.index} commit={commit} commitLater={commitLater} onClose={() => setAsmSel(null)} />
               )}
             </ScrollView>
-          ) : firstErr ? (
-            <>
-              <Ban kind="err" title={`${firstErr.code} · ${firstErr.title}`} text={[firstErr.msg, firstErr.fix].filter(Boolean).join('. ')} style={{ marginBottom: 4 }} />
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4, paddingVertical: 4 }}>
-                <Txt size={14} color={C.muted}>Цена</Txt>
-                {info?.total != null ? <Txt w={600} color={C.faint} style={{ textDecorationLine: 'line-through' }}>{num(info.total)}</Txt> : <Txt size={14} color={C.faint}>нет цены</Txt>}
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {fx ? (
-                  <>
-                    <Soft title="Подробнее" onPress={() => setMode('issues')} />
-                    <Button title={fx.title} icon={fx.icon} onPress={() => doFix(fx)} style={{ flex: 1 }} />
-                  </>
-                ) : <Button title="Подробнее" onPress={() => setMode('issues')} style={{ flex: 1 }} />}
-              </View>
-            </>
           ) : (
             <>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 4, paddingTop: 4, paddingBottom: 10 }}>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Txt size={14} color={C.muted} lines={1}>{room} · {num(doc.frame.w)} × {num(doc.frame.h)}{qty > 1 ? ` · × ${qty}` : ''}</Txt>
-                  {isOffline ? (
-                    <Txt w={500} color={C.muted}>посчитаем, когда появится интернет</Txt>
-                  ) : info?.total != null ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-                      <Txt w={700} size={20} color={saving ? C.faint : C.ink} style={{ fontVariant: ['tabular-nums'] }}>{num(info.total)}</Txt>
-                      <Txt size={14} color={C.muted}>сум{kitName ? ` · ${kitName}` : ''}</Txt>
-                      {info.demo ? <Tag kind="est" title="ДЕМО" /> : null}
+              <WindowPanel snaps={[94, Math.round(win.height * 0.42), Math.round(win.height * 0.72)]}
+                header={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 8 }}>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Txt size={14} color={firstErr ? C.danger : C.muted} lines={1}>
+                        {firstErr ? `Ошибка: ${firstErr.title}` : `${room} · ${num(doc.frame.w)} × ${num(doc.frame.h)}${qty > 1 ? ` · × ${qty}` : ''}`}
+                      </Txt>
+                      {isOffline ? <Txt w={500} color={C.muted}>посчитаем, когда появится интернет</Txt>
+                        : info?.total != null ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                            <Txt w={700} size={22} color={saving || firstErr ? C.faint : C.ink} style={{ fontVariant: ['tabular-nums'], textDecorationLine: firstErr ? 'line-through' : 'none' }}>{num(info.total)}</Txt>
+                            <Txt size={14} color={C.muted}>сум</Txt>
+                            {info.demo ? <Tag kind="est" title="ДЕМО" /> : null}
+                          </View>
+                        ) : <Txt w={500} color={C.muted}>{saving ? 'считаем…' : 'нет цены'}</Txt>}
                     </View>
-                  ) : (
-                    <Txt w={500} color={C.muted}>{saving ? 'считаем…' : 'нет цены — проверьте прайс'}</Txt>
-                  )}
-                </View>
-                {!isOffline && !isLocal ? <TextLink title="Комплектация" onPress={() => goKit()} /> : null}
-              </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Soft title="Разделить" icon="window" onPress={splitPress} style={{ flex: 1 }} />
-                <Soft title={is3d ? 'Схема' : '3D'} icon="layers" onPress={() => setIs3d(!is3d)} style={{ flex: 1 }} />
-              </View>
+                    {/* отмена/повтор — внизу, под большим пальцем, а не в верхнем углу */}
+                    <View style={{ opacity: canUndo ? 1 : 0.35 }}><IconButton name="undo" label="Отменить" onPress={canUndo ? undo : undefined} bg={C.soft} /></View>
+                    <View style={{ opacity: canRedo ? 1 : 0.35 }}><IconButton name="redo" label="Повторить" onPress={canRedo ? redo : undefined} bg={C.soft} /></View>
+                  </View>
+                }
+                err={firstErr ? (
+                  <>
+                    <Ban kind="err" title={`${firstErr.code} · ${firstErr.title}`} text={[firstErr.msg, firstErr.fix].filter(Boolean).join('. ')} />
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Soft title="Все ошибки" onPress={() => setMode('issues')} />
+                      {fx ? <Button title={fx.title} icon={fx.icon} onPress={() => doFix(fx)} style={{ flex: 1 }} /> : null}
+                    </View>
+                  </>
+                ) : null}
+                chips={isOffline || isLocal ? [] : setupChips}
+                onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)}
+                tiles={[
+                  { key: 'split', title: 'Разделить', sub: 'створки, импосты', onPress: splitPress },
+                  ...(!asm ? [{ key: 'shape', title: 'Форма рамы', sub: SHAPE_TITLE[frameShape(doc.frame).shape], onPress: () => setShapeFor('') }] : []),
+                  { key: 'addons', title: 'Доп. профили', sub: doc.addons?.length ? String(doc.addons.length) : 'нет', onPress: () => setDocSheet('addons') },
+                  { key: 'shutter', title: 'Рольставни, решётка', sub: shutterText(doc), onPress: () => setDocSheet('shutter') },
+                  ...(asm ? [{ key: 'loggia', title: 'Лоджия', sub: loggiaText(doc.loggia), onPress: () => setDocSheet('loggia') }] : []),
+                  { key: 'mirror', title: 'Зеркально', sub: 'петли наоборот', onPress: () => commit([{ cmd: 'mirror' }]) },
+                  { key: 'qty', title: `Количество: ${qty}`, sub: 'изменить', onPress: () => setMenu(true) },
+                ]}
+                more={[
+                  { key: 'issues', title: 'Ошибки и предупреждения', sub: String(vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length || 'нет'), onPress: () => setMode('issues') },
+                  { key: 'copy', title: 'Копировать окно', onPress: () => void copyPosition() },
+                  ...(!isOffline && !isLocal ? [{ key: 'tpl', title: 'Сохранить как шаблон', onPress: () => setDocSheet('tpl') }] : []),
+                  ...(!isOffline && !isLocal ? [{ key: 'kit', title: 'Комплектация заказа', sub: 'Эконом · Стандарт · Тёплый', onPress: () => goKit() }] : []),
+                ]} />
               <Button title="Расчёт" disabled={isOffline || isLocal} onPress={() => router.push(`/order/${id}/calc`)} />
             </>
           )}
@@ -950,8 +955,8 @@ function IssueRow({ v, first, kind, doc, order, pos, onPick, onFix, onCommand }:
 /** Строка чипов под переключателем вида — каждое касание открывает лист замен (/alternatives) для этого пункта.
  * Профиль · Цвет профиля · Ламинация снаружи · Ламинация внутри · Стекло · Фурнитура (shapes_contract §8). */
 /** sysFallback — система, которую сервер подставил по комплектации (в doc её может не быть) */
-function SetupBar({ doc, presets, onPick, sysFallback }: { doc: Doc; presets: GlassPreset[] | null; onPick: (what: string) => void; sysFallback?: string }) {
-  const s = doc.setup ?? {};
+function useSetupChips(doc: Doc | null, presets: GlassPreset[] | null, sysFallback?: string) {
+  const s = doc?.setup ?? {};
   const [names, setNames] = useState<{ systems: SystemRow[]; decors: Decor[]; fittings: FittingSet[] } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -963,29 +968,33 @@ function SetupBar({ doc, presets, onPick, sysFallback }: { doc: Doc; presets: Gl
   const sys = names?.systems.find((x) => x.code === s.system);
   const fit = fittingLabel(names?.fittings.find((f) => f.code === s.fittings), s.fittings)[0];
   const lamOut = lamLabel(s, 'outside', names?.decors), lamIn = lamLabel(s, 'inside', names?.decors);
-  const chips: { what: string; label: string; value: string; color?: string }[] = [
+  return [
     { what: 'system', label: 'Профиль', value: sys ? `${sys.brand} ${sys.series}` : s.system ?? sysFallback ?? 'по комплектации' },
-    { what: 'profile_color', label: 'Цвет профиля', value: profileColorLabel(s.profile_color), color: profileHex({ profile_color: s.profile_color, lam_in: null }, 'inside') },
-    { what: 'lam_out', label: 'Ламинация снаружи', value: lamOut, color: lamOut !== 'нет' ? profileHex(s, 'outside') : undefined },
-    { what: 'lam_in', label: 'Ламинация внутри', value: lamIn, color: lamIn !== 'нет' ? profileHex(s, 'inside') : undefined },
+    { what: 'profile_color', label: 'Цвет профиля', value: profileColorLabel(s.profile_color) },
+    { what: 'lam_out', label: 'Ламинация снаружи', value: lamOut },
+    { what: 'lam_in', label: 'Ламинация внутри', value: lamIn },
     { what: 'glass', label: 'Стекло', value: glassLabel(s.glass, presets) || 'по системе' },
     { what: 'fittings', label: 'Фурнитура', value: fit || 'по системе' },
   ];
+}
+
+/** Нижняя панель окна (ничего не выбрано): тянется пальцем; шапка — цена, отмена/повтор; разделы
+ * Комплектация · Окно · Ещё вместо строки чипов, уезжающей вбок, и меню «⋯». */
+function WindowPanel({ snaps, header, chips, onPick, err, tiles, more }: {
+  snaps: [number, number, number]; header: ReactNode; chips: { what: string; label: string; value: string }[]; onPick: (what: string) => void;
+  err: ReactNode; tiles: { key: string; title: string; sub?: string; onPress: () => void }[]; more: { key: string; title: string; sub?: string; onPress: () => void }[];
+}) {
+  const [tab, setTab] = useState<'kit' | 'win' | 'more'>('kit');
+  const act = (list: typeof tiles) => (k: string) => list.find((x) => x.key === k)?.onPress();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}
-      contentContainerStyle={{ gap: 6, paddingHorizontal: 12, paddingTop: 10 }}>
-      {chips.map((c) => (
-        <Pressable key={c.what} accessibilityRole="button" accessibilityLabel={`${c.label}: ${c.value}. Заменить`} onPress={() => onPick(c.what)}
-          style={({ pressed }) => ({
-            flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 12, borderRadius: 20,
-            backgroundColor: pressed ? C.line : '#FFFFFF', borderWidth: 1, borderColor: C.line,
-          })}>
-          {c.color ? <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: c.color, borderWidth: 1, borderColor: 'rgba(0,0,0,0.15)' }} /> : null}
-          <Txt size={12} color={C.muted}>{c.label}</Txt>
-          <Txt size={13} w={600} lines={1} style={{ maxWidth: 150 }}>{c.value}</Txt>
-        </Pressable>
-      ))}
-    </ScrollView>
+    <DragArea snaps={snaps} start={0} header={header}>
+      {err}
+      <Seg<typeof tab> style={st0.seg} value={tab} onChange={setTab}
+        items={[{ value: 'kit', title: 'Комплектация' }, { value: 'win', title: 'Окно' }, { value: 'more', title: 'Ещё' }]} />
+      {tab === 'kit' ? <Tiles<string> value={null} onChange={onPick} items={chips.map((c) => ({ value: c.what, title: c.value, sub: c.label }))} /> : null}
+      {tab === 'win' ? <Tiles<string> value={null} onChange={act(tiles)} items={tiles.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
+      {tab === 'more' ? <Tiles<string> value={null} onChange={act(more)} items={more.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
+    </DragArea>
   );
 }
 
