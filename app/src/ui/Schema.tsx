@@ -303,10 +303,10 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
           <SvgText x={X(mx)} y={Y((gb.y0 + gb.y1) / 2) + 4} fontSize={11} fontFamily={F.medium} fill={C.faint} textAnchor="middle">Г</SvgText>
         ) : null}
         {cell.mosquito && gpx > 40 ? (
-          <SvgText x={Math.min(X(g.x0), X(g.x1)) + 5} y={Y(g.y1) - 5} fontSize={9} fontFamily={F.regular} fill={C.muted}>{mosqLabel(cell.mosquito)}</SvgText>
+          <SvgText x={Math.min(X(g.x0), X(g.x1)) + 5} y={Y(g.y1) - 5} fontSize={9} fontFamily={F.regular} fill={C.muted}>{mosqLabel(cell.mosquito, cell)}</SvgText>
         ) : null}
         {open && cell.open_dir === 'out' && gpx > 40 ? (
-          <SvgText x={X(mx)} y={Y(g.y1) - 5} fontSize={9} fontFamily={F.medium} fill={C.accentText} textAnchor="middle">наружу</SvgText>
+          <SvgText x={X(mx)} y={Y(gb.y0) + 13} fontSize={9} fontFamily={F.medium} fill={C.accentText} textAnchor="middle">наружу</SvgText>
         ) : null}
         {cell.vent ? <Rect {...rect(mx - 150, ly0 + (open ? 10 : 4), mx + 150, ly0 + (open ? 26 : 18))} rx={2} fill="#55524D" /> : null}
         {cell.type === 'door_sash' && cell.threshold === 'low_alu' && sides.b === 'frame' ? (
@@ -458,8 +458,8 @@ function MuntinArt({ cell, g, X, Y, k, prof, rise, frameW, small }: Pen & { cell
   );
 }
 
-const mosqLabel = (m: Cell['mosquito']) => {
-  const t = m && typeof m === 'object' ? m.type : 'frame';
+const mosqLabel = (m: Cell['mosquito'], cell?: Cell) => {
+  const t = m && typeof m === 'object' ? m.type : cell?.type === 'door_sash' ? 'door' : 'frame';
   return ({ frame: 'сетка', sliding: 'сетка разд.', pleated: 'плиссе', door: 'сетка-дверь', antipet: 'антикошка' } as Record<string, string>)[t] ?? 'сетка';
 };
 

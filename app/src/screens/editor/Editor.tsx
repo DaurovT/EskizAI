@@ -574,10 +574,12 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
 }
 
 function Dim({ text, style, red, onPress }: { text: string; style: object; red?: boolean; onPress?: () => void }) {
+  // width: undefined у края схемы давал ширину ~0 → «2 100» переносилось в «2 10». Ширина всегда 120, выравнивание — из style
+  const { width: _w, ...rest } = style as { width?: number };
   return (
-    <View pointerEvents="box-none" style={[{ position: 'absolute', width: 120, alignItems: 'center' }, style]}>
+    <View pointerEvents="box-none" style={[{ position: 'absolute', width: 120, alignItems: 'center' }, rest, _w ? { width: _w } : null]}>
       <Pressable disabled={!onPress} onPress={onPress} style={[st.dim, red && { borderWidth: 2, borderColor: C.dangerLine }]}>
-        <Txt size={15} w={600} color={red ? '#A1221A' : C.dim} style={{ fontVariant: ['tabular-nums'] }}>{text}</Txt>
+        <Txt size={15} w={600} color={red ? '#A1221A' : C.dim} lines={text.includes('\n') ? 2 : 1} style={{ fontVariant: ['tabular-nums'], flexShrink: 0 }}>{text}</Txt>
       </Pressable>
     </View>
   );
@@ -623,7 +625,7 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
             ) : <View style={{ flex: 1 }} />}
             <Pressable accessibilityRole="button" accessibilityState={{ selected: !!cell.mosquito }} onPress={() => setSheet('mosquito')}
               style={{ height: 46, borderRadius: 14, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: cell.mosquito ? C.dark : C.soft }}>
-              <Txt size={15} w={500} color={cell.mosquito ? '#fff' : C.ink}>{cell.mosquito ? `Сетка: ${MOSQ_SHORT[mosqType(cell.mosquito)]}` : 'Москитка'}</Txt>
+              <Txt size={15} w={500} color={cell.mosquito ? '#fff' : C.ink}>{cell.mosquito ? `Сетка: ${MOSQ_SHORT[mosqType(cell.mosquito, cell)]}` : 'Москитка'}</Txt>
             </Pressable>
           </View>
           {cell.type === 'door_sash' ? (
@@ -702,10 +704,10 @@ const optLabel = (c: Cell, o: { group: string; title: string }) => (c.options?.[
 type MosqT = 'frame' | 'sliding' | 'pleated' | 'door' | 'antipet';
 const MOSQ_TITLE: Record<MosqT, string> = { frame: 'Рамочная', sliding: 'Раздвижная', pleated: 'Плиссе', door: 'Дверная на петлях', antipet: 'Антикошка' };
 const MOSQ_SHORT: Record<MosqT, string> = { frame: 'рамочная', sliding: 'раздвижная', pleated: 'плиссе', door: 'дверная', antipet: 'антикошка' };
-const mosqType = (m: Cell['mosquito']): MosqT => (m && typeof m === 'object' ? m.type : 'frame');
+const mosqType = (m: Cell['mosquito'], cell?: Cell): MosqT => (m && typeof m === 'object' ? m.type : cell?.type === 'door_sash' ? 'door' : 'frame');
 
 function MosquitoSheet({ visible, cell, onClose, onPick }: { visible: boolean; cell: Cell; onClose: () => void; onPick: (m: Cell['mosquito']) => void }) {
-  const cur = cell.mosquito ? mosqType(cell.mosquito) : 'none';
+  const cur = cell.mosquito ? mosqType(cell.mosquito, cell) : 'none';
   const wide = cell.type === 'door_sash';
   return (
     <FormSheet visible={visible} onClose={onClose} title="Москитная сетка">

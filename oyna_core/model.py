@@ -191,7 +191,7 @@ def mosquito_type(cell: dict) -> str | None:
     if not m:
         return None
     if m is True:
-        return "frame"
+        return "door" if cell.get("type") == "door_sash" else "frame"   # у двери «сетка» по умолчанию — дверная
     if isinstance(m, dict):
         return m.get("type") or "frame"
     return str(m)
