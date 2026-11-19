@@ -18,7 +18,8 @@ type Props = {
   colorIn: string; // hex декора внутри
   depthMm?: number; // монтажная глубина профиля
   side?: 'inside' | 'outside';
-  open?: boolean;
+  /** закрыто / повёрнуто / откинуто (поворотно-откидные; остальные открываются своим способом) */
+  open?: OpenMode | boolean;
   /** меняется — камера плавно возвращается к стандартному ракурсу («к исходному виду») */
   resetKey?: number;
   style?: ViewStyle;
@@ -76,22 +77,29 @@ function Rig({ cur, goal, ctx }: { cur: { current: Orbit }; goal: { current: Orb
 }
 
 /** Внутри Canvas: анимация створок (линейный ход + плавный старт/стоп). */
-function Sashes({ model, open }: { model: WindowModel; open: boolean }) {
+function Sashes({ model, open }: { model: WindowModel; open: OpenMode }) {
   const invalidate = useThree((s) => s.invalidate);
-  const t = useRef(open ? 1 : 0);
+  // два хода: поворот и откидывание; из одного в другое — сначала закрыть, потом открыть (как настоящая ручка)
+  const tt = useRef(open === 'turn' ? 1 : 0), tk = useRef(open === 'tilt' ? 1 : 0);
   const ease = (x: number) => x * x * (3 - 2 * x);
-  useEffect(() => { applyOpen(model, ease(t.current)); invalidate(); }, [model, invalidate]);
+  useEffect(() => { applyOpen(model, ease(tt.current), ease(tk.current)); invalidate(); }, [model, invalidate]);
   useEffect(() => { invalidate(); }, [open, invalidate]);
   useFrame((_, delta) => {
-    const goal = open ? 1 : 0;
-    if (t.current === goal) return;
+    const gT = open === 'turn' ? 1 : 0, gK = open === 'tilt' ? 1 : 0;
+    if (tt.current === gT && tk.current === gK) return;
     const step = Math.min(delta, 1 / 30) / OPEN_SEC;
-    t.current = goal > t.current ? Math.min(goal, t.current + step) : Math.max(goal, t.current - step);
-    applyOpen(model, ease(t.current));
+    const move = (r: { current: number }, g: number) => { r.current = g > r.current ? Math.min(g, r.current + step) : Math.max(g, r.current - step); };
+    // сначала закрываем лишнее, потом открываем нужное — створка не бывает повёрнута и откинута сразу
+    if (tt.current > gT) move(tt, gT);
+    else if (tk.current > gK) move(tk, gK);
+    else if (tt.current < gT) move(tt, gT);
+    else move(tk, gK);
+    applyOpen(model, ease(tt.current), ease(tk.current));
     invalidate();
   });
   return null;
 }
+export type OpenMode = 'closed' | 'turn' | 'tilt';
 
 class GlBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -214,7 +222,7 @@ export function Window3D({ doc, colorOut, colorIn, depthMm = 70, side = 'inside'
             <directionalLight position={[-2.2, 3, -3]} intensity={2.0} />
             <directionalLight position={[-3, 0.6, 1.2]} intensity={0.9} />
             <primitive object={model.root} />
-            <Sashes model={model} open={open} />
+            <Sashes model={model} open={open === true ? 'turn' : open === false ? 'closed' : open} />
             <Rig cur={cur} goal={goal} ctx={ctx} />
           </Canvas>
         </View>
