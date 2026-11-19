@@ -12,6 +12,7 @@ import Svg, { ClipPath, Defs, G, Line, Path, Polygon, Rect, Text as SvgText } fr
 
 import type { Addon, Cell, Doc, Frame, Severity, Violation } from '@/api/types';
 import { isDark, profileHex } from '@/lib/decors';
+import { forgedDecor } from '@/lib/decorPattern';
 import {
   asmFrames, asmJoints, boxPts, clipPoly, frameShape, insetPoly, isAssembly, isShaped, layout, lineSpan, outline, type Box, type Pt,
 } from '@/lib/tree';
@@ -430,18 +431,8 @@ function MuntinArt({ cell, g, X, Y, k, prof, rise, frameW, small }: Pen & { cell
     }
     if (cy < g.y1 - 1) segs.push([g.x0, cy, g.x1, cy]);
   } else if (m.pattern === 'decor') {
-    // простой «кованый» узор: ромб, круг в центре и четыре завитка к углам
-    const cx = (g.x0 + g.x1) / 2, cy = (g.y0 + g.y1) / 2;
-    const rx = gw * 0.38, ry = gh * 0.38, r = Math.min(gw, gh) * 0.12;
-    arcs.push(`M${X(cx)} ${Y(cy - ry)}L${X(cx + rx)} ${Y(cy)}L${X(cx)} ${Y(cy + ry)}L${X(cx - rx)} ${Y(cy)}Z`);
-    arcs.push(`M${X(cx - r)} ${Y(cy)} A${r * k} ${r * k} 0 1 1 ${X(cx + r)} ${Y(cy)} A${r * k} ${r * k} 0 1 1 ${X(cx - r)} ${Y(cy)}`);
-    for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-      const ex = cx + sx * gw * 0.46, ey = cy + sy * gh * 0.46;
-      arcs.push(`M${X(cx + sx * r * 0.7)} ${Y(cy + sy * r * 0.7)} Q${X(cx + sx * rx)} ${Y(cy + sy * r)} ${X(ex)} ${Y(ey)}`);
-      const cr = Math.min(gw, gh) * 0.06;
-      arcs.push(`M${X(ex)} ${Y(ey)} a${cr * k} ${cr * k} 0 1 0 ${X(ex - sx * cr) - X(ex)} ${Y(ey - sy * cr) - Y(ey)}`);
-    }
-    segs.push([cx, g.y0, cx, cy - ry], [cx, cy + ry, cx, g.y1]);
+    // кованая вставка — общая форма со схемой 3D (lib/decorPattern)
+    for (const line of forgedDecor(g)) arcs.push(line.map(([x, y], i) => `${i ? 'L' : 'M'}${X(x).toFixed(1)} ${Y(y).toFixed(1)}`).join(''));
   }
   const sw = m.pattern === 'decor' ? Math.max(small ? 0.8 : 1.2, w * 0.6) : w;
   const draw = (stroke: string, width: number, key: string) => (
