@@ -479,7 +479,7 @@ def _variants(co, docs: list[dict], kits: list[dict], discount: float, extras: l
             works += share
             rows.append({"id": d.get("id"), "room": d.get("room"), "w": d["frame"]["w"], "h": d["frame"]["h"], "qty": d.get("qty", 1),
                          "total": total, "works": share, "desc": describe(dk, lang),
-                         "svg": render_svg(dk, cat, co, max_px=320),
+                         "svg": render_svg(dk, cat, co, max_px=320, highlight=False),
                          "violations": [v for v in r["violations"] if v["severity"] == "warn" and v.get("accepted")]})
         ex_total = sum(e["total"] for e in extras)
         total = round_to(goods * (1 - discount / 100), co.rounding_sum) + ex_total
