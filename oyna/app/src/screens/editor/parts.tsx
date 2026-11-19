@@ -5,7 +5,7 @@
  */
 import { router, useFocusEffect } from 'expo-router';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 
@@ -106,6 +106,65 @@ export function TextLink({ title, onPress, color = C.accentText }: { title: stri
 }
 
 /** Выбор одного из вариантов — строка светлых пилюль (выбранная тёмная), листается вбок. */
+/** Варианты плиткой в N колонок — всё видно сразу, без листания вбок (на телефоне листание прятало половину вариантов). */
+export function Tiles<T extends string>({ items, value, onChange, cols = 2 }: {
+  items: { value: T; title: string; sub?: string }[]; value: T | null; onChange: (v: T) => void; cols?: 2 | 3;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {items.map((it) => {
+        const on = it.value === value;
+        return (
+          <Pressable key={it.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(it.value)}
+            style={({ pressed }) => ({
+              flexBasis: cols === 3 ? '31%' : '48%', flexGrow: 1, minHeight: 52, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8,
+              justifyContent: 'center', alignItems: 'center', backgroundColor: on ? C.dark : C.soft, opacity: pressed ? 0.8 : 1,
+            })}>
+            <Txt size={15} w={600} color={on ? '#fff' : C.ink} center lines={2}>{it.title}</Txt>
+            {it.sub ? <Txt size={12} color={on ? '#E8E6E1' : C.muted} center lines={1}>{it.sub}</Txt> : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * Нижняя панель, которую тянут пальцем за шапку: свёрнута (только шапка) · половина · почти весь экран.
+ * Тап по шапке — свернуть/развернуть. Под панелью — схема, она сжимается/растёт вместе с панелью.
+ */
+export function DragArea({ snaps, start = 1, header, children }: { snaps: [number, number, number]; start?: 0 | 1 | 2; header: ReactNode; children: ReactNode }) {
+  const h = useRef(new Animated.Value(snaps[start])).current;
+  const cur = useRef(snaps[start]);
+  const from = useRef(0);
+  useEffect(() => { const id = h.addListener(({ value }) => { cur.current = value; }); return () => h.removeListener(id); }, [h]);
+  const go = (to: number) => Animated.spring(h, { toValue: to, useNativeDriver: false, speed: 20, bounciness: 0 }).start();
+  const pan = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 6 && Math.abs(g.dy) > Math.abs(g.dx),
+    onPanResponderGrant: () => { h.stopAnimation(); from.current = cur.current; },
+    onPanResponderMove: (_, g) => h.setValue(Math.max(snaps[0], Math.min(snaps[2], from.current - g.dy))),
+    onPanResponderRelease: (_, g) => {
+      const v = cur.current;
+      let i = snaps.reduce((b, s, k) => (Math.abs(s - v) < Math.abs(snaps[b] - v) ? k : b), 0);
+      if (g.vy < -0.6) i = Math.min(2, snaps.findIndex((s) => s > v + 4) === -1 ? 2 : snaps.findIndex((s) => s > v + 4));
+      if (g.vy > 0.6) { const below = [...snaps].reverse().find((s) => s < v - 4); i = below === undefined ? 0 : snaps.indexOf(below); }
+      go(snaps[i]);
+    },
+  })).current;
+  const toggle = () => go(cur.current <= snaps[0] + 8 ? snaps[1] : snaps[0]);
+  return (
+    <Animated.View style={{ height: h, overflow: 'hidden' }}>
+      <View {...pan.panHandlers}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Свернуть или развернуть панель" onPress={toggle}>
+          <View style={st.hdl}><View style={st.hdlBar} /></View>
+          {header}
+        </Pressable>
+      </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 10, paddingBottom: 16 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+    </Animated.View>
+  );
+}
+
 export function Choice<T extends string>({ items, value, onChange, style }: {
   items: { value: T; title: string }[]; value: T | null; onChange: (v: T) => void; style?: StyleProp<ViewStyle>;
 }) {

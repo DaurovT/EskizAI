@@ -26,7 +26,7 @@ import {
 } from '@/ui/kit';
 import { hlFromViolations, Schema, schemaGeometry } from '@/ui/Schema';
 import {
-  Ban, calcDoc, cellAt, cellSize, cellTitle, Choice, Decor, DotCanvas, fetchPosition, FittingSet, fittingLabel, fixAction, FixAction, FormSheet,
+  Ban, calcDoc, DragArea, Tiles, cellAt, cellSize, cellTitle, Choice, Decor, DotCanvas, fetchPosition, FittingSet, fittingLabel, fixAction, FixAction, FormSheet,
   GLASS_DECOR_TITLE, glassDecorLabel, glassLabel, GlassPreset, lamLabel, OPEN_TITLE, openConflict, parentPath, Pill, plural, posStore,
   profileColorLabel, refs, SHAPE_TITLE, shortDate, Soft, st, SystemRow, Tag, TextLink, TINT_TITLE, TYPE_TITLE, useToast,
 } from './parts';
@@ -412,16 +412,15 @@ export default function Editor() {
 
         {/* .bs — нижний лист */}
         <View style={[st.bs, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
-          <View style={st.hdl}><View style={st.hdlBar} /></View>
+          {sel === null ? <View style={st.hdl}><View style={st.hdlBar} /></View> : null}
           {sel !== null ? (
-            <ScrollView style={{ maxHeight: win.height * 0.4 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
-              <CellPanel doc={doc} path={sel} presets={presets} onClose={() => setSelected(null)}
+            <CellPanel key={sel} doc={doc} path={sel} presets={presets} onClose={() => setSelected(null)}
+                snaps={[96, Math.round(win.height * 0.42), Math.round(win.height * 0.78)]}
                 commit={commit} commitLater={commitLater}
                 onFill={() => (isLocal ? showToast('Стекло ячейки — когда позиция уйдёт на сервер') : goKit(sel))}
                 onOption={isOffline || isLocal ? undefined : (g) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${encodeURIComponent(`option:${g}`)}&path=${encodeURIComponent(sel)}`)}
                 onSplit={() => setSplitFor(sel)}
                 onMerge={() => { const pp = parentPath(sel); commit([{ cmd: 'merge', path: pp }]); setSelected(pp); }} />
-            </ScrollView>
           ) : aSel ? (
             <ScrollView style={{ maxHeight: win.height * 0.4 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
               {aSel.kind === 'frame' ? (
@@ -586,14 +585,16 @@ function Dim({ text, style, red, onPress }: { text: string; style: object; red?:
 }
 
 // ---------------------------------------------------------------- панель ячейки (EditorCell)
-function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, onSplit, onMerge, onOption }: {
+function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, onSplit, onMerge, onOption, snaps }: {
   doc: Doc; path: string; presets: GlassPreset[] | null; onClose: () => void;
   commit: (c: Command[]) => void; commitLater: (k: string, c: Command[]) => void;
   onFill: () => void; onSplit: () => void; onMerge: () => void;
   /** вариант детали створки — лист замен (/alternatives), только онлайн */
   onOption?: (group: string) => void;
+  snaps: [number, number, number];
 }) {
-  const [sheet, setSheet] = useState<'muntins' | 'decor' | 'mosquito' | null>(null);
+  const [sheet, setSheet] = useState<'muntins' | 'decor' | null>(null);
+  const [tab, setTab] = useState<'open' | 'glass' | 'extra' | 'size'>('open');
   const cell = cellAt(doc, path);
   if (!cell) return null;
   const open = cell.type === 'sash' || cell.type === 'door_sash';
@@ -603,88 +604,143 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
   const fillText = cell.type === 'panel' && cell.fill?.kind !== 'glass'
     ? 'панель'
     : own ? `своё · ${glassLabel(own, presets)}` : `как у изделия${doc.setup?.glass ? ` · ${glassLabel(doc.setup.glass, presets)}` : ''}`;
-  return (
-    <>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 8 }}>
+  const sub = splitPath(path).sub !== '';
+  // строка-итог под заголовком: видно, что выбрано, даже когда панель свёрнута
+  const summary = [
+    open ? OPEN_FULL[cell.open ?? 'turn'] ?? OPEN_TITLE[cell.open ?? 'turn'] : TYPE_TITLE[cell.type],
+    open && !NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (cell.hinge === 'right' ? 'петли справа' : 'петли слева') : null,
+    cell.mosquito ? `сетка ${MOSQ_SHORT[mosqType(cell.mosquito, cell)]}` : null,
+    cell.muntins ? 'раскладка' : null,
+  ].filter(Boolean).join(' · ');
+  const tabs: { value: typeof tab; title: string }[] = [
+    { value: 'open', title: open ? 'Открывание' : 'Тип' },
+    ...(hasGlass ? [{ value: 'glass' as const, title: 'Стекло' }] : []),
+    { value: 'extra', title: open ? 'Сетка' : 'Ещё' },
+    { value: 'size', title: 'Размер' },
+  ];
+  const cur = tabs.some((t) => t.value === tab) ? tab : 'open';
+
+  const header = (
+    <View style={{ paddingHorizontal: 4, paddingBottom: 8, gap: 2 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Txt w={700} size={20} style={{ flex: 1 }} lines={1}>{cellTitle(doc, path)}</Txt>
         <Txt size={14} color={C.muted} style={{ fontVariant: ['tabular-nums'] }}>{cellSize(doc, path)}</Txt>
         <IconButton name="close" label="Закрыть" onPress={onClose} bg={C.soft} />
       </View>
-      <Seg<Cell['type']> style={st0.seg} value={cell.type} onChange={(t) => set({ type: t })}
-        items={(['fixed', 'sash', 'door_sash', 'panel'] as const).map((t) => ({ value: t, title: TYPE_TITLE[t] }))} />
-      {open ? (
+      <Txt size={15} color={C.muted} lines={1}>{summary}</Txt>
+    </View>
+  );
+
+  return (
+    <DragArea snaps={snaps} header={header}>
+      {/* разделы вместо длинной простыни параметров: на экране — только то, что сейчас меняют */}
+      <Seg<typeof tab> style={st0.seg} value={cur} onChange={setTab} items={tabs} />
+
+      {cur === 'open' ? (
         <>
-          <Choice<string> value={cell.open ?? 'turn'}
-            onChange={(o) => set(o === 'tilt' ? { open: 'tilt', hinge: 'bottom' } : o === 'top_hung' ? { open: 'top_hung', hinge: 'top' }
-              : { open: o as Cell['open'], ...(cell.hinge === 'bottom' || cell.hinge === 'top' ? { hinge: 'left' } : {}) })}
-            items={[...OPENS_OF(cell), ...(cell.open && !OPENS_OF(cell).includes(cell.open) ? [cell.open] : [])].map((o) => ({ value: o, title: OPEN_TITLE[o] ?? o }))} />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {!NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (
-              <Seg<string> style={[st0.seg, { flex: 1 }]} value={cell.hinge === 'right' ? 'right' : 'left'} onChange={(h) => set({ hinge: h as Cell['hinge'] })}
-                items={[{ value: 'left', title: 'Петли слева' }, { value: 'right', title: 'справа' }]} />
-            ) : <View style={{ flex: 1 }} />}
-            <Pressable accessibilityRole="button" accessibilityState={{ selected: !!cell.mosquito }} onPress={() => setSheet('mosquito')}
-              style={{ height: 46, borderRadius: 14, paddingHorizontal: 16, justifyContent: 'center', backgroundColor: cell.mosquito ? C.dark : C.soft }}>
-              <Txt size={15} w={500} color={cell.mosquito ? '#fff' : C.ink}>{cell.mosquito ? `Сетка: ${MOSQ_SHORT[mosqType(cell.mosquito, cell)]}` : 'Москитка'}</Txt>
-            </Pressable>
-          </View>
-          {cell.type === 'door_sash' ? (
+          <Lbl>Что это</Lbl>
+          <Tiles<Cell['type']> value={cell.type} onChange={(t) => set({ type: t })}
+            items={(['fixed', 'sash', 'door_sash', 'panel'] as const).map((t) => ({ value: t, title: TYPE_TITLE[t] }))} />
+          {open ? (
             <>
-              <Seg<string> style={st0.seg} value={cell.open_dir ?? 'in'} onChange={(d) => set({ open_dir: d as Cell['open_dir'] })}
-                items={[{ value: 'in', title: 'Внутрь' }, { value: 'out', title: 'Наружу' }]} />
-              <Txt size={14} color={C.muted} style={{ paddingHorizontal: 4 }}>Порог</Txt>
-              <Choice<string> value={cell.threshold ?? 'standard'} onChange={(t) => set({ threshold: t as Cell['threshold'] })}
-                items={[{ value: 'standard', title: 'Рамный' }, { value: 'low_alu', title: 'Низкий алюминиевый' }, { value: 'none', title: 'Без порога' }]} />
+              <Lbl>Как открывается</Lbl>
+              <Tiles<string> value={cell.open ?? 'turn'}
+                onChange={(o) => set(o === 'tilt' ? { open: 'tilt', hinge: 'bottom' } : o === 'top_hung' ? { open: 'top_hung', hinge: 'top' }
+                  : { open: o as Cell['open'], ...(cell.hinge === 'bottom' || cell.hinge === 'top' ? { hinge: 'left' } : {}) })}
+                items={[...OPENS_OF(cell), ...(cell.open && !OPENS_OF(cell).includes(cell.open) ? [cell.open] : [])]
+                  .map((o) => ({ value: o, title: OPEN_FULL[o] ?? OPEN_TITLE[o] ?? o }))} />
+              {!NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (
+                <>
+                  <Lbl>Петли</Lbl>
+                  <Tiles<string> value={cell.hinge === 'right' ? 'right' : 'left'} onChange={(h) => set({ hinge: h as Cell['hinge'] })}
+                    items={[{ value: 'left', title: 'Слева' }, { value: 'right', title: 'Справа' }]} />
+                </>
+              ) : null}
+              {cell.type === 'door_sash' ? (
+                <>
+                  <Lbl>Дверь открывается</Lbl>
+                  <Tiles<string> value={cell.open_dir ?? 'in'} onChange={(d) => set({ open_dir: d as Cell['open_dir'] })}
+                    items={[{ value: 'in', title: 'Внутрь' }, { value: 'out', title: 'Наружу' }]} />
+                  <Lbl>Порог</Lbl>
+                  <Tiles<string> cols={3} value={cell.threshold ?? 'standard'} onChange={(t) => set({ threshold: t as Cell['threshold'] })}
+                    items={[{ value: 'standard', title: 'Рамный' }, { value: 'low_alu', title: 'Низкий алюм.' }, { value: 'none', title: 'Без порога' }]} />
+                </>
+              ) : null}
             </>
           ) : null}
         </>
       ) : null}
-      <MosquitoSheet visible={sheet === 'mosquito'} cell={cell} onClose={() => setSheet(null)}
-        onPick={(m) => { set({ mosquito: m }); setSheet(null); }} />
-      <Pressable accessibilityRole="button" onPress={onFill} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingVertical: 6, paddingHorizontal: 4, gap: 10 }, pressed && { opacity: 0.7 }]}>
-        <View style={{ flex: 1 }}>
-          <Txt size={14} color={C.muted}>{cell.type === 'panel' ? 'Заполнение' : 'Стекло'}</Txt>
-          <Txt w={500} lines={1}>{fillText}</Txt>
-        </View>
-        <Icon name="chevron" size={20} color="#B4B1AB" />
-      </Pressable>
-      {hasGlass ? (
+
+      {cur === 'glass' ? (
         <>
+          <Pressable accessibilityRole="button" onPress={onFill} style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingVertical: 6, paddingHorizontal: 4, gap: 10 }, pressed && { opacity: 0.7 }]}>
+            <View style={{ flex: 1 }}>
+              <Txt size={14} color={C.muted}>{cell.type === 'panel' ? 'Заполнение' : 'Стеклопакет'}</Txt>
+              <Txt w={500} lines={1}>{fillText}</Txt>
+            </View>
+            <Icon name="chevron" size={20} color="#B4B1AB" />
+          </Pressable>
           <PanelLink label="Раскладка" value={muntinsLabel(cell.muntins)} onPress={() => setSheet('muntins')} />
           <PanelLink label="Декор стекла" value={glassDecorLabel(cell)} onPress={() => setSheet('decor')} />
         </>
       ) : null}
-      <MuntinsSheet visible={sheet === 'muntins'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
-      <GlassDecorSheet visible={sheet === 'decor'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
-      {open ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 4 }}>
-          <Txt w={500} style={{ flex: 1 }}>Ручка</Txt>
-          <Switch value={cell.handle !== false} onChange={(v) => set({ handle: v })} />
-        </View>
-      ) : null}
-      {cell.type !== 'panel' ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 4 }}>
-          <View style={{ flex: 1 }}>
-            <Txt w={500}>Приточный клапан</Txt>
-            <Note>в верхний профиль</Note>
-          </View>
-          <Switch value={!!cell.vent} onChange={(v) => set({ vent: v ? { type: 'supply_valve' } : null })} />
-        </View>
-      ) : null}
-      {open && onOption ? (
+
+      {cur === 'extra' ? (
         <>
-          <Txt size={14} color={C.muted} style={{ paddingHorizontal: 4, paddingTop: 4 }}>Опции створки</Txt>
-          <Choice<string> value={null} onChange={onOption} items={CELL_OPTIONS.map((o) => ({ value: o.group, title: optLabel(cell, o) }))} />
+          {open ? (
+            <>
+              <Lbl>Москитная сетка</Lbl>
+              <Tiles<string> cols={3} value={cell.mosquito ? mosqType(cell.mosquito, cell) : 'none'}
+                onChange={(t) => set({ mosquito: t === 'none' ? false : { type: t as MosqT } })}
+                items={[{ value: 'none', title: 'Нет' }, ...(Object.keys(MOSQ_SHORT) as MosqT[]).map((k) => ({ value: k, title: MOSQ_SHORT[k][0].toUpperCase() + MOSQ_SHORT[k].slice(1) }))]} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 4 }}>
+                <Txt w={500} style={{ flex: 1 }}>Ручка</Txt>
+                <Switch value={cell.handle !== false} onChange={(v) => set({ handle: v })} />
+              </View>
+            </>
+          ) : null}
+          {cell.type !== 'panel' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 4 }}>
+              <View style={{ flex: 1 }}>
+                <Txt w={500}>Приточный клапан</Txt>
+                <Note>в верхний профиль</Note>
+              </View>
+              <Switch value={!!cell.vent} onChange={(v) => set({ vent: v ? { type: 'supply_valve' } : null })} />
+            </View>
+          ) : null}
+          {open && onOption ? (
+            <>
+              <Lbl>Фурнитура створки</Lbl>
+              <Tiles<string> value={null} onChange={onOption} items={CELL_OPTIONS.map((o) => ({ value: o.group, title: optLabel(cell, o) }))} />
+            </>
+          ) : null}
         </>
       ) : null}
-      {splitPath(path).sub !== '' ? <PartSize doc={doc} path={path} commit={commit} commitLater={commitLater} /> : null}
-      <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
-        <Soft title="Разделить" icon="window" onPress={onSplit} style={{ flex: 1 }} small />
-        {splitPath(path).sub !== '' ? <Soft title="Объединить" onPress={onMerge} style={{ flex: 1 }} small /> : null}
-      </View>
-    </>
+
+      {cur === 'size' ? (
+        <>
+          {sub ? <PartSize doc={doc} path={path} commit={commit} commitLater={commitLater} /> : <Note>Размер изделия — на плашках у схемы</Note>}
+          <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
+            <Soft title="Разделить" icon="window" onPress={onSplit} style={{ flex: 1 }} />
+            {sub ? <Soft title="Объединить" onPress={onMerge} style={{ flex: 1 }} /> : null}
+          </View>
+        </>
+      ) : null}
+
+      <MuntinsSheet visible={sheet === 'muntins'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
+      <GlassDecorSheet visible={sheet === 'decor'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
+    </DragArea>
   );
 }
+/** подпись группы в панели */
+function Lbl({ children }: { children: string }) {
+  return <Txt size={14} w={600} color={C.muted} style={{ paddingHorizontal: 4, paddingTop: 4 }}>{children}</Txt>;
+}
+/** открывание полными словами (мастер говорит «поворотно-откидная», а не «П-О») */
+const OPEN_FULL: Record<string, string> = {
+  turn: 'Поворотная', tilt_turn: 'Поворотно-откидная', tilt: 'Откидная', top_hung: 'Подвесная', pivot: 'Среднеподвесная',
+  psk: 'PSK, параллельно-сдвижная', hs: 'HS, подъёмно-сдвижная', sliding: 'Раздвижная', folding: 'Гармошка',
+};
 const st0 = { seg: { marginHorizontal: 0, backgroundColor: '#EDECE9' } };
 
 /** Открывания по типу ячейки (§3, §9.1); гармошка — только у листьев узла «гармошка». */
