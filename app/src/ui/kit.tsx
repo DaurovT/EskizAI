@@ -6,10 +6,7 @@
  * Экраны собирают интерфейс из этих деталей; новое общее — добавляйте сюда.
  */
 import { ComponentRef, ReactNode, Ref, useState } from 'react';
-import {
-  ActivityIndicator, Modal, Pressable, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextInputProps,
-  TextStyle, View, ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleProp, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View, ViewStyle, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -317,12 +314,24 @@ export function Sheet({ visible, onClose, children, title }: { visible: boolean;
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable accessibilityLabel="Закрыть" style={{ flex: 1, backgroundColor: C.scrim }} onPress={onClose} />
-      <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={s.grab}><View style={s.grabBar} /></View>
-        {title ? <Txt w={600} size={17} style={{ paddingHorizontal: 16, paddingBottom: 8 }}>{title}</Txt> : null}
-        {children}
-      </View>
+      {/* лист поднимается над клавиатурой: иначе поля внизу (цена, «Добавить») закрыты и ввод уходит не туда */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <Pressable accessibilityLabel="Закрыть" style={{ flex: 1, backgroundColor: C.scrim }} onPress={onClose} />
+        <View style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          <View style={s.grab}><View style={s.grabBar} /></View>
+          {title ? (
+            // заголовок с крестиком: длинный лист (наценка, работы) иначе закрывался только тапом по тёмному фону
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 8, paddingBottom: 8, gap: 8 }}>
+              <Txt w={600} size={17} style={{ flex: 1 }}>{title}</Txt>
+              <Pressable accessibilityRole="button" accessibilityLabel="Закрыть" hitSlop={10} onPress={onClose}
+                style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? C.line : 'transparent' })}>
+                <Txt size={22} color={C.muted}>×</Txt>
+              </Pressable>
+            </View>
+          ) : null}
+          {children}
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
