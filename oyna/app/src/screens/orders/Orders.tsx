@@ -242,7 +242,7 @@ function RowShell({ first, onPress, children, doc }: { first: boolean; onPress: 
 function ServerRow({ row, first, pending, onPress }: { row: OrderRow; first: boolean; pending: boolean; onPress: () => void }) {
   const sub = [row.address, row.units ? nItems(row.units) : null, row.area_m2 ? m2(row.area_m2) : null].filter(Boolean).join(' · ');
   return (
-    <RowShell first={first} onPress={onPress}>
+    <RowShell first={first} onPress={onPress} doc={row.first_doc ?? undefined}>
       <View style={st.rowTop}>
         <Txt w={600} lines={1} style={{ flex: 1 }}>{row.client_name || 'Без клиента'}</Txt>
         <Txt w={600} style={{ fontVariant: ['tabular-nums'] }}>{row.total > 0 ? money(row.total) : '—'}</Txt>

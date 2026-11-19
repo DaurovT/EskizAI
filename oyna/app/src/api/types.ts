@@ -136,6 +136,8 @@ export type OrderRow = {
   positions: number; units: number; total: number; area_m2: number | null; missing_price_positions: number; blocked_positions: number;
   demo: boolean; extras_total: number | null; quote_version: number | null; quote_sent_at: string | null;
   accepted_at: string | null; accepted_kit: string | null; accepted_total: number | null; kit_name: string | null;
+  /** документ первой позиции — миниатюра в списке заказов */
+  first_doc?: Doc | null;
 };
 export type Counts = Partial<Record<OrderStatus | 'all', number>>;
 export type PositionOut = {

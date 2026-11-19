@@ -19,6 +19,8 @@ type Props = {
   depthMm?: number; // монтажная глубина профиля
   side?: 'inside' | 'outside';
   open?: boolean;
+  /** меняется — камера плавно возвращается к стандартному ракурсу («к исходному виду») */
+  resetKey?: number;
   style?: ViewStyle;
 };
 
@@ -30,7 +32,7 @@ const THETA0 = 0.35; // лёгкий ракурс
 const PHI0 = Math.PI / 2 - 0.12; // чуть выше горизонта
 const PHI_MIN = 0.25;
 const PHI_MAX = Math.PI - 0.25;
-const PAD = 1.18; // отступ при вписывании
+const PAD = 1.06; // отступ при вписывании (крупнее: окно занимает почти всё поле)
 const OPEN_SEC = 0.7;
 
 const baseTheta = (side: 'inside' | 'outside') => (side === 'outside' ? THETA0 + Math.PI : THETA0);
@@ -97,7 +99,7 @@ class GlBoundary extends Component<{ fallback: ReactNode; children: ReactNode },
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-export function Window3D({ doc, colorOut, colorIn, depthMm = 70, side = 'inside', open = false, style }: Props): JSX.Element {
+export function Window3D({ doc, colorOut, colorIn, depthMm = 70, side = 'inside', open = false, resetKey = 0, style }: Props): JSX.Element {
   const ctx = useRef<Ctx>({ invalidate: () => undefined, size: { w: 1, h: 1 } });
   const cur = useRef<Orbit>({ target: new Vector3(), theta: baseTheta(side), phi: PHI0, radius: 3 });
   const goal = useRef<Orbit>({ target: new Vector3(), theta: baseTheta(side), phi: PHI0, radius: 3 });
@@ -140,6 +142,16 @@ export function Window3D({ doc, colorOut, colorIn, depthMm = 70, side = 'inside'
     goal.current.phi = PHI0;
     refit(true);
   }, [side, refit]);
+
+  // «к исходному виду»: стандартный ракурс стороны и вписывание
+  const prevReset = useRef(resetKey);
+  useEffect(() => {
+    if (prevReset.current === resetKey) return;
+    prevReset.current = resetKey;
+    goal.current.theta = baseTheta(side);
+    goal.current.phi = PHI0;
+    refit(true);
+  }, [resetKey, side, refit]);
 
   // ----- жесты: один палец — вращение, два — щипок -----
   const g = useRef({ touches: 0, dist: 0, startR: 3, lx: 0, ly: 0 });

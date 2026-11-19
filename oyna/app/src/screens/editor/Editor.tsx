@@ -68,6 +68,7 @@ export default function Editor() {
   const [view, setView] = useState<'inside' | 'outside'>('inside');
   const [is3d, setIs3d] = useState(false);          // 3D-вид вместо схемы (сторона — view)
   const [open3d, setOpen3d] = useState(false);      // створки приоткрыты в 3D
+  const [reset3d, setReset3d] = useState(0);        // «к исходному виду»
   const [depth, setDepth] = useState<number | undefined>(undefined);
   const [mode, setMode] = useState<'edit' | 'issues'>('edit');
   const [menu, setMenu] = useState(false);
@@ -392,9 +393,10 @@ export default function Editor() {
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
               <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
               <Soft small title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
+              <Soft small title="Вид" icon="undo" onPress={() => setReset3d((n) => n + 1)} />
             </View>
             <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
-              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} style={{ marginBottom: 36 }} />
+              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} resetKey={reset3d} style={{ marginBottom: 36 }} />
           </View>
         ) : null}
         <Pressable style={{ flex: 1, display: is3d ? 'none' : 'flex' }} onPress={() => { setSelected(null); setAsmSel(null); }} accessible={false}
@@ -412,7 +414,7 @@ export default function Editor() {
         <View style={[st.bs, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
           <View style={st.hdl}><View style={st.hdlBar} /></View>
           {sel !== null ? (
-            <ScrollView style={{ maxHeight: win.height * 0.52 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
+            <ScrollView style={{ maxHeight: win.height * 0.4 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
               <CellPanel doc={doc} path={sel} presets={presets} onClose={() => setSelected(null)}
                 commit={commit} commitLater={commitLater}
                 onFill={() => (isLocal ? showToast('Стекло ячейки — когда позиция уйдёт на сервер') : goKit(sel))}
@@ -421,7 +423,7 @@ export default function Editor() {
                 onMerge={() => { const pp = parentPath(sel); commit([{ cmd: 'merge', path: pp }]); setSelected(pp); }} />
             </ScrollView>
           ) : aSel ? (
-            <ScrollView style={{ maxHeight: win.height * 0.52 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
+            <ScrollView style={{ maxHeight: win.height * 0.4 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
               {aSel.kind === 'frame' ? (
                 <FramePanel doc={doc} index={aSel.index} commit={commit} commitLater={commitLater} onClose={() => setAsmSel(null)}
                   onShape={() => setShapeFor(framePrefix(aSel.index))} onSplit={splitPress}

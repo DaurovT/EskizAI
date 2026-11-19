@@ -402,8 +402,9 @@ function MuntinArt({ cell, g, X, Y, k, prof, rise, frameW, small }: Pen & { cell
   if (!m) return null;
   const color = m.color === 'gold' ? GOLD : m.color === 'decor' ? prof : '#FFFFFF';
   const overlay = m.kind === 'overlay';
-  const w = Math.max(overlay ? 1.6 : 1, (m.width_mm ?? (overlay ? 26 : 18)) * k * (overlay ? 1 : 0.8));
-  const edge = isDark(color) ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.38)';
+  const w = Math.max(overlay ? 2.6 : 2, (m.width_mm ?? (overlay ? 26 : 18)) * k * (overlay ? 1 : 0.8));
+  // окантовка заметная: белая раскладка на голубом стекле иначе не видна (особенно на солнце)
+  const edge = isDark(color) ? 'rgba(255,255,255,0.6)' : 'rgba(40,36,30,0.6)';
   const segs: [number, number, number, number][] = [];
   const arcs: string[] = [];
   const gw = g.x1 - g.x0, gh = g.y1 - g.y0;
@@ -451,7 +452,7 @@ function MuntinArt({ cell, g, X, Y, k, prof, rise, frameW, small }: Pen & { cell
   );
   return (
     <>
-      {draw(edge, sw + (overlay ? 1.4 : 0.8), 'e')}
+      {draw(edge, sw + (overlay ? 2.4 : 2), 'e')}
       {draw(color, sw, 'c')}
     </>
   );
