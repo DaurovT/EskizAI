@@ -93,15 +93,22 @@ export async function request<T>(path: string, o: Opts = {}, retried = false): P
   let body: BodyInit | undefined;
   if (o.form) body = o.form as unknown as BodyInit;
   else if (o.body !== undefined) { headers['Content-Type'] = 'application/json'; body = JSON.stringify(o.body); }
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), o.timeoutMs ?? 20_000);
+  const url = `${API_URL}${path}${qs(o.query)}`;
+  const send = async () => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), o.timeoutMs ?? 20_000);
+    try { return await fetch(url, { method: o.method ?? 'GET', headers, body, signal: ctrl.signal }); }
+    finally { clearTimeout(timer); }
+  };
   let res: Response;
+  const started = Date.now();
   try {
-    res = await fetch(`${API_URL}${path}${qs(o.query)}`, { method: o.method ?? 'GET', headers, body, signal: ctrl.signal });
+    res = await send();
   } catch {
-    throw new ApiError(0, 'network', 'Нет связи с сервером. Проверьте интернет');
-  } finally {
-    clearTimeout(timer);
+    // iOS: POST/PATCH по «уснувшему» keep-alive соединению падает сразу (-1005) и сам не повторяется (GET повторяется).
+    // Мгновенный обрыв = запрос до сервера не дошёл → один повтор по новому соединению безопасен.
+    if (Date.now() - started > 3000 || o.form) throw new ApiError(0, 'network', 'Нет связи с сервером. Проверьте интернет');
+    try { res = await send(); } catch { throw new ApiError(0, 'network', 'Нет связи с сервером. Проверьте интернет'); }
   }
   if (res.status === 401 && o.auth !== false && !retried) {
     if (await refresh()) return request<T>(path, o, true);
