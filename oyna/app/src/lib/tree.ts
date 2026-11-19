@@ -228,27 +228,30 @@ export function clipPoly(subject: Pt[], clip: Pt[]): Pt[] {
   return dedupe(out);
 }
 
-/** Выпуклый контур, сдвинутый внутрь на d мм (полоса рамы/створки по контуру). */
+/** Выпуклый контур, сдвинутый внутрь на d мм (полоса рамы/створки по контуру).
+ * Считается пересечением полуплоскостей «сторона, сдвинутая внутрь»: у дуги, сходящейся с прямой под углом
+ * (полукруг, низкая арка), сдвиг вершин давал самопересечение у углов — стекло обрезалось в пустоту. */
 export function insetPoly(poly: Pt[], d: number): Pt[] {
   const p = dedupe(poly);
   const n = p.length;
   if (n < 3 || d === 0) return p;
   const s = Math.sign(polyArea(p)) || 1;
-  const lines = p.map((a, i) => {
-    const b = p[(i + 1) % n];
+  let out = p;
+  for (let i = 0; i < n && out.length; i++) {
+    const a = p[i], b = p[(i + 1) % n];
     const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
-    const nx = (-dy / L) * s * d, ny = (dx / L) * s * d;
-    return { a: [a[0] + nx, a[1] + ny] as Pt, dx, dy };
-  });
-  const out: Pt[] = [];
-  for (let i = 0; i < n; i++) {
-    const l1 = lines[(i - 1 + n) % n], l2 = lines[i];
-    const den = l1.dx * l2.dy - l1.dy * l2.dx;
-    if (Math.abs(den) < 1e-9 * Math.hypot(l1.dx, l1.dy) * Math.hypot(l2.dx, l2.dy)) { out.push(l2.a); continue; }
-    const t = ((l2.a[0] - l1.a[0]) * l2.dy - (l2.a[1] - l1.a[1]) * l2.dx) / den;
-    out.push([l1.a[0] + l1.dx * t, l1.a[1] + l1.dy * t]);
+    // внутрь: знак как в clipPoly (side ≥ 0 — внутри), отступ d
+    const side = (q: Pt) => (s * (dx * (q[1] - a[1]) - dy * (q[0] - a[0]))) / L - d;
+    const inp = out;
+    out = [];
+    for (let j = 0; j < inp.length; j++) {
+      const q = inp[j], r = inp[(j + 1) % inp.length];
+      const sq = side(q), sr = side(r);
+      if (sq >= -1e-6) out.push(q);
+      if ((sq >= -1e-6) !== (sr >= -1e-6)) { const t = sq / (sq - sr); out.push([q[0] + (r[0] - q[0]) * t, q[1] + (r[1] - q[1]) * t]); }
+    }
   }
-  return out;
+  return dedupe(out);
 }
 
 /** Отрезок прямой x = at (orient 'v') или y = at ('h'), который лежит внутри выпуклого контура. */

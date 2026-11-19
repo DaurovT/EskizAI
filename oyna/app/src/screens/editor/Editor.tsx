@@ -364,7 +364,7 @@ export default function Editor() {
             value={is3d ? '3d' : view} onChange={(v) => { if (v === '3d') setIs3d(true); else { setIs3d(false); setView(v); } }} style={{ width: 240 }} />
         </View>
         {!isOffline && !isLocal ? (
-          <SetupBar doc={doc} presets={presets} onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)} />
+          <SetupBar doc={doc} presets={presets} sysFallback={server?.label?.split(' · ')[0]} onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)} />
         ) : null}
         {errors.length || warns.length ? (
           <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingTop: 10 }}>
@@ -388,12 +388,13 @@ export default function Editor() {
         {/* поле схемы / 3D */}
         {is3d ? (
           <View style={{ flex: 1 }}>
-            <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
-              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} />
-            <View style={{ position: 'absolute', left: 12, bottom: 44, flexDirection: 'row', gap: 8 }}>
-              <Soft title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
-              <Soft title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
+            {/* кнопки строкой над моделью — поверх они закрывали низ окна */}
+            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
+              <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
+              <Soft small title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
             </View>
+            <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
+              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} style={{ marginBottom: 36 }} />
           </View>
         ) : null}
         <Pressable style={{ flex: 1, display: is3d ? 'none' : 'flex' }} onPress={() => { setSelected(null); setAsmSel(null); }} accessible={false}
@@ -483,7 +484,7 @@ export default function Editor() {
       {docSheet === 'tpl' ? <SaveTemplateSheet doc={doc} onClose={() => setDocSheet(null)} onSaved={() => { setDocSheet(null); showToast('Шаблон сохранён — в «Шаблоны → Мои»'); }} /> : null}
       <ShapeSheet doc={doc} prefix={shapeFor} onClose={() => setShapeFor(null)}
         onApply={(c) => { setShapeFor(null); commit(c); }} />
-      <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add').length}
+      <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length}
         offline={isOffline || isLocal}
         shape={asm ? null : SHAPE_TITLE[frameShape(doc.frame).shape]}
         onShape={() => { setMenu(false); setShapeFor(''); }}
@@ -505,6 +506,8 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
   onCellPress: (path: string) => void; onShape: (prefix: string) => void; onFrame: (i: number) => void;
 }) {
   const G = schemaGeometry(doc, width, maxHeight, false, view);
+  // схема мелкая (открыта панель ячейки) — плашки формы (подъём, срез, высоты сторон) не помещаются: прячем
+  const roomy = G.vw >= 200;
   const { vw, vh, k } = G;
   const schema = <Schema doc={doc} width={vw} maxHeight={vh} dims={false} view={view} selected={selected} violations={violations} onCellPress={onCellPress} />;
   if (isAssembly(doc)) {
@@ -550,7 +553,7 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
         return <Dim key={i} text={num(Math.round(s))} style={{ right: vw + 4, top: cy - 16, width: undefined, alignItems: 'flex-end' }} red={bad(i)} onPress={() => press(i)} />;
       }) : null}
       <Dim text={shape === 'circle' ? `Ø ${num(W)}` : num(W)} style={{ left: fg.x + fg.w / 2 - 60, top: vh + (sizes.length > 1 && vertical ? 48 : 8) }} />
-      {shape === 'trapezoid' ? (
+      {shape === 'trapezoid' && roomy ? (
         <>
           <Dim text={num(mirror ? params.h_left! : params.h_right!)} style={{ left: vw + 6, top: Y(H - (mirror ? params.h_left! : params.h_right!) / 2) - 16, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
           <Dim text={num(mirror ? params.h_right! : params.h_left!)} style={leftBusy
@@ -558,10 +561,10 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
             : { right: vw + 4, top: Y(H - (mirror ? params.h_right! : params.h_left!) / 2) - 16, width: undefined, alignItems: 'flex-end' }} onPress={() => onShape('')} />
         </>
       ) : shape !== 'circle' ? <Dim text={num(H)} style={{ left: vw + 6, top: fg.y + fg.h / 2 - 16, width: undefined, alignItems: 'flex-start' }} /> : null}
-      {shape === 'arch' ? (
-        <Dim text={`подъём ${num(params.rise!)}`} style={{ left: vw + 6, top: Y(params.rise! / 2) - 30, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
+      {shape === 'arch' && roomy ? (
+        <Dim text={`подъём\n${num(params.rise!)}`} style={{ left: vw + 6, top: Y(0), width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
       ) : null}
-      {shape === 'bevel' ? (
+      {shape === 'bevel' && roomy ? (
         <Dim text={`срез ${num(params.dx!)}×${num(params.dy!)}`} style={{ left: vw / 2 - 80, top: -40, width: 160 }} onPress={() => onShape('')} />
       ) : null}
     </View>
@@ -886,7 +889,8 @@ function IssueRow({ v, first, kind, doc, order, pos, onPick, onFix, onCommand }:
 
 /** Строка чипов под переключателем вида — каждое касание открывает лист замен (/alternatives) для этого пункта.
  * Профиль · Цвет профиля · Ламинация снаружи · Ламинация внутри · Стекло · Фурнитура (shapes_contract §8). */
-function SetupBar({ doc, presets, onPick }: { doc: Doc; presets: GlassPreset[] | null; onPick: (what: string) => void }) {
+/** sysFallback — система, которую сервер подставил по комплектации (в doc её может не быть) */
+function SetupBar({ doc, presets, onPick, sysFallback }: { doc: Doc; presets: GlassPreset[] | null; onPick: (what: string) => void; sysFallback?: string }) {
   const s = doc.setup ?? {};
   const [names, setNames] = useState<{ systems: SystemRow[]; decors: Decor[]; fittings: FittingSet[] } | null>(null);
   useEffect(() => {
@@ -900,7 +904,7 @@ function SetupBar({ doc, presets, onPick }: { doc: Doc; presets: GlassPreset[] |
   const fit = fittingLabel(names?.fittings.find((f) => f.code === s.fittings), s.fittings)[0];
   const lamOut = lamLabel(s, 'outside', names?.decors), lamIn = lamLabel(s, 'inside', names?.decors);
   const chips: { what: string; label: string; value: string; color?: string }[] = [
-    { what: 'system', label: 'Профиль', value: sys ? `${sys.brand} ${sys.series}` : s.system ?? 'по комплектации' },
+    { what: 'system', label: 'Профиль', value: sys ? `${sys.brand} ${sys.series}` : s.system ?? sysFallback ?? 'по комплектации' },
     { what: 'profile_color', label: 'Цвет профиля', value: profileColorLabel(s.profile_color), color: profileHex({ profile_color: s.profile_color, lam_in: null }, 'inside') },
     { what: 'lam_out', label: 'Ламинация снаружи', value: lamOut, color: lamOut !== 'нет' ? profileHex(s, 'outside') : undefined },
     { what: 'lam_in', label: 'Ламинация внутри', value: lamIn, color: lamIn !== 'нет' ? profileHex(s, 'inside') : undefined },
@@ -1138,7 +1142,7 @@ function JointPanel({ doc, index, commit, commitLater, onClose }: {
 // ---------------------------------------------------------------- форма рамы
 type ShapePick = Shape | 'semi';
 const SHAPE_PICKS: { value: ShapePick; title: string }[] = [
-  { value: 'rect', title: 'Прямоугольник' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' }, { value: 'circle', title: 'Круг' },
+  { value: 'rect', title: 'Обычная' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' }, { value: 'circle', title: 'Круг' },
   { value: 'trapezoid', title: 'Трапеция' }, { value: 'bevel', title: 'Скос угла' }, { value: 'triangle', title: 'Треугольник' },
 ];
 const sampleDoc = (shape: Shape, shape_params?: ShapeParams, w = 1000, h = 1000): Doc =>

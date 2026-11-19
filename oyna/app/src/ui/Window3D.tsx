@@ -195,10 +195,12 @@ export function Window3D({ doc, colorOut, colorIn, depthMm = 70, side = 'inside'
             }}
             style={{ flex: 1 }}
           >
-            <ambientLight intensity={0.8} />
-            <directionalLight position={[1.2, 2.5, 3]} intensity={1.5} />
-            <directionalLight position={[-1.2, 2.5, -3]} intensity={1.1} />
-            <directionalLight position={[-3, 0.5, 0.5]} intensity={0.35} />
+            {/* r3f 9 / three r169 — физические единицы: прежние 0.8/1.5 давали серый белый профиль */}
+            <ambientLight intensity={1.7} />
+            <hemisphereLight args={['#FFFFFF', '#B9B4AC', 0.9]} />
+            <directionalLight position={[2.2, 3, 3]} intensity={2.6} />
+            <directionalLight position={[-2.2, 3, -3]} intensity={2.0} />
+            <directionalLight position={[-3, 0.6, 1.2]} intensity={0.9} />
             <primitive object={model.root} />
             <Sashes model={model} open={open} />
             <Rig cur={cur} goal={goal} ctx={ctx} />

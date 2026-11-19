@@ -6,7 +6,8 @@
  * Фигурная ячейка = её прямоугольник ∩ контур рамы; многоугольники считаем в мм раскладки (y вниз).
  */
 import {
-  BoxGeometry, BufferGeometry, Color, DoubleSide, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Path, Shape,
+  BoxGeometry, BufferGeometry, Color, DoubleSide, EdgesGeometry, ExtrudeGeometry, Group, LineBasicMaterial, LineSegments, Mesh,
+  MeshStandardMaterial, Path, Shape,
   ShapeGeometry, Vector2, type Material,
 } from 'three';
 
@@ -612,6 +613,18 @@ export function buildWindow(doc: Doc, colorOut: string, colorIn: string, depthMm
     const f = doc.frame as unknown as FrameX;
     root.add(buildFrame(f, env));
     size = { w: Math.max(f.w || 0, 200) * M, h: Math.max(f.h || 0, 200) * M, d: (D + 2 * (SASH_PROUD + 30)) * M };
+  }
+
+  // рёбра профиля тонкой тёмной линией — как на чертеже: створка читается отдельно от рамы, белое не сливается
+  const edgeMat = new LineBasicMaterial({ color: new Color('#5E5A54'), transparent: true, opacity: 0.55 });
+  all.push(edgeMat);
+  const edgeOf = new Map<BufferGeometry, EdgesGeometry>();
+  const profile: Mesh[] = [];
+  root.traverse((o) => { const m = o as Mesh; if (m.isMesh && (m.material === mats.out || m.material === mats.in)) profile.push(m); });
+  for (const m of profile) {
+    let e = edgeOf.get(m.geometry);
+    if (!e) { e = new EdgesGeometry(m.geometry, 25); edgeOf.set(m.geometry, e); geos.push(e); }
+    m.add(new LineSegments(e, edgeMat));
   }
 
   return {

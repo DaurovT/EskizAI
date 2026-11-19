@@ -215,7 +215,7 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
   const fixedSum = t.fixed_parts.filter((p) => !p.path.includes('.')).reduce((s, p) => s + p.size, 0);
   const sizes = geo?.sizes[''] ?? [];
   const partsLine = sizes.length > 1
-    ? sizes.map((s, i) => (t.fixed_parts.some((p) => p.path === String(i)) ? num(s) : fitErr ? '—' : num(Math.round(s)))).join(' · ')
+    ? `части ${vertical ? 'по ширине' : 'по высоте'}: ${sizes.map((s, i) => (t.fixed_parts.some((p) => p.path === String(i)) ? num(s) : fitErr ? '—' : num(Math.round(s)))).join(' + ')} мм`
     : '';
   const dimWord = vertical ? 'ширину' : 'высоту';
   const dimVal = vertical ? wn : hn;
