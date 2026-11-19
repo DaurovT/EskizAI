@@ -10,6 +10,7 @@ import {
   MeshStandardMaterial, Path, Shape,
   ShapeGeometry, Vector2, type Material,
 } from 'three';
+import { forgedDecor } from '@/lib/decorPattern';
 
 import type { Cell, Doc, Node } from '@/api/types';
 import { layout, type Layout } from '@/lib/tree';
@@ -268,7 +269,7 @@ function glassFactory(all: Material[]) {
   };
 }
 
-const STAINED = ['#C8423B', '#E3B23C', '#3F7CC4', '#4E9A5B', '#8E5BB5'];
+const STAINED = ['#D2574A', '#3F86C6', '#EFC64A', '#4FA66B']; // те же цвета, что у витража на схеме (Schema.tsx)
 
 /** Одна рама (центр в начале координат) → Group. */
 function buildFrame(f: FrameX, env: Env): Group {
@@ -329,13 +330,15 @@ function buildFrame(f: FrameX, env: Env): Group {
     if (cell.type === 'panel' || fl?.kind === 'panel') { prism(parent, poly, null, zc - PANEL / 2, zc + PANEL / 2); return; }
     flat(parent, poly, zc, env.glass(fl), 2);
     if (fl?.decor === 'stained') {
-      // витраж: ромбы по сетке, обрезанные формой стекла
-      const r = bbox(poly), n = Math.max(2, Math.round((r.x1 - r.x0) / 260)), m = Math.max(2, Math.round((r.y1 - r.y0) / 260));
-      const sx = (r.x1 - r.x0) / n, sy = (r.y1 - r.y0) / m;
-      for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) {
-        const cx = r.x0 + sx * (i + 0.5), cy = r.y0 + sy * (j + 0.5);
-        const dia: Pt[] = [[cx, cy - sy * 0.42], [cx + sx * 0.42, cy], [cx, cy + sy * 0.42], [cx - sx * 0.42, cy]];
-        flat(parent, clipConvex(dia, poly), zc, env.glass({ decor: `stained${(i + j * 2) % STAINED.length}` }), 3);
+      // витраж: та же сетка ромбов, что на схеме (Schema.GlassDecorArt): шаг d = max(60, min(ш,в)/3), ряды со сдвигом ½
+      const r = bbox(poly), gw = r.x1 - r.x0, gh = r.y1 - r.y0, d = Math.max(60, Math.min(gw, gh) / 3);
+      let k = 0;
+      for (let j = 0; j * d <= gh + d && k < 160; j++) for (let i = 0; i * d <= gw + d && k < 160; i++) for (const off of [0, 0.5]) {
+        const cx = r.x0 + (i + off) * d, cy = r.y0 + (j + off) * d;
+        const dia: Pt[] = [[cx, cy - d / 2], [cx + d / 2, cy], [cx, cy + d / 2], [cx - d / 2, cy]];
+        const part = clipConvex(dia, poly);
+        if (part.length >= 3) flat(parent, part, zc, env.glass({ decor: `stained${(i + j * 2 + (off ? 1 : 0)) % STAINED.length}` }), 3);
+        k++;
       }
     }
   };
@@ -368,13 +371,8 @@ function buildFrame(f: FrameX, env: Env): Group {
         }
       }
     } else if (pattern === 'decor') {
-      // простой узор: два вложенных ромба и связи с краями стекла
-      const cy = (r.y0 + r.y1) / 2, ix = (r.x1 - r.x0) * 0.2, iy = (r.y1 - r.y0) * 0.2;
-      const dia = (kx: number, ky: number): Pt[] => [[cx, cy - ky], [cx + kx, cy], [cx, cy + ky], [cx - kx, cy]];
-      for (const d of [dia(cx - r.x0 - ix, cy - r.y0 - iy), dia((cx - r.x0 - ix) / 2, (cy - r.y0 - iy) / 2)]) {
-        for (let i = 0; i < 4; i++) segs.push([d[i], d[(i + 1) % 4]]);
-      }
-      segs.push([[cx, r.y0 - 1], [cx, r.y0 + iy]], [[cx, r.y1 - iy], [cx, r.y1 + 1]], [[r.x0 - 1, cy], [r.x0 + ix, cy]], [[r.x1 - ix, cy], [r.x1 + 1, cy]]);
+      // кованая вставка — та же форма, что на схеме (lib/decorPattern)
+      for (const line of forgedDecor(r)) for (let i = 1; i < line.length; i++) segs.push([line[i - 1], line[i]]);
     } else lines(cnt(mu.v, 1), cnt(mu.h, 1));
 
     const overlay = mu.kind === 'overlay';
