@@ -288,7 +288,10 @@ def variants(order_id: str, cx: Ctx = Depends(ctx)):
 
 GROUPS = [("profile", "Профиль"), ("reinforcement", "Армирование"), ("bead", "Штапик"), ("glass", "Стеклопакеты"),
           ("panel", "Панели"), ("fitting", "Фурнитура"), ("connector", "Соединители"), ("seal", "Уплотнитель"),
-          ("sill", "Подоконники"), ("drip", "Отливы"), ("consumable", "Монтажные материалы"), ("work", "Работы")]
+          ("muntin", "Раскладка"), ("mosquito", "Москитные сетки"), ("addon", "Доп. профили"), ("shutter", "Рольставни и жалюзи"),
+          ("grille", "Решётки"), ("loggia", "Лоджия"), ("sill", "Подоконники"), ("drip", "Отливы"),
+          ("consumable", "Монтажные материалы"), ("work", "Работы"), ("custom", "Свои строки")]
+_GROUP_KEYS = {k for k, _ in GROUPS}
 
 
 @router.get("/oyna/orders/{order_id}/calc", tags=["заказы"], summary="Расчёт заказа: спецификация группами (S09)")
@@ -323,7 +326,9 @@ def order_calc(order_id: str, kit: str | None = None, cx: Ctx = Depends(ctx)):
     bars = {i["article"]: i["bars"] for i in cut_order(rows_for_cut, p.get("bar_mm", 6000), p.get("cut_mm", 4))["items"]} if docs else {}
     owner = cx.role == "owner"
     out_groups = []
-    for key, title in GROUPS:
+    # виды строк, которых нет в GROUPS (новые роли ядра), не теряем — иначе сумма групп меньше себестоимости
+    extra_keys = [(k, k) for k in groups if k not in _GROUP_KEYS]
+    for key, title in GROUPS + extra_keys:
         if key not in groups:
             continue
         g = groups[key]

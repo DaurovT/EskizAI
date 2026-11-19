@@ -146,7 +146,9 @@ export default function Summary() {
                     <Pressable key={v.kit} accessibilityRole="button" onPress={() => router.push(`/order/${id}/calc?kit=${encodeURIComponent(v.kit)}`)}
                       style={({ pressed }) => [s.kit, on && s.kitOn, pressed && { opacity: 0.85 }]}>
                       <Txt size={13} color={C.muted} lines={1}>{v.kit}</Txt>
-                      <Txt size={19} w={700} style={{ marginTop: 2, fontVariant: ['tabular-nums'] }} lines={1}>{money(v.total)}</Txt>
+                      {/* не считается (ошибка размеров/конструкции) — не «0», а прямо говорим, что не так */}
+                      {v.total > 0 ? <Txt size={19} w={700} style={{ marginTop: 2, fontVariant: ['tabular-nums'] }} lines={1}>{money(v.total)}</Txt>
+                        : <Txt size={14} w={600} color={C.danger} style={{ marginTop: 4 }} lines={2}>не считается — проверьте окно</Txt>}
                       {v.per_m2 ? <Txt size={12} color={C.muted} lines={1} style={{ fontVariant: ['tabular-nums'] }}>{money(v.per_m2)} /м²</Txt> : null}
                     </Pressable>
                   );

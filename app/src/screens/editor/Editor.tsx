@@ -484,7 +484,7 @@ export default function Editor() {
       {docSheet === 'tpl' ? <SaveTemplateSheet doc={doc} onClose={() => setDocSheet(null)} onSaved={() => { setDocSheet(null); showToast('Шаблон сохранён — в «Шаблоны → Мои»'); }} /> : null}
       <ShapeSheet doc={doc} prefix={shapeFor} onClose={() => setShapeFor(null)}
         onApply={(c) => { setShapeFor(null); commit(c); }} />
-      <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add').length}
+      <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length}
         offline={isOffline || isLocal}
         shape={asm ? null : SHAPE_TITLE[frameShape(doc.frame).shape]}
         onShape={() => { setMenu(false); setShapeFor(''); }}
@@ -506,6 +506,8 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
   onCellPress: (path: string) => void; onShape: (prefix: string) => void; onFrame: (i: number) => void;
 }) {
   const G = schemaGeometry(doc, width, maxHeight, false, view);
+  // схема мелкая (открыта панель ячейки) — плашки формы (подъём, срез, высоты сторон) не помещаются: прячем
+  const roomy = G.vw >= 200;
   const { vw, vh, k } = G;
   const schema = <Schema doc={doc} width={vw} maxHeight={vh} dims={false} view={view} selected={selected} violations={violations} onCellPress={onCellPress} />;
   if (isAssembly(doc)) {
@@ -551,7 +553,7 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
         return <Dim key={i} text={num(Math.round(s))} style={{ right: vw + 4, top: cy - 16, width: undefined, alignItems: 'flex-end' }} red={bad(i)} onPress={() => press(i)} />;
       }) : null}
       <Dim text={shape === 'circle' ? `Ø ${num(W)}` : num(W)} style={{ left: fg.x + fg.w / 2 - 60, top: vh + (sizes.length > 1 && vertical ? 48 : 8) }} />
-      {shape === 'trapezoid' ? (
+      {shape === 'trapezoid' && roomy ? (
         <>
           <Dim text={num(mirror ? params.h_left! : params.h_right!)} style={{ left: vw + 6, top: Y(H - (mirror ? params.h_left! : params.h_right!) / 2) - 16, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
           <Dim text={num(mirror ? params.h_right! : params.h_left!)} style={leftBusy
@@ -559,10 +561,10 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
             : { right: vw + 4, top: Y(H - (mirror ? params.h_right! : params.h_left!) / 2) - 16, width: undefined, alignItems: 'flex-end' }} onPress={() => onShape('')} />
         </>
       ) : shape !== 'circle' ? <Dim text={num(H)} style={{ left: vw + 6, top: fg.y + fg.h / 2 - 16, width: undefined, alignItems: 'flex-start' }} /> : null}
-      {shape === 'arch' ? (
-        <Dim text={`подъём ${num(params.rise!)}`} style={{ left: Math.max(0, vw - 130), top: -40, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
+      {shape === 'arch' && roomy ? (
+        <Dim text={`подъём\n${num(params.rise!)}`} style={{ left: vw + 6, top: Y(0), width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
       ) : null}
-      {shape === 'bevel' ? (
+      {shape === 'bevel' && roomy ? (
         <Dim text={`срез ${num(params.dx!)}×${num(params.dy!)}`} style={{ left: vw / 2 - 80, top: -40, width: 160 }} onPress={() => onShape('')} />
       ) : null}
     </View>
@@ -1140,7 +1142,7 @@ function JointPanel({ doc, index, commit, commitLater, onClose }: {
 // ---------------------------------------------------------------- форма рамы
 type ShapePick = Shape | 'semi';
 const SHAPE_PICKS: { value: ShapePick; title: string }[] = [
-  { value: 'rect', title: 'Прямоугольник' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' }, { value: 'circle', title: 'Круг' },
+  { value: 'rect', title: 'Обычная' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' }, { value: 'circle', title: 'Круг' },
   { value: 'trapezoid', title: 'Трапеция' }, { value: 'bevel', title: 'Скос угла' }, { value: 'triangle', title: 'Треугольник' },
 ];
 const sampleDoc = (shape: Shape, shape_params?: ShapeParams, w = 1000, h = 1000): Doc =>

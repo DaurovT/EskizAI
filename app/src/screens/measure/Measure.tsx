@@ -382,7 +382,9 @@ function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
       const iss = await checkValue(v);
       const top = iss.find((x) => x.severity === 'block') ?? iss[0];
       if (top) {
-        const again = manual && top.severity !== 'block' && issue && issue.dim === dim && issue.idx === idx && issue.value === v;
+        // «похоже на сантиметры» (1.7) повторным «Далее» не принимаем: на объекте жмут быстро — 145 вместо 1450
+        // уходило в заказ. Только кнопка «× 10» или исправить число.
+        const again = manual && top.severity !== 'block' && top.code !== '1.7' && issue && issue.dim === dim && issue.idx === idx && issue.value === v;
         if (!again) { setIssue({ dim, idx, value: v, issue: top }); return; }
       }
       setIssue(null);
@@ -499,7 +501,7 @@ const OPEN_TITLE: Record<string, string> = {
 /** Быстрый выбор формы рамы на шаге деления (подробно — в редакторе: Ещё → Форма рамы). */
 type QuickShape = 'rect' | 'arch' | 'semi' | 'circle' | 'trapezoid' | 'triangle';
 const QUICK_SHAPES: { value: QuickShape; title: string }[] = [
-  { value: 'rect', title: 'Прямоугольник' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' },
+  { value: 'rect', title: 'Обычная' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' },
   { value: 'circle', title: 'Круг' }, { value: 'trapezoid', title: 'Трапеция' }, { value: 'triangle', title: 'Треугольник' },
 ];
 function quickShape(doc: Doc): QuickShape {
