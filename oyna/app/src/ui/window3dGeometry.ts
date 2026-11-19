@@ -53,6 +53,8 @@ export type SashRig = {
   /** поворотно-откидная: второе положение — откидывание вокруг нижней кромки */
   tiltAnim?: Group;
   tiltAmount?: number;
+  /** ножницы откидывания: рычаг от рамы к верху створки, пересчитывается при каждом угле (в метрах, в системе узла откидывания) */
+  arm?: { mesh: Mesh; x: number; h: number };
 };
 
 export type WindowModel = {
@@ -75,6 +77,17 @@ export function applyOpen(model: WindowModel, tTurn: number, tTilt = 0) {
     } else if (s.mode === 'rotX') s.anim.rotation.x = s.amount * Math.max(tTurn, tTilt);
     else if (s.mode === 'rotY') s.anim.rotation.y = s.amount * tTurn;
     else { s.anim.position.x = s.amount * tTurn; s.anim.position.z = 0.03 * tTurn; } // откатная — во внутренний полоз
+    if (s.arm) {
+      // ножницы: от точки на раме (над верхом створки) к верху наклонённой створки
+      const th = s.tiltAnim ? (s.tiltAmount ?? 0) * tTilt : s.amount * Math.max(tTurn, tTilt);
+      const { mesh, x, h } = s.arm;
+      const ay = h + 0.012, az = -0.006, by = h * Math.cos(th), bz = h * Math.sin(th);
+      const dy = by - ay, dz = bz - az, len = Math.hypot(dy, dz);
+      mesh.visible = th > 0.01;
+      mesh.position.set(x, (ay + by) / 2, (az + bz) / 2);
+      mesh.scale.set(0.014, Math.max(len, 0.001), 0.006);
+      mesh.rotation.set(Math.atan2(dz, dy), 0, 0);
+    }
   }
 }
 
@@ -249,7 +262,7 @@ function contour(f: FrameX): Pt[] {
 // ---------- сборка ----------
 type Mats = { out: MeshStandardMaterial; in: MeshStandardMaterial; handle: MeshStandardMaterial; white: MeshStandardMaterial; gold: MeshStandardMaterial };
 type Env = {
-  D: number; unit: BoxGeometry; geos: BufferGeometry[]; mats: Mats; all: Material[]; sashes: SashRig[];
+  D: number; unit: BoxGeometry; geos: BufferGeometry[]; mats: Mats; all: Material[]; sashes: SashRig[]; dark: MeshStandardMaterial;
   glass: (fill: GlassDecor | undefined) => MeshStandardMaterial;
 };
 
@@ -472,6 +485,12 @@ function buildFrame(f: FrameX, env: Env): Group {
     else if (hinge === 'top') { py = sb.y0; mode = 'rotX'; amount = -TURN_H; }
     else { py = sb.y1; mode = 'rotX'; amount = TURN_H; }
 
+    /** ножницы: со стороны петель (у откидной — слева), в узле откидывания (низ створки, середина) */
+    const makeArm = (holder: Group) => {
+      const mesh = new Mesh(unit, mats.handle); mesh.visible = false; holder.add(mesh);
+      const side = hinge === 'right' ? sb.x1 - 70 : sb.x0 + 70;
+      return { mesh, x: (side - (sb.x0 + sb.x1) / 2) * M, h: (sb.y1 - sb.y0) * M };
+    };
     const pivot = new Group();
     pivot.position.set(X(px), Y(py), pz * M);
     const anim = new Group();
@@ -483,10 +502,10 @@ function buildFrame(f: FrameX, env: Env): Group {
       const tp = new Group(); tp.position.set(X((sb.x0 + sb.x1) / 2), Y(sb.y1), zs1 * M);
       const tAnim = new Group(); const wrap = new Group(); wrap.position.set(-tp.position.x, -tp.position.y, -tp.position.z);
       tp.add(tAnim); tAnim.add(wrap); wrap.add(pivot); root.add(tp);
-      env.sashes.push({ anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT });
+      env.sashes.push({ anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT, arm: makeArm(tp) });
     } else {
       root.add(pivot);
-      env.sashes.push({ anim, mode, amount });
+      env.sashes.push({ anim, mode, amount, ...(op === 'tilt' ? { arm: makeArm(pivot) } : {}) });
     }
 
     if (!valid(hole, S)) { prism(body, S, null, zs0, zs1); continue; } // слишком мелкая — сплошная
@@ -527,6 +546,42 @@ function buildFrame(f: FrameX, env: Env): Group {
         else if (hs === 'top') box(root, mats.handle, a, sb.y0 - W / 2, b, sb.y0 + W / 2, z0, z1);
         else box(root, mats.handle, a, sb.y1 - W / 2, b, sb.y1 + W / 2, z0, z1);
       }
+    }
+
+    // запорные цапфы по торцу створки (видны, когда створка открыта): со стороны ручки 2–3, сверху и снизу по одной у широких
+    if (op === 'turn' || op === 'tilt_turn' || op === 'tilt') {
+      const hside = op === 'tilt' ? 'top' : hinge === 'left' ? 'right' : 'left';
+      const zc = zs0 + D * 0.35, hh = sb.y1 - sb.y0, ww = sb.x1 - sb.x0;
+      const cams: [number, number][] = [];
+      if (hside === 'left' || hside === 'right') {
+        const n = hh > 1200 ? 3 : 2, xe = hside === 'right' ? sb.x1 : sb.x0, dir = hside === 'right' ? 1 : -1;
+        for (let i = 1; i <= n; i++) { const y = sb.y0 + (hh * i) / (n + 1); cams.push([xe + dir * 4, y]); }
+        for (const [x, y] of cams) box(body, mats.handle, x - 4, y - 7, x + 4, y + 7, zc - 5, zc + 5);
+      }
+      if (ww > 600) for (const y of [sb.y0 - 4, sb.y1 + 4]) box(body, mats.handle, (sb.x0 + sb.x1) / 2 - 7, y - 4, (sb.x0 + sb.x1) / 2 + 7, y + 4, zc - 5, zc + 5);
+    }
+
+    // варианты ручки и опции (§9.6): ключ, кнопка, блокиратор, гребёнка, ограничитель
+    const opts = (cell as unknown as { options?: Record<string, string | null> }).options ?? {};
+    const hcode = String(opts.handle ?? '');
+    if (cell.handle !== false && (op === 'turn' || op === 'tilt_turn')) {
+      const hb = bbox(hole);
+      const right = hinge === 'left';
+      const cx = right ? (sb.x1 + hb.x1) / 2 : (sb.x0 + hb.x0) / 2, cy = (sb.y0 + sb.y1) / 2;
+      const dark = env.dark;
+      if (hcode.includes('handle_key')) box(body, dark, cx - 5, cy + 18, cx + 5, cy + 30, zs1 + 7, zs1 + 10);          // личинка под ключ
+      if (hcode.includes('handle_lock')) box(body, dark, cx - 4, cy - 34, cx + 4, cy - 26, zs1 + 7, zs1 + 11);         // кнопка
+      if (opts.child_lock) box(body, mats.handle, cx - 9, sb.y1 - 160, cx + 9, sb.y1 - 110, zs1, zs1 + 14);            // блокиратор
+      const fx = right ? sb.x1 + 14 : sb.x0 - 14;                                                                       // на раме, против ручки
+      if (opts.comb) {
+        box(root, mats.handle, fx - 7, cy + 60, fx + 7, cy + 150, zs1 - 2, zs1 + 6);
+        for (let k = 0; k < 4; k++) box(root, mats.handle, fx - 7, cy + 70 + k * 20, fx + 7, cy + 76 + k * 20, zs1 + 6, zs1 + 14);
+      }
+      if (opts.limiter) { const lx = right ? sb.x0 + 140 : sb.x1 - 140; box(root, mats.handle, lx - 40, sb.y0 - 10, lx + 40, sb.y0 + 6, zs1 - 2, zs1 + 10); }
+    }
+    if (opts.micro_vent && op === 'tilt_turn') {
+      const mx = hinge === 'left' ? sb.x1 : sb.x0;
+      box(root, mats.handle, mx - 6, sb.y0 + 40, mx + 6, sb.y0 + 90, zs1 - 2, zs1 + 8);                                 // ступень микропроветривания
     }
   }
   return root;
@@ -615,8 +670,10 @@ export function buildWindow(doc: Doc, colorOut: string, colorIn: string, depthMm
     return [`stained${i}`, m] as const;
   });
   const stainedMap = new Map<string, MeshStandardMaterial>(stained);
+  const darkMat = new MeshStandardMaterial({ color: new Color('#3B3F44'), roughness: 0.4, metalness: 0.5 });
+  all.push(darkMat);
   const env: Env = {
-    D, unit, geos, mats, all, sashes: [],
+    D, unit, geos, mats, all, sashes: [], dark: darkMat,
     glass: (f) => stainedMap.get(f?.decor ?? '') ?? glassOf(f),
   };
 
