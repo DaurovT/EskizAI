@@ -4,7 +4,11 @@ alternatives(doc, cat, company, what) где what:
   "system"      — серии профиля (по умолчанию того же материала)
   "fittings"    — наборы фурнитуры под паз системы
   "glass"       — пресеты стеклопакетов (для ячейки path — её заполнение)
-  "decor_out" / "decor_in"
+  "decor_out" / "decor_in" — старые поля (читаются как ламинация сторон)
+  "profile_color" — цвет профиля в массе (недоступные у системы — в locked с 2.20)
+  "lam_out" / "lam_in" — ламинация стороны: «нет» + плёнки decors.json
+  "glass_decor" — декор стекла ячейки path: «нет», matte, tinted, mirror, pattern, stained
+  "supplier:<категория>" — поставщики категории (glass, profile, fittings, other): основной + у кого есть цены
   "option:<группа>" — варианты детали створки path (handle, hinge, security, hinge_cap, extra_lock)
 """
 from __future__ import annotations
@@ -23,6 +27,15 @@ def _try(doc, cat, company, base_total):
     return {"total": total, "delta": (total - base_total) if total is not None and base_total is not None else None,
             "blocking": [f"{v['code']} {v.get('msg') or v['title']}" for v in blocks],
             "demo": (r.get("price") or {}).get("demo", False), "complete": (r.get("price") or {}).get("complete", False)}
+
+
+def _with_supplier(doc: dict, category: str, supplier_id: str | None) -> dict:
+    setup = dict(doc.get("setup") or {})
+    sup = {k: v for k, v in (setup.get("suppliers") or {}).items() if k != category}
+    if supplier_id:
+        sup[category] = supplier_id
+    setup["suppliers"] = sup
+    return {**doc, "setup": setup}
 
 
 def alternatives(doc: dict, cat: Catalog, company: Company | None = None, what: str = "fittings",
@@ -64,6 +77,38 @@ def alternatives(doc: dict, cat: Catalog, company: Company | None = None, what: 
         side = "color_out" if what == "decor_out" else "color_in"
         for did, d in cat.decors.items():
             offer(did, d["name_ru"], commands.set_setup(doc, **{side: did}), hex=d.get("hex"))
+    elif what == "profile_color":
+        mat = "alu" if cat.material(s["system"]).startswith("alu") else "pvc"
+        for cid, pc in cat.profile_colors.items():
+            if mat not in pc.get("material", []):
+                continue
+            code = "ral:9016" if cid == "ral" else cid
+            offer(code, pc["name_ru"], commands.set_setup(doc, profile_color=code), hex=pc.get("hex"))
+    elif what in ("lam_out", "lam_in"):
+        mat = "alu" if cat.material(s["system"]).startswith("alu") else "pvc"
+        offer(None, "Без ламинации", commands.set_setup(doc, **{what: None}))
+        for did, d in cat.decors.items():
+            if d["kind"] in ("white", "powder") or mat not in d.get("material", []):
+                continue
+            offer(did, d["name_ru"], commands.set_setup(doc, **{what: did}), hex=d.get("hex"))
+    elif what == "glass_decor":
+        if path is None:
+            raise ValueError("для декора стекла нужен path ячейки")
+        from .bom import GLASS_DECOR
+        offer(None, "Обычное стекло", commands.set_fill(doc, path, decor=None))
+        for code, name in GLASS_DECOR.items():
+            offer(code, name.capitalize(), commands.set_fill(doc, path, decor=code))
+    elif what.startswith("supplier:"):                  # §9.7: сравнить цены поставщиков категории
+        catg = what.split(":", 1)[1]
+        default = company.default_suppliers.get(catg)
+        offer(None, "Основной поставщик" if default else "Свои цены цеха", _with_supplier(doc, catg, None))
+        from .groups import supplier_category
+        role_of = {it["item_id"]: it["role"] for it in cat.items}
+        for sid, name in company.suppliers.items():
+            has = catg == "glass" and company.supplier_glass_prices.get(sid) or any(
+                supplier_category(role_of.get(i)) == catg for i, _ in company.supplier_prices.get(sid, {}))
+            if sid != default and has:
+                offer(sid, name, _with_supplier(doc, catg, sid))
     elif what.startswith("option:"):
         group = what.split(":", 1)[1]
         if path is None:
@@ -79,7 +124,12 @@ def alternatives(doc: dict, cat: Catalog, company: Company | None = None, what: 
         raise ValueError(f"неизвестно, что заменять: {what}")
 
     cur = {"system": s["system"], "fittings": s["fittings"], "glass": s["glass"], "decor_out": s["color_out"],
-           "decor_in": s["color_in"]}.get(what)
+           "decor_in": s["color_in"], "profile_color": s["profile_color"], "lam_out": s["lam_out"],
+           "lam_in": s["lam_in"]}.get(what)
+    if what.startswith("supplier:"):
+        cur = ((doc.get("setup") or {}).get("suppliers") or {}).get(what.split(":", 1)[1]) or None
+    if what == "glass_decor":
+        cur = ((node_at(doc, path).get("cell") or {}).get("fill") or {}).get("decor")
     for o in options:
         o["current"] = o["value"] == cur
     options.sort(key=lambda o: (o["delta"] is None, o["delta"] if o["delta"] is not None else 0))

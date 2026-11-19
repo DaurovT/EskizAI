@@ -93,3 +93,16 @@ euro_pvc.turn.handle_hoppe_hamburg,*euro_pvc,turn,handle_hoppe_hamburg,Ручк�
 euro_pvc.turn.handle_swin,*euro_pvc,turn,handle_swin,Ручка Roto Swing,,,,,handle,0,1,0,handle,Ruchka Okon Roto (SWIN) (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 57 380 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
 euro_pvc.turn.handle_hoppe_toulon,*euro_pvc,turn,handle_hoppe_toulon,Ручка Hoppe Toulon,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe Toulon (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», 67 164 сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
 euro_pvc.turn.handle_hoppe_ny,*euro_pvc,turn,handle_hoppe_ny,Ручка Hoppe New York,,,,,handle,0,1,0,handle,Ruchka Okon Hoppe NY (Tr),,найдено,"Romchi, Akfa «Exclusive ruchka (Import)», нет цены — ДЕМО из каталога сум; подходит ко всем наборам с евро-пазом ПВХ (квадрат 7 мм)"
+alu_tr_a3400.door.door_hinge,alu_tr_a3400,door,door_hinge,Петля дверная алюминиевая (Tr),,,,,,,3,0,,,95000,ДЕМО,shapes_contract.md §9.1: входные группы на тёплом алюминии
+alu_tr_a3400.door.door_lock,alu_tr_a3400,door,door_lock,Дверной замок + ручка (алюминий Tr),,,,,,,1,0,,,450000,ДЕМО,shapes_contract.md §9.1
+euro_pvc.tilt_turn.handle_key,*euro_pvc,tilt_turn,handle_key,Ручка с ключом,,,,,handle,0,1,0,handle,,120000,ДЕМО,shapes_contract.md §9.6
+euro_pvc.turn.handle_key,*euro_pvc,turn,handle_key,Ручка с ключом,,,,,handle,0,1,0,handle,,120000,ДЕМО,shapes_contract.md §9.6
+euro_pvc.tilt_turn.handle_lock,*euro_pvc,tilt_turn,handle_lock,Ручка с кнопкой (детский замок),,,,,handle,0,1,0,handle,,95000,ДЕМО,shapes_contract.md §9.6
+euro_pvc.turn.handle_lock,*euro_pvc,turn,handle_lock,Ручка с кнопкой (детский замок),,,,,handle,0,1,0,handle,,95000,ДЕМО,shapes_contract.md §9.6
+euro_pvc.tilt_turn.child_lock,*euro_pvc,tilt_turn,child_lock,Замок-блокиратор (детский),,,,,child_lock,0,1,0,,,60000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.turn.child_lock,*euro_pvc,turn,child_lock,Замок-блокиратор (детский),,,,,child_lock,0,1,0,,,60000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.tilt_turn.micro_vent,*euro_pvc,tilt_turn,micro_vent,Микропроветривание,,,,,micro_vent,0,1,0,,,35000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.tilt_turn.limiter,*euro_pvc,tilt_turn,limiter,Ограничитель открывания,,,,,limiter,0,1,0,,,45000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.turn.limiter,*euro_pvc,turn,limiter,Ограничитель открывания,,,,,limiter,0,1,0,,,45000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.tilt_turn.comb,*euro_pvc,tilt_turn,comb,Гребёнка (фиксатор),,,,,comb,0,1,0,,,25000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет
+euro_pvc.turn.comb,*euro_pvc,turn,comb,Гребёнка (фиксатор),,,,,comb,0,1,0,,,25000,ДЕМО,shapes_contract.md §9.6; по умолчанию нет

@@ -5,9 +5,31 @@
 """
 from __future__ import annotations
 
+from . import shapes as shp
 from .geometry import CellGeo
 from .glass import Glass, GlassError, fits_beads
-from .model import decor, is_leaf, root_of, walk_nodes
+from .model import decor, is_leaf, mosquito_type, profile_color_id, root_of, walk_nodes
+
+KIT_OPENINGS = ("folding", "psk", "hs")      # сдвижные и гармошка: фурнитура комплектом, свои пределы створки
+
+MUNTIN_WIDTHS = {"inner": (8, 18, 26), "overlay": (18, 26, 45)}
+MUNTIN_PATTERNS = ("grid", "sun", "cross", "decor")
+MUNTIN_COLORS = ("white", "decor", "gold")
+
+
+def muntin_layout(cg: CellGeo, m: dict) -> dict:
+    """Прутки раскладки ячейки по видимому стеклу."""
+    pts = cg.vis_poly or shp.rect_poly(cg.light.x0, cg.light.y0, cg.light.x1, cg.light.y1)[0]
+    return shp.muntin_layout(pts, m.get("pattern", "grid"), int(m.get("v") or 0), int(m.get("h") or 0))
+
+
+def shaped_openings(ev, cg: CellGeo) -> tuple[str, ...]:
+    """Какие открывания можно в фигурной ячейке (4.20): у круга, полукруга и треугольника — только откидное."""
+    geo = ev.geo
+    semicircle = geo.shape == "arch" and geo.shape_params.get("rise", 0) >= geo.h - 0.5     # пяты на низу рамы
+    if geo.shape in ("circle", "triangle") or semicircle:
+        return ("tilt",)
+    return ("turn", "tilt")
 
 
 def _num(v):
@@ -64,16 +86,31 @@ def check_input(ev) -> None:
         ok = ev.cat.compatible_fitting_sets(ev.setup["system"])
         ev.add("7.2", f"набор «{ev.setup['fittings']}» не подходит к пазу «{ev.groove}» системы {ev.setup['system']}",
                fix="подходят: " + ", ".join(ok) if ok else "для системы нет совместимой фурнитуры")
-    # декор (7.10 / 7.5)
+    # декор (7.10 / 7.5): ламинация по сторонам
     colors = ev.cat.system_colors(ev.setup["system"])
     mat = "alu" if ev.material.startswith("alu") else "pvc"
-    for side in ("color_out", "color_in"):
+    for side in ("lam_out", "lam_in"):
+        if not ev.setup.get(side):
+            continue
         d = decor(ev.cat, ev.setup[side])
         if d.get("material") and mat not in d["material"]:
             ev.add("7.10", f"декор «{d.get('name_ru', d['id'])}» не для {'алюминия' if mat == 'alu' else 'ПВХ'}")
     if colors and ev.group not in colors:
         ev.add("7.10", f"ценовой группы «{ev.group}» нет у системы (есть: {', '.join(colors)})")
-    # проём и этаж
+    # цвет профиля в массе (2.20)
+    pc = profile_color_id(ev.setup.get("profile_color"))
+    if pc != "white":
+        ok = ev.cat.profile_colors_for(ev.setup["system"])
+        known = ev.cat.profile_colors.get(pc)
+        if not known or mat not in known.get("material", []) or pc not in ok:
+            names = [ev.cat.profile_colors.get(x, {}).get("name_ru", x) for x in ok]
+            ev.add("2.20", f"цвета профиля «{(known or {}).get('name_ru', ev.setup.get('profile_color'))}» нет у системы "
+                           f"{ev.setup['system']}", fix="есть: " + ", ".join(names) + "; или ламинация плёнкой")
+    check_opening(ev, w, h)
+
+
+def check_opening(ev, w: float, h: float) -> None:
+    """Проём и этаж: шов (9.5), ветер (5.7), работа снаружи (9.6). У сборки — по развёртке."""
     op = ev.doc.get("opening") or {}
     if op.get("width") and op.get("height"):
         ow = min(op["width"]) if isinstance(op["width"], list) else op["width"]
@@ -139,7 +176,7 @@ def check_all(ev) -> None:
             side_min = min(cg.glass_w, cg.glass_h)
             if side_min < cat.rules["4.1"]["params"]["min"]:
                 ev.add("4.1", f"сторона стекла {side_min:.0f} мм", path)
-            area = cg.glass_w * cg.glass_h / 1e6
+            area = cg.glass_area_m2
             if area > cat.rules["4.4"]["params"]["max_m2"]:
                 ev.add("4.4", f"стекло {area:.2f} м²", path, fix="разделите импостом")
             thin = [x for x in g.panes if not x.tempered and not x.triplex]
@@ -158,33 +195,76 @@ def check_all(ev) -> None:
                 ev.add("4.8", "одинарное стекло в тёплой системе", path)
         if cell.get("mosquito") and cell.get("type") not in ("sash", "door_sash"):
             ev.add("9.1", "москитная сетка на глухой части", path, fix="уберите сетку или сделайте створку")
+        # ---- раскладка (5.20–5.22) ----
+        m = cell.get("muntins")
+        if m:
+            if cell.get("type") == "panel" or g is None:
+                ev.add("5.21", "раскладка на глухой панели", path, fix="уберите раскладку или поставьте стекло")
+            elif m.get("kind", "inner") == "inner" and m.get("pattern") != "decor" and isinstance(g, Glass):
+                cham = max((sp["mm"] for sp in g.spacers), default=0)
+                need = cat.rules["5.20"]["params"]["min_chamber_mm"]
+                if cham < need:
+                    ev.add("5.20", f"стеклопакет {g.formula}: камера {cham} мм, нужно ≥ {need} мм", path,
+                           fix="накладная раскладка (overlay) или стеклопакет с рамкой 12+ мм")
+            if m.get("pattern") != "decor" and not ev.has("5.21"):
+                lay = muntin_layout(cg, m)
+                mn = cat.rules["5.22"]["params"]["min_piece_mm"]
+                if lay["min_piece"] is not None and lay["min_piece"] < mn:
+                    ev.add("5.22", f"кусок прутка {lay['min_piece']:.0f} мм < {mn} мм", path,
+                           fix="меньше прутков или шире ячейка")
         if not cg.opening:
             continue
         # ---- створка ----
         opening = cell.get("open", "turn")
+        if "folding" in cg.sides.values():
+            opening = "folding"
         hinge = cell.get("hinge", "left")
-        if opening == "tilt" and hinge != "bottom" or opening in ("turn", "tilt_turn") and hinge in ("top", "bottom"):
+        if opening == "hs" and not p.get("hs"):
+            ev.add("7.20", f"система {ev.setup['system']} без подъёмно-сдвижного (HS)", path,
+                   fix="PSK или раздвижная, либо система с HS (тёплый алюминий, 70-мм ПВХ)")
+        mq = mosquito_type(cell)
+        if mq in ("pleated", "door") and cell.get("type") != "door_sash" \
+                and cg.sash.w < cat.rules["9.22"]["params"]["wide_mm"]:
+            ev.add("9.22", f"сетка «{mq}» на окне {cg.sash.w:.0f} мм", path, fix="рамочная сетка или на двери / проёме от 1200 мм")
+        if opening in KIT_OPENINGS:
+            pass
+        elif opening == "tilt" and hinge != "bottom" or opening in ("turn", "tilt_turn") and hinge in ("top", "bottom") \
+                or opening == "top_hung" and hinge != "top":
             ev.add("6.3", f"открывание «{opening}» с петлями «{hinge}»", path)
-        key = "door" if cell.get("type") == "door_sash" and ev.kind == "door" else ("shtulp" if cg.sides.get("left") == "shtulp" or cg.sides.get("right") == "shtulp" else opening)
+        if cg.shaped:
+            allowed = shaped_openings(ev, cg)
+            if opening not in allowed:
+                ev.add("4.20", f"«{opening}» в фигурной ячейке; можно: {', '.join(allowed)}", path,
+                       fix="поворотная или откидная створка, или глухая часть")
+            else:
+                ev.add("4.21", "фигурная створка: спецфурнитура в спецификации", path)
+        if opening == "pivot":
+            p22 = cat.rules["4.22"]["params"]
+            if cg.sash.w > p22["max_w"] or cg.sash.h > p22["max_h"]:
+                ev.add("4.22", f"среднеподвесная створка {cg.sash.w:.0f}×{cg.sash.h:.0f} мм больше "
+                               f"{p22['max_w']}×{p22['max_h']}", path, fix="разделите импостом")
+        key = opening if opening in KIT_OPENINGS else "door" if cell.get("type") == "door_sash" and ev.kind == "door" else ("shtulp" if cg.sides.get("left") == "shtulp" or cg.sides.get("right") == "shtulp" else opening)
         L = lim.get(key) or lim.get(opening) or {}
         sw, sh = cg.sash.w, cg.sash.h
         maxw = L.get("w", [0, 1e9])[1]
         maxh = L.get("h", [0, 1e9])[1]
         pw = p.get("max_window_sash_mm") if cell.get("type") == "sash" else p.get("max_door_sash_mm")
-        if pw and (cell.get("type") == "door_sash" or opening in ("turn", "tilt_turn")):   # уровень 2: паспорт строже (не для фрамуг)
+        if pw and opening not in KIT_OPENINGS and (cell.get("type") == "door_sash" or opening in ("turn", "tilt_turn")):   # уровень 2: паспорт строже (не для фрамуг)
             maxw, maxh = min(maxw, pw[0]), min(maxh, pw[1])
         if L:
             if sw < L["w"][0] or sh < L["h"][0]:
                 ev.add("2.1", f"створка {sw:.0f}×{sh:.0f} мм меньше {L['w'][0]}×{L['h'][0]}", path)
             area = sw * sh / 1e6
-            if sw > maxw or sh > maxh or (L.get("max_m2") and area > L["max_m2"]):
+            if ev.has("4.22") and any(v.code == "4.22" and v.path == path for v in ev.violations):
+                pass
+            elif sw > maxw or sh > maxh or (L.get("max_m2") and area > L["max_m2"]):
                 ev.add("2.2", f"створка {sw:.0f}×{sh:.0f} мм ({area:.2f} м²), предел {maxw:.0f}×{maxh:.0f}"
                               + (f", {L['max_m2']} м²" if L.get("max_m2") else ""), path, fix="разделите импостом")
             elif sw > 0.9 * maxw or sh > 0.9 * maxh:
                 ev.add("2.4", f"створка {sw:.0f}×{sh:.0f} у предела {maxw:.0f}×{maxh:.0f}", path)
             if L.get("h_le_w") and sh / sw > L["h_le_w"] or L.get("w_le_h") and sw / sh > L["w_le_h"]:
                 ev.add("2.3", f"пропорция створки {sw:.0f}×{sh:.0f}", path)
-        if cell.get("type") == "door_sash" and ev.kind == "door":
+        if cell.get("type") == "door_sash" and ev.kind == "door" and opening not in KIT_OPENINGS:
             d1, d2 = cat.rules["8.1"]["params"], cat.rules["8.2"]["params"]
             if not d1["min"] <= sw <= d1["max"]:
                 ev.add("8.1", f"ширина дверной створки {sw:.0f} мм", path)
@@ -193,7 +273,10 @@ def check_all(ev) -> None:
             if "door" not in fs.get("openings", []):
                 ev.add("8.6", f"набор «{ev.setup['fittings']}» — оконная фурнитура", path)
         # ---- вес ----
-        if cg.weight_kg is not None:
+        if opening == "psk" and cg.weight_kg is not None and cg.weight_kg > cat.rules["3.20"]["params"]["max_kg"]:
+            ev.add("3.20", f"створка PSK {cg.weight_kg:.0f} кг больше {cat.rules['3.20']['params']['max_kg']} кг", path,
+                   fix="подъёмно-сдвижная (HS) или стекло легче")
+        if cg.weight_kg is not None and opening not in KIT_OPENINGS:
             sel = ev.fittings.get(path)
             heavy = sel and any(pt.option_group == "hinge" and "160" in pt.code for pt in sel.parts)
             limit = (fs.get("max_sash_kg_heavy") if heavy else fs.get("max_sash_kg")) or weights["fitting_limits_kg"]["standard"]
@@ -214,6 +297,16 @@ def check_all(ev) -> None:
                     ev.add("6.6", msg, path)
                 else:
                     ev.add(code, msg, path)
+
+    # ---- расширитель на стороне со створкой (9.23) ----
+    for a in ev.doc.get("addons") or []:
+        if a.get("type") != "extender":
+            continue
+        sides = ("top", "bottom", "left", "right") if a.get("side") == "all" else (a.get("side"),)
+        hit = [cg.path or "корень" for cg in cells if cg.opening and any(cg.sides.get(sd) == "frame" for sd in sides)]
+        if hit:
+            ev.add("9.23", f"расширитель {a.get('size_mm', '')} мм ({a.get('side')}) у створки {', '.join(hit)}",
+                   fix="проверьте открывание створки над расширителем")
 
     # ---- армирование ПВХ ----
     if ev.material == "pvc" and p.get("reinforce") == "always":

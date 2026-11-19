@@ -19,10 +19,12 @@ pytestmark = pytest.mark.skipif(not ADMIN, reason="OYNA_TEST_DSN не задан
 @pytest.fixture(scope="module")
 def client():
     import psycopg
-    with psycopg.connect(ADMIN, autocommit=True) as c:
-        c.execute("DROP DATABASE IF EXISTS oyna_test")
-        c.execute("CREATE DATABASE oyna_test")
-    dsn = ADMIN.rsplit("dbname=", 1)[0] + "dbname=oyna_test"
+    admin = ADMIN.rsplit("dbname=", 1)[0] + "dbname=postgres" if "dbname=" in ADMIN else ADMIN  # нельзя удалить базу, к которой подключён
+    db = os.environ.get("OYNA_TEST_DB", "oyna_test")       # своя база, если тесты гоняют параллельно
+    with psycopg.connect(admin, autocommit=True) as c:
+        c.execute(f'DROP DATABASE IF EXISTS "{db}"')
+        c.execute(f'CREATE DATABASE "{db}"')
+    dsn = ADMIN.rsplit("dbname=", 1)[0] + f"dbname={db}"
     with psycopg.connect(dsn, autocommit=True) as c:
         c.execute((ROOT / "oyna_data/schema.sql").read_text())
     subprocess.run([sys.executable, str(ROOT / "oyna_data/seed_import.py"), dsn], check=True, capture_output=True)

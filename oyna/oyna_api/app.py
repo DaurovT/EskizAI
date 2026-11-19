@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -77,8 +77,12 @@ def _bad(e: Exception):
 # ---------------- позиция ----------------
 @app.post("/oyna/positions/from-template", tags=["позиция"])
 def from_template(body: FromTemplateIn, cx: Ctx = Depends(ctx)):
+    """Системный шаблон (T01…) или свой шаблон цеха (uuid из /oyna/company/templates)."""
+    from .templates import own_template
+    own = own_template(cx.company_id, body.template) if body.template not in CAT.templates else None
     try:
-        doc = commands.create_from_template(CAT, body.template, body.w, body.h, setup=body.setup, room=body.room)
+        doc = commands.create_from_template(CAT, body.template, body.w, body.h, setup=body.setup, room=body.room,
+                                            template=own)
     except CommandError as e:
         _bad(e)
     return {"doc": doc, "result": validate(doc, CAT, cx.company)}
@@ -121,29 +125,43 @@ def alts(body: AltIn, cx: Ctx = Depends(ctx)):
 
 
 # ---------------- справочники ----------------
-CATEGORY = {"window": "window", "balcony_block": "balcony", "door": "door", "sliding": "sliding", "assembly": "assembly"}
+CATEGORY = {"window": "window", "balcony_block": "balcony", "door": "door", "sliding": "sliding", "assembly": "corner"}
+
+
+def template_row(t: dict) -> dict:
+    """Шаблон для экрана S07: category и short — из templates.json; ready — ядро считает (раздвижные — после MVP)."""
+    root = t["root"]
+    fixed = []
+
+    def walk(node, path=""):
+        for i, part in enumerate(node.get("parts", [])):
+            pp = f"{path}.{i}" if path else str(i)
+            if isinstance(part.get("size"), (int, float)):
+                fixed.append({"path": pp, "size": part["size"]})
+            if "node" in part:
+                walk(part["node"], pp)
+    walk(root)
+    ready = t.get("ready", "sliding" not in root)
+    row = {**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")}, "short": t.get("short", t["name"]),
+           "category": t.get("category") or CATEGORY.get(t["kind"], t["kind"]), "ready": bool(ready),
+           "fixed_parts": fixed, "root": root}                # дерево — миниатюра рисуется на телефоне без запроса
+    if t.get("shape"):
+        row["shape"], row["shape_params"] = t["shape"], t.get("shape_params") or {}
+    return row
 
 
 @app.get("/oyna/templates", tags=["справочники"])
-def templates():
-    """ready = ядро считает этот шаблон (раздвижные, составные, арки — после MVP); fixed — зафиксированные части."""
-    out = []
-    for t in CAT.templates.values():
-        root = t["root"]
-        ready = not any(k in root for k in ("sliding", "assembly")) and root.get("shape") in (None, "rect")
-        fixed = []
-        def walk(node, path=""):
-            for i, part in enumerate(node.get("parts", [])):
-                pp = f"{path}.{i}" if path else str(i)
-                if isinstance(part.get("size"), (int, float)):
-                    fixed.append({"path": pp, "size": part["size"]})
-                if "node" in part:
-                    walk(part["node"], pp)
-        walk(root)
-        out.append({**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")}, "short": t.get("short", t["name"]),
-                    "category": CATEGORY.get(t["kind"], t["kind"]), "ready": ready, "fixed_parts": fixed,
-                    "root": t["root"]})                    # дерево — миниатюра рисуется на телефоне без запроса
-    return out
+def templates(request: Request, authorization: str | None = Header(None), x_company: str | None = Header(None),
+              x_role: str | None = Header(None)):
+    """Шаблоны: свои шаблоны цеха первыми (own: true, если вошли в цех), затем системные.
+    category (window, door, balcony, sliding, shaped, muntins, corner, facade), short, ready,
+    shape/shape_params у фигурных, root.assembly у составных."""
+    from .templates import own_templates
+    try:
+        cid = ctx(request, authorization=authorization, x_company=x_company, x_role=x_role).company_id
+    except HTTPException:                                # без входа — только системные
+        cid = None
+    return own_templates(cid) + [template_row(t) for t in CAT.templates.values()]
 
 
 @app.get("/oyna/systems", tags=["справочники"])
@@ -268,13 +286,21 @@ from .auth import router as _auth_router  # noqa: E402
 from .catalog import load_overrides, router as _catalog_router  # noqa: E402
 from .company import router as _company_router  # noqa: E402
 from .docs import router as _docs_router  # noqa: E402
+from .prices import router as _prices_router  # noqa: E402
+from .cabinet import router as _cabinet_router  # noqa: E402
+from .templates import router as _templates_router  # noqa: E402
 
 app.include_router(_auth_router)
 app.include_router(_company_router)
+app.include_router(_prices_router)
 app.include_router(_catalog_router)
 app.include_router(_docs_router)
+app.include_router(_cabinet_router)
+app.include_router(_templates_router)
 
 
 @app.on_event("startup")
 def _startup():
+    from .migrate import migrate
+    migrate()                                            # новые таблицы и колонки schema.sql на живую базу
     load_overrides()

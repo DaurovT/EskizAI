@@ -1,0 +1,24 @@
+{
+  "_note": "Цвет профиля в массе (docs/shapes_contract.md §8): ПВХ, окрашенный в массе, и покраска алюминия. Это НЕ ламинация (lam_out / lam_in — плёнки из decors.json) и НЕ ценовые группы прайса (systems.colors). Наценка к цене белого профиля — позиции роли profile_color в catalog_items.csv (variant в колонке type_ru). Доступность по системам — ДЕМО по бренду: уточнить у поставщиков (правило 2.20).",
+  "colors": [
+    {"id": "white", "name_ru": "Белый", "name_uz": "Oq", "material": ["pvc", "alu"], "hex": "#F4F4F2"},
+    {"id": "cream", "name_ru": "Слоновая кость", "name_uz": "Fil suyagi", "material": ["pvc"], "hex": "#EFE6CF"},
+    {"id": "brown", "name_ru": "Коричневый в массе", "name_uz": "Jigarrang", "material": ["pvc"], "hex": "#5A3A26"},
+    {"id": "grey", "name_ru": "Серый в массе", "name_uz": "Kulrang", "material": ["pvc"], "hex": "#8A8D8F"},
+    {"id": "anthracite", "name_ru": "Антрацит в массе", "name_uz": "Antratsit", "material": ["pvc"], "hex": "#383E42"},
+    {"id": "ral", "name_ru": "Покраска по RAL", "name_uz": "RAL bo'yicha bo'yoq", "material": ["alu"], "hex": null,
+     "note": "код: ral:<номер>, например ral:9016, ral:8017"},
+    {"id": "anodized", "name_ru": "Анодирование", "name_uz": "Anodlash", "material": ["alu"], "hex": "#B8B6B0"}
+  ],
+  "availability": {
+    "default": {"pvc": ["white"], "alu": ["white", "ral", "anodized"]},
+    "brands": {
+      "pvc": {
+        "Akfa": ["white", "cream", "brown", "grey", "anthracite"],
+        "Engelberg": ["white", "cream", "brown"],
+        "Ekopen": ["white", "brown"]
+      }
+    },
+    "systems": {}
+  }
+}

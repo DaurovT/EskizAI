@@ -265,10 +265,34 @@ class Ctx:
 DEMO, REAL = Company.demo(), Company()
 
 
-def ctx(authorization: str | None = Header(None), x_company: str | None = Header(None),
+# веб-кабинет цен (/cabinet): токен в httpOnly-cookie, защита от CSRF — double-submit (cookie + заголовок) и Origin
+ACCESS_COOKIE, REFRESH_COOKIE, CSRF_COOKIE, CSRF_HEADER = "oyna_at", "oyna_rt", "oyna_csrf", "x-csrf-token"
+SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def check_csrf(request: Request) -> None:
+    """Изменяющий запрос с cookie-сессией: заголовок X-CSRF-Token = cookie oyna_csrf, Origin (если есть) — свой хост."""
+    if request.method in SAFE_METHODS:
+        return
+    origin = request.headers.get("origin")
+    if origin and origin != "null":
+        from urllib.parse import urlsplit
+        if urlsplit(origin).netloc.lower() != (request.headers.get("host") or "").lower():
+            raise HTTPException(403, "Запрос с чужого сайта")
+    elif origin == "null":
+        raise HTTPException(403, "Запрос с чужого сайта")
+    cookie, header = request.cookies.get(CSRF_COOKIE) or "", request.headers.get(CSRF_HEADER) or ""
+    if not cookie or not hmac.compare_digest(cookie, header):
+        raise HTTPException(403, "Обновите страницу кабинета (CSRF)")
+
+
+def ctx(request: Request, authorization: str | None = Header(None), x_company: str | None = Header(None),
         x_role: str | None = Header(None)) -> Ctx:
-    """Bearer-токен → цех и роль из базы. Без токена в dev — заголовки X-Company / X-Role."""
+    """Bearer-токен → цех и роль из базы. Без токена — cookie кабинета (с проверкой CSRF). В dev — X-Company / X-Role."""
     s = settings()
+    if not (authorization and authorization.startswith("Bearer ")) and request.cookies.get(ACCESS_COOKIE):
+        check_csrf(request)
+        authorization = "Bearer " + request.cookies[ACCESS_COOKIE]
     if authorization and authorization.startswith("Bearer "):
         p = decode(s, authorization[7:].strip(), "access")
         if not p.get("cid"):

@@ -143,12 +143,26 @@ def main(dsn: str) -> None:
 
         # шаблоны
         for t in json.load(open(HERE / "templates.json", encoding="utf-8"))["templates"]:
-            cur.execute(
-                """INSERT INTO templates (id, company_id, name, kind, default_w, default_h, root)
-                   VALUES (%s,NULL,%s,%s,%s,%s,%s) ON CONFLICT (id) DO NOTHING""",
+            cur.execute(                                   # системные шаблоны обновляются (форма, категория, short — в data)
+                """INSERT INTO templates (id, company_id, name, kind, default_w, default_h, root, data)
+                   VALUES (%s,NULL,%s,%s,%s,%s,%s,%s)
+                   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind, default_w = EXCLUDED.default_w,
+                     default_h = EXCLUDED.default_h, root = EXCLUDED.root, data = EXCLUDED.data
+                   WHERE templates.company_id IS NULL""",
                 (t["id"], t["name"], t["kind"], t["default_w"], t["default_h"],
-                 json.dumps(t["root"], ensure_ascii=False)),
+                 json.dumps(t["root"], ensure_ascii=False), json.dumps(t, ensure_ascii=False)),
             )
+        # новые работы (гибка профиля, shapes_contract.md §7) — уже созданному демо-цеху, без перезаписи его ставок
+        NEW_WORKS = {"work_bend"}
+        cur.execute("SELECT id FROM companies WHERE name = %s ORDER BY created_at LIMIT 1",
+                    (json.load(open(HERE / "demo_company.json", encoding="utf-8"))["company"]["name"],))
+        row = cur.fetchone()
+        if row:
+            for w in csv.DictReader(open(HERE / "works_defaults.csv", encoding="utf-8")):
+                if w["work_code"] in NEW_WORKS and w["demo_price_sum"] != "":
+                    cur.execute("""INSERT INTO work_rates (company_id, work_code, unit, price_sum) VALUES (%s,%s,%s,%s)
+                                   ON CONFLICT (company_id, work_code) DO NOTHING""",
+                                (row[0], w["work_code"], w["unit"], float(w["demo_price_sum"])))
         # демо-цех: настройки, работы (ДЕМО-цены), комплектации — только если его ещё нет
         demo = json.load(open(HERE / "demo_company.json", encoding="utf-8"))
         c = demo["company"]

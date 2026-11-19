@@ -16,8 +16,8 @@ import { C } from '@/theme';
 import { Icon } from '@/ui/Icon';
 import { Body, Button, Dock, Empty, Field, LoadError, Loading, Note, Row, Screen, Seg, TopBar, Txt } from '@/ui/kit';
 import {
-  calcDoc, cellAt, cellTitle, ConflictError, Decor, FittingSet, fittingLabel, glassLabel, GlassParse, GlassPreset, OptCard, Pill, plural,
-  posStore, refs, sendCommands, st, SystemRow, systemName, systemSub, Tag, usePosition, useToast,
+  calcDoc, cellAt, cellTitle, ConflictError, Decor, FittingSet, fittingLabel, glassLabel, GlassParse, GlassPreset, lamLabel, OptCard, Pill, plural,
+  glassDecorLabel, posStore, profileColorLabel, refs, sendCommands, st, SystemRow, systemName, systemSub, Tag, usePosition, useToast,
 } from './parts';
 
 type Scope = 'order' | 'position' | 'cell';
@@ -138,7 +138,6 @@ function OrderScope({ order, toast }: { order: string; toast: (t: string) => voi
   };
 
   const sys = names?.systems.find((s) => s.code === sel.setup.system);
-  const dec = (d?: string) => names?.decors.find((x) => x.id === d)?.name_ru ?? d ?? 'белый';
   return (
     <>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -158,7 +157,8 @@ function OrderScope({ order, toast }: { order: string; toast: (t: string) => voi
       </View>
       <View style={st.sheetBox}>
         <Line first label="Система" value={systemName(sys, sel.setup.system)} sub={systemSub(sys)} />
-        <Line label="Декор снаружи / внутри" value={`${dec(sel.setup.color_out)} / ${dec(sel.setup.color_in).toLowerCase()}`} />
+        <Line label="Цвет профиля" value={profileColorLabel(sel.setup.profile_color)} />
+        <Line label="Ламинация снаружи / внутри" value={`${lamLabel(sel.setup, 'outside', names?.decors)} / ${lamLabel(sel.setup, 'inside', names?.decors).toLowerCase()}`} />
         <Line label="Стеклопакет" value={glassLabel(sel.setup.glass, names?.glass) || 'по системе'} sub={glassSub(sel.setup.glass, names?.glass)} />
         <Line label="Фурнитура" value={fittingLabel(names?.fittings.find((f) => f.code === sel.setup.fittings), sel.setup.fittings)[0] || 'по пазу системы'} />
       </View>
@@ -192,7 +192,6 @@ function PositionScope({ order, p, path, cellScope, onCommand, onFormula }: {
   if (cellScope && !cell) return <Empty title="Ячейки больше нет" text="Её объединили или разделили — выберите заново на схеме" />;
 
   const sys = names?.systems.find((x) => x.code === s.system);
-  const decor = (d?: string) => names?.decors.find((x) => x.id === d)?.name_ru ?? d ?? '';
   const price = (
     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingHorizontal: 8, flexWrap: 'wrap' }}>
       <Txt size={14} color={C.muted}>{cellScope && path !== undefined ? `${cellTitle(p.doc, path)} · ` : ''}{p.room || 'Позиция'} · цена</Txt>
@@ -217,9 +216,15 @@ function PositionScope({ order, p, path, cellScope, onCommand, onFormula }: {
         <View style={st.sheetBox}>
           <Line first label="Стеклопакет" value={own ? glassLabel(own, names?.glass) : `как у изделия · ${glassLabel(s.glass, names?.glass)}`}
             sub={glassSub(own ?? s.glass, names?.glass)} onPress={() => alt('glass', path)} />
+          {cell.type !== 'panel' || cell.fill?.kind === 'glass' ? (
+            <Line label="Декор стекла" value={glassDecorLabel(cell)} onPress={() => alt('glass_decor', path)} />
+          ) : null}
           {own ? <Row label="Вернуть стекло изделия" onPress={() => void onCommand([{ cmd: 'set_fill', path, fill: null }], 'Стекло как у изделия')} chevron={false} /> : null}
           {open ? <Line label="Ручка" value={opt('handle')} onPress={() => alt('option:handle', path)} /> : null}
           {open ? <Line label="Петли" value={opt('hinge')} sub={geo?.weight_kg ? `створка ${num(geo.weight_kg, 1)} кг` : 'авто по весу'} onPress={() => alt('option:hinge', path)} /> : null}
+          {open ? EXTRA_OPTIONS.map((o) => (
+            <Line key={o.group} label={o.title} value={cell.options?.[o.group] ?? s.options?.[o.group] ? opt(o.group) : 'нет'} onPress={() => alt(`option:${o.group}`, path)} />
+          )) : null}
         </View>
         <FormulaCard onPress={onFormula} />
         {calcErr ? <Note style={{ paddingHorizontal: 8 }}>{calcErr}</Note> : null}
@@ -233,14 +238,45 @@ function PositionScope({ order, p, path, cellScope, onCommand, onFormula }: {
       {price}
       <View style={st.sheetBox}>
         <Line first label="Система" value={systemName(sys, s.system) || '…'} sub={systemSub(sys)} onPress={() => alt('system')} />
-        <Line label="Декор снаружи" value={decor(s.color_out) || '…'} onPress={() => alt('decor_out')} />
-        <Line label="Декор внутри" value={decor(s.color_in) || '…'} onPress={() => alt('decor_in')} />
+        <Line label="Цвет профиля" value={profileColorLabel(s.profile_color)} onPress={() => alt('profile_color')} />
+        <Line label="Ламинация снаружи" value={lamLabel(s, 'outside', names?.decors)} onPress={() => alt('lam_out')} />
+        <Line label="Ламинация внутри" value={lamLabel(s, 'inside', names?.decors)} onPress={() => alt('lam_in')} />
         <Line label="Стеклопакет" value={glassLabel(s.glass, names?.glass) || '…'} sub={glassSub(s.glass, names?.glass)} onPress={() => alt('glass')} />
         <Line label="Фурнитура" value={fit[0] || '…'} sub={fit[1]} onPress={() => alt('fittings')} />
+      </View>
+      <View style={[st.sheetBox, { paddingHorizontal: 16, paddingVertical: 12, gap: 8 }]}>
+        <Txt size={14} color={C.muted}>Уплотнитель</Txt>
+        <SmallChoice value={s.seal_color ?? 'black'} onChange={(v) => void onCommand([{ cmd: 'set_setup', seal_color: v }], 'Уплотнитель изменён')}
+          items={[{ value: 'black', title: 'Чёрный' }, { value: 'grey', title: 'Серый' }]} />
+        <Txt size={14} color={C.muted}>Штапик</Txt>
+        <SmallChoice value={s.bead ?? 'square'} onChange={(v) => void onCommand([{ cmd: 'set_setup', bead: v }], 'Штапик изменён')}
+          items={[{ value: 'square', title: 'Прямой' }, { value: 'round', title: 'Округлый' }, { value: 'profiled', title: 'Фигурный' }]} />
       </View>
       <FormulaCard onPress={onFormula} />
       {calcErr ? <Note style={{ paddingHorizontal: 8 }}>{calcErr}</Note> : null}
     </>
+  );
+}
+
+/** Опции створки (§9.6) кроме ручки и петель — вариант выбирается листом замен. */
+const EXTRA_OPTIONS = [
+  { group: 'child_lock', title: 'Детский замок' }, { group: 'micro_vent', title: 'Микропроветривание' },
+  { group: 'limiter', title: 'Ограничитель' }, { group: 'comb', title: 'Гребёнка' },
+];
+
+function SmallChoice({ items, value, onChange }: { items: { value: string; title: string }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+      {items.map((it) => {
+        const on = it.value === value;
+        return (
+          <Pressable key={it.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => !on && onChange(it.value)}
+            style={({ pressed }) => ({ height: 38, paddingHorizontal: 14, borderRadius: 19, justifyContent: 'center', backgroundColor: on ? C.dark : C.soft, opacity: pressed ? 0.8 : 1 })}>
+            <Txt size={15} w={500} color={on ? '#fff' : C.ink}>{it.title}</Txt>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -281,26 +317,34 @@ function describe(formula: string): string {
   const parts = formula.toLowerCase().split('-');
   const panes = parts.filter((_, i) => i % 2 === 0).map((p) => {
     const tri = /^(\d+(?:\.\d+)?)\.(\d+(?:\.\d+)?)\.(\d+)/.exec(p);
-    if (tri) return `триплекс ${tri[1]}.${tri[2]}.${tri[3]}`;
+    if (tri) return `${p.endsWith('p4a') ? 'бронированное' : 'триплекс'} ${tri[1]}.${tri[2]}.${tri[3]}`;
     const m = /^(\d+(?:[.,]\d+)?)([a-z]*)$/.exec(p);
     if (!m) return p;
     const w = PANE_WORD.find(([re]) => re.test(m[2]));
     return `${w ? w[1] : 'обычное'} ${m[1]} мм`;
   });
-  const argon = parts.some((p, i) => i % 2 === 1 && p.endsWith('ar'));
-  return panes.join(' + ') + (argon ? ' · аргон' : '');
+  const argon = parts.some((p, i) => i % 2 === 1 && p.includes('ar'));
+  const warm = parts.some((p, i) => i % 2 === 1 && (p.includes('tgi') || p.includes('warm')));
+  return panes.join(' + ') + (argon ? ' · аргон' : '') + (warm ? ' · тёплая рамка' : '');
 }
 
 const HELP: { add: string; title: string }[] = [
   { add: 'i', title: 'i энергосбер.' }, { add: 't', title: 't закалённое' }, { add: 'tn', title: 'tn тонир.' },
-  { add: 'm', title: 'm матовое' }, { add: 'ar', title: 'ar аргон' }, { add: '4.4.1', title: '4.4.1 триплекс' },
+  { add: 'm', title: 'm матовое' }, { add: 'ar', title: 'Аргон' }, { add: 'tgi', title: 'Тёплая рамка' },
+  { add: '3.3.1', title: 'Триплекс 3.3.1' }, { add: '4.4.1', title: 'Триплекс 4.4.1' }, { add: 'p4a', title: 'Бронированное P4A' },
 ];
-/** Подсказка-чип: суффикс к последнему стеклу, «ar» — к последней рамке, триплекс — вместо последнего стекла. */
+/** Подсказка-чип: суффикс к последнему стеклу; аргон и тёплая рамка — к рамкам; триплекс — вместо последнего стекла,
+ * бронированное — триплекс 4.4.4p4a вместо первого (снаружи). */
 function addHelp(f: string, add: string): string {
   const parts = f.split('-');
-  if (add === '4.4.1') { parts[parts.length - 1] = '4.4.1'; return parts.join('-'); }
+  if (add === '4.4.1' || add === '3.3.1') { parts[parts.length - 1] = add; return parts.join('-'); }
+  if (add === 'p4a') { parts[0] = '4.4.4p4a'; return parts.join('-'); }
   if (add === 'ar') {
-    for (let i = parts.length - 2; i >= 1; i -= 2) if (!parts[i].endsWith('ar')) { parts[i] += 'ar'; break; }
+    for (let i = parts.length - 2; i >= 1; i -= 2) if (!parts[i].includes('ar')) { parts[i] = parts[i].replace(/^(\d+)/, '$1ar'); break; }
+    return parts.join('-');
+  }
+  if (add === 'tgi') {
+    for (let i = 1; i < parts.length; i += 2) if (!parts[i].includes('tgi') && !parts[i].includes('warm')) parts[i] += 'tgi';
     return parts.join('-');
   }
   const last = parts.length - 1;

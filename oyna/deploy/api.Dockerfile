@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends fonts-dejavu-co
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /app
 COPY pyproject.toml /app/
-RUN pip install "fastapi>=0.110" "uvicorn>=0.29" "psycopg[binary]>=3.1" "pyjwt>=2.8" "httpx>=0.27" "reportlab>=4" "svglib>=1.5"
+RUN pip install "fastapi>=0.110" "uvicorn>=0.29" "psycopg[binary]>=3.1" "pyjwt>=2.8" "httpx>=0.27" "reportlab>=4" "svglib>=1.5" "openpyxl>=3.1"
 COPY oyna_core /app/oyna_core
 COPY oyna_api /app/oyna_api
 COPY oyna_data /app/oyna_data

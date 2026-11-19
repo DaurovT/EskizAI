@@ -6,26 +6,30 @@
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, useWindowDimensions, View } from 'react-native';
+import { Alert, Pressable, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { api, ApiError, errorText } from '@/api/http';
 import type { Doc, OrderFull, Setup, Template, Validation, Violation } from '@/api/types';
 import { num } from '@/lib/format';
-import { layout } from '@/lib/tree';
+import { apply, docFromTemplate, layout, rememberTemplates } from '@/lib/tree';
 import { useLoad } from '@/lib/useLoad';
 import { offline, uuid } from '@/offline/store';
-import { C } from '@/theme';
+import { C, F } from '@/theme';
+import { Icon } from '@/ui/Icon';
 import { Body, Button, Empty, ErrorText, Field, IconButton, LoadError, Loading, Screen, Seg, Txt } from '@/ui/kit';
 import { Schema } from '@/ui/Schema';
 import { Ban, CompanyOut, KbSheet, Tag, WindowThumb } from './parts';
 
-type Tab = 'all' | 'window' | 'balcony' | 'door' | 'mine';
+/** Категории шаблонов (shapes_contract §6); «Мои» — свои шаблоны цеха (§9.7), первыми. */
+type Tab = 'mine' | 'all' | 'window' | 'door' | 'balcony' | 'sliding' | 'shaped' | 'muntins' | 'corner' | 'facade';
 const TABS: { value: Tab; title: string }[] = [
-  { value: 'all', title: 'Все' }, { value: 'window', title: 'Окна' }, { value: 'balcony', title: 'Балконные' },
-  { value: 'door', title: 'Двери' }, { value: 'mine', title: 'Мои' },
+  { value: 'mine', title: 'Мои' }, { value: 'all', title: 'Все' }, { value: 'window', title: 'Окна' }, { value: 'door', title: 'Двери' },
+  { value: 'balcony', title: 'Балкон' }, { value: 'sliding', title: 'Раздвижные' }, { value: 'shaped', title: 'Фигурные' },
+  { value: 'muntins', title: 'С раскладкой' }, { value: 'corner', title: 'Угловые и эркеры' }, { value: 'facade', title: 'Витражи' },
 ];
-const inTab = (t: Template, tab: Tab) =>
-  tab === 'all' || (tab === 'window' ? ['window', 'sliding', 'assembly'].includes(t.category) : t.category === tab);
+/** старые категории API: assembly → угловые и эркеры */
+const catOf = (t: Template): Tab => (t.category === 'assembly' ? 'corner' : (t.category as Tab));
+const inTab = (t: Template, tab: Tab) => (tab === 'mine' ? !!t.own : tab === 'all' ? true : !t.own && catOf(t) === tab);
 
 const MIN = 200, MAX = 9000; // мм — отсечь опечатки; настоящие пределы проверяет сервер
 type FromTpl = { doc: Doc; result: Validation };
@@ -38,6 +42,7 @@ export default function Templates() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
   const [tab, setTab] = useState<Tab>('all');
+  const [q, setQ] = useState('');
   const [docs, setDocs] = useState<Record<string, Doc>>({ ...docCache });
   const [picked, setPicked] = useState<Template | null>(null);
   const [ctx, setCtx] = useState<{ setup?: Setup; kit?: string | null }>({});
@@ -46,6 +51,7 @@ export default function Templates() {
     try {
       const list = await api.get<Template[]>('/oyna/templates');
       listCache = list;
+      rememberTemplates(list);
       return list;
     } catch (e) {
       if (e instanceof ApiError && e.isNetwork && listCache) return listCache;
@@ -74,10 +80,11 @@ export default function Templates() {
     if (!data) return;
     let alive = true;
     const local: Record<string, Doc> = {};
-    for (const t of data as (Template & { root?: Doc['frame']['root'] })[]) {   // сервер отдаёт дерево — без запросов
-      if (t.root && !docCache[t.id]) {
-        docCache[t.id] = { kind: t.kind, qty: 1, frame: { w: t.default_w, h: t.default_h, shape: 'rect', root: t.root } };
-        local[t.id] = docCache[t.id];
+    rememberTemplates(data);
+    for (const t of data) {   // сервер отдаёт дерево и форму — миниатюра без запросов
+      if (!docCache[t.id]) {
+        const d = docFromTemplate(t);
+        if (d) { docCache[t.id] = d; local[t.id] = d; }
       }
     }
     if (Object.keys(local).length) setDocs((d) => ({ ...d, ...local }));
@@ -92,7 +99,17 @@ export default function Templates() {
   }, [data]);
 
   const back = () => (router.canGoBack() ? router.back() : router.replace(`/order/${id}`));
-  const list = (data ?? []).filter((t) => inTab(t, tab));
+  const needle = q.trim().toLowerCase();
+  const list = (data ?? []).filter((t) => (needle ? `${t.name} ${t.short ?? ''} ${t.id}`.toLowerCase().includes(needle) : inTab(t, tab)));
+  // табы только с шаблонами («Мои» и «Все» — всегда)
+  const tabs = TABS.filter((x) => x.value === 'mine' || x.value === 'all' || (data ?? []).some((t) => inTab(t, x.value)))
+    .map((x) => ({ ...x, count: x.value === 'all' ? undefined : (data ?? []).filter((t) => inTab(t, x.value)).length || undefined }));
+  const removeOwn = (t: Template) => Alert.alert(`Удалить шаблон «${t.short ?? t.name}»?`, 'Позиции из него останутся', [
+    { text: 'Отмена', style: 'cancel' },
+    { text: 'Удалить', style: 'destructive', onPress: () => {
+      api.del(`/oyna/company/templates/${t.id}`).then(() => { listCache = null; reload(); }).catch((e) => Alert.alert(errorText(e)));
+    } },
+  ]);
   const cardW = Math.floor((width - 24 - 16) / 3);
 
   return (
@@ -104,14 +121,21 @@ export default function Templates() {
       <Txt size={30} w={700} style={{ lineHeight: 36, letterSpacing: -0.75, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4 }}>Шаблоны</Txt>
       {!data && loading ? <Loading /> : !data ? <LoadError message={error ?? ''} onRetry={reload} /> : (
         <Body style={{ paddingTop: 6, gap: 10, paddingBottom: 32 }}>
-          <Seg chips items={TABS} value={tab} onChange={setTab} />
-          {tab === 'mine' ? (
-            <Empty title="Свои шаблоны — скоро" text="Частые изделия цеха можно будет сохранить как шаблон и собирать в одно нажатие" />
+          <View style={{ marginHorizontal: 12, height: 44, borderRadius: 14, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 }}>
+            <Icon name="search" size={20} color={C.faint} />
+            <TextInput value={q} onChangeText={setQ} placeholder="Арка, эркер, дверь…" placeholderTextColor={C.faint}
+              returnKeyType="search" autoCorrect={false} clearButtonMode="while-editing"
+              style={{ flex: 1, fontFamily: F.regular, fontSize: 16, color: C.ink, paddingVertical: 0 }} />
+          </View>
+          {!needle ? <Seg chips items={tabs} value={tab} onChange={setTab} /> : null}
+          {!list.length ? (
+            needle ? <Empty title="Ничего не нашли" text="Попробуйте другое слово" />
+              : <Empty title="Своих шаблонов пока нет" text="В редакторе: Ещё → Сохранить как шаблон. Частое изделие соберётся в одно нажатие" />
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12 }}>
               {list.map((t) => (
                 <Pressable key={t.id} accessibilityRole="button" accessibilityLabel={t.name} accessibilityState={{ disabled: !t.ready }}
-                  disabled={!t.ready} onPress={() => setPicked(t)}
+                  disabled={!t.ready} onPress={() => setPicked(t)} onLongPress={t.own ? () => removeOwn(t) : undefined}
                   style={({ pressed }) => [{ width: cardW, borderRadius: 22, backgroundColor: C.card, padding: 10, gap: 6, alignItems: 'center' },
                     { transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
                   <View style={{ height: 74, justifyContent: 'center', opacity: t.ready ? 1 : 0.45 }}>
@@ -120,7 +144,7 @@ export default function Templates() {
                   <View style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Txt size={14} w={600} center style={{ lineHeight: 18 }} color={t.ready ? C.ink : C.muted}>{t.short ?? t.name}</Txt>
                   </View>
-                  <Txt size={11} color={C.muted}>{t.id}</Txt>
+                  <Txt size={11} color={C.muted} lines={1}>{t.own ? 'свой' : t.id}</Txt>
                   {!t.ready ? <View style={{ position: 'absolute', top: 8, right: 8 }}><Tag kind="n" title="скоро" /></View> : null}
                 </Pressable>
               ))}
@@ -172,8 +196,11 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
     if (server?.key === key) return server.doc;
     const src = server?.doc ?? base;
     if (!src || !valid) return src;
-    return { ...src, ...(setup ? { setup } : {}), frame: { ...src.frame, w: wn, h: hn } };
-  }, [server, base, key, valid, wn, hn, setup]);
+    let d: Doc | null = null;
+    if (!server) d = docFromTemplate(t, wn, hn);           // до ответа сервера — шаблон в новом габарите (как ядро)
+    if (!d) { try { d = apply(src, [{ cmd: 'set_size', w: wn, h: hn }]); } catch { d = src; } }
+    return setup ? { ...d, setup } : d;
+  }, [server, base, key, valid, wn, hn, setup, t]);
 
   const fresh = server?.key === key;
   const vs = fresh ? server.violations : [];

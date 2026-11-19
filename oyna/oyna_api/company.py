@@ -18,6 +18,7 @@ from .auth import ROLES, Ctx, ctx, decode, issue, need_company, normalize_phone,
 from .settings import settings
 
 router = APIRouter(prefix="/oyna/company", tags=["цех"])
+PRICE_ROLES = ("owner", "manager")                    # кабинет цен (§10): цены, стекло, работы, поставщики, импорт
 
 FIELDS = ("demo_prices", "name", "phone", "inn", "address", "logo_url", "mode", "dealer_coef", "markup_kind", "markup_value", "usd_rate",
           "install_gap_mm", "rounding_sum", "lang_default", "skew_warn_mm", "waste_pct", "quote_price_check_days")
@@ -63,6 +64,8 @@ class CompanyPatch(BaseModel):
     waste_pct: float | None = Field(None, ge=0, le=50)
     quote_price_check_days: int | None = Field(None, ge=1, le=365)
     demo_prices: bool | None = None
+    markup_groups: dict[str, float] | None = Field(None, description="наценка по группам строк (§9.7): profile, glass, "
+                                                   "fittings, works, other; null — общая наценка")
 
 
 class Kit(BaseModel):
@@ -74,12 +77,26 @@ class PriceRow(BaseModel):
     item_id: str
     color: str
     price_sum: float | None = Field(..., description="None — убрать свою цену, вернуть базовую")
+    supplier_id: str | None = Field(None, description="цена поставщика (§9.7); None — основной прайс цеха")
 
 
 class MemberIn(BaseModel):
     phone: str
     role: Literal["owner", "manager", "measurer", "installer", "production"] = "measurer"
     discount_limit_pct: float = 0
+
+
+def check_markup_groups(groups: dict, kind: str | None = None) -> dict:
+    from oyna_core.groups import MARKUP_GROUPS
+    bad = set(groups) - set(MARKUP_GROUPS)
+    if bad:
+        raise HTTPException(422, f"группы наценки: {', '.join(MARKUP_GROUPS)}; неизвестные: {', '.join(sorted(bad))}")
+    if kind == "per_m2":
+        raise HTTPException(422, "наценка за м² — только общая")
+    for g, v in groups.items():
+        if v is None or not 0 <= float(v) <= (95 if kind == "margin" else 1000):
+            raise HTTPException(422, f"наценка «{g}»: от 0 до {95 if kind == 'margin' else 1000} %")
+    return {g: float(v) for g, v in groups.items()}
 
 
 def check_kit(setup: dict) -> list[str]:
@@ -107,14 +124,15 @@ def _out(c, cid: str) -> dict:
              for w in c.execute("SELECT * FROM work_rates WHERE company_id = %s", (cid,))}
     cat = _cat()
     defaults = {k: {"name": v["name"], "unit": v["unit"], "ref_price_sum": v.get("ref_price_sum") or None,
+                    "demo_price_sum": float(v["demo_price_sum"]) if v.get("demo_price_sum") else None,
                     "set": k in works, "price_sum": works.get(k, {}).get("price_sum")} for k, v in cat.works.items()}
     return {"company": store.jsonable(r), "works": defaults,
             "kits": [{"id": str(k["id"]), "name": k["name"], "setup": k["setup"]}
                      for k in c.execute("SELECT * FROM kits WHERE company_id = %s ORDER BY name", (cid,))],
             "systems": [x["system_code"] for x in c.execute("SELECT system_code FROM company_systems WHERE company_id = %s", (cid,))],
             "glass_prices": {x["glass_code"]: float(x["price_sum_m2"]) for x in c.execute(
-                "SELECT glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s", (cid,))},
-            "own_prices": c.execute("SELECT count(*) AS n FROM company_prices WHERE company_id = %s", (cid,)).fetchone()["n"],
+                "SELECT glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s AND supplier_id IS NULL", (cid,))},
+            "own_prices": len(store.current_prices(c, cid)[0]),
             "onboarding": {"works_missing": [k for k, v in defaults.items() if not v["set"] and k in (
                 "install", "dismantle", "slopes", "sill_install", "drip_install")],
                            "glass_missing": not c.execute("SELECT 1 FROM glass_prices WHERE company_id = %s LIMIT 1", (cid,)).fetchone()}}
@@ -156,7 +174,7 @@ def get_company(cx: Ctx = Depends(ctx)):
     with store.conn() as c:
         out = _out(c, cid)
         if cx.role != "owner":                           # наценка и себестоимость — только владельцу
-            for k in ("markup_kind", "markup_value", "dealer_coef"):
+            for k in ("markup_kind", "markup_value", "dealer_coef", "markup_groups"):
                 out["company"].pop(k, None)
         return out
 
@@ -166,8 +184,13 @@ def patch_company(body: CompanyPatch, cx: Ctx = Depends(ctx)):
     cid = need_company(cx); require(cx, "owner")
     data = body.model_dump(exclude_unset=True)          # явный null сбрасывает поле: usd_rate → курс ЦБ, logo_url, dealer_coef
     nullable = {"usd_rate", "logo_url", "dealer_coef", "phone", "inn", "address"}
-    data = {k: v for k, v in data.items() if v is not None or k in nullable}
+    data = {k: v for k, v in data.items() if v is not None or k in nullable | {"markup_groups"}}
     with store.conn() as c:
+        kind = data.get("markup_kind") or c.execute("SELECT markup_kind FROM companies WHERE id = %s", (cid,)).fetchone()["markup_kind"]
+        if data.get("markup_groups") is not None:
+            data["markup_groups"] = Jsonb(check_markup_groups(data["markup_groups"], kind))
+        elif kind == "per_m2" and "markup_kind" in data:
+            data["markup_groups"] = None                  # за м² — только общая наценка
         if data:
             c.execute(f"UPDATE companies SET {', '.join(f'{k} = %s' for k in data)} WHERE id = %s", list(data.values()) + [cid])
         return _out(c, cid)
@@ -175,7 +198,7 @@ def patch_company(body: CompanyPatch, cx: Ctx = Depends(ctx)):
 
 @router.put("/works", summary="Цены работ цеха")
 def put_works(body: dict[str, float | None], cx: Ctx = Depends(ctx)):
-    cid = need_company(cx); require(cx, "owner")
+    cid = need_company(cx); require(cx, *PRICE_ROLES)
     cat = _cat()
     unknown = [k for k in body if k not in cat.works]
     if unknown:
@@ -221,11 +244,16 @@ def put_systems(body: list[str], cx: Ctx = Depends(ctx)):
         return body
 
 
-@router.put("/glass-prices", summary="Прайс стекольщика: код пресета или формула → сум/м²")
-def put_glass_prices(body: dict[str, float | None], cx: Ctx = Depends(ctx)):
-    cid = need_company(cx); require(cx, "owner")
+@router.put("/glass-prices", summary="Прайс стекольщика: код пресета или формула → сум/м² (supplier_id — прайс поставщика)")
+def put_glass_prices(body: dict[str, float | None], supplier_id: str | None = None, cx: Ctx = Depends(ctx)):
+    cid = need_company(cx); require(cx, *PRICE_ROLES)
     cat = _cat()
     with store.conn() as c:
+        if supplier_id:
+            from .prices import own_supplier
+            own_supplier(c, cid, supplier_id)
+        from .prices import ensure_glass_types
+        ensure_glass_types(c, [k for k in body if k in cat.glass_presets])
         for key, price in body.items():
             if key not in cat.glass_presets:
                 try:
@@ -235,16 +263,20 @@ def put_glass_prices(body: dict[str, float | None], cx: Ctx = Depends(ctx)):
                 c.execute("INSERT INTO glass_types (code, formula, thickness_mm, glass_mm_total, weight_kg_m2) "
                           "VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
                           (key, key, int(parse(key, cat).thickness_mm), int(parse(key, cat).glass_mm_total), parse(key, cat).weight_kg_m2))
-            c.execute("DELETE FROM glass_prices WHERE company_id = %s AND glass_code = %s", (cid, key))
+            c.execute("DELETE FROM glass_prices WHERE company_id = %s AND glass_code = %s AND supplier_id IS NOT DISTINCT FROM %s",
+                      (cid, key, supplier_id))
             if price is not None:
-                c.execute("INSERT INTO glass_prices (company_id, glass_code, price_sum_m2, status, source) VALUES (%s,%s,%s,'от стекольщика','цех')",
-                          (cid, key, price))
+                c.execute("INSERT INTO glass_prices (company_id, glass_code, price_sum_m2, status, source, supplier_id) "
+                          "VALUES (%s,%s,%s,'от стекольщика','цех',%s)", (cid, key, price, supplier_id))
+        if supplier_id:
+            return {x["glass_code"]: float(x["price_sum_m2"]) for x in c.execute(
+                "SELECT glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s AND supplier_id = %s", (cid, supplier_id))}
         return _out(c, cid)["glass_prices"]
 
 
 @router.put("/glass-pricing", summary="Свои надбавки для формул стеклопакета (ключи glass_formula.json)")
 def put_glass_pricing(body: dict[str, float], cx: Ctx = Depends(ctx)):
-    cid = need_company(cx); require(cx, "owner")
+    cid = need_company(cx); require(cx, *PRICE_ROLES)
     keys = set(_cat().glass_formula["pricing_sum_m2"])
     bad = set(body) - keys
     if bad:
@@ -255,22 +287,22 @@ def put_glass_pricing(body: dict[str, float], cx: Ctx = Depends(ctx)):
     return body
 
 
-@router.put("/prices", summary="Цены цеха поверх базового прайса (FR-C4)")
+@router.put("/prices", summary="Цены цеха поверх базового прайса (FR-C4): каждая правка — версия цен (история)")
 def put_prices(body: list[PriceRow], cx: Ctx = Depends(ctx)):
-    cid = need_company(cx); require(cx, "owner")
+    cid = need_company(cx); require(cx, *PRICE_ROLES)
     ids = {it["item_id"] for it in _cat().items}
     bad = [r.item_id for r in body if r.item_id not in ids]
     if bad:
         raise HTTPException(422, f"нет в каталоге: {', '.join(bad[:10])}")
+    if any(r.price_sum is not None and r.price_sum < 0 for r in body):
+        raise HTTPException(422, "цена не может быть меньше нуля")
+    from .prices import price_rows, save_manual
     with store.conn() as c:
-        for r in body:
-            if r.price_sum is None:
-                c.execute("DELETE FROM company_prices WHERE company_id = %s AND item_id = %s AND color = %s", (cid, r.item_id, r.color))
-            else:
-                c.execute("""INSERT INTO company_prices (company_id, item_id, color, price_sum) VALUES (%s,%s,%s,%s)
-                             ON CONFLICT (company_id, item_id, color) DO UPDATE SET price_sum = EXCLUDED.price_sum, updated_at = now()""",
-                          (cid, r.item_id, r.color, r.price_sum))
-        return {"own_prices": c.execute("SELECT count(*) AS n FROM company_prices WHERE company_id = %s", (cid,)).fetchone()["n"]}
+        versions = save_manual(c, cid, cx.user_id, [r.model_dump() for r in body])
+        _, co = store.load_company(c, cid)
+        return {"own_prices": len(store.current_prices(c, cid)[0]), "versions": versions,
+                "rows": price_rows(co, [(r.item_id, r.color) for r in body],
+                                   next((r.supplier_id for r in body if r.supplier_id), None))}
 
 
 # ---------------- сотрудники (платная «Команда», PRD 3) ----------------

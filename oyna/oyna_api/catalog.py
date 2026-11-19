@@ -19,8 +19,11 @@ router = APIRouter(prefix="/oyna/catalog", tags=["каталог"])
 ROLES = ["frame", "sash", "mullion", "door_frame", "door_sash", "door_mullion", "shtulp", "threshold", "bead_single",
          "bead_igu", "bead_triple", "lambri", "reinforcement", "connector", "joint_profile", "coupling_profile",
          "thermo_insert", "fit_hinge", "fit_handle", "fit_lock", "fit_scissors", "fit_drive", "fit_set", "fit_cap", "seal",
-         "sill", "sill_cap", "mosquito_profile", "corner_cleat", "machine", "other"]
-UNITS = ["bar", "m", "kg", "pcs", "m2", "pack"]
+         "sill", "sill_cap", "mosquito_profile", "corner_cleat", "machine", "other",
+         # shapes_contract.md §7–8 (ДЕМО-позиции — серия eskiz__demo_roles)
+         "fit_shaped", "fit_top_hung", "fit_pivot", "muntin_inner", "muntin_cross", "muntin_overlay", "muntin_decor",
+         "conn_straight", "conn_corner90", "conn_bay", "conn_post", "lamination", "profile_color", "glass_decor"]
+UNITS = ["bar", "m", "kg", "pcs", "m2", "pack", "pct"]
 
 
 def _cat():

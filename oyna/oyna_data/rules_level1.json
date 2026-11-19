@@ -524,7 +524,7 @@
     {
       "code": "9.7",
       "group": "kit",
-      "title": "Нестандартная форма без стоимости гибки/резки",
+      "title": "Раздвижные — после MVP (формы и составные считаются, shapes_contract.md)",
       "params": {},
       "severity": "warn"
     },
@@ -600,6 +600,138 @@
         "source": "decors.json + systems.colors"
       },
       "severity": "lock"
+    },
+    {
+      "code": "1.8",
+      "group": "input",
+      "title": "Параметры формы рамы вне допустимого (арка, круг, трапеция, скос, треугольник)",
+      "params": {
+        "source": "docs/shapes_contract.md §1, таблица «ограничения»"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.20",
+      "group": "compat",
+      "title": "Цвета профиля в массе нет у системы",
+      "params": {
+        "source": "profile_colors.json (ДЕМО: по бренду)"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "4.20",
+      "group": "sash",
+      "title": "В фигурной ячейке только поворотная или откидная створка",
+      "params": {
+        "allowed": [
+          "turn",
+          "tilt"
+        ],
+        "circle_semicircle_triangle": [
+          "tilt"
+        ]
+      },
+      "severity": "block"
+    },
+    {
+      "code": "4.21",
+      "group": "sash",
+      "title": "Фигурная створка — спецфурнитура (роль fit_shaped)",
+      "params": {
+        "role": "fit_shaped"
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "4.22",
+      "group": "sash",
+      "title": "Среднеподвесная створка больше 1600 × 1600 мм",
+      "params": {
+        "max_w": 1600,
+        "max_h": 1600
+      },
+      "severity": "block"
+    },
+    {
+      "code": "5.20",
+      "group": "glass",
+      "title": "Раскладка внутри стеклопакета требует камеры ≥ 12 мм",
+      "params": {
+        "min_chamber_mm": 12
+      },
+      "severity": "block"
+    },
+    {
+      "code": "5.21",
+      "group": "glass",
+      "title": "Раскладка на глухой панели",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "5.22",
+      "group": "glass",
+      "title": "Слишком мелкая раскладка (кусок прутка < 150 мм)",
+      "params": {
+        "min_piece_mm": 150
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "9.20",
+      "group": "kit",
+      "title": "Стык составного изделия: угол вне 90…179° или неизвестный тип",
+      "params": {
+        "angle": [
+          90,
+          179
+        ]
+      },
+      "severity": "block"
+    },
+    {
+      "code": "9.21",
+      "group": "kit",
+      "title": "Высоты соседних рам сборки различаются больше 5 мм",
+      "params": {
+        "max_diff_mm": 5
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "3.20",
+      "group": "weight",
+      "title": "Параллельно-сдвижная (PSK) створка тяжелее 160 кг",
+      "params": {
+        "max_kg": 160
+      },
+      "severity": "block"
+    },
+    {
+      "code": "7.20",
+      "group": "compat",
+      "title": "Система не поддерживает подъёмно-сдвижное (HS)",
+      "params": {
+        "source": "passports.json: hs"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "9.22",
+      "group": "kit",
+      "title": "Сетка плиссе или дверная — не на двери и не на широком проёме",
+      "params": {
+        "wide_mm": 1200
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "9.23",
+      "group": "kit",
+      "title": "Расширитель на стороне со створкой",
+      "params": {},
+      "severity": "warn"
     }
   ],
   "sash_limits": {
@@ -675,6 +807,60 @@
         1800,
         2400
       ]
+    },
+    "top_hung": {
+      "w": [
+        400,
+        1600
+      ],
+      "h": [
+        300,
+        1400
+      ],
+      "max_m2": 2.0
+    },
+    "pivot": {
+      "w": [
+        500,
+        1600
+      ],
+      "h": [
+        500,
+        1600
+      ],
+      "max_m2": 2.56
+    },
+    "folding": {
+      "w": [
+        300,
+        1000
+      ],
+      "h": [
+        500,
+        2600
+      ]
+    },
+    "psk": {
+      "w": [
+        600,
+        1800
+      ],
+      "h": [
+        600,
+        2400
+      ],
+      "max_m2": 3.5
+    },
+    "hs": {
+      "w": [
+        800,
+        3300
+      ],
+      "h": [
+        1000,
+        3000
+      ],
+      "max_m2": 9.0
     }
   },
   "weights": {

@@ -10,7 +10,8 @@ import Svg, { G, Path, Rect } from 'react-native-svg';
 import { ApiError, request } from '@/api/http';
 import type { Cell, Doc, Measure, Node } from '@/api/types';
 import { num } from '@/lib/format';
-import { layout } from '@/lib/tree';
+import { isAssembly, isShaped, layout } from '@/lib/tree';
+import { Schema } from '@/ui/Schema';
 import { Icon, IconName } from '@/ui/Icon';
 import { Button, IconButton, Txt } from '@/ui/kit';
 import { C, TAG } from '@/theme';
@@ -114,6 +115,8 @@ export const presetDoc = (p: Preset, w = p.w, h = p.h): Doc => ({ kind: p.kind, 
 
 // ---------- мини-схема (миниатюры макета: рама, створка, стекло, ручка, знак открывания) ----------
 export function MiniSchema({ doc, width, height }: { doc: Doc; width: number; height: number }) {
+  // фигурная рама и составное изделие — общей схемой без размеров
+  if (doc.frame?.root && (isAssembly(doc) || isShaped(doc.frame))) return <Schema doc={doc} width={width} maxHeight={height} dims={false} />;
   const W = doc.frame.w || 1, H = doc.frame.h || 1;
   const k = Math.min((width - 4) / W, (height - 4) / H);
   const dw = W * k + 4, dh = H * k + 4;

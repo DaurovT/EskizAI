@@ -1,5 +1,5 @@
 {
-  "_note": "Системные шаблоны. Размеры частей: число мм = зафиксировано, 'eq' = поровну. Размеры по осям импостов. Деление 'shtulp' = две створки без импоста (штульп на створке).",
+  "_note": "Системные шаблоны. Размеры частей: число мм = зафиксировано, 'eq' = поровну. Размеры по осям импостов. Деление 'shtulp' = две створки без импоста (штульп на створке). category — вкладка в приложении, short — короткое имя. Форма рамы — shape + shape_params рядом с root (docs/shapes_contract.md §1); составные — kind assembly, root.assembly. ready = ядро считает (раздвижные — после MVP).",
   "templates": [
     {
       "id": "T01",
@@ -16,7 +16,9 @@
           "mosquito": true
         }
       },
-      "short": "Одна створка"
+      "short": "Одна створка",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T02",
@@ -29,7 +31,9 @@
           "type": "fixed"
         }
       },
-      "short": "Глухое"
+      "short": "Глухое",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T03",
@@ -58,7 +62,9 @@
           }
         ]
       },
-      "short": "П/О + глухая"
+      "short": "П/О + глухая",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T04",
@@ -91,7 +97,9 @@
           }
         ]
       },
-      "short": "Две створки П/О"
+      "short": "Две створки П/О",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T05",
@@ -130,7 +138,9 @@
           }
         ]
       },
-      "short": "Три створки"
+      "short": "Три створки",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T06",
@@ -165,7 +175,9 @@
           }
         ]
       },
-      "short": "Три: П/О + 2 глухих"
+      "short": "Три: П/О + 2 глухих",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T07",
@@ -212,7 +224,9 @@
           }
         ]
       },
-      "short": "С фрамугой"
+      "short": "С фрамугой",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T08",
@@ -245,14 +259,16 @@
           }
         ]
       },
-      "short": "Штульповое"
+      "short": "Штульповое",
+      "category": "window",
+      "ready": true
     },
     {
       "id": "T09",
       "name": "Балконный блок: дверь слева + окно",
       "kind": "balcony_block",
-      "default_w": 2100,
-      "default_h": 2150,
+      "default_w": 1600,
+      "default_h": 2100,
       "root": {
         "split": "v",
         "parts": [
@@ -293,14 +309,16 @@
           }
         ]
       },
-      "short": "Балкон, дверь слева"
+      "short": "Балкон, дверь слева",
+      "category": "balcony",
+      "ready": true
     },
     {
       "id": "T10",
       "name": "Балконный блок: окно + дверь справа",
       "kind": "balcony_block",
-      "default_w": 2100,
-      "default_h": 2150,
+      "default_w": 1600,
+      "default_h": 2100,
       "root": {
         "split": "v",
         "parts": [
@@ -340,7 +358,9 @@
           }
         ]
       },
-      "short": "Балкон, дверь справа"
+      "short": "Балкон, дверь справа",
+      "category": "balcony",
+      "ready": true
     },
     {
       "id": "T11",
@@ -358,7 +378,9 @@
           "threshold": true
         }
       },
-      "short": "Входная дверь"
+      "short": "Входная дверь",
+      "category": "door",
+      "ready": true
     },
     {
       "id": "T12",
@@ -373,7 +395,9 @@
           "overlap_mm": "passport"
         }
       },
-      "short": "Раздвижное ×2"
+      "short": "Раздвижное ×2",
+      "category": "sliding",
+      "ready": false
     },
     {
       "id": "T13",
@@ -388,7 +412,9 @@
           "overlap_mm": "passport"
         }
       },
-      "short": "Раздвижное ×3"
+      "short": "Раздвижное ×3",
+      "category": "sliding",
+      "ready": false
     },
     {
       "id": "T14",
@@ -403,7 +429,9 @@
           "overlap_mm": "passport"
         }
       },
-      "short": "Раздвижное ×4"
+      "short": "Раздвижное ×4",
+      "category": "sliding",
+      "ready": false
     },
     {
       "id": "T15",
@@ -418,14 +446,16 @@
             "w": 2400
           },
           {
-            "joint": "angle_90"
+            "joint": "angle",
+            "angle": 90
           },
           {
             "frame": "T03",
             "w": 1200
           },
           {
-            "joint": "angle_90"
+            "joint": "angle",
+            "angle": 90
           },
           {
             "frame": "T05",
@@ -433,23 +463,1935 @@
           }
         ]
       },
-      "short": "Лоджия П-образная"
+      "short": "Лоджия П-образная",
+      "category": "corner",
+      "ready": true,
+      "loggia": {
+        "outrigger_mm": 0,
+        "roof": false,
+        "cladding": null,
+        "parapet": "brick"
+      }
     },
     {
       "id": "T16",
-      "name": "Арочное окно",
+      "name": "Арочное глухое",
       "kind": "window",
       "default_w": 1200,
       "default_h": 1600,
       "root": {
-        "shape": "arch",
-        "rise_mm": 300,
         "cell": {
           "type": "fixed"
-        },
-        "calc": "этап 3"
+        }
       },
-      "short": "Арочное"
+      "short": "Арка глухая",
+      "category": "shaped",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 300
+      },
+      "ready": true
+    },
+    {
+      "id": "T17",
+      "name": "Одностворчатое поворотное",
+      "kind": "window",
+      "default_w": 700,
+      "default_h": 1300,
+      "root": {
+        "cell": {
+          "type": "sash",
+          "open": "turn",
+          "hinge": "left",
+          "handle": true,
+          "mosquito": false
+        }
+      },
+      "short": "Поворотная створка",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T18",
+      "name": "Четырёхстворчатое: п/о + глухая + глухая + п/о",
+      "kind": "window",
+      "default_w": 2800,
+      "default_h": 1400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "right",
+              "handle": true,
+              "mosquito": false
+            }
+          }
+        ]
+      },
+      "short": "Четыре створки",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T19",
+      "name": "Трёхстворчатое: глухая + п/о + глухая",
+      "kind": "window",
+      "default_w": 2100,
+      "default_h": 1400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        ]
+      },
+      "short": "Глухая–П/О–глухая",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T20",
+      "name": "Окно с глухой фрамугой сверху: п/о + глухая",
+      "kind": "window",
+      "default_w": 1400,
+      "default_h": 1900,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 500,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "v",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": true
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "short": "Глухая фрамуга",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T21",
+      "name": "Подвесное (петли сверху, наружу)",
+      "kind": "window",
+      "default_w": 1000,
+      "default_h": 800,
+      "root": {
+        "cell": {
+          "type": "sash",
+          "open": "top_hung",
+          "hinge": "top",
+          "handle": true,
+          "mosquito": false
+        }
+      },
+      "short": "Подвесное",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T22",
+      "name": "Среднеподвесное (поворот по горизонтальной оси)",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 1200,
+      "root": {
+        "cell": {
+          "type": "sash",
+          "open": "pivot",
+          "handle": true,
+          "mosquito": false
+        }
+      },
+      "short": "Среднеподвесное",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T23",
+      "name": "Узкое глухое",
+      "kind": "window",
+      "default_w": 400,
+      "default_h": 1400,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Узкое глухое",
+      "category": "window",
+      "ready": true
+    },
+    {
+      "id": "T24",
+      "name": "Балконная дверь одностворчатая",
+      "kind": "balcony_block",
+      "default_w": 750,
+      "default_h": 2100,
+      "root": {
+        "cell": {
+          "type": "door_sash",
+          "open": "tilt_turn",
+          "hinge": "left",
+          "handle": true,
+          "mosquito": true
+        }
+      },
+      "short": "Балконная дверь",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T25",
+      "name": "Балконная дверь с глухой фрамугой",
+      "kind": "balcony_block",
+      "default_w": 800,
+      "default_h": 2450,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 400,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          }
+        ]
+      },
+      "short": "Балк. дверь + фрамуга",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T26",
+      "name": "Входная дверь с панелью (сэндвич)",
+      "kind": "door",
+      "default_w": 900,
+      "default_h": 2100,
+      "root": {
+        "cell": {
+          "type": "door_sash",
+          "open": "turn",
+          "hinge": "left",
+          "handle": true,
+          "mosquito": false,
+          "threshold": true,
+          "fill": {
+            "kind": "panel",
+            "item": "sandwich"
+          }
+        }
+      },
+      "short": "Входная с панелью",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T27",
+      "name": "Входная двустворчатая, неравные створки",
+      "kind": "door",
+      "default_w": 1500,
+      "default_h": 2100,
+      "root": {
+        "split": "shtulp",
+        "parts": [
+          {
+            "size": 850,
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false,
+              "threshold": true
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "right",
+              "handle": false,
+              "mosquito": false,
+              "threshold": true
+            }
+          }
+        ]
+      },
+      "short": "Входная двустворчатая",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T28",
+      "name": "Входная дверь с глухой фрамугой",
+      "kind": "door",
+      "default_w": 1000,
+      "default_h": 2450,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 400,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false,
+              "threshold": true
+            }
+          }
+        ]
+      },
+      "short": "Входная + фрамуга",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T29",
+      "name": "Балконный блок: окно + дверь по центру + окно",
+      "kind": "balcony_block",
+      "default_w": 2450,
+      "default_h": 2100,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": 1400,
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": true
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "panel"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "size": 750,
+            "cell": {
+              "type": "door_sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": 1400,
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "right",
+                    "handle": true,
+                    "mosquito": false
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "panel"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "short": "Балкон, дверь в центре",
+      "category": "balcony",
+      "ready": true
+    },
+    {
+      "id": "T30",
+      "name": "Подъёмно-сдвижной портал HS",
+      "kind": "balcony_block",
+      "default_w": 3000,
+      "default_h": 2200,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "hs",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false,
+              "threshold": "none"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        ]
+      },
+      "setup": {
+        "system": "akfa__7000_akfa_eko",
+        "glass": "g4_16_4"
+      },
+      "short": "Портал HS",
+      "category": "sliding",
+      "ready": true
+    },
+    {
+      "id": "T31",
+      "name": "Арочное с поворотной створкой",
+      "kind": "window",
+      "default_w": 800,
+      "default_h": 1500,
+      "root": {
+        "cell": {
+          "type": "sash",
+          "open": "turn",
+          "hinge": "left",
+          "handle": true,
+          "mosquito": false
+        }
+      },
+      "short": "Арка со створкой",
+      "category": "shaped",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 250
+      },
+      "ready": true
+    },
+    {
+      "id": "T32",
+      "name": "Арка над двумя створками (импост под дугой)",
+      "kind": "window",
+      "default_w": 1400,
+      "default_h": 1900,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 500,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "v",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": true
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "right",
+                    "handle": true,
+                    "mosquito": false
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "short": "Арка над двумя",
+      "category": "shaped",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 450
+      },
+      "ready": true
+    },
+    {
+      "id": "T33",
+      "name": "Лучковое окно (малый подъём арки)",
+      "kind": "window",
+      "default_w": 1400,
+      "default_h": 1500,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 300,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "v",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": true
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "short": "Лучковое",
+      "category": "shaped",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 150
+      },
+      "ready": true
+    },
+    {
+      "id": "T34",
+      "name": "Полукруглое окно",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 600,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Полукруг",
+      "category": "shaped",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 600
+      },
+      "ready": true
+    },
+    {
+      "id": "T35",
+      "name": "Круглое окно",
+      "kind": "window",
+      "default_w": 800,
+      "default_h": 800,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Круг",
+      "category": "shaped",
+      "shape": "circle",
+      "shape_params": {},
+      "ready": true
+    },
+    {
+      "id": "T36",
+      "name": "Трапеция: низкая сторона слева",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 1400,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Трапеция левая",
+      "category": "shaped",
+      "shape": "trapezoid",
+      "shape_params": {
+        "h_left": 900,
+        "h_right": 1400
+      },
+      "ready": true
+    },
+    {
+      "id": "T37",
+      "name": "Трапеция: низкая сторона справа",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 1400,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Трапеция правая",
+      "category": "shaped",
+      "shape": "trapezoid",
+      "shape_params": {
+        "h_left": 1400,
+        "h_right": 900
+      },
+      "ready": true
+    },
+    {
+      "id": "T38",
+      "name": "Треугольное окно",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 800,
+      "root": {
+        "cell": {
+          "type": "fixed"
+        }
+      },
+      "short": "Треугольник",
+      "category": "shaped",
+      "shape": "triangle",
+      "shape_params": {
+        "apex": 600
+      },
+      "ready": true
+    },
+    {
+      "id": "T39",
+      "name": "Скошенный угол: п/о + глухая со скосом",
+      "kind": "window",
+      "default_w": 1400,
+      "default_h": 1400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        ]
+      },
+      "short": "Скошенный угол",
+      "category": "shaped",
+      "shape": "bevel",
+      "shape_params": {
+        "corner": "tr",
+        "dx": 400,
+        "dy": 400
+      },
+      "ready": true
+    },
+    {
+      "id": "T40",
+      "name": "Окно «домик»: скос двух углов, п/о снизу",
+      "kind": "window",
+      "default_w": 950,
+      "default_h": 1700,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 600,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true
+            }
+          }
+        ]
+      },
+      "short": "Домик",
+      "category": "shaped",
+      "shape": "bevel",
+      "shape_params": {
+        "corner": "both",
+        "dx": 400,
+        "dy": 450
+      },
+      "ready": true
+    },
+    {
+      "id": "T41",
+      "name": "Двухстворчатое с английской раскладкой 2×3",
+      "kind": "window",
+      "default_w": 1400,
+      "default_h": 1400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true,
+              "muntins": {
+                "kind": "inner",
+                "v": 1,
+                "h": 2,
+                "width_mm": 18,
+                "pattern": "grid",
+                "color": "white"
+              }
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "turn",
+              "hinge": "right",
+              "handle": true,
+              "mosquito": false,
+              "muntins": {
+                "kind": "inner",
+                "v": 1,
+                "h": 2,
+                "width_mm": 18,
+                "pattern": "grid",
+                "color": "white"
+              }
+            }
+          }
+        ]
+      },
+      "short": "Раскладка 2×3",
+      "category": "muntins",
+      "ready": true
+    },
+    {
+      "id": "T42",
+      "name": "Трёхстворчатое с раскладкой",
+      "kind": "window",
+      "default_w": 2100,
+      "default_h": 1400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "tilt_turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": true,
+              "muntins": {
+                "kind": "inner",
+                "v": 1,
+                "h": 1,
+                "width_mm": 18,
+                "pattern": "grid",
+                "color": "white"
+              }
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed",
+              "muntins": {
+                "kind": "inner",
+                "v": 1,
+                "h": 1,
+                "width_mm": 18,
+                "pattern": "grid",
+                "color": "white"
+              }
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "turn",
+              "hinge": "right",
+              "handle": true,
+              "mosquito": false,
+              "muntins": {
+                "kind": "inner",
+                "v": 1,
+                "h": 1,
+                "width_mm": 18,
+                "pattern": "grid",
+                "color": "white"
+              }
+            }
+          }
+        ]
+      },
+      "short": "Три с раскладкой",
+      "category": "muntins",
+      "ready": true
+    },
+    {
+      "id": "T43",
+      "name": "Арка с раскладкой «солнышко»",
+      "kind": "window",
+      "default_w": 1200,
+      "default_h": 600,
+      "root": {
+        "cell": {
+          "type": "fixed",
+          "muntins": {
+            "kind": "inner",
+            "v": 4,
+            "h": 1,
+            "width_mm": 18,
+            "pattern": "sun",
+            "color": "white"
+          }
+        }
+      },
+      "short": "Арка «солнышко»",
+      "category": "muntins",
+      "shape": "arch",
+      "shape_params": {
+        "rise": 600
+      },
+      "ready": true
+    },
+    {
+      "id": "T44",
+      "name": "Входная дверь с декоративной вставкой",
+      "kind": "door",
+      "default_w": 900,
+      "default_h": 2100,
+      "root": {
+        "cell": {
+          "type": "door_sash",
+          "open": "turn",
+          "hinge": "left",
+          "handle": true,
+          "mosquito": false,
+          "threshold": true,
+          "fill": {
+            "kind": "glass",
+            "glass": "4t-12-4t"
+          },
+          "muntins": {
+            "kind": "inner",
+            "v": 0,
+            "h": 0,
+            "width_mm": 18,
+            "pattern": "decor",
+            "color": "gold"
+          }
+        }
+      },
+      "short": "Дверь с декором",
+      "category": "muntins",
+      "ready": true
+    },
+    {
+      "id": "T45",
+      "name": "Угловое окно 90°",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1400,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 1400,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "left",
+                      "handle": true,
+                      "mosquito": true
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 90
+          },
+          {
+            "frame": {
+              "w": 1000,
+              "h": 1400,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "short": "Угловое 90°",
+      "category": "corner",
+      "ready": true
+    },
+    {
+      "id": "T46",
+      "name": "Эркер 3 грани 135°",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1500,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 1000,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 135
+          },
+          {
+            "frame": {
+              "w": 1400,
+              "h": 1500,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "left",
+                      "handle": true,
+                      "mosquito": true
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 135
+          },
+          {
+            "frame": {
+              "w": 1000,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "short": "Эркер 3 грани",
+      "category": "corner",
+      "ready": true
+    },
+    {
+      "id": "T47",
+      "name": "Эркер 5 граней 144°",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1500,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 800,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 144
+          },
+          {
+            "frame": {
+              "w": 900,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "sash",
+                  "open": "tilt_turn",
+                  "hinge": "left",
+                  "handle": true,
+                  "mosquito": true
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 144
+          },
+          {
+            "frame": {
+              "w": 1000,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 144
+          },
+          {
+            "frame": {
+              "w": 900,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "sash",
+                  "open": "tilt_turn",
+                  "hinge": "right",
+                  "handle": true,
+                  "mosquito": false
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 144
+          },
+          {
+            "frame": {
+              "w": 800,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "short": "Эркер 5 граней",
+      "category": "corner",
+      "ready": true
+    },
+    {
+      "id": "T48",
+      "name": "Полукруглый эркер 7 граней 154°",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1500,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "sash",
+                  "open": "tilt_turn",
+                  "hinge": "left",
+                  "handle": true,
+                  "mosquito": true
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "sash",
+                  "open": "tilt_turn",
+                  "hinge": "left",
+                  "handle": true,
+                  "mosquito": true
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 154
+          },
+          {
+            "frame": {
+              "w": 700,
+              "h": 1500,
+              "root": {
+                "cell": {
+                  "type": "fixed"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "short": "Эркер 7 граней",
+      "category": "corner",
+      "ready": true
+    },
+    {
+      "id": "T49",
+      "name": "Витраж 3×2 с импостами",
+      "kind": "window",
+      "default_w": 2700,
+      "default_h": 2400,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "sash",
+                    "open": "tilt_turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": true
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "short": "Витраж 3×2",
+      "category": "facade",
+      "ready": true
+    },
+    {
+      "id": "T50",
+      "name": "Витраж с дверью",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 2450,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 1200,
+              "h": 2450,
+              "root": {
+                "split": "h",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "straight"
+          },
+          {
+            "frame": {
+              "w": 1000,
+              "h": 2450,
+              "root": {
+                "split": "h",
+                "parts": [
+                  {
+                    "size": 400,
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "door_sash",
+                      "open": "turn",
+                      "hinge": "left",
+                      "handle": true,
+                      "mosquito": false,
+                      "fill": {
+                        "kind": "glass",
+                        "glass": "4t-12-4t"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "straight"
+          },
+          {
+            "frame": {
+              "w": 1200,
+              "h": 2450,
+              "root": {
+                "split": "h",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "short": "Витраж с дверью",
+      "category": "facade",
+      "ready": true
+    },
+    {
+      "id": "T51",
+      "name": "Параллельно-сдвижная дверь PSK",
+      "kind": "balcony_block",
+      "default_w": 2400,
+      "default_h": 2100,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "psk",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "fixed"
+            }
+          }
+        ]
+      },
+      "short": "Портал PSK",
+      "category": "sliding",
+      "ready": true
+    },
+    {
+      "id": "T52",
+      "name": "Дверь-гармошка, 4 створки",
+      "kind": "door",
+      "default_w": 2800,
+      "default_h": 2200,
+      "root": {
+        "split": "folding",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "folding",
+              "hinge": "left",
+              "handle": false,
+              "mosquito": false
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "folding",
+              "hinge": "right",
+              "handle": false,
+              "mosquito": false
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "folding",
+              "hinge": "left",
+              "handle": false,
+              "mosquito": false
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "folding",
+              "hinge": "right",
+              "handle": true,
+              "mosquito": false
+            }
+          }
+        ]
+      },
+      "short": "Гармошка",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T53",
+      "name": "Алюминиевая входная дверь с фрамугой (тёплый)",
+      "kind": "door",
+      "default_w": 1100,
+      "default_h": 2500,
+      "root": {
+        "split": "h",
+        "parts": [
+          {
+            "size": 400,
+            "cell": {
+              "type": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false,
+              "threshold": true,
+              "open_dir": "out",
+              "fill": {
+                "kind": "glass",
+                "glass": "4t-16-4t"
+              }
+            }
+          }
+        ]
+      },
+      "setup": {
+        "system": "akfa__termo_70",
+        "fittings": "alu_tr_a3400",
+        "glass": "g4_16_4"
+      },
+      "short": "Алюм. дверь + фрамуга",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T54",
+      "name": "Алюминиевая витрина 3×2 с дверью (холодный)",
+      "kind": "door",
+      "default_w": 3000,
+      "default_h": 2500,
+      "root": {
+        "split": "v",
+        "parts": [
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "size": 1100,
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": 400,
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "door_sash",
+                    "open": "turn",
+                    "hinge": "left",
+                    "handle": true,
+                    "mosquito": false,
+                    "threshold": true,
+                    "open_dir": "out",
+                    "fill": {
+                      "kind": "glass",
+                      "glass": "6t-8-6t"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "size": "eq",
+            "node": {
+              "split": "h",
+              "parts": [
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                },
+                {
+                  "size": "eq",
+                  "cell": {
+                    "type": "fixed"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "setup": {
+        "system": "akfa__aldoks",
+        "fittings": "alu_uz",
+        "glass": "g4_12_4"
+      },
+      "short": "Алюм. витрина с дверью",
+      "category": "facade",
+      "ready": true
+    },
+    {
+      "id": "T55",
+      "name": "Алюминиевая входная двустворчатая (тёплый)",
+      "kind": "door",
+      "default_w": 1700,
+      "default_h": 2100,
+      "root": {
+        "split": "shtulp",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "left",
+              "handle": true,
+              "mosquito": false,
+              "threshold": true,
+              "open_dir": "out",
+              "fill": {
+                "kind": "glass",
+                "glass": "4t-16-4t"
+              }
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "door_sash",
+              "open": "turn",
+              "hinge": "right",
+              "handle": false,
+              "mosquito": false,
+              "threshold": true,
+              "open_dir": "out",
+              "fill": {
+                "kind": "glass",
+                "glass": "4t-16-4t"
+              }
+            }
+          }
+        ]
+      },
+      "setup": {
+        "system": "akfa__termo_70",
+        "fittings": "alu_tr_a3400",
+        "glass": "g4_16_4"
+      },
+      "short": "Алюм. двустворчатая",
+      "category": "door",
+      "ready": true
+    },
+    {
+      "id": "T56",
+      "name": "Лоджия Г-образная (2 рамы, угол 90°)",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1400,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 2400,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "left",
+                      "handle": true,
+                      "mosquito": true
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "right",
+                      "handle": true,
+                      "mosquito": false
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 90
+          },
+          {
+            "frame": {
+              "w": 1200,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "right",
+                      "handle": true,
+                      "mosquito": false
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "loggia": {
+        "outrigger_mm": 0,
+        "roof": false,
+        "cladding": null,
+        "parapet": "brick"
+      },
+      "short": "Лоджия Г-образная",
+      "category": "corner",
+      "ready": true
+    },
+    {
+      "id": "T57",
+      "name": "Лоджия прямая (3 рамы)",
+      "kind": "assembly",
+      "default_w": 0,
+      "default_h": 1400,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 1600,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "left",
+                      "handle": true,
+                      "mosquito": true
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "straight"
+          },
+          {
+            "frame": {
+              "w": 1600,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "joint": "straight"
+          },
+          {
+            "frame": {
+              "w": 1600,
+              "h": 1400,
+              "root": {
+                "split": "v",
+                "parts": [
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "fixed"
+                    }
+                  },
+                  {
+                    "size": "eq",
+                    "cell": {
+                      "type": "sash",
+                      "open": "tilt_turn",
+                      "hinge": "right",
+                      "handle": true,
+                      "mosquito": false
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "loggia": {
+        "outrigger_mm": 300,
+        "roof": true,
+        "cladding": "outside",
+        "parapet": "metal"
+      },
+      "short": "Лоджия прямая",
+      "category": "corner",
+      "ready": true
     }
   ]
 }

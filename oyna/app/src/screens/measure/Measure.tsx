@@ -9,9 +9,9 @@ import { ComponentRef, ReactNode, useCallback, useEffect, useMemo, useRef, useSt
 import { PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import type { Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull } from '@/api/types';
+import type { Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull, Shape } from '@/api/types';
 import { num } from '@/lib/format';
-import { apply, cells, layout, simpleWindow } from '@/lib/tree';
+import { apply, cells, frameShape, isAssembly, layout, loggiaDoc, scaleAssembly, simpleWindow } from '@/lib/tree';
 import { offline, uuid } from '@/offline/store';
 import { Icon } from '@/ui/Icon';
 import { Schema } from '@/ui/Schema';
@@ -143,7 +143,7 @@ function Wizard({ orderId, pos, stepParam }: { orderId: string; pos: string; ste
       <Txt style={[st.cap, { paddingHorizontal: 20, paddingTop: 14 }]}>Шаг {shown} из {STEPS}</Txt>
       {shown === 1 ? <RoomStep doc={doc} run={run} goto={goto} showToast={showToast} /> : null}
       {shown === 2 ? <OpeningStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
-      {shown === 3 ? <SizeStep doc={doc} run={run} goto={goto} showToast={showToast} /> : null}
+      {shown === 3 ? <SizeStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
       {shown === 4 ? <SplitStep doc={doc} run={run} persist={persist} goto={goto} orderId={orderId} pos={pos} /> : null}
       {shown === 5 ? <ExtrasStep doc={doc} run={run} onDone={finish} floorDefault={orderFloor} /> : null}
       <Sheet visible={step === 6} onClose={() => { setStep(5); router.setParams({ step: '5' }); }}>
@@ -226,13 +226,13 @@ const KINDS: { kind: Doc['kind'] | 'loggia'; title: string; sub: string }[] = [
   { kind: 'window', title: 'Окно', sub: 'створки и глухие' },
   { kind: 'balcony_block', title: 'Балконный блок', sub: 'дверь + окно' },
   { kind: 'door', title: 'Дверь', sub: 'входная, балконная' },
-  { kind: 'loggia', title: 'Лоджия', sub: 'после MVP' },
+  { kind: 'loggia', title: 'Лоджия', sub: 'П-образная, 3 рамы' },
 ];
 const KIND_ICON: Record<string, Doc> = {
   window: simpleWindow(1300, 1200, 2),
   balcony_block: presetDoc(PRESETS.find((p) => p.id === 'T09')!, 1800, 1400),
   door: presetDoc(PRESETS.find((p) => p.id === 'T11')!, 700, 1400),
-  loggia: { kind: 'window', frame: { w: 1300, h: 1200, root: { cell: { type: 'fixed' } } } },
+  loggia: loggiaDoc(3000, 1400, 800),
 };
 const WALLS = [{ value: 'brick', title: 'Кирпич' }, { value: 'concrete', title: 'Бетон' }, { value: 'aerated', title: 'Газоблок' }, { value: 'wood', title: 'Дерево' }];
 const SLOPES = [100, 150, 200, 250, 300, 400];
@@ -243,7 +243,13 @@ function OpeningStep({ doc, run, persist, goto, showToast }: StepProps) {
   const o = doc.opening ?? {};
   const measured = Array.isArray(o.width) ? o.width.length > 0 : typeof o.width === 'number';
   const chooseKind = (k: Doc['kind'] | 'loggia') => {
-    if (k === 'loggia') { showToast?.('Лоджия — позже, после MVP'); return; }
+    if (k === 'loggia') {
+      // лоджия — сборка из трёх рам (§9.5); вынос, крыша, обшивка — в редакторе: Ещё → Лоджия
+      if (doc.kind === 'assembly') return;
+      const base = loggiaDoc(measured ? Math.max(2400, doc.frame.w) : 4200, measured ? doc.frame.h : 1400);
+      persist?.({ ...base, id: doc.id, room: doc.room, opening: doc.opening, setup: doc.setup, extras: doc.extras ?? {} }, 2);
+      return;
+    }
     if (k === doc.kind) return;
     const p = PRESETS.find((x) => x.id === DEFAULT_PRESET[k]);
     let next = apply(doc, [{ cmd: 'set_meta', kind: k }]);
@@ -258,9 +264,8 @@ function OpeningStep({ doc, run, persist, goto, showToast }: StepProps) {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingTop: 8, gap: 10 }}>
         <View style={s.grid}>
           {KINDS.map((k) => (
-            <OptCard key={k.kind} on={k.kind === doc.kind} disabled={k.kind === 'loggia'} onPress={() => chooseKind(k.kind)} style={s.kindOpt}>
+            <OptCard key={k.kind} on={k.kind === doc.kind || (k.kind === 'loggia' && doc.kind === 'assembly')} onPress={() => chooseKind(k.kind)} style={s.kindOpt}>
               <View style={{ height: 58, justifyContent: 'center' }}><MiniSchema doc={KIND_ICON[k.kind]} width={72} height={58} /></View>
-              {k.kind === 'loggia' ? <View style={{ position: 'absolute', right: 12, top: 12 }}><Tag title="скоро" /></View> : null}
               <View style={{ gap: 2 }}>
                 <Txt size={16} w={600} style={{ lineHeight: 20 }}>{k.title}</Txt>
                 <Txt size={13} color={C.muted} style={{ lineHeight: 17 }}>{k.sub}</Txt>
@@ -322,7 +327,7 @@ const initVals = (v?: number | number[]) => {
 };
 const nums = (a: string[]) => a.filter(Boolean).map((x) => parseInt(x, 10));
 
-function SizeStep({ doc, run, goto, showToast }: StepProps) {
+function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
   const [vals, setVals] = useState<Record<Dim, string[]>>(() => ({ w: initVals(doc.opening?.width), h: initVals(doc.opening?.height) }));
   const firstEmpty = ORDER.find(([d, i]) => !vals[d][i]) ?? ORDER[ORDER.length - 1];
   const [dim, setDim] = useState<Dim>(firstEmpty[0]);
@@ -360,7 +365,12 @@ function SizeStep({ doc, run, goto, showToast }: StepProps) {
     const r = (await refreshFrame(v)) ?? frameLocal(ws, hs);
     if (!r.ok || !r.frame_w || !r.frame_h) { showToast?.('Проверьте размеры'); return; }
     if (r.issues.some((x) => x.code === 'M.skew') && !skewSeen) { setSkewSeen(true); return; }
-    run([{ cmd: 'set_size', w: r.frame_w, h: r.frame_h }, { cmd: 'set_meta', opening: { width: ws, height: hs } }], 4);
+    if (isAssembly(doc)) {
+      // лоджия: длина — по рамам пропорционально, высота — всем рамам
+      persist?.(apply(scaleAssembly(doc, r.frame_w, r.frame_h), [{ cmd: 'set_meta', opening: { width: ws, height: hs } }]), 4);
+    } else {
+      run([{ cmd: 'set_size', w: r.frame_w, h: r.frame_h }, { cmd: 'set_meta', opening: { width: ws, height: hs } }], 4);
+    }
     goto(4);
   };
 
@@ -481,7 +491,34 @@ function cycle(c: Cell): Partial<Cell> {
   if (c.open === 'turn') return { open: 'tilt', hinge: 'bottom' };
   return { type: 'fixed' };
 }
-const OPEN_TITLE: Record<string, string> = { fixed: 'глухая', tilt_turn: 'поворотно-откидная', turn: 'поворотная', tilt: 'откидная', panel: 'панель' };
+const OPEN_TITLE: Record<string, string> = {
+  fixed: 'глухая', tilt_turn: 'поворотно-откидная', turn: 'поворотная', tilt: 'откидная', panel: 'панель', top_hung: 'подвесная', pivot: 'среднеподвесная',
+  sliding: 'раздвижная',
+};
+
+/** Быстрый выбор формы рамы на шаге деления (подробно — в редакторе: Ещё → Форма рамы). */
+type QuickShape = 'rect' | 'arch' | 'semi' | 'circle' | 'trapezoid' | 'triangle';
+const QUICK_SHAPES: { value: QuickShape; title: string }[] = [
+  { value: 'rect', title: 'Прямоугольник' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' },
+  { value: 'circle', title: 'Круг' }, { value: 'trapezoid', title: 'Трапеция' }, { value: 'triangle', title: 'Треугольник' },
+];
+function quickShape(doc: Doc): QuickShape {
+  const { shape, params } = frameShape(doc.frame);
+  if (shape === 'arch' && Math.abs((params.rise ?? 0) - doc.frame.w / 2) < 2 && Math.abs(doc.frame.h - doc.frame.w / 2) < 2) return 'semi';
+  return shape === 'bevel' ? 'rect' : shape;
+}
+function quickShapeCommands(doc: Doc, q: QuickShape): Command[] {
+  const { w, h } = doc.frame;
+  const sh = (shape: Shape, params?: object): Command => ({ cmd: 'set_shape', shape, ...(params ? { params } : {}) });
+  switch (q) {
+    case 'rect': return [sh('rect')];
+    case 'arch': return [sh('arch', { rise: Math.max(50, Math.round(Math.min(w / 2, h) / 2)) })];
+    case 'semi': return [sh('rect'), { cmd: 'set_size', h: Math.floor(w / 2) }, sh('arch', { rise: Math.floor(w / 2) })];
+    case 'circle': return [sh('rect'), { cmd: 'set_size', h: w }, sh('circle')];
+    case 'trapezoid': return [sh('trapezoid', { h_left: h, h_right: Math.max(300, Math.round(h * 0.7)) })];
+    case 'triangle': return [sh('triangle', { apex: Math.round(w / 2) })];
+  }
+}
 
 function SplitStep({ doc, run, persist, goto, orderId, pos }: StepProps & { orderId: string; pos: string }) {
   const { width } = useWindowDimensions();
@@ -567,6 +604,20 @@ function SplitStep({ doc, run, persist, goto, orderId, pos }: StepProps & { orde
               <Txt size={15} w={500} color={transom ? '#fff' : C.ink}>Фрамуга</Txt>
             </Pressable>
           </View>
+        ) : null}
+        {isWindow ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {QUICK_SHAPES.map((q) => {
+              const on = quickShape(doc) === q.value;
+              return (
+                <Pressable key={q.value} accessibilityRole="button" accessibilityState={{ selected: on }}
+                  onPress={() => { if (!on) { setSel(null); run(quickShapeCommands(doc, q.value), 4); } }}
+                  style={[s.chip, on && s.chipOn]}>
+                  <Txt size={15} w={500} color={on ? '#fff' : C.ink}>{q.title}</Txt>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         ) : null}
         <View style={[st.sheet, { paddingTop: 18, paddingBottom: 12, alignItems: 'center', gap: 8 }]}>
           <View ref={box} {...pan.panHandlers} onLayout={() => box.current?.measureInWindow((x, y) => { origin.current = { x, y }; })}>
