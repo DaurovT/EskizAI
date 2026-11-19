@@ -18,7 +18,7 @@ EXPO_PUBLIC_API_URL=http://localhost:8030 npx expo start   # локальный 
 | `src/ui/kit.tsx` | компоненты по классам макета: `.app`→Screen, `.hdr`→TopBar, `.sheet`→Card, `.row`→Row, `.cta`→Button (стеклянная голубая), `.soft`→Button secondary, `.seg`→Seg, `.chip`→Chip, `.fld`→Field, `.tog`→Switch, `.stp`→Stepper, `.bs`→Sheet, `.foot`→Dock |
 | `src/ui/Schema.tsx` | схема окна из дерева изделия (без сети), подсветка нарушений, нажатие на ячейку |
 | `src/ui/Icon.tsx`, `Glass.tsx`, `TabBar.tsx`, `MainHeader.tsx` | иконки, «жидкое стекло», меню, шапка вкладок |
-| `src/lib/tree.ts` | дерево изделия и команды (как в ядре) — для правки без сети |
+| `src/lib/tree.ts` | дерево изделия и команды (как в ядре) — для правки без сети; форма рамы `outline()`, раскладка, сборки (пути `A<i>/`) — `../docs/shapes_contract.md` |
 | `src/lib/format.ts` | `money`, `sum`, `num`, `size`, `m2`, `date`, `ago`, `phone`, `STATUS_TITLE` |
 | `src/lib/useLoad.ts` | загрузка данных экрана |
 | `src/api/http.ts`, `types.ts` | запросы к API, типы ответов |

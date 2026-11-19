@@ -133,6 +133,23 @@ for x in items:
     if best:
         x['demo_price_sum']=str(int(round(best[0],-2))); x['demo_price_basis']=best[1]
 
+# ---- ДЕМО-позиции новых ролей (shapes_contract.md §7–8): фигурные, раскладка, открывания, сборки, цвет ----
+# Не из Romchi: своя серия «Eskiz ДЕМО», цвет «—», цена только в demo_price_sum (боевой цех — P.1, пока не внесёт свою).
+# variant (кремовый, матовое…) — в колонке type_ru. unit pct — наценка в % к цене белого профиля.
+DEMO_SYS='eskiz__demo_roles'
+import os
+if os.path.exists('demo_roles.csv'):
+    for r in csv.DictReader(open('demo_roles.csv',encoding='utf-8')):
+        i=len(items)+1
+        items.append(dict(item_id=f'it{i:05d}',brand='Eskiz ДЕМО',material_class='demo',system_code=DEMO_SYS,
+            series='Новые роли (ДЕМО)',price_updated='',color='—',pos=str(i),type_ru=r['variant'],article=r['article'],
+            role=r['role'],unit=r['unit'],unit_confirmed='0',pack_kg='',pack_m='',sill_depth_cm='',price_sum='',
+            has_price='0',series_incomplete='0',needs_review='0',source='eskiz_demo_2026-11',
+            demo_price_sum=r['demo_price_sum'],demo_price_basis=r['note']))
+        st=sys_stats.setdefault(DEMO_SYS,dict(system_code=DEMO_SYS,brand='Eskiz ДЕМО',series='Новые роли (ДЕМО)',
+            material_class='demo',colors=set(),roles=set(),items=0,no_price=0,updated='',incomplete='0'))
+        st['colors'].add('—'); st['roles'].add(r['role']); st['items']+=1; st['no_price']+=1
+
 with open('catalog_items.csv','w',newline='') as f:
     w=csv.DictWriter(f,fieldnames=list(items[0].keys())); w.writeheader(); w.writerows(items)
 

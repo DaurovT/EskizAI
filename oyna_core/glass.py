@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from .data import Catalog
 
 RU = str.maketrans({"и": "i", "з": "t"})
-PANE = re.compile(r"^(?:(\d+(?:\.\d+)?)\.(\d+(?:\.\d+)?)\.(\d+)|(\d+(?:\.\d+)?))((?:tn|i|t|m)*)$")
+PANE = re.compile(r"^(?:(\d+(?:\.\d+)?)\.(\d+(?:\.\d+)?)\.(\d+)|(\d+(?:\.\d+)?))((?:p4a|tn|i|t|m)*)$")
 
 
 class GlassError(ValueError):
@@ -23,6 +23,7 @@ class Pane:
     tempered: bool = False
     tinted: bool = False
     matte: bool = False
+    armored: bool = False               # P4A (§9.6)
 
 
 @dataclass
@@ -69,7 +70,11 @@ def preset_to_formula(code: str) -> str:
 def parse(spec: str, cat: Catalog) -> Glass:
     """setup.glass: код пресета (g4_12_4) или формула (6t-14-4i). Ошибка → GlassError (правило 4.9)."""
     if spec in cat.glass_presets:
-        g = _parse_formula(preset_to_formula(spec), cat)
+        token = cat.glass_presets[spec]["formula"].split(" ")[0]
+        try:                                   # формула пресета из glass.csv (триплекс, аргон, тёплая рамка)
+            g = _parse_formula(token, cat)
+        except GlassError:
+            g = _parse_formula(preset_to_formula(spec), cat)
         g.spec, g.preset = spec, spec
         return g
     g = _parse_formula(spec, cat)
@@ -91,19 +96,19 @@ def _parse_formula(formula: str, cat: Catalog) -> Glass:
     panes, spacers = [], []
     for i, p in enumerate(parts):
         if i % 2:
-            m = re.fullmatch(r"(\d+)(ar)?", p)
+            m = re.fullmatch(r"(\d+)(ar)?(tgi|warm)?", p)
             if not m:
-                raise GlassError(f"рамка «{p}»: число мм и необязательно ar")
+                raise GlassError(f"рамка «{p}»: число мм и необязательно ar, tgi (тёплая рамка)")
             w = int(m.group(1))
             if not lim["spacer_mm"][0] <= w <= lim["spacer_mm"][1]:
                 raise GlassError(f"рамка {w} мм вне {lim['spacer_mm'][0]}–{lim['spacer_mm'][1]} мм")
-            spacers.append({"mm": w, "argon": bool(m.group(2))})
+            spacers.append({"mm": w, "argon": bool(m.group(2)), "warm": bool(m.group(3))})
             continue
         m = PANE.match(p)
         if not m:
             raise GlassError(f"стекло «{p}»: толщина + i/t/tn/m или триплекс 4.4.1")
         sfx = m.group(5) or ""
-        flags = set(re.findall(r"tn|i|t|m", sfx))
+        flags = set(re.findall(r"p4a|tn|i|t|m", sfx))
         if m.group(1):
             gmm = float(m.group(1)) + float(m.group(2))
             pane = Pane(mm=round(gmm + int(m.group(3)) * 0.38, 2), glass_mm=gmm, triplex=True)
@@ -113,6 +118,7 @@ def _parse_formula(formula: str, cat: Catalog) -> Glass:
                 raise GlassError(f"стекло {mm:g} мм вне {lim['pane_mm'][0]}–{lim['pane_mm'][1]} мм")
             pane = Pane(mm=mm, glass_mm=mm)
         pane.low_e, pane.tempered, pane.tinted, pane.matte = "i" in flags, "t" in flags, "tn" in flags, "m" in flags
+        pane.armored = "p4a" in flags
         panes.append(pane)
     if len(spacers) > lim["chambers_max"]:
         raise GlassError(f"камер больше {lim['chambers_max']}")
@@ -143,6 +149,8 @@ def price_m2(g: Glass, cat: Catalog, company=None) -> tuple[float | None, str, s
         s += P["low_e"] * p.low_e + P["tempered"] * p.tempered + P["tinted"] * p.tinted
         s += P["matte"] * p.matte + P["triplex"] * p.triplex
     s += P["argon"] * sum(sp["argon"] for sp in g.spacers)
+    s += P.get("warm_spacer", 0) * sum(sp.get("warm", False) for sp in g.spacers)
+    s += P.get("armored_p4a", 0) * sum(p.armored for p in g.panes)
     s += P.get("spacer_extra_per_mm", 0) * sum(max(0, sp["mm"] - 12) for sp in g.spacers)
     how = "по надбавкам цеха" if status_custom == "найдено" else "по надбавкам glass_formula.json"
     return float(s), status_custom, how

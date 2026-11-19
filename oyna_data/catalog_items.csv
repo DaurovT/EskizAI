@@ -3239,3 +3239,55 @@ it03237,Retpen,pvc_accessory,retpen__6000_eko_aksessuarlari,6000 EKO aksessuarla
 it03238,Retpen,pvc_accessory,retpen__6000_qvt_aksessuarlari,6000 QVT aksessuarlari,2026-03-11,—,1,,Metall Universal (0.7mm),reinforcement,bar,0,,,,39260,1,0,0,romchi_demo_2026-11,,
 it03239,Retpen,pvc_accessory,retpen__6000_qvt_aksessuarlari,6000 QVT aksessuarlari,2026-03-11,—,2,,Metall Universal (0.8mm),reinforcement,bar,0,,,,50977,1,0,0,romchi_demo_2026-11,,
 it03240,Retpen,pvc_accessory,retpen__6000_qvt_aksessuarlari,6000 QVT aksessuarlari,2026-03-11,—,3,,Metall Universal (1.0mm),reinforcement,bar,0,,,,67527,1,0,0,romchi_demo_2026-11,,
+it03241,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3241,,Спецфурнитура фигурной створки (комплект),fit_shaped,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,350000,ДЕМО: shapes_contract.md §7
+it03242,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3242,,Фурнитура подвесного окна (комплект),fit_top_hung,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,280000,ДЕМО: shapes_contract.md §7
+it03243,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3243,,Фурнитура среднеподвесного окна (комплект),fit_pivot,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,420000,ДЕМО: shapes_contract.md §7
+it03244,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3244,,Раскладка внутренняя (профиль),muntin_inner,m,0,,,,,0,0,0,eskiz_demo_2026-11,25000,ДЕМО: shapes_contract.md §7
+it03245,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3245,,Крестовина раскладки,muntin_cross,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,3000,ДЕМО: shapes_contract.md §7
+it03246,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3246,,Раскладка накладная (фальш-переплёт),muntin_overlay,m,0,,,,,0,0,0,eskiz_demo_2026-11,35000,ДЕМО: shapes_contract.md §7; за метр одной стороны
+it03247,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3247,,Декоративная вставка в стекло,muntin_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,250000,ДЕМО: shapes_contract.md §7
+it03248,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3248,,Соединитель прямой 180°,conn_straight,m,0,,,,,0,0,0,eskiz_demo_2026-11,60000,ДЕМО: shapes_contract.md §7
+it03249,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3249,,Соединитель угловой 90°,conn_corner90,m,0,,,,,0,0,0,eskiz_demo_2026-11,90000,ДЕМО: shapes_contract.md §7
+it03250,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3250,,Соединитель эркерный (поворотный),conn_bay,m,0,,,,,0,0,0,eskiz_demo_2026-11,110000,ДЕМО: shapes_contract.md §7
+it03251,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3251,,Несущая стойка (колонна),conn_post,m,0,,,,,0,0,0,eskiz_demo_2026-11,150000,ДЕМО: shapes_contract.md §7
+it03252,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3252,,Ламинация профиля (одна сторона),lamination,m,0,,,,,0,0,0,eskiz_demo_2026-11,18000,ДЕМО: shapes_contract.md §8; если у системы нет группы прайса с ламинацией
+it03253,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3253,cream,Цвет в массе: слоновая кость,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,12,ДЕМО: наценка в % к цене белого профиля
+it03254,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3254,brown,Цвет в массе: коричневый,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,25,ДЕМО: наценка в % к цене белого профиля
+it03255,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3255,grey,Цвет в массе: серый,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,25,ДЕМО: наценка в % к цене белого профиля
+it03256,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3256,anthracite,Цвет в массе: антрацит,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,25,ДЕМО: наценка в % к цене белого профиля
+it03257,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3257,ral,Покраска по RAL,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,18,ДЕМО: наценка в % к цене белого профиля (алюминий без группы «Цветной»)
+it03258,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3258,anodized,Анодирование,profile_color,pct,0,,,,,0,0,0,eskiz_demo_2026-11,25,ДЕМО: наценка в % к цене белого профиля
+it03259,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3259,matte,Стекло матовое (декор),glass_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,80000,ДЕМО: shapes_contract.md §8
+it03260,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3260,tinted,Стекло тонированное (декор),glass_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,70000,ДЕМО: shapes_contract.md §8
+it03261,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3261,mirror,Стекло зеркальное (декор),glass_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,120000,ДЕМО: shapes_contract.md §8
+it03262,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3262,pattern,Стекло узорчатое (декор),glass_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,90000,ДЕМО: shapes_contract.md §8
+it03263,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3263,stained,Витраж в стеклопакете,glass_decor,m2,0,,,,,0,0,0,eskiz_demo_2026-11,450000,ДЕМО: shapes_contract.md §8
+it03264,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3264,,Фурнитура двери наружу (петли и замок),fit_door_out,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,150000,ДЕМО: shapes_contract.md §9.1; доплата к дверной фурнитуре
+it03265,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3265,,Порог алюминиевый низкий,threshold_alu,m,0,,,,,0,0,0,eskiz_demo_2026-11,180000,ДЕМО: §9.1
+it03266,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3266,,Фурнитура гармошки (на створку),fit_folding,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,350000,ДЕМО: §9.1
+it03267,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3267,,Фурнитура параллельно-сдвижная PSK (на створку),fit_psk,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,1200000,ДЕМО: §9.1
+it03268,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3268,,Фурнитура подъёмно-сдвижная HS (на створку),fit_hs,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,3500000,ДЕМО: §9.1
+it03269,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3269,,Порог HS,threshold_hs,m,0,,,,,0,0,0,eskiz_demo_2026-11,450000,ДЕМО: §9.1
+it03270,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3270,,Москитная сетка рамочная,mosq_frame,m2,0,,,,,0,0,0,eskiz_demo_2026-11,150000,ДЕМО: §9.2; розница 110 000–250 000 за сетку (extra_products.csv)
+it03271,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3271,,Москитная сетка раздвижная,mosq_sliding,m2,0,,,,,0,0,0,eskiz_demo_2026-11,379000,ДЕМО: §9.2; service-eco 379 000 м²
+it03272,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3272,,Москитная сетка плиссе,mosq_pleated,m2,0,,,,,0,0,0,eskiz_demo_2026-11,600000,ДЕМО: §9.2; ecofiber от 775 000 за изделие
+it03273,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3273,,Москитная дверь на петлях,mosq_door,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,293000,ДЕМО: §9.2; service-eco 293 000
+it03274,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3274,,Москитная сетка «антикошка»,mosq_antipet,m2,0,,,,,0,0,0,eskiz_demo_2026-11,220000,ДЕМО: §9.2
+it03275,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3275,20,Расширитель 20 мм,addon_extender,m,0,,,,,0,0,0,eskiz_demo_2026-11,25000,ДЕМО: §9.3
+it03276,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3276,40,Расширитель 40 мм,addon_extender,m,0,,,,,0,0,0,eskiz_demo_2026-11,40000,ДЕМО: §9.3
+it03277,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3277,60,Расширитель 60 мм,addon_extender,m,0,,,,,0,0,0,eskiz_demo_2026-11,60000,ДЕМО: §9.3
+it03278,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3278,100,Расширитель 100 мм,addon_extender,m,0,,,,,0,0,0,eskiz_demo_2026-11,90000,ДЕМО: §9.3
+it03279,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3279,,Подставочный профиль,addon_base,m,0,,,,,0,0,0,eskiz_demo_2026-11,30000,ДЕМО: §9.3
+it03280,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3280,,Соединитель коробок,addon_connector,m,0,,,,,0,0,0,eskiz_demo_2026-11,45000,ДЕМО: §9.3
+it03281,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3281,,Нащельник,addon_cover,m,0,,,,,0,0,0,eskiz_demo_2026-11,20000,ДЕМО: §9.3
+it03282,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3282,,Козырёк,addon_canopy,m,0,,,,,0,0,0,eskiz_demo_2026-11,120000,ДЕМО: §9.3; за метр длины
+it03283,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3283,,Приточный клапан,vent_valve,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,250000,ДЕМО: §9.4
+it03284,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3284,,Рольставня,shutter_roller,m2,0,,,,,0,0,0,eskiz_demo_2026-11,900000,"ДЕМО: §9.4; розница 1–1,5 млн за изделие"
+it03285,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3285,,Жалюзи (короб на окне),shutter_blinds,m2,0,,,,,0,0,0,eskiz_demo_2026-11,200000,ДЕМО: §9.4
+it03286,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3286,,Электропривод рольставни/жалюзи,shutter_motor,pcs,0,,,,,0,0,0,eskiz_demo_2026-11,1200000,ДЕМО: §9.4
+it03287,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3287,straight,Решётка из прутка,grille,m2,0,,,,,0,0,0,eskiz_demo_2026-11,350000,ДЕМО: §9.4
+it03288,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3288,forged,Решётка кованая,grille,m2,0,,,,,0,0,0,eskiz_demo_2026-11,700000,ДЕМО: §9.4
+it03289,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3289,,Вынос остекления лоджии,loggia_outrigger,m,0,,,,,0,0,0,eskiz_demo_2026-11,250000,ДЕМО: §9.5; за метр длины
+it03290,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3290,,Крыша лоджии,loggia_roof,m2,0,,,,,0,0,0,eskiz_demo_2026-11,350000,ДЕМО: §9.5
+it03291,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3291,,Обшивка парапета лоджии,loggia_cladding,m2,0,,,,,0,0,0,eskiz_demo_2026-11,180000,ДЕМО: §9.5
+it03292,Eskiz ДЕМО,demo,eskiz__demo_roles,Новые роли (ДЕМО),,—,3292,,Штапик фигурный (доплата),bead_profiled,m,0,,,,,0,0,0,eskiz_demo_2026-11,5000,ДЕМО: §9.6

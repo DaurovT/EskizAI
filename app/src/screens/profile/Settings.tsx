@@ -24,7 +24,13 @@ type CompanyRow = {
   id: string; name: string; phone: string | null; inn: string | null; address: string | null; logo_url: string | null;
   mode: 'manufacturer' | 'dealer'; dealer_coef?: number | null; markup_kind?: 'percent' | 'margin' | 'per_m2'; markup_value?: number;
   usd_rate: number | null; lang_default: 'ru' | 'uz'; demo_prices: boolean; plan?: string;
+  /** наценка по группам строк BOM (shapes_contract §9.7); нет — общая наценка */
+  markup_groups?: Record<string, number> | null;
 };
+const MARKUP_GROUPS: { key: string; title: string }[] = [
+  { key: 'profile', title: 'Профиль' }, { key: 'glass', title: 'Стекло' }, { key: 'fittings', title: 'Фурнитура' },
+  { key: 'works', title: 'Работы' }, { key: 'other', title: 'Прочее' },
+];
 type Work = { name: string; unit: string; ref_price_sum: number | null; set: boolean; price_sum: number | null };
 type CompanyOut = {
   company: CompanyRow; works: Record<string, Work>; kits: (Kit & { id: string })[]; systems: string[];
@@ -104,7 +110,7 @@ export default function Settings() {
             <Row onPress={() => setOpen('markup')} left={<Tile><XIcon name="tag" size={20} /></Tile>}
               label={isOwner ? 'Наценка и работы' : 'Работы цеха'}
               sub={<Txt size={14} color={C.muted} lines={1}>{[
-                isOwner && d.co.company.markup_kind ? markupLine(d.co.company.markup_kind, d.co.company.markup_value) : '',
+                isOwner && d.co.company.markup_kind ? `${markupLine(d.co.company.markup_kind, d.co.company.markup_value)}${d.co.company.markup_groups && Object.keys(d.co.company.markup_groups).length ? ' · по группам' : ''}` : '',
                 d.co.onboarding.works_missing.length ? 'работы ДЕМО' : 'работы заданы',
               ].filter(Boolean).join(' · ')}</Txt>}
               right={d.co.onboarding.works_missing.length ? <Dot /> : undefined} />
@@ -296,6 +302,11 @@ function MarkupSheet({ co, owner, onSave }: { co: CompanyOut; owner: boolean; on
   const [kind, setKind] = useState(c.markup_kind ?? 'percent');
   const [value, setValue] = useState(String(Number(c.markup_value ?? 30)).replace('.', ','));
   const [demo, setDemo] = useState(!!c.demo_prices);
+  const [byGroup, setByGroup] = useState<'one' | 'groups'>(c.markup_groups && Object.keys(c.markup_groups).length ? 'groups' : 'one');
+  const [groups, setGroups] = useState<Record<string, string>>(() => Object.fromEntries(MARKUP_GROUPS.map((g) => {
+    const v = c.markup_groups?.[g.key];
+    return [g.key, v != null ? String(v).replace('.', ',') : ''];
+  })));
   const [works, setWorks] = useState<Record<string, string>>(() =>
     Object.fromEntries(Object.entries(co.works).map(([k, w]) => [k, w.set && w.price_sum != null ? String(w.price_sum) : ''])));
   const sv = useSave();
@@ -307,6 +318,13 @@ function MarkupSheet({ co, owner, onSave }: { co: CompanyOut; owner: boolean; on
   if (kind !== c.markup_kind) body.markup_kind = kind;
   if (valueN !== null && valueN !== Number(c.markup_value)) body.markup_value = valueN;
   if (demo !== !!c.demo_prices) body.demo_prices = demo;
+  // группы: пустое поле — общая наценка для этой группы
+  const groupsBody: Record<string, number> | null = byGroup === 'groups'
+    ? Object.fromEntries(MARKUP_GROUPS.map((g) => [g.key, parseNum(groups[g.key] ?? '')]).filter(([, v]) => v !== null)) as Record<string, number>
+    : null;
+  const groupsWas = c.markup_groups && Object.keys(c.markup_groups).length ? c.markup_groups : null;
+  const groupsNow = groupsBody && Object.keys(groupsBody).length ? groupsBody : null;
+  if (JSON.stringify(groupsNow) !== JSON.stringify(groupsWas)) body.markup_groups = groupsNow;
   const wBody: Record<string, number | null> = {};
   for (const [k, w] of Object.entries(co.works)) {
     const v = parseNum(works[k] ?? '');
@@ -337,6 +355,16 @@ function MarkupSheet({ co, owner, onSave }: { co: CompanyOut; owner: boolean; on
             <Field label={kind === 'margin' ? 'Доля маржи в цене' : kind === 'per_m2' ? 'Сумма за м²' : 'Наценка на себестоимость'} value={value} onChangeText={setValue}
               keyboardType="decimal-pad" right={<Txt size={17} w={500}>{kind === 'per_m2' ? 'сум' : '%'}</Txt>} />
           </View>
+          <Seg items={[{ value: 'one', title: 'Общая' }, { value: 'groups', title: 'По группам' }]} value={byGroup} onChange={setByGroup} />
+          {byGroup === 'groups' ? (
+            <View style={{ paddingHorizontal: 12, gap: 8 }}>
+              {MARKUP_GROUPS.map((g) => (
+                <Field key={g.key} label={g.title} value={groups[g.key] ?? ''} onChangeText={(v) => setGroups({ ...groups, [g.key]: v })}
+                  keyboardType="decimal-pad" placeholder={`как общая · ${value}`} right={<Txt size={17} w={500}>{kind === 'per_m2' ? 'сум' : '%'}</Txt>} />
+              ))}
+              <Note style={{ paddingHorizontal: 8 }}>Пустое поле — общая наценка</Note>
+            </View>
+          ) : null}
           {valueN !== null && kind !== 'per_m2' && !(kind === 'margin' && valueN >= 95) ? (
             <Note style={{ paddingHorizontal: 20 }}>{`Себестоимость 1 000 000 → цена ${sum(Math.round(kind === 'margin' ? 1e6 / (1 - valueN / 100) : 1e6 * (1 + valueN / 100)))}`}</Note>
           ) : null}

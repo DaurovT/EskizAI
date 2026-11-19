@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { api, errorText } from '@/api/http';
-import type { OrderFull } from '@/api/types';
+import type { CustomLine, OrderFull, PositionOut } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { num } from '@/lib/format';
 import { useLoad } from '@/lib/useLoad';
@@ -27,6 +27,7 @@ export default function Calc() {
   const [kit, setKit] = useState<string | null>(p.kit ? String(p.kit) : null);
   const [discOpen, setDiscOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
+  const [lineFor, setLineFor] = useState<string | null>(null);   // «Добавить строку» — позиция
 
   const base = useLoad(async () => {
     const [order, company] = await Promise.all([
@@ -124,6 +125,12 @@ export default function Calc() {
           ))}
           {!c.groups.length ? <View style={{ padding: 20 }}><Note>В заказе пока нет позиций</Note></View> : null}
         </View>
+        <CustomLines positions={order.positions.filter((x) => !x.deleted)} onAdd={(pid) => setLineFor(pid)}
+          onRemove={async (pos, i) => {
+            const doc = { ...pos.doc, custom_lines: (pos.doc.custom_lines ?? []).filter((_, k) => k !== i) };
+            try { await api.put(`/oyna/orders/${id}/positions/${pos.id}`, { doc, base_rev: pos.rev }); } catch { /* перечитаем */ }
+            void base.reload(); void calc.reload();
+          }} />
         {calc.loading ? <Note center>Пересчитываем…</Note> : null}
         {calc.error ? <ErrorText>{calc.error}</ErrorText> : null}
       </ScrollView>
@@ -133,6 +140,9 @@ export default function Calc() {
         <Button title="Отправить КП" style={{ flex: 1 }} disabled={incomplete} onPress={() => router.push(`/order/${id}/quote`)} />
       </FootBar>
 
+      <LineSheet orderId={id} pos={order.positions.find((x) => x.id === lineFor) ?? null} positions={order.positions.filter((x) => !x.deleted)}
+        onPick={setLineFor} onClose={() => setLineFor(null)}
+        onSaved={() => { setLineFor(null); void base.reload(); void calc.reload(); }} />
       <DiscountSheet visible={discOpen} onClose={() => setDiscOpen(false)} orderId={id} value={c.discount_pct}
         onSaved={() => { setDiscOpen(false); void calc.reload(); void base.reload(); }} />
       {isOwner ? (
@@ -204,7 +214,83 @@ function groupSub(g: CalcGroup): string {
   if (g.bars) qty = `${g.bars} ${plural(g.bars, 'хлыст', 'хлыста', 'хлыстов')}`;
   else if (g.unit === 'pcs') qty = `${num(g.qty)} шт`;
   else qty = `${num(g.qty, 1)} ${unitRu(g.unit)}`;
-  return g.key === 'work' ? what : [what, qty].filter(Boolean).join(' · ');
+  const sup = [...new Set(g.lines.map((l) => l.supplier_name ?? l.supplier).filter(Boolean))];
+  const supText = sup.length ? `поставщик: ${sup.join(', ')}` : '';
+  return (g.key === 'work' ? [what, supText] : [what, qty, supText]).filter(Boolean).join(' · ');
+}
+
+// ---------- свои строки позиций (doc.custom_lines, §9.7) ----------
+function CustomLines({ positions, onAdd, onRemove }: {
+  positions: PositionOut[]; onAdd: (pos: string) => void; onRemove: (pos: PositionOut, i: number) => void;
+}) {
+  const rows = positions.flatMap((p, pi) => (p.doc.custom_lines ?? []).map((l, i) => ({ p, pi, l, i })));
+  if (!positions.length) return null;
+  return (
+    <>
+      <Txt size={15} w={600} color={C.muted} style={{ paddingHorizontal: 8, paddingTop: 2 }}>Свои строки</Txt>
+      <View style={{ backgroundColor: C.card, borderRadius: 28, overflow: 'hidden' }}>
+        {rows.map(({ p, pi, l, i }, k) => (
+          <View key={`${p.id}:${i}`} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingLeft: 20, paddingRight: 8, paddingVertical: 8 },
+            k > 0 && { borderTopWidth: 1, borderTopColor: C.line }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Txt w={500}>{l.name}</Txt>
+              <Txt size={14} color={C.muted}>{`Позиция ${pi + 1}${p.room ? ` · ${p.room}` : ''} · ${num(l.qty, 2)} ${l.unit} × ${num(l.price_sum)}${l.no_markup ? ' · без наценки' : ''}`}</Txt>
+            </View>
+            <Txt w={600} style={{ fontVariant: ['tabular-nums'] }}>{mln(l.qty * l.price_sum)}</Txt>
+            <IconButton name="close" label="Убрать строку" onPress={() => onRemove(p, i)} />
+          </View>
+        ))}
+        <View style={[{ padding: 12 }, rows.length > 0 && { borderTopWidth: 1, borderTopColor: C.line }]}>
+          <SoftButton title="Добавить строку" onPress={() => onAdd(positions[0].id)} />
+        </View>
+      </View>
+      <Note style={{ paddingHorizontal: 8 }}>Работа или материал, которых нет в каталоге — в цену позиции, с наценкой</Note>
+    </>
+  );
+}
+
+function LineSheet({ orderId, pos, positions, onPick, onClose, onSaved }: {
+  orderId: string; pos: PositionOut | null; positions: PositionOut[]; onPick: (id: string) => void; onClose: () => void; onSaved: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [qty, setQty] = useState('1');
+  const [unit, setUnit] = useState('шт');
+  const [price, setPrice] = useState('');
+  const [noMarkup, setNoMarkup] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { if (pos) { setName(''); setQty('1'); setUnit('шт'); setPrice(''); setNoMarkup(false); setErr(null); } }, [pos?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const q = Number(qty.replace(',', '.')), pr = Number(price);
+  const ok = !!pos && name.trim().length > 0 && q > 0 && pr >= 0 && price !== '';
+  const save = async () => {
+    if (!pos || !ok) return;
+    setBusy(true); setErr(null);
+    const line: CustomLine = { name: name.trim(), qty: q, unit: unit.trim() || 'шт', price_sum: pr, ...(noMarkup ? { no_markup: true } : {}) };
+    const doc = { ...pos.doc, custom_lines: [...(pos.doc.custom_lines ?? []), line] };
+    try { await api.put(`/oyna/orders/${orderId}/positions/${pos.id}`, { doc, base_rev: pos.rev }); onSaved(); }
+    catch (e) { setErr(errorText(e)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <Sheet visible={!!pos} onClose={onClose} title="Своя строка в позиции">
+      <View style={{ paddingHorizontal: 12, gap: 8, paddingBottom: 8 }}>
+        {positions.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }} keyboardShouldPersistTaps="handled">
+            {positions.map((p, i) => <Chip key={p.id} title={`${i + 1}${p.room ? ` · ${p.room}` : ''}`} on={p.id === pos?.id} onPress={() => onPick(p.id)} />)}
+          </ScrollView>
+        ) : null}
+        <Field label="Название" value={name} onChangeText={setName} placeholder="Демонтаж решётки" />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Field label="Количество" value={qty} onChangeText={setQty} keyboardType="decimal-pad" style={{ flex: 1 }} />
+          <Field label="Ед." value={unit} onChangeText={setUnit} style={{ width: 96 }} />
+        </View>
+        <Field label="Цена за единицу, сум" value={price} onChangeText={(t) => setPrice(t.replace(/[^\d]/g, ''))} keyboardType="number-pad" placeholder="0" />
+        <Chip title="Без наценки" on={noMarkup} onPress={() => setNoMarkup(!noMarkup)} />
+        <ErrorText>{err}</ErrorText>
+        <Button title="Добавить" onPress={() => void save()} disabled={!ok} loading={busy} />
+      </View>
+    </Sheet>
+  );
 }
 
 function SpecRow({ title, sub, value, status, first }: SpecItem & { first?: boolean }) {

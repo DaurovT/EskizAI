@@ -60,7 +60,7 @@ def test_render_svg():
 def test_alternatives_and_catalogs():
     doc = c.post("/oyna/positions/from-template", json={"template": "T01"}).json()["doc"]
     a = c.post("/oyna/positions/alternatives", json={"doc": doc, "what": "option:handle", "path": ""}).json()
-    assert len(a["options"]) == 5
+    assert len(a["options"]) == 7                    # 5 ручек + с ключом и с кнопкой (shapes_contract.md §9.6)
     assert {"fornax", "generic", "maco_mm"} == {f["code"] for f in c.get("/oyna/fitting-sets", params={"system": "akfa__6000_qvt"}).json()}
     dec = {d["id"]: d for d in c.get("/oyna/decors", params={"system": "akfa__6000_qvt"}).json()}
     assert dec["white"]["available"] and not dec["ral_any"]["available"]

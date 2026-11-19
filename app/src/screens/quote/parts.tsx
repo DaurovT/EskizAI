@@ -21,7 +21,8 @@ import { Icon } from '@/ui/Icon';
 import { C, TAG } from '@/theme';
 
 // ---------- типы ответов (нет в src/api/types.ts) ----------
-export type CalcLine = { name: string; qty: number; bars?: number; total?: number };
+/** supplier / supplier_name — поставщик строки, если у цеха их несколько (shapes_contract §9.7) */
+export type CalcLine = { name: string; qty: number; bars?: number; total?: number; supplier?: string | null; supplier_name?: string | null; kind?: string };
 export type CalcGroup = {
   key: string; title: string; qty: number; unit: string; price_status: 'price' | 'demo' | 'none' | 'estimate';
   lines: CalcLine[]; bars?: number; cost?: number;

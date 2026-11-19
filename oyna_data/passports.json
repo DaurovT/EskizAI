@@ -72,7 +72,9 @@
       "reinf": 1.0
     },
     "fitting_groove": "13mm",
-    "verified": false
+    "verified": false,
+    "hs": true,
+    "hs_note": "ДЕМО: подъёмно-сдвижное (HS) есть у системы — уточнить у поставщика (правило 7.20)"
   },
   "alu_cold": {
     "title": "Алюминий холодный (Aldoks, BKC50, ADC-50, PZ-50…)",
@@ -140,7 +142,9 @@
       "mullion": 1.5
     },
     "fitting_groove": "alu",
-    "verified": false
+    "verified": false,
+    "hs": true,
+    "hs_note": "ДЕМО: подъёмно-сдвижное (HS) есть у системы — уточнить у поставщика (правило 7.20)"
   },
   "_systems_note": "Паспорта конкретных систем (ключ = system_code) поверх класса: inherits — класс, поля из него, которые не переопределены, остаются ДЕМО. verified_fields — поля, взятые из официальных данных Akfa (akfagroup.com, каталог IMZO). Размеры сечений (bf, bi, bs, ov, weld, imp_add, g, r) Akfa не публикует — тех. каталог по запросу: t.me/akfa_support, +998 71 203 00 00.",
   "akfa__6000_qvt": {

@@ -55,7 +55,7 @@
     "title": "Турецкая П/О для алюминия, серия A3400 (Romchi «(Tr)»)",
     "grooves": ["euro_alu"],
     "materials": ["alu_cold", "alu_thermo"],
-    "openings": ["tilt_turn", "turn"],
+    "openings": ["tilt_turn", "turn", "door"],
     "sash_w_mm": [400, 1400],
     "sash_h_mm": [500, 2400],
     "max_sash_kg": 100,

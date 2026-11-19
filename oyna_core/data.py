@@ -54,6 +54,39 @@ class Company:
     item_prices: dict = field(default_factory=dict)  # (item_id, color) -> цена цеха поверх базовой (FR-C4)
     glass_prices: dict = field(default_factory=dict) # glass_code -> цена за м² у стекольщика цеха
     glass_pricing: dict = field(default_factory=dict) # переопределение надбавок glass_formula.json: ключ -> значение
+    # поставщики и наценка по группам (shapes_contract.md §9.7)
+    suppliers: dict = field(default_factory=dict)              # supplier_id -> название
+    default_suppliers: dict = field(default_factory=dict)      # категория (profile|glass|fittings|other) -> supplier_id
+    supplier_prices: dict = field(default_factory=dict)        # supplier_id -> {(item_id, color): цена}
+    supplier_glass_prices: dict = field(default_factory=dict)  # supplier_id -> {glass_code: цена за м²}
+    markup_groups: dict | None = None                          # {"profile": 30, "glass": 20, …}; None — общая наценка
+    price_sources: dict = field(default_factory=dict)          # ("item", item_id) | ("glass", code) -> supplier_id (после with_suppliers)
+
+    def with_suppliers(self, cat: "Catalog", setup: dict | None) -> "Company":
+        """Цены позиции по поставщикам: основной поставщик категории, setup.suppliers ({"glass": id}) переопределяет.
+
+        Цена поставщика ложится поверх своих цен цеха; нет у поставщика цены — своя цена цеха, потом базовая.
+        """
+        from dataclasses import replace
+
+        from .groups import supplier_category
+        chosen = {k: v for k, v in (self.default_suppliers or {}).items() if v}
+        chosen.update({k: v for k, v in ((setup or {}).get("suppliers") or {}).items() if v})
+        chosen = {k: v for k, v in chosen.items() if v in self.supplier_prices or v in self.supplier_glass_prices}
+        if not chosen:
+            return self
+        role_of = {it["item_id"]: it["role"] for it in cat.items}
+        items, glass, src = dict(self.item_prices), dict(self.glass_prices), {}
+        for catg, sid in chosen.items():
+            for (iid, color), p in self.supplier_prices.get(sid, {}).items():
+                if supplier_category(role_of.get(iid)) == catg:
+                    items[(iid, color)] = p
+                    src[("item", iid)] = sid
+            if catg == "glass":
+                for code, p in self.supplier_glass_prices.get(sid, {}).items():
+                    glass[code] = p
+                    src[("glass", code)] = sid
+        return replace(self, item_prices=items, glass_prices=glass, price_sources=src)
 
     @classmethod
     def demo(cls, data_dir: Path = DEFAULT_DATA) -> "Company":
@@ -143,8 +176,47 @@ class Catalog:
                 if r.get("unit"):
                     it["unit"] = r["unit"]
                 it["needs_review"] = "0"
-        for k in ("_by_sys_role_color", "_by_article", "_by_sys_article"):
+        for k in ("_by_sys_role_color", "_by_article", "_by_sys_article", "_by_role"):
             self.__dict__.pop(k, None)
+
+    @cached_property
+    def profile_colors_cfg(self) -> dict:
+        p = self.dir / "profile_colors.json"
+        return _json(p) if p.exists() else {"colors": [], "availability": {}}
+
+    @cached_property
+    def profile_colors(self) -> dict[str, dict]:
+        """Цвета профиля в массе (shapes_contract.md §8): id → {name_ru, material, hex}."""
+        return {c["id"]: c for c in self.profile_colors_cfg["colors"]}
+
+    def profile_colors_for(self, system_code: str) -> list[str]:
+        """Цвета в массе, которые есть у системы (правило 2.20). ДЕМО: по бренду, см. profile_colors.json."""
+        av = self.profile_colors_cfg.get("availability", {})
+        sysrow = self.systems.get(system_code) or {}
+        if system_code in av.get("systems", {}):
+            return list(av["systems"][system_code])
+        mat = "alu" if self.material(system_code).startswith("alu") else "pvc"
+        by_brand = av.get("brands", {}).get(mat, {})
+        return list(by_brand.get(sysrow.get("brand", ""), av.get("default", {}).get(mat, ["white"])))
+
+    def role_item(self, role: str, variant: str = "", system: str | None = None) -> dict | None:
+        """Позиция каталога по роли (новые роли §7–8: work-независимые, ДЕМО-строки «Eskiz ДЕМО»).
+
+        variant — вариант внутри роли (колонка type_ru: cream, matte, …). Своя позиция серии — раньше общей.
+        """
+        cands = [it for it in self._by_role.get(role, []) if not variant or it.get("type_ru") == variant]
+        if system:
+            own = [it for it in cands if it["system_code"] in (system, system + "_aksessuarlari")]
+            cands = own or cands
+        priced = [c for c in cands if c["price_sum"]]
+        return (priced or cands or [None])[0]
+
+    @cached_property
+    def _by_role(self) -> dict:
+        idx: dict = {}
+        for it in self.items:
+            idx.setdefault(it["role"], []).append(it)
+        return idx
 
     @cached_property
     def works(self) -> dict[str, dict]:

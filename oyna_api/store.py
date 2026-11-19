@@ -62,18 +62,43 @@ def load_company(c, company: str) -> tuple[str, Company]:
             for k in c.execute("SELECT * FROM kits WHERE company_id = %s ORDER BY name <> 'Эконом', name", (r["id"],))]
     order = {"Эконом": 0, "Стандарт": 1, "Тёплый": 2}
     kits.sort(key=lambda k: order.get(k["name"], 9))
-    items = {(x["item_id"], x["color"]): float(x["price_sum"])
-             for x in c.execute("SELECT item_id, color, price_sum FROM company_prices WHERE company_id = %s", (r["id"],))}
-    glass = {x["glass_code"]: float(x["price_sum_m2"]) for x in c.execute(
-        "SELECT glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s", (r["id"],))}
+    items, sup_items = current_prices(c, r["id"])
+    glass, sup_glass = {}, {}
+    for x in c.execute("SELECT supplier_id, glass_code, price_sum_m2 FROM glass_prices WHERE company_id = %s", (r["id"],)):
+        (sup_glass.setdefault(str(x["supplier_id"]), {}) if x["supplier_id"] else glass)[x["glass_code"]] = float(x["price_sum_m2"])
+    suppliers = {str(x["id"]): x["name"] for x in c.execute("SELECT id, name FROM suppliers WHERE company_id = %s ORDER BY created_at",
+                                                             (r["id"],))}
+    defaults = {x["category"]: str(x["supplier_id"]) for x in c.execute(
+        "SELECT category, supplier_id FROM company_suppliers_default WHERE company_id = %s", (r["id"],))}
     gp = c.execute("SELECT data FROM glass_pricing WHERE company_id = %s ORDER BY updated_at DESC LIMIT 1", (r["id"],)).fetchone()
     co = Company(name=r["name"], mode=r["mode"], dealer_coef=float(r["dealer_coef"] or 0), markup_kind=r["markup_kind"],
                  markup_value=float(r["markup_value"]), usd_rate=float(r["usd_rate"]) if r["usd_rate"] else None,
                  install_gap_mm=r["install_gap_mm"], rounding_sum=r["rounding_sum"], skew_warn_mm=r["skew_warn_mm"],
                  demo_prices=r["demo_prices"], waste_pct=float(r["waste_pct"]),
                  quote_price_check_days=r["quote_price_check_days"], plan=r["plan"], work_rates=works, kits=kits,
-                 item_prices=items, glass_prices=glass, glass_pricing=(gp or {}).get("data") or {})
+                 item_prices=items, glass_prices=glass, glass_pricing=(gp or {}).get("data") or {},
+                 suppliers=suppliers, default_suppliers=defaults, supplier_prices=sup_items, supplier_glass_prices=sup_glass,
+                 markup_groups=r.get("markup_groups") or None)
     return str(r["id"]), co
+
+
+CURRENT_PRICES_SQL = """SELECT DISTINCT ON (ip.supplier_id, ip.item_id, ip.color)
+        ip.supplier_id, ip.item_id, ip.color, ip.price_sum, ip.price_version_id, v.loaded_at
+    FROM item_prices ip JOIN price_versions v ON v.id = ip.price_version_id
+    WHERE v.company_id = %s AND v.reverted_at IS NULL
+    ORDER BY ip.supplier_id, ip.item_id, ip.color, ip.price_version_id DESC"""
+
+
+def current_prices(c, company_id) -> tuple[dict, dict]:
+    """Цены цеха из версий: последняя неотменённая версия по (поставщик, позиция, цвет); NULL-цена — своя цена убрана.
+
+    → ({(item_id, color): цена} основного прайса, {supplier_id: {(item_id, color): цена}})."""
+    own, sup = {}, {}
+    for x in c.execute(CURRENT_PRICES_SQL, (company_id,)):
+        if x["price_sum"] is None:
+            continue
+        (sup.setdefault(str(x["supplier_id"]), {}) if x["supplier_id"] else own)[(x["item_id"], x["color"])] = float(x["price_sum"])
+    return own, sup
 
 
 # ---------------- заказы ----------------

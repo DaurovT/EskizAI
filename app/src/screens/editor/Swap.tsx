@@ -102,7 +102,7 @@ function findFill(doc: Doc, path: string) {
 
 /** Любая другая замена — до/после по расчёту. */
 async function planGeneric(doc: Doc, what: string, value: string, path?: string): Promise<Plan> {
-  const cmd = altCommand(what, value, path);
+  const cmd = altCommand(what, value, path, doc);
   const [before, after] = await Promise.all([calcDoc(doc), calcDoc(apply(doc, [cmd]))]);
   const was = new Set(blocks(before).map((v) => `${v.code}:${v.path ?? ''}`));
   return {

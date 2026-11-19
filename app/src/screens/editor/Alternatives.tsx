@@ -19,15 +19,29 @@ import {
 
 const CURRENT: Record<string, string> = { 'option:handle': 'текущая', 'option:hinge': 'текущие', 'option:security': 'текущие', 'option:hinge_cap': 'текущие' };
 
-/** Команда для выбранного варианта. */
-export function altCommand(what: string, value: string, path?: string): Command {
+const NONE = new Set(['', 'none', 'null']);
+
+/** Команда для выбранного варианта. doc — для декора стекла (сохранить текущее стекло ячейки). */
+export function altCommand(what: string, value: string, path?: string, doc?: Doc): Command {
   if (what === 'system') return { cmd: 'set_setup', system: value };
   if (what === 'fittings') return { cmd: 'set_setup', fittings: value };
+  if (what === 'profile_color') return { cmd: 'set_setup', profile_color: value };
+  // «без ламинации» = null (shapes_contract §8)
+  if (what === 'lam_out') return { cmd: 'set_setup', lam_out: NONE.has(value) ? null : value };
+  if (what === 'lam_in') return { cmd: 'set_setup', lam_in: NONE.has(value) ? null : value };
+  if (what === 'glass_decor' && path !== undefined) return glassDecorCommand(doc, path, value);
   if (what === 'decor_out') return { cmd: 'set_setup', color_out: value };
   if (what === 'decor_in') return { cmd: 'set_setup', color_in: value };
   if (what === 'glass') return path !== undefined ? { cmd: 'set_fill', path, fill: { kind: 'glass', glass: value } } : { cmd: 'set_setup', glass: value };
   if (what.startsWith('option:')) return { cmd: 'set_option', group: what.slice(7), code: value, path: path ?? null };
   throw new Error(`неизвестно, что заменять: ${what}`);
+}
+
+/** Декор стекла ячейки: set_fill {path, decor, tint} — стекло ячейки остаётся прежним (как в ядре). value: «tinted:bronze», «none». */
+export function glassDecorCommand(_doc: Doc | undefined, path: string, value: string): Command {
+  const [decor, tint] = value.split(':');
+  if (NONE.has(decor)) return { cmd: 'set_fill', path, decor: null };
+  return { cmd: 'set_fill', path, decor, ...(decor === 'tinted' ? { tint: tint || 'bronze' } : { tint: null }) };
 }
 
 /** «7.2 паз … не подходит» → «паз … не подходит (7.2)» */
@@ -40,7 +54,12 @@ function isCurrent(o: AltOption, what: string, doc: Doc, path?: string): boolean
     const code = cell?.options?.[g] ?? doc.setup?.options?.[g];
     return code ? o.value === code : !!o.is_default;
   }
-  if (what === 'glass' && cell?.fill?.kind === 'glass') return o.value === cell.fill.glass;
+  if (what === 'glass' && cell?.fill?.kind === 'glass' && cell.fill.glass) return o.value === cell.fill.glass;
+  if (what === 'glass_decor' && cell) {
+    const f = cell.fill?.kind === 'glass' ? cell.fill : null;
+    const cur = f?.decor ? (f.decor === 'tinted' ? `tinted:${f.tint ?? 'bronze'}` : f.decor) : 'none';
+    return o.value === cur || (o.value === 'tinted' && cur.startsWith('tinted'));
+  }
   return o.current;
 }
 
@@ -76,7 +95,7 @@ export default function Alternatives() {
     }
     setBusy(o.value);
     try {
-      const out = await sendCommands(id, P.pos, [altCommand(what, o.value, path)]);
+      const out = await sendCommands(id, P.pos, [altCommand(what, o.value, path, P.pos.doc)]);
       P.update(out);
       router.back();
     } catch (e) {

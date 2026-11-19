@@ -5,14 +5,15 @@
  */
 import { router, useFocusEffect } from 'expo-router';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, Pattern, Rect } from 'react-native-svg';
 
 import { api, ApiError, errorText } from '@/api/http';
-import type { Calc, Cell, Command, Conflict, Doc, OrderFull, PositionOut, Violation } from '@/api/types';
+import type { Calc, Cell, Command, Conflict, Doc, OrderFull, PositionOut, Setup, Shape, Violation } from '@/api/types';
+import { lamination } from '@/lib/decors';
 import { num } from '@/lib/format';
-import { apply, cells, layout, nodeAt } from '@/lib/tree';
+import { apply, cells, layout, nodeAt, parentOf } from '@/lib/tree';
 import { offline } from '@/offline/store';
 import { C, TAG } from '@/theme';
 import { Icon, IconName } from '@/ui/Icon';
@@ -101,6 +102,50 @@ export function TextLink({ title, onPress, color = C.accentText }: { title: stri
     <Pressable accessibilityRole="link" onPress={onPress} hitSlop={6} style={({ pressed }) => [{ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 }]}>
       <Txt size={16} w={500} color={color}>{title}</Txt>
     </Pressable>
+  );
+}
+
+/** Выбор одного из вариантов — строка светлых пилюль (выбранная тёмная), листается вбок. */
+export function Choice<T extends string>({ items, value, onChange, style }: {
+  items: { value: T; title: string }[]; value: T | null; onChange: (v: T) => void; style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, style]} contentContainerStyle={{ gap: 6 }}
+      keyboardShouldPersistTaps="handled">
+      {items.map((it) => {
+        const on = it.value === value;
+        return (
+          <Pressable key={it.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(it.value)}
+            style={({ pressed }) => [st.choice, { backgroundColor: on ? C.dark : C.soft, opacity: pressed ? 0.8 : 1 }]}>
+            <Txt size={15} w={500} color={on ? '#fff' : C.ink}>{it.title}</Txt>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/** Нижний лист с полями ввода: поднимается над клавиатурой. */
+export function FormSheet({ visible, onClose, children, title }: { visible: boolean; onClose: () => void; children: ReactNode; title?: string }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <Pressable accessibilityLabel="Закрыть" style={{ flex: 1, backgroundColor: C.scrim }} onPress={onClose} />
+        <View style={[st.bs, { paddingBottom: Math.max(insets.bottom, 16) + 4, maxHeight: '88%' }]}>
+          <View style={st.hdl}><View style={st.hdlBar} /></View>
+          {title ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 4 }}>
+              <Txt w={700} size={20} style={{ flex: 1 }} lines={1}>{title}</Txt>
+              <IconButton name="close" label="Закрыть" onPress={onClose} bg={C.soft} />
+            </View>
+          ) : null}
+          <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 10, paddingBottom: 4 }} keyboardShouldPersistTaps="handled">
+            {children}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -285,7 +330,35 @@ export const refs = {
 
 // ---------------------------------------------------------------- подписи
 export const TYPE_TITLE: Record<Cell['type'], string> = { fixed: 'Глухая', sash: 'Створка', door_sash: 'Дверная', panel: 'Панель' };
-export const OPEN_TITLE: Record<string, string> = { turn: 'Поворотная', tilt_turn: 'П-О', tilt: 'Откидная', sliding: 'Раздвижная' };
+export const OPEN_TITLE: Record<string, string> = {
+  turn: 'Поворотная', tilt_turn: 'П-О', tilt: 'Откидная', sliding: 'Раздвижная', top_hung: 'Подвесное', pivot: 'Среднеподвесное',
+};
+export const SHAPE_TITLE: Record<Shape, string> = {
+  rect: 'Прямоугольник', arch: 'Арка', circle: 'Круг', trapezoid: 'Трапеция', bevel: 'Скос угла', triangle: 'Треугольник',
+};
+export const GLASS_DECOR_TITLE: Record<string, string> = {
+  none: 'Нет', matte: 'Матовое', tinted: 'Тонированное', mirror: 'Зеркальное', pattern: 'Узорчатое', stained: 'Витраж',
+};
+export const TINT_TITLE: Record<string, string> = { bronze: 'бронза', grey: 'серый', blue: 'синий' };
+/** «Тонированное · бронза» / «нет» */
+export function glassDecorLabel(cell: Cell): string {
+  const f = cell.fill?.kind === 'glass' ? cell.fill : null;
+  if (!f?.decor) return 'нет';
+  return `${GLASS_DECOR_TITLE[f.decor] ?? f.decor}${f.decor === 'tinted' ? ` · ${TINT_TITLE[f.tint ?? 'bronze'] ?? f.tint}` : ''}`;
+}
+
+// ---------------------------------------------------------------- цвет профиля и ламинация (shapes_contract §8)
+export const PROFILE_COLOR_TITLE: Record<string, string> = {
+  white: 'Белый', cream: 'Кремовый', brown: 'Коричневый', grey: 'Серый', anthracite: 'Антрацит', anodized: 'Анодированный',
+};
+export const profileColorLabel = (code?: string) =>
+  !code ? 'Белый' : code.startsWith('ral:') ? `RAL ${code.slice(4)}` : PROFILE_COLOR_TITLE[code] ?? code;
+/** «Золотой дуб» / «нет» — ламинация стороны (новые lam_* или старые color_*). */
+export function lamLabel(setup: Setup | undefined, side: 'inside' | 'outside', decors?: Decor[] | null): string {
+  const id = lamination(setup, side);
+  if (!id) return 'нет';
+  return decors?.find((d) => d.id === id)?.name_ru ?? id;
+}
 
 /** «Створка 1», «Глухая 2» — номер ячейки слева направо, сверху вниз (как в дереве). */
 export function cellTitle(doc: Doc, path: string): string {
@@ -303,13 +376,16 @@ export function cellSize(doc: Doc, path: string): string {
 export function cellAt(doc: Doc, path: string): Cell | null {
   try { return nodeAt(doc, path).cell ?? null; } catch { return null; }
 }
-/** родитель пути «0.1» → «0»; у частей корня — '' */
-export const parentPath = (path: string) => (path.includes('.') ? path.slice(0, path.lastIndexOf('.')) : '');
+/** родитель пути «0.1» → «0»; у частей корня — ''; «A1/0» → «A1/» */
+export const parentPath = parentOf;
 
 export const WHAT_TITLE: Record<string, string> = {
   system: 'Система', fittings: 'Фурнитура', glass: 'Стеклопакет', decor_out: 'Декор снаружи', decor_in: 'Декор внутри',
   'option:handle': 'Ручка', 'option:hinge': 'Петли', 'option:security': 'Противовзлом', 'option:extra_lock': 'Доп. запор',
   'option:hinge_cap': 'Накладки петель',
+  profile_color: 'Цвет профиля', lam_out: 'Ламинация снаружи', lam_in: 'Ламинация внутри', glass_decor: 'Декор стекла',
+  'option:child_lock': 'Детский замок', 'option:micro_vent': 'Микропроветривание', 'option:limiter': 'Ограничитель открывания',
+  'option:comb': 'Гребёнка', 'supplier:glass': 'Поставщик стекла',
 };
 
 export const systemName = (s?: SystemRow | null, code?: string) => (s ? `${s.brand} ${s.series}`.trim() : code ?? '');
@@ -427,13 +503,16 @@ export function docDiff(a: Doc, b: Doc): { mine: string[]; theirs: string[] } {
     if (sa !== sb && !mine.length) add('другие размеры частей', 'другие размеры частей');
   }
   const ka = a.setup ?? {}, kb = b.setup ?? {};
-  (['system', 'glass', 'fittings', 'color_out', 'color_in'] as const).forEach((k) => {
+  (['system', 'glass', 'fittings', 'profile_color', 'lam_out', 'lam_in', 'color_out', 'color_in'] as const).forEach((k) => {
     if ((ka[k] ?? '') !== (kb[k] ?? '')) add(`${SETUP_TITLE[k]}: ${ka[k] ?? 'по умолч.'}`, `${SETUP_TITLE[k]}: ${kb[k] ?? 'по умолч.'}`);
   });
   if ((a.room ?? '') !== (b.room ?? '')) add(a.room ?? '—', b.room ?? '—');
   return { mine, theirs };
 }
-const SETUP_TITLE = { system: 'система', glass: 'стекло', fittings: 'фурнитура', color_out: 'снаружи', color_in: 'внутри' } as const;
+const SETUP_TITLE = {
+  system: 'система', glass: 'стекло', fittings: 'фурнитура', profile_color: 'цвет профиля', lam_out: 'ламинация снаружи', lam_in: 'ламинация внутри',
+  color_out: 'снаружи', color_in: 'внутри',
+} as const;
 
 /** Офлайн-конфликт (после синхронизации) — из хранилища телефона. */
 export async function offlineConflict(pos: string) {
@@ -460,5 +539,6 @@ export const st = StyleSheet.create({
   toastWrap: { position: 'absolute', left: 12, right: 12, bottom: 110, alignItems: 'stretch' },
   toast: { borderRadius: 18, backgroundColor: C.dark, minHeight: 56, paddingHorizontal: 18, paddingVertical: 12, justifyContent: 'center' },
   sheetBox: { backgroundColor: C.card, borderRadius: 28, overflow: 'hidden' },
+  choice: { height: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center' },
   lbl: { paddingHorizontal: 8, paddingTop: 6 },
 });
