@@ -126,9 +126,12 @@ export function Schema({ doc, width, maxHeight, dims = true, view = 'inside', se
   const W = (asm ? G0.frames.reduce((a, f) => a + f.frame.w, 0) : doc.frame.w) + mg.l + mg.r;
 
   const taps: { path: string; x: number; y: number; w: number; h: number }[] = [];
+  // FrameArt вызывается функцией (не <FrameArt/>): он заполняет taps, и это должно случиться ДО отрисовки
+  // областей нажатия ниже — дочерний компонент отрендерился бы позже, и taps был бы пуст (ячейки не выбирались).
   const art = G0.frames.map((fg) => (
-    <FrameArt key={fg.prefix || 'f'} uid={`${uid}${fg.index}`} fg={fg} k={k} mirror={G0.mirror} prof={prof} knob={knob}
-      hl={hl} selected={selected ?? null} taps={taps} small={vw < 140} />
+    <G key={fg.prefix || 'f'}>
+      {FrameArt({ uid: `${uid}${fg.index}`, fg, k, mirror: G0.mirror, prof, knob, hl, selected: selected ?? null, taps, small: vw < 140 })}
+    </G>
   ));
 
   return (

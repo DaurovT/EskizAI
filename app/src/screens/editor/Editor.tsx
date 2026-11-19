@@ -364,7 +364,7 @@ export default function Editor() {
             value={is3d ? '3d' : view} onChange={(v) => { if (v === '3d') setIs3d(true); else { setIs3d(false); setView(v); } }} style={{ width: 240 }} />
         </View>
         {!isOffline && !isLocal ? (
-          <SetupBar doc={doc} presets={presets} onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)} />
+          <SetupBar doc={doc} presets={presets} sysFallback={server?.label?.split(' · ')[0]} onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)} />
         ) : null}
         {errors.length || warns.length ? (
           <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingTop: 10 }}>
@@ -388,12 +388,13 @@ export default function Editor() {
         {/* поле схемы / 3D */}
         {is3d ? (
           <View style={{ flex: 1 }}>
-            <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
-              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} />
-            <View style={{ position: 'absolute', left: 12, bottom: 44, flexDirection: 'row', gap: 8 }}>
-              <Soft title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
-              <Soft title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
+            {/* кнопки строкой над моделью — поверх они закрывали низ окна */}
+            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
+              <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
+              <Soft small title={open3d ? 'Закрыть створки' : 'Открыть створки'} icon="window" onPress={() => setOpen3d(!open3d)} />
             </View>
+            <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
+              colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} style={{ marginBottom: 36 }} />
           </View>
         ) : null}
         <Pressable style={{ flex: 1, display: is3d ? 'none' : 'flex' }} onPress={() => { setSelected(null); setAsmSel(null); }} accessible={false}
@@ -559,7 +560,7 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
         </>
       ) : shape !== 'circle' ? <Dim text={num(H)} style={{ left: vw + 6, top: fg.y + fg.h / 2 - 16, width: undefined, alignItems: 'flex-start' }} /> : null}
       {shape === 'arch' ? (
-        <Dim text={`подъём ${num(params.rise!)}`} style={{ left: vw + 6, top: Y(params.rise! / 2) - 30, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
+        <Dim text={`подъём ${num(params.rise!)}`} style={{ left: Math.max(0, vw - 130), top: -40, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
       ) : null}
       {shape === 'bevel' ? (
         <Dim text={`срез ${num(params.dx!)}×${num(params.dy!)}`} style={{ left: vw / 2 - 80, top: -40, width: 160 }} onPress={() => onShape('')} />
@@ -886,7 +887,8 @@ function IssueRow({ v, first, kind, doc, order, pos, onPick, onFix, onCommand }:
 
 /** Строка чипов под переключателем вида — каждое касание открывает лист замен (/alternatives) для этого пункта.
  * Профиль · Цвет профиля · Ламинация снаружи · Ламинация внутри · Стекло · Фурнитура (shapes_contract §8). */
-function SetupBar({ doc, presets, onPick }: { doc: Doc; presets: GlassPreset[] | null; onPick: (what: string) => void }) {
+/** sysFallback — система, которую сервер подставил по комплектации (в doc её может не быть) */
+function SetupBar({ doc, presets, onPick, sysFallback }: { doc: Doc; presets: GlassPreset[] | null; onPick: (what: string) => void; sysFallback?: string }) {
   const s = doc.setup ?? {};
   const [names, setNames] = useState<{ systems: SystemRow[]; decors: Decor[]; fittings: FittingSet[] } | null>(null);
   useEffect(() => {
@@ -900,7 +902,7 @@ function SetupBar({ doc, presets, onPick }: { doc: Doc; presets: GlassPreset[] |
   const fit = fittingLabel(names?.fittings.find((f) => f.code === s.fittings), s.fittings)[0];
   const lamOut = lamLabel(s, 'outside', names?.decors), lamIn = lamLabel(s, 'inside', names?.decors);
   const chips: { what: string; label: string; value: string; color?: string }[] = [
-    { what: 'system', label: 'Профиль', value: sys ? `${sys.brand} ${sys.series}` : s.system ?? 'по комплектации' },
+    { what: 'system', label: 'Профиль', value: sys ? `${sys.brand} ${sys.series}` : s.system ?? sysFallback ?? 'по комплектации' },
     { what: 'profile_color', label: 'Цвет профиля', value: profileColorLabel(s.profile_color), color: profileHex({ profile_color: s.profile_color, lam_in: null }, 'inside') },
     { what: 'lam_out', label: 'Ламинация снаружи', value: lamOut, color: lamOut !== 'нет' ? profileHex(s, 'outside') : undefined },
     { what: 'lam_in', label: 'Ламинация внутри', value: lamIn, color: lamIn !== 'нет' ? profileHex(s, 'inside') : undefined },
