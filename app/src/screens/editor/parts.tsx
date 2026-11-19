@@ -450,6 +450,10 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
   if (m && cell && path !== undefined) {
     return { title: `Поставить ${m[1]}`, commands: [{ cmd: 'set_fill', path, fill: { kind: 'glass', glass: m[1] } }] };
   }
+  // узкая откидная створка — ножниц нет: делаем поворотной (без откидывания), это решение на объекте
+  if (v.code === '6.6' && cell && path !== undefined && (cell.open === 'tilt_turn' || cell.open === 'tilt')) {
+    return { title: 'Сделать поворотной', icon: 'window', commands: [{ cmd: 'set_cell', path, open: 'turn' }] };
+  }
   if (v.code === '6.10') {
     const first = cells(doc)[0];
     if (first) return { title: 'Сделать створкой', commands: [{ cmd: 'set_cell', path: first.path, type: 'sash' }] };
