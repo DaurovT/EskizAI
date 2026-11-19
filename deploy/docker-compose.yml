@@ -41,7 +41,7 @@ services:
       ESKIZ_EMAIL: ${ESKIZ_EMAIL:-}
       ESKIZ_PASSWORD: ${ESKIZ_PASSWORD:-}
       ESKIZ_SENDER: ${ESKIZ_SENDER:-4546}
-      ESKIZ_TEMPLATE: ${ESKIZ_TEMPLATE:-IQLabs Confirmation code: {code}}
+      ESKIZ_TEMPLATE: "${ESKIZ_TEMPLATE:-IQLabs Confirmation code: {code}}"
       OYNA_PUBLIC_URL: ${OYNA_PUBLIC_URL:-https://api.oyna.eskizai.uz}
       OYNA_FONT: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
       OYNA_FONT_BOLD: /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
