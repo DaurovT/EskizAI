@@ -18,6 +18,10 @@ MUNTIN_PATTERNS = ("grid", "sun", "cross", "decor")
 MUNTIN_COLORS = ("white", "decor", "gold")
 
 
+# жилые комнаты: только в них «все створки глухие» (6.10) — нечем проветрить
+LIVING_ROOMS = {"зал", "гостиная", "спальня", "детская", "кухня", "кабинет"}
+
+
 def _sys(ev) -> str:
     """Название системы для мастера («Akfa 6000 QVT»), а не код."""
     r = ev.cat.systems.get(ev.setup["system"], {})
@@ -68,7 +72,16 @@ def check_input(ev) -> None:
             ev.add("1.7", f"{w}×{h} — похоже, введено в сантиметрах", fix=f"имелось в виду {w * 10}×{h * 10} мм?")
         ev.stopped = True
         return
-    if not sp and (w > ev.cat.rules["1.3"]["params"]["gt"] or h > ev.cat.rules["1.3"]["params"]["gt"]):
+    gt = ev.cat.rules["1.3"]["params"]["gt"]
+    root = ev.doc["frame"].get("root") or {}
+    split = root.get("split") if root.get("parts") else None
+    # импост уже есть по длинной стороне — правило выполнено (раньше срабатывало и у 4-створчатого 2800)
+    long_w, long_h = w > gt, h > gt
+    if split in ("v", "shtulp", "folding") and long_w and not long_h:
+        long_w = False
+    if split in ("h", "vslide") and long_h and not long_w:
+        long_h = False
+    if not sp and (long_w or long_h):
         ev.add("1.3", f"{w}×{h} мм", fix="добавьте импост или разделите на блоки")
     k = ev.cat.rules["1.6"]["params"]["multiple_of"]
     for name, v in (("ширина", w), ("высота", h)):
@@ -224,7 +237,8 @@ def check_all(ev) -> None:
                        fix="пассивную створку сделайте поворотной")
 
     cells: list[CellGeo] = geo.cells
-    if ev.kind == "window" and all(c.cell.get("type") in ("fixed", "panel") for c in cells):
+    living = str(ev.doc.get("room") or "").strip().lower() in LIVING_ROOMS
+    if ev.kind == "window" and living and all(c.cell.get("type") in ("fixed", "panel") for c in cells):
         ev.add("6.10", "все части глухие", fix="добавьте открывающуюся створку для проветривания")
 
     floor_base = 0 if ev.kind in ("door", "balcony_block") else (ev.doc.get("opening") or {}).get("floor_offset")
@@ -311,7 +325,7 @@ def check_all(ev) -> None:
                               + (f", {L['max_m2']} м²" if L.get("max_m2") else ""), path, fix="разделите импостом")
             elif sw > 0.9 * maxw or sh > 0.9 * maxh:
                 ev.add("2.4", f"створка {sw:.0f}×{sh:.0f} у предела {maxw:.0f}×{maxh:.0f}", path)
-            if L.get("h_le_w") and sh / sw > L["h_le_w"] or L.get("w_le_h") and sw / sh > L["w_le_h"]:
+            if cell.get("type") != "door_sash" and (L.get("h_le_w") and sh / sw > L["h_le_w"] or L.get("w_le_h") and sw / sh > L["w_le_h"]):
                 ev.add("2.3", f"пропорция створки {sw:.0f}×{sh:.0f}", path)
         if cell.get("type") == "door_sash" and ev.kind == "door" and opening not in KIT_OPENINGS:
             d1, d2 = cat.rules["8.1"]["params"], cat.rules["8.2"]["params"]
