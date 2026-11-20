@@ -1,5 +1,6 @@
 /**
- * S10 КП — макеты Quote (предпросмотр), QuoteBlocked (нельзя отправить), QuoteSent (отправлено · версия N).
+ * S10 КП — макет «Ядро v3» X7Quote (карточка КП, «Показать клиенту», язык RU/UZ, ссылка · PDF · «В Telegram»)
+ * + QuoteBlocked (нельзя отправить), QuoteSent (отправлено · версия N) из docs/design.
  * Варианты — GET /oyna/orders/{id}/variants (до 3 комплектаций), язык RU/UZ, кому — Telegram клиента из заказа,
  * «С логотипом цеха» — только в подписке (plan pro). Отправка — POST /oyna/orders/{id}/quotes {lang, kits, discount_pct};
  * 409 → причины по вариантам с «Исправить». Прошлые версии — GET /oyna/orders/{id} quotes[], отзыв — POST …/quotes/{v}/revoke.
@@ -208,30 +209,27 @@ export default function Quote() {
           <View style={{ backgroundColor: C.card, borderRadius: 28, overflow: 'hidden' }}>
             <Pressable accessibilityRole="button" disabled={variants.length < 2} onPress={() => setKitsOpen(true)}
               style={({ pressed }) => [rowS, pressed && { backgroundColor: '#F7F6F3' }]}>
-              <Txt w={500} style={{ flex: 1 }}>Варианты в КП</Txt>
+              <Txt w={500} style={{ flex: 1 }}>Показать клиенту</Txt>
               <Txt size={14} color={C.muted} lines={1} style={{ flexShrink: 1, textAlign: 'right' }}>{kits.join(', ') || 'как в позициях'}</Txt>
               {variants.length > 1 ? <Icon name="chevron" size={18} color={C.heroMuted} /> : null}
             </Pressable>
             <View style={[rowS, sep]}>
               <Txt w={500} style={{ flex: 1 }}>Язык</Txt>
-              <View style={{ width: 150 }}>
+              <View style={{ width: 140 }}>
                 <Seg style={{ marginHorizontal: 0 }} items={[{ value: 'ru', title: 'RU' }, { value: 'uz', title: 'UZ' }]} value={qLang}
                   onChange={(v) => { setLang(v as Lang); setBlocked(null); }} />
               </View>
             </View>
-            <View style={[rowS, sep]}>
-              <Txt w={500} style={{ flex: 1 }}>Кому</Txt>
-              <Txt size={14} color={C.muted} lines={1} style={{ flexShrink: 1 }}>
-                {tg ? `${tg.startsWith('@') ? tg : `@${tg}`} · Telegram` : 'Telegram не указан · ссылкой'}
-              </Txt>
-            </View>
-            <View style={[rowS, sep]} accessible accessibilityLabel={pro ? 'С логотипом цеха: включено' : 'С логотипом цеха: в подписке цеха'}>
-              <View style={{ flex: 1 }}>
-                <Txt w={500}>С логотипом цеха</Txt>
-                <Txt size={14} color={C.muted}>{pro ? 'включено в подписке' : 'в подписке цеха'}</Txt>
-              </View>
-              {pro ? <Icon name="check" size={20} color={C.ok} /> : <LockIcon />}
-            </View>
+          </View>
+        ) : null}
+        {/* кому и логотип — строкой под настройками (в макете X7 — только «Показать клиенту» и «Язык») */}
+        {!isBlocked || !uniq.length ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8 }}
+            accessible accessibilityLabel={`Кому: ${tg || 'Telegram не указан'}. Логотип цеха: ${pro ? 'включено' : 'в подписке цеха'}`}>
+            {pro ? <Icon name="check" size={16} color={C.ok} /> : <LockIcon size={16} />}
+            <Txt size={14} color="#5F5C57" lines={2} style={{ flex: 1 }}>
+              {[tg ? `Кому: ${tg.startsWith('@') ? tg : `@${tg}`} · Telegram` : 'Telegram не указан — отправим ссылкой', pro ? 'с логотипом цеха' : 'логотип — в подписке цеха'].join(' · ')}
+            </Txt>
           </View>
         ) : null}
 
@@ -270,7 +268,7 @@ export default function Quote() {
 
       {toast ? <Toast text={toast.text} action={toast.action} onAction={() => { toast.onAction?.(); hideToast(); }} onHide={hideToast} /> : null}
 
-      <Sheet visible={kitsOpen} onClose={() => setKitsOpen(false)} title="Варианты в КП">
+      <Sheet visible={kitsOpen} onClose={() => setKitsOpen(false)} title="Показать клиенту">
         <View style={{ paddingHorizontal: 12, gap: 10, paddingBottom: 8 }}>
           <Note style={{ paddingHorizontal: 8 }}>До трёх комплектаций — клиент выберет на странице КП.</Note>
           <View style={{ backgroundColor: C.card, borderRadius: 28, overflow: 'hidden' }}>
@@ -314,24 +312,24 @@ function Preview({ order, company, lines, cap }: { order: OrderFull; company: Co
     <View style={{ backgroundColor: C.card, borderRadius: 28, padding: 14, gap: 10 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Txt w={700} lines={1} style={{ flexShrink: 1 }}>{company?.company.name ?? 'Цех'}</Txt>
-        <Txt size={14} color={C.muted}>КП · {date(new Date().toISOString())}</Txt>
+        <Txt size={14} color="#5F5C57">{date(new Date().toISOString())}</Txt>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
         {/* только реальные изделия (до 3), без пустых плиток; больше трёх — «+N» */}
         {docs.slice(0, 3).map((d, i) => (
-          <View key={i} style={{ flex: 1, maxWidth: 120, height: 70, borderRadius: 12, backgroundColor: '#F7F7F5', alignItems: 'center', justifyContent: 'center' }}>
-            {thumbW ? <Schema doc={d.doc} width={Math.min(thumbW - 16, 70)} maxHeight={56} dims={false} /> : null}
+          <View key={i} style={{ flex: 1, maxWidth: 120, height: 76, borderRadius: 12, backgroundColor: '#F7F7F5', alignItems: 'center', justifyContent: 'center' }}>
+            {thumbW ? <Schema doc={d.doc} width={Math.min(thumbW - 16, 52)} maxHeight={48} dims={false} /> : null}
             {i === 2 && docs.length > 3 ? <Txt size={13} w={600} color={C.muted} style={{ position: 'absolute', right: 8, bottom: 6 }}>+{docs.length - 3}</Txt> : null}
           </View>
         ))}
       </View>
       {lines.map((l) => (
-        <View key={l.kit} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <View key={l.kit} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
-            <Txt size={14} color={C.muted} lines={1} style={{ flexShrink: 1 }}>{l.kit} · {cap}</Txt>
+            <Txt size={14} color="#5F5C57" lines={1} style={{ flexShrink: 1 }}>{l.kit} · {cap}</Txt>
             {l.demo ? <Tag kind="est" title="ДЕМО" /> : null}
           </View>
-          <Txt w={700} style={{ fontVariant: ['tabular-nums'] }}>{num(l.total)} сум</Txt>
+          <Txt size={18} w={700} style={{ fontVariant: ['tabular-nums'] }}>{num(l.total)} сум</Txt>
         </View>
       ))}
     </View>

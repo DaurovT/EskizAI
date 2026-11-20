@@ -110,7 +110,7 @@ export default function Summary() {
           <View style={st.sheet}>
             {rows.map((r, i) => {
               const sub = [`${num(r.doc.frame.w)} × ${num(r.doc.frame.h)}`, (r.doc.qty ?? 1) > 1 ? `× ${r.doc.qty}` : '',
-                r.draftStep !== undefined ? `не закончен, шаг ${r.draftStep}` : r.unsent ? 'не отправлено' : ''].filter(Boolean).join(' · ');
+                r.draftStep !== undefined ? `не закончен, шаг ${Math.min(3, r.draftStep)} из 3` : r.unsent ? 'не отправлено' : ''].filter(Boolean).join(' · ');
               return (
                 <Pressable key={r.id} accessibilityRole="button"
                   onPress={() => router.push(r.draftStep !== undefined ? `/order/${id}/measure?pos=${r.id}&step=${r.draftStep}` : `/order/${id}/editor?pos=${r.id}`)}

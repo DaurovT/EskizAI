@@ -150,7 +150,7 @@ export function SoftSm({ title, icon, onPress, disabled, style }: { title: strin
 
 // ---------- .svc (быстрые действия на «Заказах») ----------
 export function Svc({ title, sub, icon, pri, onPress, disabled, flex = 1 }: {
-  title: string; sub: string; icon?: PIconName; pri?: boolean; onPress?: () => void; disabled?: boolean; flex?: number;
+  title: string; sub?: string; icon?: PIconName; pri?: boolean; onPress?: () => void; disabled?: boolean; flex?: number;
 }) {
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !!disabled }} disabled={disabled} onPress={onPress}
@@ -165,7 +165,7 @@ export function Svc({ title, sub, icon, pri, onPress, disabled, flex = 1 }: {
         <View style={st.svcIco}><PIcon name={icon} size={20} /></View>
       ) : null}
       <Txt size={16} w={600} color={pri ? C.ctaText : C.ink} style={{ lineHeight: 20 }}>{title}</Txt>
-      <Txt size={13} color={pri ? '#2A4E85' : C.muted} style={{ marginTop: 2 }}>{sub}</Txt>
+      {sub ? <Txt size={13} color={pri ? '#2A4E85' : C.muted} style={{ marginTop: 2 }}>{sub}</Txt> : null}
     </Pressable>
   );
 }
@@ -286,7 +286,7 @@ export const st = StyleSheet.create({
   tile: { width: 44, height: 44, borderRadius: 14, backgroundColor: C.soft, alignItems: 'center', justifyContent: 'center' },
   posTile: { borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   softSm: { height: 44, borderRadius: 999, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
-  svc: { height: 118, borderRadius: 24, backgroundColor: C.card, padding: 14, justifyContent: 'flex-end', overflow: 'hidden' },
+  svc: { height: 112, borderRadius: 24, backgroundColor: C.card, padding: 14, justifyContent: 'flex-end', overflow: 'hidden' },
   svcIco: { position: 'absolute', right: 10, top: 10, width: 36, height: 36, borderRadius: 12, backgroundColor: C.soft, alignItems: 'center', justifyContent: 'center' },
   kbSheet: { backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '92%' },
   grab: { height: 22, alignItems: 'center', justifyContent: 'center' },

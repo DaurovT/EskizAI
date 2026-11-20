@@ -32,8 +32,8 @@ async function load(): Promise<Draft[]> {
   return drafts.map((p) => ({ p, address: addr[p.order_id] ?? '' }));
 }
 
-const label = (d: Draft) => [`${d.p.doc.room || 'Окно'}, шаг ${d.p.step}`, d.address].filter(Boolean).join(' · ');
-const open = (p: LocalPosition) => router.replace(`/order/${p.order_id}/measure?pos=${p.id}&step=${p.step ?? 1}`);
+const label = (d: Draft) => [`${d.p.doc.room || 'Окно'}, шаг ${Math.min(3, d.p.step ?? 1)} из 3`, d.address].filter(Boolean).join(' · ');
+const open = (p: LocalPosition) => router.replace(`/order/${p.order_id}/measure?pos=${p.id}&step=${Math.min(3, p.step ?? 1)}`);
 const close = () => (router.canGoBack() ? router.back() : router.replace('/orders'));
 
 export default function Resume() {

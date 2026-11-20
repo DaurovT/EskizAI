@@ -1,37 +1,47 @@
 /**
- * S05 мастер замера (FR-M1…M10) — макеты M1Room, M2Opening, M3Size, M3SizeErr, M4Split, M5Extras, M6Next.
- * Один вопрос на экран; каждый шаг сразу пишется на телефон (offline.savePosition) и работает без сети.
+ * S05 мастер замера по макетам «Ядро v3» (docs/design_v3): X2Measure, X3Size / X3Size3, X4Split — 3 шага.
+ * 1 — где и что: помещение, «Что ставим» (Окно / Балкон / Дверь / Глухое), четверть, стена;
+ * 2 — размеры: 1 или 3 точки, проверка опечаток (1.2, 1.6, 1.7, «× 10»), «Рама выйдет …»;
+ * 3 — деление: готовые варианты, схема с нажимаемыми размерами, открывание, петли, «Добивки» листом, «Готово · цена».
+ * Раздвижная, гильотина, лоджия, форма рамы и редкие открывания — «Ещё…» на шаге 3 (в карточки шага 1 не ложатся).
+ * Каждый шаг сразу пишется на телефон (offline.savePosition) и работает без сети; цена на «Готово» — с сервера, когда есть сеть.
  * Правки — только командами ядра (apply из src/lib/tree.ts), чтобы документ был таким же, как на сервере.
- * Маршрут: /order/[id]/measure?pos=&step= (step 6 — лист «Следующее окно» поверх шага 5).
+ * «Готово» → редактор этого окна (X5Editor), оттуда «В заказ».
+ * Маршрут: /order/[id]/measure?pos=&step= (1–3).
  */
 import { router, useLocalSearchParams } from 'expo-router';
-import { ComponentRef, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import type { Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull, Shape } from '@/api/types';
+import type { Calc, Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull, Shape } from '@/api/types';
+import { rescaleParts, type DimTarget } from '@/lib/dims';
 import { num } from '@/lib/format';
 import {
-  apply, cells, frameShape, guillotineDoc, isAssembly, layout, loggiaDoc, scaleAssembly, simpleWindow, slidingDoc, slidingSpec,
+  apply, asmFrames, cells, frameShape, guillotineDoc, isAssembly, layout, loggiaDoc, scaleAssembly, slidingDoc, slidingSpec,
 } from '@/lib/tree';
 import { offline, uuid } from '@/offline/store';
-import { Icon } from '@/ui/Icon';
-import { Schema } from '@/ui/Schema';
-import { Button, Dock, Field, Loading, Note, Row, Screen, Seg, Sheet, Switch, Txt } from '@/ui/kit';
 import { C } from '@/theme';
+import { Icon } from '@/ui/Icon';
+import { Button, Dock, Field, IconButton, Loading, Screen, Seg, Sheet, Switch, Txt } from '@/ui/kit';
+import { BigValue, Caret, OptC, Opt2Grid } from '@/ui/v3';
+import { DimSheet } from '../editor/DimSheet';
+import { SchemaDims } from '../editor/SchemaDims';
+import { ExtrasPanel } from './Extras';
 import {
-  Ban, checkValue, frameLocal, frameValue, Issue, issueBanner, isOpening, KIND_WORD, Keypad, MiniSchema, OptCard,
-  PRESETS, presetDoc, presetsFor, Progress, st, Tag, tryApi, useToast, WizardHeader,
+  Ban, checkValue, frameLocal, frameValue, Issue, issueBanner, isOpening, KIND_WORD, Keypad, MiniSchema, PRESETS, presetDoc, Progress, st,
+  tryApi, useToast,
 } from './parts';
 
 const ROOMS = ['Кухня', 'Зал', 'Спальня', 'Детская', 'Балкон', 'Санузел'];
-const STEPS = 5;
-const DEFAULT_PRESET: Partial<Record<Doc['kind'], string>> = { window: 'T03', balcony_block: 'T09', door: 'T11' };
+const STEPS = 3;
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
-const clampStep = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 1 ? Math.min(6, Math.round(n)) : 0; };
+/** черновики прошлой версии мастера (5 шагов) открываются на ближайшем шаге */
+const clampStep = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 1 ? Math.min(STEPS, Math.round(n)) : 0; };
+const preset = (id: string) => PRESETS.find((p) => p.id === id)!;
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function freshDoc(): Doc {
-  const d = presetDoc(PRESETS.find((p) => p.id === 'T03')!, 1400, 1300);
+  const d = presetDoc(preset('T03'), 1400, 1300);
   d.extras = { sill: { depth_cm: 30 }, drip: true };
   return d;
 }
@@ -49,12 +59,12 @@ function Wizard({ orderId, pos, stepParam }: { orderId: string; pos: string; ste
   const [step, setStep] = useState(stepParam || 1);
   const [n, setN] = useState(1);
   const [orderFloor, setOrderFloor] = useState<number | undefined>();
-  const [savedNote, setSavedNote] = useState('сохранено на телефоне');
   const finished = useRef(false);            // окно уже закончено (или есть на сервере) — правки сразу уходят в синхронизацию
   const baseRev = useRef<number | null | undefined>(undefined);
   const docRef = useRef<Doc | null>(null);
   const [toast, showToast] = useToast();
   const initialStep = useRef(stepParam);
+  const leaving = useRef(false);             // «Готово» уже нажали — второй тап не открывает редактор дважды
 
   // ---------- загрузка: телефон → сервер → новое окно ----------
   useEffect(() => {
@@ -68,7 +78,7 @@ function Wizard({ orderId, pos, stepParam }: { orderId: string; pos: string; ste
       if (local && !local.deleted) {
         d = local.doc;
         finished.current = local.step === undefined;
-        if (!initialStep.current) setStep(local.step ?? 1);
+        if (!initialStep.current) setStep(clampStep(local.step) || 1);
       }
       if (d && alive) { docRef.current = d; setDoc(d); }
       let full: OrderFull | null = null;
@@ -96,255 +106,204 @@ function Wizard({ orderId, pos, stepParam }: { orderId: string; pos: string; ste
     setDoc(next);
     const opts: { id: string; step?: number; base_rev?: number | null } = { id: pos, step: finished.current ? undefined : s };
     if (baseRev.current !== undefined) opts.base_rev = baseRev.current;
-    void offline.savePosition(orderId, next, opts);
+    return offline.savePosition(orderId, next, opts);
   }, [orderId, pos]);
 
   const run = useCallback((commands: Command[], s = step) => {
     const cur = docRef.current;
     if (!cur) return;
-    try { persist(apply(cur, commands), s); } catch (e) { showToast(e instanceof Error ? e.message : 'Не получилось'); }
+    try { void persist(apply(cur, commands), s); } catch (e) { showToast(e instanceof Error ? e.message : 'Не получилось'); }
   }, [persist, step, showToast]);
 
   const goto = useCallback((s: number) => {
     setStep(s);
     router.setParams({ step: String(s) });
-    if (docRef.current && s <= STEPS) persist(docRef.current, s);
+    if (docRef.current) void persist(docRef.current, s);
   }, [persist]);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace(`/order/${orderId}`));
 
+  // «Готово»: окно закончено → редактор (X5Editor). Отправку на сервер делает редактор при открытии.
+  const finish = useCallback(async () => {
+    if (leaving.current || !docRef.current) return;
+    leaving.current = true;
+    finished.current = true;
+    await persist(docRef.current, STEPS);
+    router.replace(`/order/${orderId}/editor?pos=${pos}`);
+  }, [persist, orderId, pos]);
+
+  const openEditor = useCallback(async () => {
+    if (!docRef.current) return;
+    await persist(docRef.current, STEPS);
+    router.push(`/order/${orderId}/editor?pos=${pos}`);
+  }, [persist, orderId, pos]);
+
   if (!doc) return <Screen><Loading /></Screen>;
 
-  const room = doc.room?.trim();
   const kw = KIND_WORD[doc.kind] ?? 'окно';
-  const title = room ? `${room} · ${kw} ${n}` : `${kw[0].toUpperCase()}${kw.slice(1)} ${n}`;
+  const title = n > 1 ? `${cap(kw)} ${n}` : kw === 'окно' ? 'Новое окно' : cap(kw);
   const shown = Math.min(step, STEPS);
-
-  const finish = () => {
-    finished.current = true;
-    persist(docRef.current!, STEPS);
-    setStep(6);
-    router.setParams({ step: '6' });
-    offline.sync().then((r) => { if (r.sent && !r.conflicts) setSavedNote('сохранено и отправлено'); }).catch(() => { /* отправим позже */ });
-  };
-
-  const nextWindow = async () => {
-    const nid = uuid();
-    const nd: Doc = clone(docRef.current!);
-    nd.id = nid; nd.qty = 1; nd.accepted_warnings = [];
-    delete nd.room;
-    if (nd.opening) { delete nd.opening.width; delete nd.opening.height; }
-    await offline.savePosition(orderId, nd, { id: nid, step: 1, base_rev: null });
-    router.replace(`/order/${orderId}/measure?pos=${nid}&step=1`);
-  };
 
   return (
     <Screen>
-      <WizardHeader title={title} onClose={close} doc={shown > 1 ? doc : null} onSchema={() => goto(4)} />
-      <Progress step={shown} onPress={goto} />
-      <Txt style={[st.cap, { paddingHorizontal: 20, paddingTop: 14 }]}>Шаг {shown} из {STEPS}</Txt>
+      <View style={st.hdr}>
+        <IconButton name="close" label="Закрыть" onPress={close} />
+        <Txt w={600} size={18} lines={1} style={{ flex: 1, minWidth: 0 }}>{title}</Txt>
+        <Txt size={14} color="#5F5C57" style={{ paddingRight: 8 }}>{shown} из {STEPS}</Txt>
+      </View>
+      <Progress step={shown} total={STEPS} onPress={goto} />
       <StepIn step={shown}>
-      {shown === 1 ? <RoomStep doc={doc} run={run} goto={goto} showToast={showToast} /> : null}
-      {shown === 2 ? <OpeningStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
-      {shown === 3 ? <SizeStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
-      {shown === 4 ? <SplitStep doc={doc} run={run} persist={persist} goto={goto} orderId={orderId} pos={pos} /> : null}
-      {shown === 5 ? <ExtrasStep doc={doc} run={run} onDone={finish} floorDefault={orderFloor} /> : null}
+        {shown === 1 ? <PlaceStep doc={doc} run={run} persist={persist} goto={goto} /> : null}
+        {shown === 2 ? <SizeStep doc={doc} run={run} persist={persist} goto={goto} showToast={showToast} /> : null}
+        {shown === 3 ? (
+          <SplitStep doc={doc} run={run} persist={persist} onDone={() => void finish()} onEditor={() => void openEditor()} floorDefault={orderFloor} showToast={showToast} />
+        ) : null}
       </StepIn>
-      <Sheet visible={step === 6} onClose={() => { setStep(5); router.setParams({ step: '5' }); }}>
-        <View style={{ paddingHorizontal: 12, gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8 }}>
-            <MiniSchema doc={doc} width={52} height={48} />
-            <View style={{ flex: 1 }}>
-              <Txt w={600} lines={1}>{room || title} · {num(doc.frame.w)} × {num(doc.frame.h)}</Txt>
-              <Note>{savedNote}</Note>
-            </View>
-          </View>
-          <Button title="Следующее окно" icon="plus" onPress={() => void nextWindow()} />
-          <View style={[s.softRow]}>
-            <Txt size={17} w={500} style={{ flex: 1 }}>Такое же × N</Txt>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Pressable accessibilityLabel="Меньше" onPress={() => run([{ cmd: 'set_qty', qty: Math.max(1, (doc.qty ?? 1) - 1) }])} style={st.stpBtn}>
-                <Txt size={20} w={600}>−</Txt>
-              </Pressable>
-              <Txt size={20} w={600} style={{ width: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{String(doc.qty ?? 1)}</Txt>
-              <Pressable accessibilityLabel="Больше" onPress={() => run([{ cmd: 'set_qty', qty: Math.min(99, (doc.qty ?? 1) + 1) }])} style={st.stpBtn}>
-                <Txt size={20} w={600}>+</Txt>
-              </Pressable>
-            </View>
-          </View>
-          <Button title="Закончить замер" kind="secondary" onPress={() => router.replace(`/order/${orderId}/summary`)} />
-        </View>
-      </Sheet>
       {toast}
     </Screen>
   );
 }
 
 type StepProps = {
-  doc: Doc; run: (c: Command[], s?: number) => void; goto: (s: number) => void; showToast?: (t: string) => void;
-  persist?: (d: Doc, s: number) => void;
+  doc: Doc; run: (c: Command[], s?: number) => void; persist: (d: Doc, s: number) => Promise<unknown>;
+  goto?: (s: number) => void; showToast?: (t: string) => void;
 };
 
-const H1 = ({ children }: { children: ReactNode }) => <Txt w={700} style={st.h1}>{children}</Txt>;
+// ---------- общее ----------
+/** Габарит рамы по уже снятому проёму (или null, если размеров ещё нет). */
+function measuredFrame(doc: Doc): { w: number; h: number } | null {
+  const o = doc.opening ?? {};
+  const arr = (v?: number | number[]) => (Array.isArray(v) ? v : typeof v === 'number' ? [v] : []).filter((x) => x > 0);
+  const ws = arr(o.width), hs = arr(o.height);
+  if (!ws.length || !hs.length) return null;
+  if (isAssembly(doc)) return { w: asmFrames(doc).reduce((a, f) => a + f.w, 0), h: Math.max(...asmFrames(doc).map((f) => f.h)) };
+  return { w: doc.frame.w, h: doc.frame.h };
+}
+/** То же изделие с новой конструкцией: помещение, проём, комплектация и добивки остаются. */
+function withStructure(doc: Doc, next: Doc): Doc {
+  return { ...next, id: doc.id, room: doc.room, opening: doc.opening, setup: doc.setup, extras: doc.extras ?? {}, qty: doc.qty ?? 1, accepted_warnings: [] };
+}
+/** Дерево шаблона в чужом габарите: числовые части шаблона (дверь 750, окно 1400), которые не влезли, — пропорционально. */
+function fitTree(next: Doc, w0: number, h0: number): Doc {
+  if (isAssembly(next) || (next.frame.w === w0 && next.frame.h === h0)) return next;
+  const fit = rescaleParts({ ...next, frame: { ...next.frame, w: w0, h: h0 } }, next);
+  return fit.length ? apply(next, fit) : next;
+}
+const isSpecial = (doc: Doc) => isAssembly(doc) || !!doc.frame.root.sliding || !!doc.frame.root.guillotine;
 
-// ---------- шаг 1: помещение ----------
-function RoomStep({ doc, run, goto, showToast }: StepProps) {
+// ---------- шаг 1: где и что (X2Measure) ----------
+type Kind1 = 'window' | 'balcony_block' | 'door' | 'fixed';
+const fixedDoc = (w = 1000, h = 1000): Doc => ({ kind: 'window', qty: 1, frame: { w, h, shape: 'rect', root: { cell: { type: 'fixed' } } }, extras: {}, accepted_warnings: [] });
+const KIND_CARDS: { value: Kind1; title: string; icon: Doc }[] = [
+  { value: 'window', title: 'Окно', icon: presetDoc(preset('T03'), 1300, 1200) },
+  { value: 'balcony_block', title: 'Балкон', icon: presetDoc(preset('T09'), 1800, 1500) },
+  { value: 'door', title: 'Дверь', icon: presetDoc(preset('T11'), 800, 1500) },
+  { value: 'fixed', title: 'Глухое', icon: fixedDoc(1100, 1200) },
+];
+const KIND_PRESET: Record<Kind1, string | null> = { window: 'T03', balcony_block: 'T09', door: 'T11', fixed: null };
+function kindOf(doc: Doc): Kind1 | null {
+  if (isSpecial(doc)) return null;
+  if (doc.kind === 'window') return doc.frame.root.cell?.type === 'fixed' ? 'fixed' : 'window';
+  return doc.kind === 'balcony_block' || doc.kind === 'door' ? doc.kind : null;
+}
+const WALLS = [{ value: 'brick', title: 'Кирпич' }, { value: 'concrete', title: 'Бетон' }, { value: 'aerated', title: 'Газоблок' }];
+
+function PlaceStep({ doc, run, persist, goto }: StepProps) {
   const [own, setOwn] = useState(false);
   const [name, setName] = useState('');
   const custom = doc.room && !ROOMS.includes(doc.room) ? doc.room : null;
-  const pick = (r: string) => { run([{ cmd: 'set_meta', room: r }], 2); goto(2); };
+  const o = doc.opening ?? {};
+  const cur = kindOf(doc);
+
+  const chooseKind = (k: Kind1) => {
+    if (k === cur) return;
+    const m = measuredFrame(doc);
+    const p = KIND_PRESET[k];
+    const base = p ? presetDoc(preset(p)) : fixedDoc();
+    const kind: Doc['kind'] = k === 'fixed' ? 'window' : k;
+    const next = withStructure(doc, { ...base, kind, frame: { ...base.frame, w: m?.w ?? base.frame.w, h: m?.h ?? base.frame.h } });
+    void persist(fitTree(next, base.frame.w, base.frame.h), 1);
+  };
+
   return (
     <>
-      <H1>Где окно?</H1>
-      <Txt style={[st.cap, { paddingHorizontal: 20, paddingBottom: 8 }]}>Выбор — сразу дальше</Txt>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end', padding: 12, paddingTop: 8, gap: 10 }}>
-        <View style={s.grid}>
-          {[...ROOMS, ...(custom ? [custom] : [])].map((r) => (
-            <OptCard key={r} on={doc.room === r} onPress={() => pick(r)} style={s.roomOpt}>
-              <Txt size={17} w={600}>{r}</Txt>
-            </OptCard>
-          ))}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 14, paddingBottom: 12, gap: 14 }}>
+        <View>
+          <Txt size={15} w={600} color={C.muted} style={s.lbl}>Помещение</Txt>
+          <View style={s.wrap}>
+            {[...ROOMS, ...(custom ? [custom] : [])].map((r) => (
+              <Chip key={r} title={r} on={doc.room === r} onPress={() => { if (doc.room !== r) run([{ cmd: 'set_meta', room: r }], 1); }} />
+            ))}
+            <Pressable accessibilityRole="button" accessibilityLabel="Своё помещение" onPress={() => { setName(custom ?? ''); setOwn(true); }}
+              style={({ pressed }) => [s.chip, pressed && s.pressed]}>
+              <Icon name="plus" size={16} />
+            </Pressable>
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable accessibilityRole="button" onPress={() => { setName(custom ?? ''); setOwn(true); }} style={({ pressed }) => [s.soft, pressed && s.pressed]}>
-            <Icon name="plus" size={20} /><Txt size={17} w={500}>Своё</Txt>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => showToast?.('Фото проёма — скоро')} style={({ pressed }) => [s.soft, pressed && s.pressed]}>
-            <Icon name="camera" size={20} /><Txt size={17} w={500}>Фото проёма</Txt>
-          </Pressable>
+        <View>
+          <Txt size={15} w={600} color={C.muted} style={s.lbl}>Что ставим</Txt>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {KIND_CARDS.map((k) => (
+              <OptC key={k.value} on={cur === k.value} onPress={() => chooseKind(k.value)} label={k.title} style={s.kindOpt}>
+                <View style={{ height: 44, justifyContent: 'center' }}><MiniSchema doc={k.icon} width={46} height={44} /></View>
+                <Txt size={14} w={600} lines={1}>{k.title}</Txt>
+              </OptC>
+            ))}
+          </View>
+          {!cur ? (
+            <Txt size={14} color="#5F5C57" style={{ paddingHorizontal: 8, paddingTop: 8 }}>
+              {`Сейчас: ${KIND_WORD[doc.kind] ?? 'изделие'} — выбрано на шаге 3 в «Ещё»`}
+            </Txt>
+          ) : null}
+        </View>
+        <View style={[st.sheet, { paddingVertical: 6 }]}>
+          <View style={s.row}>
+            <Txt w={500} style={{ flex: 1 }}>Четверть</Txt>
+            <Switch value={!!o.quarter_mm} onChange={(v) => run([{ cmd: 'set_meta', opening: { quarter_mm: v ? 50 : 0 } }], 1)} />
+          </View>
+          <View style={[s.row, s.rowSep]}>
+            <Txt w={500} style={{ flex: 1 }}>Стена</Txt>
+            <Seg items={WALLS} value={o.wall ?? ''} onChange={(v) => run([{ cmd: 'set_meta', opening: { wall: v } }], 1)} style={s.wallSeg} />
+          </View>
         </View>
       </ScrollView>
-      <Sheet visible={own} onClose={() => setOwn(false)} title="Своё название">
+      <Dock><Button title="Дальше" onPress={() => goto?.(2)} /></Dock>
+      <Sheet visible={own} onClose={() => setOwn(false)} title="Своё помещение">
         <View style={{ paddingHorizontal: 16, gap: 12 }}>
           <Field label="Помещение" value={name} onChangeText={setName} autoFocus placeholder="Например, Кабинет" returnKeyType="done"
-            onSubmitEditing={() => { if (name.trim()) { setOwn(false); pick(name.trim()); } }} />
-          <Button title="Готово" disabled={!name.trim()} onPress={() => { setOwn(false); pick(name.trim()); }} />
+            onSubmitEditing={() => { if (name.trim()) { setOwn(false); run([{ cmd: 'set_meta', room: name.trim() }], 1); } }} />
+          <Button title="Готово" disabled={!name.trim()} onPress={() => { setOwn(false); run([{ cmd: 'set_meta', room: name.trim() }], 1); }} />
         </View>
       </Sheet>
     </>
   );
 }
 
-// ---------- шаг 2: проём ----------
-const KINDS: { kind: Doc['kind'] | 'loggia'; title: string; sub: string }[] = [
-  { kind: 'window', title: 'Окно', sub: 'створки и глухие' },
-  { kind: 'balcony_block', title: 'Балконный блок', sub: 'дверь + окно' },
-  { kind: 'door', title: 'Дверь', sub: 'входная, балконная' },
-  { kind: 'loggia', title: 'Лоджия', sub: 'П-образная, 3 рамы' },
-  { kind: 'sliding', title: 'Раздвижная', sub: 'окно, дверь, панорама' },
-  { kind: 'guillotine', title: 'Гильотина / терраса', sub: 'полотна поднимаются' },
-];
-const KIND_ICON: Record<string, Doc> = {
-  window: simpleWindow(1300, 1200, 2),
-  balcony_block: presetDoc(PRESETS.find((p) => p.id === 'T09')!, 1800, 1400),
-  door: presetDoc(PRESETS.find((p) => p.id === 'T11')!, 700, 1400),
-  loggia: loggiaDoc(3000, 1400, 700, 1, 2),   // иконка: боковые глухие, фронт — 2 части
-  sliding: slidingDoc(2000, 1400, 2),
-  guillotine: guillotineDoc(3000, 2200, 2),
-};
-const WALLS = [{ value: 'brick', title: 'Кирпич' }, { value: 'concrete', title: 'Бетон' }, { value: 'aerated', title: 'Газоблок' }, { value: 'wood', title: 'Дерево' }];
-const SLOPES = [100, 150, 200, 250, 300, 400];
-const NEARBY = ['Батарея', 'Кондиционер', 'Решётка', 'Розетка', 'Карниз', 'Труба'];
-
-function OpeningStep({ doc, run, persist, goto, showToast }: StepProps) {
-  const [more, setMore] = useState(false);
-  const o = doc.opening ?? {};
-  const measured = Array.isArray(o.width) ? o.width.length > 0 : typeof o.width === 'number';
-  const chooseKind = (k: Doc['kind'] | 'loggia') => {
-    if (k === 'loggia') {
-      // лоджия — сборка из трёх рам (§9.5); вынос, крыша, обшивка — в редакторе: Ещё → Лоджия
-      if (doc.kind === 'assembly') return;
-      const base = loggiaDoc(measured ? Math.max(2400, doc.frame.w) : 4200, measured ? doc.frame.h : 1400);
-      persist?.({ ...base, id: doc.id, room: doc.room, opening: doc.opening, setup: doc.setup, extras: doc.extras ?? {} }, 2);
-      return;
-    }
-    if (k === doc.kind) return;
-    if (k === 'sliding' || k === 'guillotine') {
-      // раздвижная и гильотина (§11): своя система вместо дерева створок; параметры — в редакторе, раздел «Окно»
-      const base = k === 'sliding' ? slidingDoc(measured ? doc.frame.w : 2000, measured ? doc.frame.h : 1400, 2)
-        : guillotineDoc(measured ? doc.frame.w : 4500, measured ? doc.frame.h : 2400, measured ? Math.max(1, Math.round(doc.frame.w / 1500)) : 3);
-      persist?.({ ...base, id: doc.id, room: doc.room, opening: doc.opening, setup: doc.setup, extras: doc.extras ?? {} }, 2);
-      return;
-    }
-    const p = PRESETS.find((x) => x.id === DEFAULT_PRESET[k]);
-    let next = apply(doc, [{ cmd: 'set_meta', kind: k }]);
-    if (p) next = { ...next, frame: { ...next.frame, w: measured ? next.frame.w : p.w, h: measured ? next.frame.h : p.h, root: clone(p.root) } };
-    persist?.(next, 2);
-  };
-  const nearby = o.nearby ?? [];
-  const moreSub = [o.slope_depth_mm ? `откос ${o.slope_depth_mm} мм` : '', nearby.join(', ').toLowerCase()].filter(Boolean).join(' · ');
-  return (
-    <>
-      <H1>Что за проём?</H1>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingTop: 8, gap: 10 }}>
-        <View style={s.grid}>
-          {KINDS.map((k) => (
-            <OptCard key={k.kind} on={k.kind === doc.kind || (k.kind === 'loggia' && doc.kind === 'assembly')} onPress={() => chooseKind(k.kind)} style={s.kindOpt}>
-              <View style={{ height: 58, justifyContent: 'center' }}><MiniSchema doc={KIND_ICON[k.kind]} width={72} height={58} /></View>
-              <View style={{ gap: 2 }}>
-                <Txt size={16} w={600} style={{ lineHeight: 20 }}>{k.title}</Txt>
-                <Txt size={13} color={C.muted} style={{ lineHeight: 17 }}>{k.sub}</Txt>
-              </View>
-            </OptCard>
-          ))}
-        </View>
-        <View style={st.sheet}>
-          <Row first label="Четверть" sub="выступ кладки снаружи"
-            right={<Switch value={!!o.quarter_mm} onChange={(v) => run([{ cmd: 'set_meta', opening: { quarter_mm: v ? 50 : 0 } }])} />} />
-          <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16, gap: 8 }}>
-            <Txt w={500}>Стена</Txt>
-            <Seg items={WALLS} value={o.wall ?? ''} onChange={(v) => run([{ cmd: 'set_meta', opening: { wall: v } }])} style={s.segIn} />
-          </View>
-          <Row label="Глубина откоса, что рядом" sub={moreSub || 'не обязательно'} onPress={() => setMore(true)} />
-        </View>
-      </ScrollView>
-      <Dock><Button title="Далее" onPress={() => goto(3)} /></Dock>
-      <Sheet visible={more} onClose={() => setMore(false)} title="Проём подробнее">
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, gap: 10, paddingBottom: 8 }}>
-          <Txt w={500}>Глубина откоса, мм</Txt>
-          <View style={s.wrap}>
-            {SLOPES.map((v) => (
-              <SheetChip key={v} title={String(v)} on={o.slope_depth_mm === v} white
-                onPress={() => run([{ cmd: 'set_meta', opening: { slope_depth_mm: o.slope_depth_mm === v ? 0 : v } }])} />
-            ))}
-          </View>
-          {o.quarter_mm ? (
-            <>
-              <Txt w={500}>Четверть, мм</Txt>
-              <View style={s.wrap}>
-                {[30, 50, 65, 80].map((v) => (
-                  <SheetChip key={v} title={String(v)} on={o.quarter_mm === v} white onPress={() => run([{ cmd: 'set_meta', opening: { quarter_mm: v } }])} />
-                ))}
-              </View>
-            </>
-          ) : null}
-          <Txt w={500}>Что рядом</Txt>
-          <View style={s.wrap}>
-            {NEARBY.map((v) => (
-              <SheetChip key={v} title={v} on={nearby.includes(v)} white
-                onPress={() => run([{ cmd: 'set_meta', opening: { nearby: nearby.includes(v) ? nearby.filter((x) => x !== v) : [...nearby, v] } }])} />
-            ))}
-          </View>
-          <Button title="Готово" onPress={() => setMore(false)} style={{ marginTop: 6 }} />
-        </ScrollView>
-      </Sheet>
-    </>
-  );
-}
-
-// ---------- шаг 3: размер (3 точки ширины, 3 точки высоты) ----------
+// ---------- шаг 2: размеры (X3Size — 1 точка, X3Size3 — 3 точки) ----------
 type Dim = 'w' | 'h';
-const LABELS: Record<Dim, string[]> = { w: ['Верх', 'Середина', 'Низ'], h: ['Лево', 'Центр', 'Право'] };
-const ORDER: [Dim, number][] = [['w', 0], ['w', 1], ['w', 2], ['h', 0], ['h', 1], ['h', 2]];
+type Mode = 1 | 3;
+/** выбор «1 точка / 3 точки» помнится до перезапуска приложения */
+let lastMode: Mode = 1;
+const ORDERS: Record<Mode, [Dim, number][]> = {
+  1: [['w', 0], ['h', 0]],
+  3: [['w', 0], ['w', 1], ['w', 2], ['h', 0], ['h', 1], ['h', 2]],
+};
+const POINTS: Record<Dim, string> = { w: 'верх / середина / низ', h: 'лево / центр / право' };
 const initVals = (v?: number | number[]) => {
   const a = Array.isArray(v) ? v : typeof v === 'number' ? [v] : [];
   return [0, 1, 2].map((i) => (a[i] ? String(a[i]) : ''));
 };
-const nums = (a: string[]) => a.filter(Boolean).map((x) => parseInt(x, 10));
+const nums = (a: string[], mode: Mode) => (mode === 1 ? a.slice(0, 1) : a).filter(Boolean).map((x) => parseInt(x, 10));
+const floor5 = (v: number) => v - (v % 5);
 
-function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
+function SizeStep({ doc, persist, goto, showToast }: StepProps) {
   const [vals, setVals] = useState<Record<Dim, string[]>>(() => ({ w: initVals(doc.opening?.width), h: initVals(doc.opening?.height) }));
-  const firstEmpty = ORDER.find(([d, i]) => !vals[d][i]) ?? ORDER[ORDER.length - 1];
+  const [mode, setModeState] = useState<Mode>(() => {
+    const multi = (v?: number | number[]) => Array.isArray(v) && v.length > 1;
+    return multi(doc.opening?.width) || multi(doc.opening?.height) ? 3 : lastMode;
+  });
+  const order = ORDERS[mode];
+  const firstEmpty = order.find(([d, i]) => !vals[d][i]) ?? order[order.length - 1];
   const [dim, setDim] = useState<Dim>(firstEmpty[0]);
   const [idx, setIdx] = useState(firstEmpty[1]);
   const [issue, setIssue] = useState<{ dim: Dim; idx: number; value: number; issue: Issue } | null>(null);
@@ -353,40 +312,59 @@ function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
   const busy = useRef(false);
   const valsRef = useRef(vals);
   valsRef.current = vals;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const docRef = useRef(doc);
+  docRef.current = doc;
 
-  // живой расчёт рамы на телефоне; с сервера — после каждого принятого значения
-  const local = useMemo(() => {
-    const ws = nums(vals.w), hs = nums(vals.h);
-    return ws.length && hs.length ? frameLocal(ws, hs) : null;
-  }, [vals]);
-  const refreshFrame = useCallback(async (v: Record<Dim, string[]>) => {
-    const ws = nums(v.w), hs = nums(v.h);
+  const refreshFrame = useCallback(async (v: Record<Dim, string[]>, m: Mode) => {
+    const ws = nums(v.w, m), hs = nums(v.h, m);
     if (!ws.length || !hs.length) { setFrame(null); return null; }
     const r = await frameValue(ws, hs);
     setFrame(r);
     return r;
   }, []);
-  useEffect(() => { void refreshFrame(valsRef.current); }, [refreshFrame]);
-  const fr = frame ?? local;
+  useEffect(() => { void refreshFrame(valsRef.current, modeRef.current); }, [refreshFrame]);
 
-  const cur = vals[dim][idx];
-  const hint = vals[dim].slice(0, idx).filter(Boolean).pop() ?? vals[dim].find(Boolean) ?? '';
+  const setMode = (m: Mode) => {
+    if (m === mode) return;
+    lastMode = m;
+    setModeState(m);
+    setIssue(null);
+    const e = ORDERS[m].find(([d, i]) => !vals[d][i]) ?? ORDERS[m][0];
+    setDim(e[0]); setIdx(e[1]);
+    void refreshFrame(vals, m);
+  };
 
+  // «Рама выйдет»: с сервера (зазор цеха), пока не всё введено — на телефоне по введённому
+  const gap = frame?.gap_mm ?? 20;
+  const ws = nums(vals.w, mode), hs = nums(vals.h, mode);
+  const fw = frame?.frame_w ?? (ws.length ? floor5(Math.min(...ws) - 2 * gap) : null);
+  const fh = frame?.frame_h ?? (hs.length ? floor5(Math.min(...hs) - 2 * gap) : null);
+
+  const cur = vals[dim][idx] ?? '';
+  const hint = mode === 3 ? vals[dim].slice(0, idx).filter(Boolean).pop() ?? vals[dim].find(Boolean) ?? '' : '';
   const setCur = (v: string) => setVals((p) => ({ ...p, [dim]: p[dim].map((x, i) => (i === idx ? v : x)) }));
   const focus = (d: Dim, i: number) => { setDim(d); setIdx(i); setIssue(null); };
 
   const done = async (v: Record<Dim, string[]>) => {
-    const ws = nums(v.w), hs = nums(v.h);
-    const r = (await refreshFrame(v)) ?? frameLocal(ws, hs);
+    const m = modeRef.current;
+    const ws2 = nums(v.w, m), hs2 = nums(v.h, m);
+    const r = (await refreshFrame(v, m)) ?? frameLocal(ws2, hs2);
     if (!r.ok || !r.frame_w || !r.frame_h) { showToast?.('Проверьте размеры'); return; }
     if (r.issues.some((x) => x.code === 'M.skew') && !skewSeen) { setSkewSeen(true); return; }
-    if (isAssembly(doc)) {
+    const d0 = docRef.current;
+    const meta: Command = { cmd: 'set_meta', opening: { width: ws2, height: hs2 } };
+    if (isAssembly(d0)) {
       // лоджия: длина — по рамам пропорционально, высота — всем рамам
-      persist?.(apply(scaleAssembly(doc, r.frame_w, r.frame_h), [{ cmd: 'set_meta', opening: { width: ws, height: hs } }]), 4);
+      await persist(apply(scaleAssembly(d0, r.frame_w, r.frame_h), [meta]), 3);
     } else {
-      run([{ cmd: 'set_size', w: r.frame_w, h: r.frame_h }, { cmd: 'set_meta', opening: { width: ws, height: hs } }], 4);
+      const sized = apply(d0, [{ cmd: 'set_size', w: r.frame_w, h: r.frame_h }, meta]);
+      // числовые части прошлого окна («как прошлое», фрамуга 500) не влезли — растягиваем пропорционально
+      const fit = rescaleParts(d0, sized);
+      await persist(fit.length ? apply(sized, fit) : sized, 3);
     }
-    goto(4);
+    goto?.(3);
   };
 
   const commit = async (str: string, manual: boolean) => {
@@ -397,22 +375,24 @@ function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
       const iss = await checkValue(v);
       const top = iss.find((x) => x.severity === 'block') ?? iss[0];
       if (top) {
-        // «похоже на сантиметры» (1.7) повторным «Далее» не принимаем: на объекте жмут быстро — 145 вместо 1450
+        // «похоже на сантиметры» (1.7) повторным «Дальше» не принимаем: на объекте жмут быстро — 145 вместо 1450
         // уходило в заказ. Только кнопка «× 10» или исправить число.
         const again = manual && top.severity !== 'block' && top.code !== '1.7' && issue && issue.dim === dim && issue.idx === idx && issue.value === v;
         if (!again) { setIssue({ dim, idx, value: v, issue: top }); return; }
       }
       setIssue(null);
+      const m = modeRef.current;
+      const ord = ORDERS[m];
       const next = { ...valsRef.current, [dim]: valsRef.current[dim].map((x, i) => (i === idx ? String(v) : x)) };
       setVals(next);
-      run([{ cmd: 'set_meta', opening: { width: nums(next.w), height: nums(next.h) } }], 3);
-      void refreshFrame(next);
-      const at = ORDER.findIndex(([d, i]) => d === dim && i === idx);
-      const after = [...ORDER.slice(at + 1), ...ORDER.slice(0, at)];
+      void persist(apply(docRef.current, [{ cmd: 'set_meta', opening: { width: nums(next.w, m), height: nums(next.h, m) } }]), 2);
+      void refreshFrame(next, m);
+      const at = ord.findIndex(([d, i]) => d === dim && i === idx);
+      const after = [...ord.slice(at + 1), ...ord.slice(0, at)];
       const empty = after.find(([d, i]) => !next[d][i]);
       if (empty) { setDim(empty[0]); setIdx(empty[1]); return; }
-      if (at === ORDER.length - 1) { await done(next); return; }
-      const [nd, ni] = ORDER[at + 1];
+      if (at === ord.length - 1) { await done(next); return; }
+      const [nd, ni] = ord[at + 1];
       setDim(nd); setIdx(ni);
     } finally {
       busy.current = false;
@@ -429,92 +409,95 @@ function SizeStep({ doc, run, persist, goto, showToast }: StepProps) {
   const onErase = () => { setCur(cur.slice(0, -1)); setIssue(null); };
   const onNext = () => {
     const v = cur || hint;
-    if (!v) { showToast?.('Введите размер в мм'); return; }
+    if (!v) {
+      // всё уже введено (вернулись на шаг) — «Дальше» просто идёт дальше
+      if (order.every(([d, i]) => vals[d][i])) { void done(vals); return; }
+      showToast?.('Введите размер в мм');
+      return;
+    }
     if (!cur) setCur(v);
     void commit(v, true);
   };
 
   const ban = issue ? issueBanner(issue.issue, issue.value) : null;
-  const skews = fr?.issues.filter((x) => x.code === 'M.skew') ?? [];
-  const lineColor = (i: number) => (i === idx ? (ban ? (ban.kind === 'err' ? C.dangerLine : '#F2B705') : C.accent) : C.accentMid);
+  const skews = frame?.issues.filter((x) => x.code === 'M.skew') ?? [];
+  const fmt = (v: string) => (v ? num(parseInt(v, 10)) : '');
+
+  const field = (d: Dim) => {
+    const on = dim === d;
+    const err = on && ban ? (ban.kind === 'err' ? s.fldErr : s.fldEst) : null;
+    const label = mode === 1 ? (d === 'w' ? 'Ширина проёма, мм' : 'Высота проёма, мм') : `${d === 'w' ? 'Ширина' : 'Высота'} · ${POINTS[d]}`;
+    if (mode === 1) {
+      return (
+        <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${vals[d][0] || 'пусто'}`} onPress={() => focus(d, 0)}
+          style={[s.fld, { minHeight: 76 }, on && s.fldFocus, err]}>
+          <Txt size={13} color={C.muted} style={{ lineHeight: 17 }}>{label}</Txt>
+          <BigValue text={fmt(vals[d][0])} focus={on} />
+        </Pressable>
+      );
+    }
+    return (
+      <View style={[s.fld, { paddingVertical: 10 }, on && s.fldFocus, err]}>
+        <Txt size={13} color={C.muted} style={{ lineHeight: 17 }}>{label}</Txt>
+        <View style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
+          {[0, 1, 2].map((i) => {
+            const v = vals[d][i];
+            const f = on && idx === i;
+            const h = f ? '' : v ? '' : (d === dim ? hint : '');
+            return (
+              <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${POINTS[d].split(' / ')[i]}: ${v || 'пусто'}`} onPress={() => focus(d, i)}
+                style={[s.point, f && { backgroundColor: C.accentSoft }]}>
+                <Txt size={20} w={600} color={v ? C.ink : C.heroMuted} style={{ fontVariant: ['tabular-nums'] }}>{v ? fmt(v) : f ? '' : h ? fmt(h) : '—'}</Txt>
+                {f ? <Caret height={22} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <>
-      <H1>{dim === 'w' ? 'Ширина проёма' : 'Высота проёма'}</H1>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingTop: 8, paddingBottom: 8, gap: 8 }}>
-        <Seg items={[{ value: 'w', title: 'Ширина · 3 точки' }, { value: 'h', title: 'Высота · 3 точки' }]} value={dim}
-          onChange={(d) => { const e = vals[d].findIndex((x) => !x); focus(d, e < 0 ? 0 : e); }} style={{ marginHorizontal: 0 }} />
-        <View style={[st.sheet, { paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', gap: 12, alignItems: 'center' }]}>
-          <Svg width={96} height={110} accessibilityLabel={dim === 'w' ? 'Три точки замера ширины' : 'Три точки замера высоты'}>
-            <Rect x={12} y={6} width={72} height={98} fill="#EDECE9" stroke="#B4B1AB" strokeWidth={1.5} />
-            {(dim === 'w' ? [20, 55, 90] : [24, 48, 72]).map((p, i) => (
-              <Path key={i} d={dim === 'w' ? `M12 ${p}h72` : `M${p} 6v98`} stroke={lineColor(i)} strokeWidth={i === idx ? 3.5 : 2} />
-            ))}
-          </Svg>
-          <View style={{ flex: 1, gap: 6 }}>
-            {LABELS[dim].map((label, i) => {
-              const v = vals[dim][i];
-              const on = i === idx;
-              const err = on && ban;
-              return (
-                <Pressable key={label} accessibilityRole="button" accessibilityLabel={`${label}: ${v || 'пусто'}`} onPress={() => focus(dim, i)}
-                  style={[s.fld, on && s.fldFocus, err && (ban!.kind === 'err' ? s.fldErr : s.fldEst)]}>
-                  <Txt size={13} color={C.muted} style={{ lineHeight: 17 }}>{label}</Txt>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 23 }}>
-                    <Txt size={17} w={500} color={v ? C.ink : '#9C9993'} style={{ fontVariant: ['tabular-nums'], lineHeight: 23 }}>
-                      {v ? num(parseInt(v, 10)) : on ? '' : hint ? num(parseInt(hint, 10)) : '—'}
-                    </Txt>
-                    {on ? <View style={s.caret} /> : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 14, paddingBottom: 8, gap: 8 }} keyboardShouldPersistTaps="handled">
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 }}>
+          <Txt size={22} w={700} style={{ lineHeight: 28, letterSpacing: -0.4 }}>Размеры</Txt>
+          <Seg<string> items={[{ value: '1', title: '1 точка' }, { value: '3', title: '3 точки' }]} value={String(mode)}
+            onChange={(v) => setMode(v === '3' ? 3 : 1)} style={{ width: 180, marginHorizontal: 0 }} />
         </View>
+        {field('w')}
+        {field('h')}
         {ban ? (
           <Ban kind={ban.kind} icon="warn" title={ban.title} body={ban.body} action={ban.action} actionSoft
             onAction={() => {
               if (ban.fixValue) { setCur(String(ban.fixValue)); setIssue(null); void commit(String(ban.fixValue), false); }
               else void commit(String(issue!.value), true);
             }} />
-        ) : fr && fr.frame_w && fr.frame_h ? (
-          <Ban kind="info" icon="check" title={`Рама: ${num(fr.frame_w)} × ${num(fr.frame_h)}`}
-            body={`минимум из точек минус зазор 2 × ${fr.gap_mm ?? 20} мм`} />
         ) : null}
         {!ban ? skews.map((x) => <Ban key={x.field} kind="est" icon="warn" title="Перекос проёма" body={`${x.msg}${x.fix ? ` — ${x.fix}` : ''}`} />) : null}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4 }}>
+          <Txt size={14} color="#5F5C57">Рама выйдет</Txt>
+          <Txt size={17} w={700} style={{ fontVariant: ['tabular-nums'] }}>{fw ? num(fw) : '—'} × {fh ? num(fh) : '—'}</Txt>
+        </View>
       </ScrollView>
-      <Keypad onDigit={onDigit} onErase={onErase} onNext={onNext} />
+      <Keypad onDigit={onDigit} onErase={onErase} onNext={onNext} nextTitle="Дальше" />
     </>
   );
 }
 
-// ---------- шаг 4: деление ----------
-function splitOf(root: Node): { leaves: number; transom: boolean } {
-  let r = root, transom = false;
-  if (r.split === 'h' && r.parts?.length === 2 && r.parts[0].cell?.open === 'tilt' && typeof r.parts[0].size === 'number') {
-    transom = true;
-    r = r.parts[1].node ?? { cell: r.parts[1].cell };
-  }
-  const ok = r.cell || (r.split === 'v' && (r.parts ?? []).every((p) => p.cell));
-  return { leaves: ok ? (r.cell ? 1 : r.parts!.length) : 0, transom };
-}
-
-/** Тап по ячейке: глухая → поворотно-откидная → поворотная → откидная → глухая. */
-function cycle(c: Cell): Partial<Cell> {
-  if (c.type === 'panel') return { type: 'fixed' };
-  if (c.open === 'vslide') return { slide: c.slide === 'fixed' ? 'moving' : 'fixed' };   // гильотинное: подвижное ⇄ глухое
-  if (c.type === 'door_sash') return { open: c.open === 'turn' ? 'tilt_turn' : 'turn' };
-  if (c.type === 'fixed') return { type: 'sash', open: 'tilt_turn', hinge: 'left', handle: true };
-  if (c.open === 'tilt_turn') return { open: 'turn', hinge: c.hinge === 'right' ? 'right' : 'left' };
-  if (c.open === 'turn') return { open: 'tilt', hinge: 'bottom' };
-  return { type: 'fixed' };
-}
-const OPEN_TITLE: Record<string, string> = {
-  fixed: 'глухая', tilt_turn: 'поворотно-откидная', turn: 'поворотная', tilt: 'откидная', panel: 'панель', top_hung: 'подвесная', pivot: 'среднеподвесная',
-  sliding: 'раздвижная', vslide: 'гильотинное',
+// ---------- шаг 3: деление (X4Split) ----------
+const VARIANTS: Partial<Record<Doc['kind'], { title: string; id: string }[]>> = {
+  window: [{ title: '1', id: 'T01' }, { title: '2', id: 'T03' }, { title: '2 П-О', id: 'T04' }, { title: '3', id: 'T05' }, { title: 'Фрамуга', id: 'T07' }],
+  balcony_block: [{ title: 'Дверь слева', id: 'T09' }, { title: 'Дверь справа', id: 'T10' }],
+  door: [{ title: 'Дверь', id: 'T11' }],
 };
+const OPEN_OPTS = [{ value: 'tilt_turn', title: 'П-О' }, { value: 'turn', title: 'Поворотная' }, { value: 'fixed', title: 'Глухая' }, { value: 'more', title: 'Ещё…' }];
+const MORE_OPENS = [{ value: 'tilt', title: 'Откидная' }, { value: 'top_hung', title: 'Подвесная' }, { value: 'pivot', title: 'Среднеподвесная' },
+  { value: 'psk', title: 'PSK' }, { value: 'hs', title: 'HS' }];
+const TYPES = [{ value: 'sash', title: 'Створка' }, { value: 'door_sash', title: 'Дверная' }, { value: 'panel', title: 'Панель' }, { value: 'fixed', title: 'Глухая' }];
+const SIDE_HINGE = ['turn', 'tilt_turn'];
 
-/** Быстрый выбор формы рамы на шаге деления (подробно — в редакторе: Ещё → Форма рамы). */
+/** Быстрый выбор формы рамы (подробно — в редакторе: «Окно» → «Форма рамы»). */
 type QuickShape = 'rect' | 'arch' | 'semi' | 'circle' | 'trapezoid' | 'triangle';
 const QUICK_SHAPES: { value: QuickShape; title: string }[] = [
   { value: 'rect', title: 'Обычная' }, { value: 'arch', title: 'Арка' }, { value: 'semi', title: 'Полукруг' },
@@ -537,262 +520,224 @@ function quickShapeCommands(doc: Doc, q: QuickShape): Command[] {
     case 'triangle': return [sh('triangle', { apex: Math.round(w / 2) })];
   }
 }
+/** Конструкция без числовых размеров частей — чтобы вариант оставался выбранным после подгонки под габарит. */
+const treeSig = (root: Node) => JSON.stringify(root, (k, v) => (k === 'size' && typeof v === 'number' ? 'n' : v));
+/** Выбранная ячейка по умолчанию — первая створка (как на макете), иначе первая ячейка. */
+function defaultSel(doc: Doc): string | null {
+  if (isSpecial(doc)) return null;
+  const list = cells(doc);
+  return (list.find((c) => isOpening(c.cell)) ?? list[0])?.path ?? null;
+}
 
-function SplitStep({ doc, run, persist, goto, orderId, pos }: StepProps & { orderId: string; pos: string }) {
+function SplitStep({ doc, run, persist, onDone, onEditor, floorDefault, showToast }: StepProps & {
+  onDone: () => void; onEditor: () => void; floorDefault?: number;
+}) {
   const { width } = useWindowDimensions();
-  const sw = Math.min(width - 24 - 24, 340);
-  const [sel, setSel] = useState<string | null>(null);
-  const { leaves, transom } = splitOf(doc.frame.root);
+  const sw = Math.min(width - 24 - 40, 300);
+  const [sel, setSel] = useState<string | null>(() => defaultSel(doc));
+  const [extras, setExtras] = useState(false);
+  const [more, setMore] = useState(false);
+  const [dim, setDim] = useState<DimTarget | null>(null);
+  const [preview, setPreview] = useState<{ doc: Doc; changed: number[] } | null>(null);
   const L = useMemo(() => { try { return layout(doc); } catch { return null; } }, [doc]);
-  const selCell = sel !== null ? L?.cells.find((c) => c.path === sel)?.cell : undefined;
-
-  const setSplit = (nl: number, tr: boolean) => {
-    const f = simpleWindow(doc.frame.w, doc.frame.h, nl, tr).frame;
-    persist?.({ ...doc, frame: { ...doc.frame, root: f.root } }, 4);
-    setSel(null);
-  };
-  const applyPreset = (id: string) => {
-    const p = PRESETS.find((x) => x.id === id)!;
-    persist?.({ ...doc, frame: { ...doc.frame, root: clone(p.root) } }, 4);
-    setSel(null);
-  };
+  const selCell: Cell | undefined = sel !== null ? L?.cells.find((c) => c.path === sel)?.cell : undefined;
+  const special = isSpecial(doc);
   const sliding = slidingSpec(doc.frame);
-  const special = !!(sliding || doc.frame.root.guillotine);
+  const variants = special ? [] : VARIANTS[doc.kind] ?? [];
+  const rootJson = treeSig(doc.frame.root);
+
+  // цена на «Готово» — расчётом на сервере без сохранения; без сети — просто «Готово»
+  const [price, setPrice] = useState<number | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await tryApi<Calc>('/oyna/positions/calc', { method: 'POST', body: { doc } });
+        if (alive) setPrice(r?.price && r.can_quote && r.price.total > 0 ? r.price.total : null);
+      } catch { if (alive) setPrice(null); }
+    }, 450);
+    return () => { alive = false; clearTimeout(t); };
+  }, [doc]);
+
+  const applyVariant = (id: string) => {
+    const p = preset(id);
+    const next = fitTree({ ...doc, frame: { ...doc.frame, root: clone(p.root) } }, p.w, p.h);
+    void persist(next, 3);
+    setSel(defaultSel(next));
+  };
   const tap = (path: string) => {
     if (sliding) {
       // раздвижная: тап — полотно подвижное ⇄ глухое
       const i = Number(path);
-      run([{ cmd: 'set_sliding', moving: sliding.moving.map((m, j) => (j === i ? !m : m)) }], 4);
+      run([{ cmd: 'set_sliding', moving: sliding.moving.map((m, j) => (j === i ? !m : m)) }], 3);
       return;
     }
-    const c = L?.cells.find((x) => x.path === path)?.cell;
-    if (!c) return;
-    setSel(path);
-    run([{ cmd: 'set_cell', path, ...cycle(c) }], 4);
-  };
-  const flipHinge = (path: string, to?: 'left' | 'right') => {
-    if (special) return;
-    const c = L?.cells.find((x) => x.path === path)?.cell;
-    if (!c || !isOpening(c) || c.open === 'tilt' || c.open === 'vslide') return;
-    const h = to ?? (c.hinge === 'right' ? 'left' : 'right');
-    if (h !== c.hinge) run([{ cmd: 'set_cell', path, hinge: h }], 4);
     setSel(path);
   };
-
-  // свайп по ячейке — сторона петель
-  const box = useRef<ComponentRef<typeof View>>(null);
-  const origin = useRef({ x: 0, y: 0 });
-  const geo = useRef({ pad: 34, k: 1 });
-  geo.current = (() => {
-    const pad = 34;
-    let k = (sw - 2 * pad) / doc.frame.w;
-    k = Math.min(k, (300 - 2 * pad) / doc.frame.h);
-    return { pad, k };
-  })();
-  const cellAt = (px: number, py: number) => {
-    const { pad, k } = geo.current;
-    const x = (px - origin.current.x - pad) / k, y = (py - origin.current.y - pad) / k;
-    return L?.cells.find((c) => x >= c.box.x0 && x <= c.box.x1 && y >= c.box.y0 && y <= c.box.y1)?.path ?? null;
+  const setOpen = (v: string) => {
+    if (v === 'more') { setMore(true); return; }
+    if (!selCell || sel === null) { showToast?.('Выберите створку на схеме'); return; }
+    if (v === 'fixed') { run([{ cmd: 'set_cell', path: sel, type: 'fixed' }], 3); return; }
+    const type = selCell.type === 'door_sash' || (selCell.type !== 'sash' && doc.kind === 'door') ? 'door_sash' : 'sash';
+    const hinge = v === 'tilt' ? 'bottom' : v === 'top_hung' ? 'top' : selCell.hinge === 'right' ? 'right' : 'left';
+    run([{ cmd: 'set_cell', path: sel, type, open: v, ...(v === 'pivot' || v === 'psk' || v === 'hs' ? {} : { hinge }), handle: true }], 3);
   };
-  const flipRef = useRef(flipHinge);
-  flipRef.current = flipHinge;
-  const cellAtRef = useRef(cellAt);
-  cellAtRef.current = cellAt;
-  const pan = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: () => { box.current?.measureInWindow((x, y) => { origin.current = { x, y }; }); },
-    onPanResponderRelease: (_, g) => {
-      if (Math.abs(g.dx) < 30) return;
-      const p = cellAtRef.current(g.x0, g.y0);
-      if (p !== null) flipRef.current(p, g.dx > 0 ? 'right' : 'left');
-    },
-  }), []);
+  const setType = (t: string) => {
+    if (sel === null || !selCell) return;
+    if (t === 'fixed' || t === 'panel') run([{ cmd: 'set_cell', path: sel, type: t }], 3);
+    else run([{ cmd: 'set_cell', path: sel, type: t, open: selCell.open && selCell.type === t ? selCell.open : 'tilt_turn', hinge: selCell.hinge === 'right' ? 'right' : 'left', handle: true }], 3);
+  };
+  const special2 = (k: 'sliding' | 'guillotine' | 'loggia' | 'window') => {
+    const m = measuredFrame(doc) ?? { w: doc.frame.w || 1400, h: doc.frame.h || 1300 };
+    const base = k === 'sliding' ? slidingDoc(m.w, m.h, 2)
+      : k === 'guillotine' ? guillotineDoc(m.w, m.h, Math.max(1, Math.round(m.w / 1500)))
+        : k === 'loggia' ? loggiaDoc(Math.max(2400, m.w), m.h)
+          : presetDoc(preset('T03'), m.w, m.h);
+    const next = withStructure(doc, base);
+    setMore(false);
+    void persist(next, 3);
+    setSel(defaultSel(next));
+  };
 
-  const presets = presetsFor(doc.kind);
-  const rootJson = JSON.stringify(doc.frame.root);
-  const isWindow = doc.kind === 'window';
+  const shownDoc = preview?.doc ?? doc;
+  const hingeShown = !!selCell && isOpening(selCell) && SIDE_HINGE.includes(selCell.open ?? 'turn');
+  const openOn = (v: string) => (selCell ? (v === 'fixed' ? selCell.type === 'fixed' : isOpening(selCell) && selCell.open === v) : false);
+  const note = sliding ? 'Тап — полотно подвижное или глухое' : doc.frame.root.guillotine ? 'Модули, привод и стекло — в редакторе'
+    : isAssembly(doc) ? 'Рамы, стыки и вынос — в редакторе' : null;
 
   return (
     <>
-      <H1>Как делится?</H1>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingTop: 8, paddingBottom: 8, gap: 10 }}>
-        {isWindow ? (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {[1, 2, 3, 4].map((v) => (
-              <Pressable key={v} accessibilityRole="button" accessibilityState={{ selected: leaves === v }} onPress={() => setSplit(v, transom)}
-                style={[s.chip, { width: 48, paddingHorizontal: 0 }, leaves === v && s.chipOn]}>
-                <Txt size={15} w={500} color={leaves === v ? '#fff' : C.ink}>{String(v)}</Txt>
-              </Pressable>
-            ))}
-            <Pressable accessibilityRole="switch" accessibilityState={{ checked: transom }} onPress={() => setSplit(leaves || 2, !transom)}
-              style={[s.chip, transom && s.chipOn]}>
-              <Icon name="plus" size={16} color={transom ? '#fff' : C.ink} />
-              <Txt size={15} w={500} color={transom ? '#fff' : C.ink}>Фрамуга</Txt>
-            </Pressable>
-          </View>
-        ) : null}
-        {isWindow ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {QUICK_SHAPES.map((q) => {
-              const on = quickShape(doc) === q.value;
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 14, paddingBottom: 12, gap: 10 }}>
+        {variants.length ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
+            {variants.map((v) => {
+              const p = preset(v.id);
               return (
-                <Pressable key={q.value} accessibilityRole="button" accessibilityState={{ selected: on }}
-                  onPress={() => { if (!on) { setSel(null); run(quickShapeCommands(doc, q.value), 4); } }}
-                  style={[s.chip, on && s.chipOn]}>
-                  <Txt size={15} w={500} color={on ? '#fff' : C.ink}>{q.title}</Txt>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-        <View style={[st.sheet, { paddingTop: 18, paddingBottom: 12, alignItems: 'center', gap: 8 }]}>
-          <View ref={box} {...pan.panHandlers} onLayout={() => box.current?.measureInWindow((x, y) => { origin.current = { x, y }; })}>
-            <Schema doc={doc} width={sw} maxHeight={300} selected={sel} onCellPress={tap} />
-          </View>
-          <Txt style={st.cap}>{sliding ? 'Тап — полотно подвижное или глухое' : doc.frame.root.guillotine ? 'Модули, привод и стекло — в редакторе' : 'Тап — тип по кругу · свайп — сторона петель'}</Txt>
-          {selCell ? (
-            <View style={{ alignSelf: 'stretch', paddingHorizontal: 16, gap: 8, paddingTop: 4 }}>
-              <Txt size={14} w={500} color={C.muted} center>
-                {selCell.type === 'door_sash' ? 'дверь' : 'створка'}: {OPEN_TITLE[selCell.type === 'sash' || selCell.type === 'door_sash' ? selCell.open ?? 'turn' : selCell.type]}
-                {selCell.open === 'vslide' ? (selCell.slide === 'fixed' ? ', неподвижное' : ', подвижное') : ''}
-              </Txt>
-              {isOpening(selCell) && selCell.open !== 'tilt' && selCell.open !== 'vslide' ? (
-                <Seg items={[{ value: 'left', title: 'Петли слева' }, { value: 'right', title: 'Петли справа' }]} value={selCell.hinge === 'right' ? 'right' : 'left'}
-                  onChange={(v) => flipHinge(sel!, v as 'left' | 'right')} style={s.segIn} />
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-        {presets.length ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {presets.map((p) => {
-              const on = JSON.stringify(p.root) === rootJson;
-              return (
-                <Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Шаблон ${p.id}`} onPress={() => applyPreset(p.id)}
-                  style={({ pressed }) => [s.tpl, on && { borderWidth: 2, borderColor: C.accent }, pressed && s.pressed]}>
+                <OptC key={v.id} on={treeSig(p.root) === rootJson} onPress={() => applyVariant(v.id)} label={`Деление ${v.title}`}
+                  style={{ minWidth: 62, height: 76, padding: 6, gap: 4 }}>
                   <MiniSchema doc={presetDoc(p)} width={34} height={30} />
-                  <Txt size={11} w={600} color={C.muted} style={{ lineHeight: 13 }}>{p.id}</Txt>
-                </Pressable>
+                  <Txt size={13} w={600} lines={1}>{v.title}</Txt>
+                </OptC>
               );
             })}
           </ScrollView>
+        ) : null}
+        <View style={[st.sheet, { paddingTop: 22, paddingBottom: 12 + 48, alignItems: 'center', minHeight: 300 }]}>
+          <SchemaDims doc={shownDoc} width={sw} maxHeight={224} selected={special ? null : sel} onCellPress={tap}
+            onDim={special ? undefined : (t) => { if (t.kind === 'part') setDim(t); }} frameDims={false}
+            edit={dim ? { target: dim, changed: preview?.changed ?? [] } : null} />
+          {note ? <Txt size={14} color="#5F5C57" center style={{ position: 'absolute', bottom: 18, left: 16, right: 16 }}>{note}</Txt> : null}
+        </View>
+        {!special ? (
+          <>
+            <Opt2Grid white items={OPEN_OPTS.map((o) => ({ ...o, on: openOn(o.value) }))} onChange={setOpen} />
+            {hingeShown ? (
+              <Opt2Grid white value={selCell!.hinge === 'right' ? 'right' : 'left'}
+                items={[{ value: 'left', title: 'Петли слева' }, { value: 'right', title: 'справа' }]}
+                onChange={(h) => { if (sel !== null && h !== selCell!.hinge) run([{ cmd: 'set_cell', path: sel, hinge: h }], 3); }} />
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
       <Dock>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Button title="В редактор" kind="secondary" style={{ flex: 1 }}
-            onPress={() => { persist?.(doc, 4); router.push(`/order/${orderId}/editor?pos=${pos}`); }} />
-          <Button title="Далее" style={{ flex: 1 }} onPress={() => goto(5)} />
+          <Pressable accessibilityRole="button" onPress={() => setExtras(true)} style={({ pressed }) => [s.soft, pressed && s.pressed]}>
+            <Txt size={17} w={500}>Добивки</Txt>
+          </Pressable>
+          <Button title={price ? `Готово · ${num(price)}` : 'Готово'} onPress={onDone} style={{ flex: 1 }} />
         </View>
       </Dock>
+
+      {dim ? (
+        <DimSheet key={JSON.stringify(dim)} doc={doc} target={dim} onClose={() => { setDim(null); setPreview(null); }}
+          onPreview={(d, changed) => setPreview(d ? { doc: d, changed } : null)}
+          onApply={(c) => { setDim(null); setPreview(null); run(c, 3); }} />
+      ) : null}
+
+      <Sheet visible={extras} onClose={() => setExtras(false)} title="Добивки и работы">
+        <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 12, gap: 10, paddingBottom: 8 }}>
+          <ExtrasPanel doc={doc} run={(c) => run(c, 3)} floorDefault={floorDefault} />
+          <Button title="Готово" onPress={() => setExtras(false)} />
+        </ScrollView>
+      </Sheet>
+
+      <Sheet visible={more} onClose={() => setMore(false)} title="Ещё">
+        <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 12, gap: 10, paddingBottom: 8 }}>
+          {!special && selCell ? (
+            <>
+              <Lbl>Открывание</Lbl>
+              <Opt2Grid white items={MORE_OPENS.filter((o) => selCell.type !== 'door_sash' || ['psk', 'hs'].includes(o.value)).map((o) => ({ ...o, on: openOn(o.value) }))}
+                onChange={(v) => { setOpen(v); setMore(false); }} />
+              <Lbl>Что это</Lbl>
+              <Opt2Grid white value={selCell.type} items={TYPES} onChange={(t) => { setType(t); setMore(false); }} />
+            </>
+          ) : null}
+          {!special && doc.kind === 'window' ? (
+            <>
+              <Lbl>Форма рамы</Lbl>
+              <Opt2Grid white value={quickShape(doc)} items={QUICK_SHAPES}
+                onChange={(q) => { if (q !== quickShape(doc)) run(quickShapeCommands(doc, q), 3); setMore(false); }} />
+            </>
+          ) : null}
+          <Lbl>Другое изделие</Lbl>
+          <Opt2Grid white items={[
+            ...(special ? [{ value: 'window', title: 'Обычное окно' }] : []),
+            { value: 'sliding', title: 'Раздвижная', on: !!doc.frame.root.sliding },
+            { value: 'guillotine', title: 'Гильотина / терраса', on: !!doc.frame.root.guillotine },
+            { value: 'loggia', title: 'Лоджия', on: isAssembly(doc) },
+          ]} onChange={(k) => special2(k as 'sliding' | 'guillotine' | 'loggia' | 'window')} />
+          <Button title="Все настройки — в редакторе" kind="secondary" onPress={() => { setMore(false); onEditor(); }} />
+        </ScrollView>
+      </Sheet>
     </>
   );
 }
 
-// ---------- шаг 5: добивки и работы ----------
-const SILL = [15, 25, 30, 40, 60];
-const DISMANTLE = [{ value: 'none', title: 'Нет' }, { value: 'wood', title: 'Дерево' }, { value: 'pvc', title: 'ПВХ' }, { value: 'metal', title: 'Металл' }];
-const DISMANTLE_OF: Record<string, string> = { wood: 'деревянного', pvc: 'пластикового', metal: 'металлического', alu: 'алюминиевого' };
+const Lbl = ({ children }: { children: ReactNode }) => <Txt size={15} w={600} color={C.muted} style={{ paddingHorizontal: 8, paddingTop: 4 }}>{children}</Txt>;
 
-function ExtrasStep({ doc, run, onDone, floorDefault }: { doc: Doc; run: StepProps['run']; onDone: () => void; floorDefault?: number }) {
-  const ex = doc.extras ?? {};
-  const set = (a: Record<string, unknown>) => run([{ cmd: 'set_extras', ...a }], 5);
-  const openCells = cells(doc).filter((c) => isOpening(c.cell));
-  const mosquito = openCells.some((c) => c.cell.mosquito);
-  const setMosquito = (v: boolean) => {
-    const target = v ? openCells.filter((c) => c.cell.type === 'sash' && c.cell.open !== 'tilt') : openCells;
-    const list = target.length ? target : openCells;
-    if (list.length) run(list.map((c) => ({ cmd: 'set_cell', path: c.path, mosquito: v })), 5);
-  };
-  const sill = ex.sill || null;
-  const dismantle = ex.dismantle || 'none';
-  const floor = ex.floor ?? floorDefault ?? 1;
-  return (
-    <>
-      <H1>Добивки и работы</H1>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 12, paddingTop: 8, paddingBottom: 8, gap: 10 }}>
-        <View style={st.sheet}>
-          <Row first label="Подоконник" sub="глубина, см" right={<Switch value={!!sill} onChange={(v) => set({ sill: v ? { depth_cm: 30 } : false })} />} />
-          {sill ? (
-            <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 20, paddingBottom: 14 }}>
-              {SILL.map((v) => (
-                <SheetChip key={v} title={String(v)} on={sill.depth_cm === v} flex onPress={() => set({ sill: { depth_cm: v } })} />
-              ))}
-            </View>
-          ) : null}
-          <Row label="Отлив" right={<Switch value={!!ex.drip} onChange={(v) => set({ drip: v })} />} />
-          <Row label="Откосы" right={<Switch value={!!ex.slopes} onChange={(v) => set({ slopes: v })} />} />
-          {openCells.length ? (
-            <Row label="Москитка" sub="на открывающуюся створку" right={<Switch value={mosquito} onChange={setMosquito} />} />
-          ) : null}
-          <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, gap: 8, borderTopWidth: 1, borderTopColor: C.line }}>
-            <Txt w={500}>Демонтаж</Txt>
-            <Seg items={DISMANTLE} value={dismantle} onChange={(v) => set({ dismantle: v === 'none' ? false : v })} style={s.segIn} />
-          </View>
-          <Row label="Этаж" right={
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Pressable accessibilityLabel="Ниже" onPress={() => set({ floor: Math.max(1, floor - 1) })} style={st.stpBtn}><Txt size={20} w={600}>−</Txt></Pressable>
-              <Txt size={17} w={600} style={{ minWidth: 28, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{String(floor)}</Txt>
-              <Pressable accessibilityLabel="Выше" onPress={() => set({ floor: Math.min(60, floor + 1) })} style={st.stpBtn}><Txt size={20} w={600}>+</Txt></Pressable>
-            </View>
-          } />
-          <Row label="Работа снаружи" sub="без балкона, с улицы" right={<Switch value={!!ex.outside} onChange={(v) => set({ outside: v })} />} />
-        </View>
-        {ex.dismantle && !ex.slopes ? (
-          <Ban kind="est" icon="warn" title="Откосы не отмечены" body={`После демонтажа ${DISMANTLE_OF[ex.dismantle] ?? 'старого'} окна обычно нужны (9.3)`}
-            action="Добавить" onAction={() => set({ slopes: true })} />
-        ) : null}
-      </ScrollView>
-      <Dock><Button title="Готово" onPress={onDone} /></Dock>
-    </>
-  );
-}
-
-/** .chip внутри белого листа (серый) / в листе .bs на сером фоне (белый) */
-function SheetChip({ title, on, onPress, flex, white }: { title: string; on?: boolean; onPress: () => void; flex?: boolean; white?: boolean }) {
+/** .chip (на сером фоне — белая, выбранная тёмная) */
+function Chip({ title, on, onPress }: { title: string; on?: boolean; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!on }} onPress={onPress}
-      style={[s.chip, { backgroundColor: on ? C.dark : white ? C.card : C.soft }, flex && { flex: 1, paddingHorizontal: 0 }]}>
+      style={({ pressed }) => [s.chip, on && s.chipOn, pressed && s.pressed]}>
       <Txt size={15} w={500} color={on ? '#fff' : C.ink}>{title}</Txt>
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  roomOpt: { width: '48.8%', minHeight: 64, justifyContent: 'center', flexGrow: 1, flexBasis: '45%' },
-  kindOpt: { height: 146, flexBasis: '45%', flexGrow: 1, justifyContent: 'space-between' },
-  soft: { flex: 1, height: 56, borderRadius: 999, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 18 },
-  softRow: { height: 56, borderRadius: 999, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
-  segIn: { marginHorizontal: 0, backgroundColor: '#EDECE9' },
+  lbl: { paddingHorizontal: 8, paddingBottom: 8 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { height: 40, borderRadius: 20, backgroundColor: C.card, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   chipOn: { backgroundColor: C.dark },
-  tpl: { width: 62, height: 62, borderRadius: 16, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  fld: { backgroundColor: C.soft, borderRadius: 16, minHeight: 50, paddingVertical: 5, paddingHorizontal: 14, justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
-  fldFocus: { backgroundColor: C.card, borderColor: C.accent },
+  kindOpt: { flex: 1, height: 104, paddingVertical: 10, paddingHorizontal: 6, gap: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingHorizontal: 20, paddingVertical: 6 },
+  rowSep: { borderTopWidth: 1, borderTopColor: C.line },
+  wallSeg: { width: 210, marginHorizontal: 0, backgroundColor: '#EDECE9' },
+  soft: { height: 56, borderRadius: 999, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
+  fld: { backgroundColor: C.card, borderRadius: 16, minHeight: 60, paddingVertical: 9, paddingHorizontal: 16, justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
+  fldFocus: { borderColor: C.accent },
   fldErr: { backgroundColor: C.dangerBg, borderColor: C.dangerLine },
   fldEst: { backgroundColor: C.estField, borderColor: C.estLine },
-  caret: { width: 2, height: 20, backgroundColor: C.accent, marginLeft: 1 },
+  point: { flex: 1, height: 40, borderRadius: 12, backgroundColor: C.soft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });
 
-/** Лёгкий въезд шага (180 мс): вперёд — справа, назад — слева. Видно, что экран сменился, и не тормозит ввод. */
+/** Лёгкий въезд шага (260 мс, как .step в макете): вперёд — справа, назад — слева. */
 function StepIn({ step, children }: { step: number; children: ReactNode }) {
   const a = useRef(new Animated.Value(1)).current;
   const prev = useRef(step);
   const dir = useRef(1);
   if (prev.current !== step) { dir.current = step > prev.current ? 1 : -1; prev.current = step; a.setValue(0); }
-  // 0,65 с после смены шага нажатия не принимаем: «Далее» на клавиатуре и «Далее» следующего шага стоят
-  // в одном месте — быстрый двойной тап проскакивал шаг (деление)
+  // 0,65 с после смены шага нажатия не принимаем: «Дальше» на клавиатуре и «Готово» следующего шага стоят
+  // в одном месте — быстрый двойной тап проскакивал шаг
   const [locked, setLocked] = useState(false);
   useEffect(() => {
     setLocked(true);
     const t = setTimeout(() => setLocked(false), 650);
-    Animated.timing(a, { toValue: 1, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+    Animated.timing(a, { toValue: 1, duration: 260, easing: Easing.bezier(0.2, 0, 0, 1), useNativeDriver: true }).start();
     return () => clearTimeout(t);
   }, [step, a]);
-  const tx = a.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 28, 0] });
+  const tx = a.interpolate({ inputRange: [0, 1], outputRange: [dir.current * 24, 0] });
   return <Animated.View pointerEvents={locked ? 'none' : 'auto'} style={{ flex: 1, opacity: a, transform: [{ translateX: tx }] }}>{children}</Animated.View>;
 }

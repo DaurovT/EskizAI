@@ -1,6 +1,9 @@
 /**
- * S03 «Заказы» (вкладка) — макеты Orders, OrdersEmpty, OrdersOffline.
- * Быстрые действия, поиск, фильтр по статусам со счётчиками, «Донастроить цех», список заказов.
+ * S03 «Заказы» (вкладка) — макет «Ядро v3» X1Orders (+ OrdersEmpty, OrdersOffline из docs/design).
+ * Компактная шапка (кружок цеха, поиск — по кнопке), три действия: «Новый замер», «Шаблон», «Как прошлое»;
+ * фильтр по статусам со счётчиками, «Продолжить замер», «Донастроить цех», список заказов
+ * (схема окна, клиент, цена, адрес · N изделий, статус).
+ * «Как прошлое» — новый замер, где первое окно — копия последнего изделия мастера с пустыми размерами (src/lib/measureCopy.ts).
  * Без сети: последний загруженный список + заказы и замеры, которые есть только на телефоне («не отправлен»).
  */
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -8,39 +11,38 @@ import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 're
 import { Pressable, RefreshControl, TextInput, View } from 'react-native';
 
 import { api, ApiError } from '@/api/http';
-import type { Counts, OrderRow, OrderStatus, Template } from '@/api/types';
+import type { Counts, OrderFull, OrderRow, OrderStatus } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
-import { date, m2, money, STATUS_TITLE } from '@/lib/format';
+import { date, money, STATUS_TITLE } from '@/lib/format';
+import { blankCopy, lastOfOrder, pickLast } from '@/lib/measureCopy';
 import { useLoad } from '@/lib/useLoad';
-import { LocalOrder, LocalPosition, offline } from '@/offline/store';
+import { LocalOrder, LocalPosition, offline, uuid } from '@/offline/store';
 import { C, F } from '@/theme';
 import { Icon } from '@/ui/Icon';
-import { Body, Button, Card, LoadError, Loading, Screen, Seg, StatusPill, Txt } from '@/ui/kit';
+import { Body, Button, Card, IconButton, LoadError, Loading, Screen, Seg, StatusPill, Txt } from '@/ui/kit';
 import { MainHeader } from '@/ui/MainHeader';
 import { TAB_BAR_SPACE } from '@/ui/TabBar';
 import { Ban, CompanyOut, NotSent, nItems, PIcon, PosTile, Pill, st, Svc, Tag, WindowThumb } from './parts';
 
 type Filter = 'all' | OrderStatus;
 type Snap = Awaited<ReturnType<typeof offline.snapshot>>;
-type Loaded = { rows: OrderRow[]; counts: Counts; offline: boolean; snap: Snap; pending: number };
+type Loaded = { rows: OrderRow[]; counts: Counts; offline: boolean; snap: Snap; pending: number; drafts: LocalPosition[] };
 
 /** Последний список с сервера — показываем его без сети (в пределах запуска приложения). */
 let lastList: { rows: OrderRow[]; counts: Counts } | null = null;
-/** Сколько шаблонов готово («Шаблон · 11 готовых») — один раз за запуск. */
-let readyTemplates: number | null = null;
 
 const MAIN_CHIPS: OrderStatus[] = ['measure', 'quoted', 'agreed'];
 const MORE_CHIPS: OrderStatus[] = ['production', 'ready', 'installed', 'closed', 'cancelled'];
 
 export default function Orders() {
   const router = useRouter();
-  const { isOwner } = useAuth();
+  const { isOwner, user } = useAuth();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [q, setQ] = useState('');
   const [syncing, setSyncing] = useState(false);
-  const [starting, setStarting] = useState<'measure' | 'template' | null>(null);
-  const [tplCount, setTplCount] = useState<number | null>(readyTemplates);
+  const [starting, setStarting] = useState<'measure' | 'template' | 'like' | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // поиск — с задержкой, чтобы не дёргать сервер на каждую букву
   useEffect(() => {
@@ -52,17 +54,18 @@ export default function Orders() {
   const { data, error, loading, reload } = useLoad<Loaded>(async () => {
     const snap = await offline.snapshot();
     const pending = await offline.pendingCount();
+    const drafts = await offline.drafts();
     try {
       const [rows, counts] = await Promise.all([
         api.get<OrderRow[]>('/oyna/orders', { status, q }),
         api.get<Counts>('/oyna/orders/counts'),
       ]);
       if (!status && !q) lastList = { rows, counts };
-      return { rows, counts, offline: false, snap, pending };
+      return { rows, counts, offline: false, snap, pending, drafts };
     } catch (e) {
       if (e instanceof ApiError && e.isNetwork) {
         const rows = (lastList?.rows ?? []).filter((r) => (!status || r.status === status) && matches(q, r.client_name, r.address, r.client_phone));
-        return { rows, counts: lastList?.counts ?? {}, offline: true, snap, pending };
+        return { rows, counts: lastList?.counts ?? {}, offline: true, snap, pending, drafts };
       }
       throw e;
     }
@@ -70,14 +73,6 @@ export default function Orders() {
 
   // «Донастроить цех» — только владельцу (настройки меняет он)
   const company = useLoad<CompanyOut | null>(async () => (isOwner ? api.get<CompanyOut>('/oyna/company').catch(() => null) : null), [isOwner]);
-
-  useEffect(() => {
-    if (readyTemplates !== null) return;
-    api.get<Template[]>('/oyna/templates').then((t) => {
-      readyTemplates = t.filter((x) => x.ready).length;
-      setTplCount(readyTemplates);
-    }).catch(() => { /* без сети — «готовые» без числа */ });
-  }, []);
 
   // изменения офлайн-хранилища (синхронизация прошла) — перечитать, пока экран на виду
   const reloadRef = useRef(reload);
@@ -93,6 +88,27 @@ export default function Orders() {
       setStarting(null);
     }
   }, [router]);
+
+  /** «Как прошлое»: копия последнего изделия (телефон или сервер) без размеров → мастер замера с шага 1. */
+  const startLike = useCallback(async () => {
+    setStarting('like');
+    try {
+      const snap = await offline.snapshot();
+      const src = pickLast(Object.values(snap.positions), lastList?.rows ?? data?.rows ?? []);
+      if (!src) return;
+      let doc = src.doc;
+      if (src.from === 'server' && src.order_id) {
+        // в списке — первая позиция заказа; уточняем: последняя, которую правил этот мастер
+        try { doc = lastOfOrder(await api.get<OrderFull>(`/oyna/orders/${src.order_id}`), user?.id) ?? doc; } catch { /* возьмём из списка */ }
+      }
+      const o = await offline.createOrder();
+      const pid = uuid();
+      await offline.savePosition(o.id, blankCopy(doc, pid), { id: pid, step: 1, base_rev: null });
+      router.push(`/order/${o.id}/measure?pos=${pid}&step=1`);
+    } finally {
+      setStarting(null);
+    }
+  }, [router, data, user?.id]);
 
   const sync = async () => {
     setSyncing(true);
@@ -138,9 +154,14 @@ export default function Orders() {
   const obSteps = ob ? (ob.works_missing.length ? 1 : 0) + (ob.glass_missing ? 1 : 0) : 0;
   const obWhat = ob ? [ob.works_missing.length ? 'работы' : null, ob.glass_missing ? 'стекло' : null].filter(Boolean).join(' и ') : '';
 
+  const likeOk = !!pickLast(Object.values(data.snap.positions), lastList?.rows ?? data.rows);
+  const showSearch = !off && (searchOpen || !!query);
+  const draft = data.drafts[0];
+  const draftWhere = draft ? [`${draft.doc.room || 'Окно'}, шаг ${Math.min(3, draft.step ?? 1)}`, data.snap.orders[draft.order_id]?.address].filter(Boolean).join(' · ') : '';
+
   return (
     <Screen>
-      <MainHeader title="Заказы" />
+      <MainHeader title="Заказы" right={!off ? <IconButton name="search" label="Поиск" onPress={() => { setSearchOpen(!showSearch); if (showSearch) setQuery(''); }} /> : undefined} />
       {off ? (
         <View style={{ marginHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.dark }}>
           <PIcon name="wifi_off" size={18} color="#fff" />
@@ -151,21 +172,26 @@ export default function Orders() {
         refresh={<RefreshControl refreshing={loading && !!data} onRefresh={reload} tintColor={C.accent} />}>
         {/* быстрые действия */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Svc pri flex={1.25} title={'Новый\nзамер'} sub="окно за 2 мин" onPress={() => start('measure')} disabled={!!starting} />
-          <Svc icon="grid" title="Шаблон" sub={tplCount !== null ? `${tplCount} готовых` : 'готовые'} onPress={() => start('template')} disabled={!!starting} />
-          <Svc icon="camera2" title="По фото" sub="через ИИ · скоро" disabled />
+          <Svc pri flex={1.25} title={'Новый\nзамер'} onPress={() => start('measure')} disabled={!!starting} />
+          <Svc icon="grid" title="Шаблон" onPress={() => start('template')} disabled={!!starting} />
+          <Svc icon="copy" title="Как прошлое" onPress={() => void startLike()} disabled={!!starting || !likeOk} />
         </View>
 
-        {!off ? (
+        {showSearch ? (
           <View style={{ height: 48, borderRadius: 16, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 }}>
             <Icon name="search" size={20} color={C.faint} />
             <TextInput value={query} onChangeText={setQuery} placeholder="Клиент, телефон, адрес" placeholderTextColor={C.faint}
-              returnKeyType="search" autoCorrect={false} clearButtonMode="while-editing"
+              returnKeyType="search" autoCorrect={false} clearButtonMode="while-editing" autoFocus={searchOpen && !query}
               style={{ flex: 1, fontFamily: F.regular, fontSize: 16, color: C.ink, paddingVertical: 0 }} />
           </View>
         ) : null}
 
         <Seg chips items={chips} value={filter} onChange={setFilter} style={{ marginHorizontal: -12 }} />
+
+        {draft ? (
+          <Ban kind="n" icon="ruler" title="Продолжить замер" text={`${draftWhere}${data.drafts.length > 1 ? ` · и ещё ${data.drafts.length - 1}` : ''}`}
+            onPress={() => router.push('/resume')} />
+        ) : null}
 
         {!off && obSteps > 0 ? (
           <Ban kind="est" title={`Донастроить цех: ${obSteps} ${obSteps === 1 ? 'шаг' : 'шага'}`} text={`${obWhat} — пока ДЕМО`}
@@ -242,7 +268,7 @@ function RowShell({ first, onPress, children, doc }: { first: boolean; onPress: 
 }
 
 function ServerRow({ row, first, pending, conflict, onPress }: { row: OrderRow; first: boolean; pending: boolean; conflict?: boolean; onPress: () => void }) {
-  const sub = [row.address, row.units ? nItems(row.units) : null, row.area_m2 ? m2(row.area_m2) : null].filter(Boolean).join(' · ');
+  const sub = [row.address, row.units ? nItems(row.units) : null].filter(Boolean).join(' · ');
   return (
     <RowShell first={first} onPress={onPress} doc={row.first_doc ?? undefined}>
       <View style={st.rowTop}>

@@ -20,10 +20,12 @@ import {
   asmFrames, asmJoints, boxPts, clipPoly, frameShape, guillotineSpec, insetPoly, isAssembly, isShaped, layout, lineSpan, outline, slidingSpec,
   type Box, type Layout, type Pt,
 } from '@/lib/tree';
+import { FRAME_MM, MULLION_MM, SASH_GLASS_K, SASH_MM } from '@/lib/dims';
 import { C, F } from '@/theme';
 
-const FRAME = 64; // видимая ширина рамы в мм (паспорт ПВХ 60) — только для рисунка
-const SASH = 70;
+// размеры профилей на рисунке — общие с «Стёкла поровну» (src/lib/dims.ts)
+const FRAME = FRAME_MM; // видимая ширина рамы в мм (паспорт ПВХ 60) — только для рисунка
+const SASH = SASH_MM;
 const GOLD = '#C9A44C';
 const TINT: Record<string, string> = { bronze: '#CDB58E', grey: '#A7AEB3', blue: '#9CC5EA' };
 const STAINED = ['#D2574A', '#3F86C6', '#EFC64A', '#4FA66B'];
@@ -230,7 +232,7 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
   const contour = shaped ? outline(f) : null;
   const inner = contour ? insetPoly(contour, FRAME) : null;
   const sashOut = contour ? insetPoly(contour, FRAME - 8) : null;
-  const glassIn = contour ? insetPoly(contour, FRAME + SASH * 0.6) : null;
+  const glassIn = contour ? insetPoly(contour, FRAME + SASH * SASH_GLASS_K) : null;
   const shape = frameShape(f);
   const rise = shape.shape === 'arch' ? shape.params.rise ?? 0 : 0;
 
@@ -243,11 +245,12 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
     const path = fg.prefix + sub;
     const r = rect(box.x0, box.y0, box.x1, box.y1);
     taps.push({ path, x: r.x, y: r.y, w: r.width, h: r.height });
-    const inset = (s: string) => (s === 'frame' ? FRAME : s === 'mullion' ? 42 : 0);
+    const inset = (s: string) => (s === 'frame' ? FRAME : s === 'mullion' ? MULLION_MM : 0);
     const lx0 = box.x0 + inset(sides.l), lx1 = box.x1 - inset(sides.r), ly0 = box.y0 + inset(sides.t), ly1 = box.y1 - inset(sides.b);
     if (lx1 <= lx0 || ly1 <= ly0) return;
     const open = cell.type === 'sash' || cell.type === 'door_sash';
-    const g: Box = open ? { x0: lx0 + SASH * 0.6, y0: ly0 + SASH * 0.6, x1: lx1 - SASH * 0.6, y1: ly1 - SASH * 0.6 } : { x0: lx0, y0: ly0, x1: lx1, y1: ly1 };
+    const gi = SASH * SASH_GLASS_K;
+    const g: Box = open ? { x0: lx0 + gi, y0: ly0 + gi, x1: lx1 - gi, y1: ly1 - gi } : { x0: lx0, y0: ly0, x1: lx1, y1: ly1 };
     if (g.x1 <= g.x0 || g.y1 <= g.y0) return;
     const sev = hl[path];
     const stroke = sev === 'block' ? C.dangerLine : sev === 'warn' ? '#F2B705' : selected === path ? C.accent : C.ink;

@@ -13,6 +13,7 @@ import { api, ApiError, errorText } from '@/api/http';
 import type { Calc, Cell, Command, Conflict, Doc, OrderFull, PositionOut, Setup, Shape, Violation } from '@/api/types';
 import { lamination } from '@/lib/decors';
 import { num } from '@/lib/format';
+import { addPartsCommands, partInfo } from '@/lib/dims';
 import { apply, cells, layout, nodeAt, parentOf } from '@/lib/tree';
 import { offline } from '@/offline/store';
 import { C, TAG } from '@/theme';
@@ -540,6 +541,14 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
     if (sz && lim) {
       const [w, h, mw, mh] = [sz[1], sz[2], lim[1], lim[2]].map(Number);
       if (w > mw) { dir = 'v'; n = Math.max(2, Math.ceil(w / mw)); } else if (h > mh) { dir = 'h'; n = Math.max(2, Math.ceil(h / mh)); }
+      // X5Err: створка шире предела, а части узла «поровну» — на одну (или больше) створку больше, все поровну: «Сделать 3 створки»
+      if (w > mw && box) {
+        const info = partInfo(doc, path);
+        const over = box.x1 - box.x0 - w;                         // рама/импост вокруг створки
+        const n2 = info ? Math.max(info.parts.length + 1, Math.ceil(info.total / (mw + over))) : 0;
+        const c = n2 && n2 <= 6 ? addPartsCommands(doc, path, n2) : null;
+        if (c) return { title: `Сделать ${n2} ${plural(n2, 'створку', 'створки', 'створок')}`, icon: 'split', commands: c };
+      }
     }
     // на 2 по ширине: не пополам (узкая створка не проходит по ножницам, 6.6), а створка пошире + глухая ≥ 400 мм
     if (n === 2 && dir === 'v' && box && sz && lim) {
@@ -551,7 +560,7 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
         return { title: 'Створка + глухая', icon: 'window', commands: [{ cmd: 'split', path, dir, n: 2, sizes }] };
       }
     }
-    return { title: `Разделить на ${n}`, icon: 'window', commands: [{ cmd: 'split', path, dir, n }] };
+    return { title: `Разделить на ${n}`, icon: 'split', commands: [{ cmd: 'split', path, dir, n }] };
   }
   return null;
 }
