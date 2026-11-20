@@ -82,7 +82,7 @@ def from_template(body: FromTemplateIn, cx: Ctx = Depends(ctx)):
     own = own_template(cx.company_id, body.template) if body.template not in CAT.templates else None
     try:
         doc = commands.create_from_template(CAT, body.template, body.w, body.h, setup=body.setup, room=body.room,
-                                            template=own)
+                                            template=own, company_systems=cx.company.systems)
     except CommandError as e:
         _bad(e)
     return {"doc": doc, "result": validate(doc, CAT, cx.company)}
@@ -125,11 +125,12 @@ def alts(body: AltIn, cx: Ctx = Depends(ctx)):
 
 
 # ---------------- справочники ----------------
-CATEGORY = {"window": "window", "balcony_block": "balcony", "door": "door", "sliding": "sliding", "assembly": "corner"}
+CATEGORY = {"window": "window", "balcony_block": "balcony", "door": "door", "sliding": "sliding", "assembly": "corner",
+            "guillotine": "guillotine"}
 
 
 def template_row(t: dict) -> dict:
-    """Шаблон для экрана S07: category и short — из templates.json; ready — ядро считает (раздвижные — после MVP)."""
+    """Шаблон для экрана S07: category и short — из templates.json; ready — ядро считает (с §11 — все шаблоны)."""
     root = t["root"]
     fixed = []
 
@@ -141,7 +142,7 @@ def template_row(t: dict) -> dict:
             if "node" in part:
                 walk(part["node"], pp)
     walk(root)
-    ready = t.get("ready", "sliding" not in root)
+    ready = t.get("ready", True)
     row = {**{k: t[k] for k in ("id", "name", "kind", "default_w", "default_h")}, "short": t.get("short", t["name"]),
            "category": t.get("category") or CATEGORY.get(t["kind"], t["kind"]), "ready": bool(ready),
            "fixed_parts": fixed, "root": root}                # дерево — миниатюра рисуется на телефоне без запроса
@@ -154,7 +155,7 @@ def template_row(t: dict) -> dict:
 def templates(request: Request, authorization: str | None = Header(None), x_company: str | None = Header(None),
               x_role: str | None = Header(None)):
     """Шаблоны: свои шаблоны цеха первыми (own: true, если вошли в цех), затем системные.
-    category (window, door, balcony, sliding, shaped, muntins, corner, facade), short, ready,
+    category (window, door, balcony, sliding, shaped, muntins, corner, facade, guillotine), short, ready,
     shape/shape_params у фигурных, root.assembly у составных."""
     from .templates import own_templates
     try:
@@ -178,7 +179,10 @@ def systems(material: str | None = None, q: str | None = None):
                     "demo_passport": not p.get("verified_fields"),
                     "colors": CAT.system_colors(code), "fitting_groove": s["fitting_groove"],
                     "fittings": CAT.compatible_fitting_sets(code), "glass_range_mm": list(p.get("beads", {}).values()),
-                    "passport_verified_fields": p.get("verified_fields", [])})
+                    "passport_verified_fields": p.get("verified_fields", []),
+                    # §11: раздвижные / гильотина; sliding_only — обычные окна на системе не считаются (7.21)
+                    "sliding": bool(p.get("sliding")), "guillotine": bool(p.get("guillotine")),
+                    "sliding_only": bool(p.get("sliding_only"))})
     return out
 
 

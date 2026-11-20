@@ -13,7 +13,11 @@ GROUP_NAMES = {"profile": "Профиль", "glass": "Стекло", "fittings":
 # профильная система: профили, штапики, армирование, уплотнитель, ламбри, цвет и ламинация профиля
 PROFILE_ROLES = {"frame", "sash", "mullion", "door_frame", "door_sash", "door_mullion", "shtulp", "threshold",
                  "bead_single", "bead_igu", "bead_triple", "lambri", "reinforcement", "thermo_insert", "seal",
-                 "joint_profile", "coupling_profile", "profile_color", "lamination", "threshold_alu", "threshold_hs"}
+                 "joint_profile", "coupling_profile", "profile_color", "lamination", "threshold_alu", "threshold_hs",
+                 # §11: раздвижные, гильотинное окно, гильотина
+                 "sl_frame", "sl_rail", "sl_sash", "sl_interlock", "sl_brush", "sl_threshold_low",
+                 "vs_frame", "vs_sash", "vs_brush", "gl_post", "gl_rail", "gl_panel", "gl_seal"}
+FITTING_ROLES = {"sl_roller", "sl_lock", "vs_balance", "vs_lock", "vs_tilt", "gl_motor", "gl_remote", "gl_belt"}
 GLASS_ROLES = {"glass_decor", "muntin_inner", "muntin_cross", "muntin_decor"}
 LINE_KIND = {"profile": "profile", "reinforcement": "profile", "bead": "profile", "seal": "profile", "panel": "profile",
              "glass": "glass", "fitting": "fittings", "work": "works"}
@@ -26,7 +30,7 @@ def role_group(role: str | None) -> str:
         return "profile"
     if r in GLASS_ROLES or r.startswith("glass"):
         return "glass"
-    if r.startswith("fit_"):
+    if r.startswith("fit_") or r in FITTING_ROLES:
         return "fittings"
     if r.startswith("work_"):
         return "works"
@@ -42,7 +46,7 @@ def supplier_category(role: str | None) -> str:
 def line_group(kind: str | None, code: str | None = "") -> str:
     """Группа строки BOM: сначала по роли (fit_* → фурнитура, work_* → работы), потом по виду строки."""
     code = code or ""
-    if code.startswith("fit_"):
+    if code.startswith("fit_") or code in FITTING_ROLES:
         return "fittings"
     if kind == "work" or code.startswith("work_"):
         return "works"

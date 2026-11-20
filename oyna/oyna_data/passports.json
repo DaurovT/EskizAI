@@ -332,5 +332,87 @@
         50
       ]
     }
+  },
+  "eskiz__sliding_demo": {
+    "inherits": "alu_cold",
+    "title": "Раздвижная алюминиевая (ДЕМО)",
+    "verified": false,
+    "sliding_only": true,
+    "default_glass": "g4_12_4",
+    "glass_min_mm": 4,
+    "glass_max_mm": 32,
+    "beads": {
+      "bead_single": [
+        4,
+        12
+      ],
+      "bead_igu": [
+        14,
+        32
+      ]
+    },
+    "sliding": {
+      "overlap_mm": 50,
+      "frame_face_mm": 40,
+      "leaf_into_mm": 15,
+      "leaf_face_mm": 60,
+      "glass_bite_mm": 12,
+      "sash_kg_m": 1.1,
+      "leaf_mm": {
+        "window": {
+          "w": [
+            400,
+            1600
+          ],
+          "h": [
+            400,
+            2400
+          ]
+        },
+        "door": {
+          "w": [
+            500,
+            1600
+          ],
+          "h": [
+            1800,
+            2700
+          ]
+        },
+        "panoramic": {
+          "w": [
+            600,
+            3000
+          ],
+          "h": [
+            1500,
+            3000
+          ]
+        }
+      },
+      "panoramic": {
+        "leaf_face_mm": 35,
+        "sash_kg_m": 1.6,
+        "max_glass_m2": 9.0
+      },
+      "carriage_kg": {
+        "window": 150,
+        "door": 150,
+        "panoramic": 300
+      }
+    },
+    "guillotine": {
+      "post_mm": 100,
+      "rail_mm": 100,
+      "panel_face_mm": 40,
+      "glass_bite_mm": 10,
+      "panel_overlap_mm": 30,
+      "panel_kg_m": 1.5,
+      "module_max_mm": [
+        4000,
+        3500
+      ]
+    },
+    "_assumed": "ДЕМО целиком (shapes_contract.md §11): систем раздвижных и гильотины в прайсе Romchi нет. sliding — перехлёст полотен 50 мм, видимая рама 40 мм, полотно заходит в раму на 15 мм, профиль полотна 60 мм (панорамный 35), стекло заходит в профиль на 12 мм; пределы полотна по kind; каретка 150 кг на пару (панорама 300). guillotine — стойка 100 мм, верх/низ модуля 100 мм, перехлёст полотен 30 мм, модуль до 4000 × 3500. sliding_only — обычные окна на этой системе не считаются (7.21)."
   }
 }

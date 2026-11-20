@@ -9,8 +9,9 @@ from datetime import datetime, timezone
 
 from . import shapes as shp
 from .data import Catalog
-from .model import (assembly_frames, child, clone, frame_of, is_leaf, migrate, node_at, norm_colors, part_at, root_of,
-                    split_path, sync_assembly)
+from .model import (GUILLOTINE_DEFAULTS, SLIDING_DEFAULTS, SLIDING_DEMO, assembly_frames, child, clone, frame_of,
+                    guillotine_of, guillotine_problems, is_leaf, migrate, node_at, norm_colors, part_at, product_specials,
+                    root_of, sliding_of, sliding_problems, special_kind, split_path, sync_assembly)
 
 
 class CommandError(ValueError):
@@ -35,9 +36,22 @@ def template_from_doc(doc: dict) -> dict:
     return t
 
 
+def special_system(cat: Catalog, kinds: set, company_systems: list | None = None) -> str:
+    """Система для раздвижных / гильотины (§11): своя система цеха с такими изделиями в паспорте, иначе ДЕМО."""
+    for code in company_systems or []:
+        p = cat.passport(code) if code in cat.systems else {}
+        if code != SLIDING_DEMO and kinds and all(p.get(k) for k in kinds):
+            return code
+    return SLIDING_DEMO
+
+
 def create_from_template(cat: Catalog, template_id: str, w: int | None = None, h: int | None = None,
-                         setup: dict | None = None, template: dict | None = None, **pos) -> dict:
-    """Изделие из шаблона: системного (templates.json) или переданного (свой шаблон цеха — template_from_doc)."""
+                         setup: dict | None = None, template: dict | None = None, company_systems: list | None = None,
+                         **pos) -> dict:
+    """Изделие из шаблона: системного (templates.json) или переданного (свой шаблон цеха — template_from_doc).
+
+    Раздвижные и гильотина без системы в шаблоне и в setup — на своей раздвижной системе цеха (company_systems),
+    иначе на ДЕМО-системе «Раздвижная алюминиевая» (§11)."""
     t = template or cat.templates.get(template_id)
     if not t:
         raise CommandError(f"нет шаблона {template_id}")
@@ -65,6 +79,9 @@ def create_from_template(cat: Catalog, template_id: str, w: int | None = None, h
                 x["frame"]["w"] = int(round(x["frame"]["w"] * k / 5) * 5)
         sync_assembly(doc)
     _shape_fits(doc["frame"])
+    kinds = product_specials(doc)
+    if kinds and not (doc.get("setup") or {}).get("system"):
+        doc.setdefault("setup", {})["system"] = special_system(cat, kinds, company_systems)
     return doc
 
 
@@ -122,11 +139,14 @@ def set_size(doc: dict, w: int | None = None, h: int | None = None, path: str = 
 
 
 def split(doc: dict, path: str, dir: str, n: int = 2, sizes: list | None = None) -> dict:
-    """dir: v | h | shtulp | folding (гармошка: n створок без импостов, §9.1)."""
-    if dir not in ("v", "h", "shtulp", "folding"):
-        raise CommandError("dir: v | h | shtulp | folding")
+    """dir: v | h | shtulp | folding (гармошка: n створок без импостов, §9.1) | vslide (гильотинное окно:
+    два полотна сверху вниз — верхнее глухое, нижнее поднимается, §11.2)."""
+    if dir not in ("v", "h", "shtulp", "folding", "vslide"):
+        raise CommandError("dir: v | h | shtulp | folding | vslide")
     if n < 2:
         raise CommandError("n ≥ 2")
+    if dir == "vslide" and n != 2:
+        raise CommandError("гильотинное окно (vslide): ровно 2 полотна")
     d = clone(doc)
     node = node_at(d, path)
     if not is_leaf(node):
@@ -144,6 +164,8 @@ def split(doc: dict, path: str, dir: str, n: int = 2, sizes: list | None = None)
         elif dir == "folding":
             c = {"type": base.get("type") if base.get("type") in ("sash", "door_sash") else "door_sash",
                  "open": "folding", "hinge": "left" if i % 2 == 0 else "right", "handle": i == n - 1}
+        elif dir == "vslide":
+            c = {"type": "sash", "open": "vslide", "slide": "fixed" if i == 0 else "moving", "handle": i == 1}
         parts.append({"size": sizes[i], "cell": c})
     new = {"split": dir, "parts": parts}
     part = part_at(d, path)
@@ -183,8 +205,9 @@ def set_part_size(doc: dict, path: str, size) -> dict:
     return d
 
 
-CELL_KEYS = {"type", "open", "hinge", "handle", "mosquito", "note", "open_dir", "threshold", "vent"}
-OPENINGS = ("turn", "tilt_turn", "tilt", "sliding", "top_hung", "pivot", "folding", "psk", "hs")
+CELL_KEYS = {"type", "open", "hinge", "handle", "mosquito", "note", "open_dir", "threshold", "vent", "slide", "tilt_clean"}
+OPENINGS = ("turn", "tilt_turn", "tilt", "sliding", "top_hung", "pivot", "folding", "psk", "hs", "vslide")
+SLIDES = ("moving", "fixed")                                 # полотно гильотинного окна (§11.2)
 MOSQ_TYPES = ("frame", "sliding", "pleated", "door", "antipet")
 THRESHOLDS = ("standard", "low_alu", "none")
 HINGE_OF = {"tilt": "bottom", "top_hung": "top"}            # петли, которые задаёт само открывание
@@ -211,7 +234,11 @@ def set_cell(doc: dict, path: str, **props) -> dict:
     v = props.get("vent")
     if v not in (None, False) and not (isinstance(v, dict) and v.get("type", "supply_valve") == "supply_valve"):
         raise CommandError("vent: {type: 'supply_valve'} | null")
-    for k in ("open_dir", "threshold", "vent"):
+    if props.get("slide") not in (None,) + SLIDES:
+        raise CommandError(f"slide: {' | '.join(SLIDES)}")
+    if props.get("tilt_clean") not in (None, True, False):
+        raise CommandError("tilt_clean: true | false")
+    for k in ("open_dir", "threshold", "vent", "slide", "tilt_clean"):
         if k in props and props[k] is None:
             props.pop(k)
             c.pop(k, None)
@@ -220,10 +247,15 @@ def set_cell(doc: dict, path: str, **props) -> dict:
         op = props["open"]
         if op in HINGE_OF:
             c["hinge"] = HINGE_OF[op]
-        elif op == "pivot":
+        elif op in ("pivot", "vslide"):
             c.pop("hinge", None)
         elif c.get("hinge") in ("top", "bottom", None):
             c["hinge"] = "left"
+    if c.get("open") != "vslide" or c.get("type") in ("fixed", "panel"):
+        for k in ("slide", "tilt_clean"):                    # только у полотна гильотинного окна
+            c.pop(k, None)
+    elif "tilt_clean" in c and not c["tilt_clean"]:
+        c.pop("tilt_clean")
     if c.get("type") in ("fixed", "panel"):
         for k in ("open", "hinge", "handle", "open_dir", "threshold"):
             c.pop(k, None)
@@ -231,8 +263,10 @@ def set_cell(doc: dict, path: str, **props) -> dict:
             c.pop("mosquito", None)
     elif c.get("type") in ("sash", "door_sash"):
         c.setdefault("open", "tilt_turn")
-        if c["open"] != "pivot":
+        if c["open"] not in ("pivot", "vslide"):
             c.setdefault("hinge", HINGE_OF.get(c["open"], "left"))
+        if c["open"] == "vslide":
+            c.setdefault("slide", "moving")
         c.setdefault("handle", True)
     return d
 
@@ -338,7 +372,7 @@ def set_shape(doc: dict, shape: str = "rect", params: dict | None = None, path: 
 
 
 # ---------- сборка (§4) ----------
-JOINTS = ("straight", "angle", "post")
+JOINTS = ("straight", "angle", "post", "corner_free")
 
 
 def _assembly(d: dict) -> list:
@@ -349,10 +383,13 @@ def _assembly(d: dict) -> list:
 
 
 def set_joint(doc: dict, index: int, joint: str, angle: float | None = None) -> dict:
-    """Стык index (0 — между A0 и A1): straight | angle (90…179°) | post."""
+    """Стык index (0 — между A0 и A1): straight | angle (90…179°) | post | corner_free (угол без стойки, стекло
+    к стеклу, §11.1; угол по умолчанию 90°)."""
     if joint not in JOINTS:
         raise CommandError(f"joint: {' | '.join(JOINTS)}")
-    if joint == "angle" and not (isinstance(angle, (int, float)) and 90 <= angle <= 179):
+    if joint == "corner_free" and angle is None:
+        angle = 90
+    if joint in ("angle", "corner_free") and not (isinstance(angle, (int, float)) and 90 <= angle <= 179):
         raise CommandError("угол стыка 90…179°; 180° — прямой (straight)")
     d = migrate(doc)
     items = _assembly(d)
@@ -362,7 +399,7 @@ def set_joint(doc: dict, index: int, joint: str, angle: float | None = None) -> 
     j = joints[index]
     j.clear()
     j["joint"] = joint
-    if joint == "angle":
+    if joint in ("angle", "corner_free"):
         j["angle"] = angle
     return d
 
@@ -480,12 +517,21 @@ def mirror(doc: dict) -> dict:
         for x in items:
             if "frame" in x and isinstance(x["frame"], dict):
                 rec(x["frame"]["root"])
+                _mirror_slide(x["frame"]["root"])
                 sp = x["frame"].get("shape_params") or {}
                 _mirror_shape(x["frame"], sp)
         return d
     rec(root_of(d))
+    _mirror_slide(root_of(d))
     _mirror_shape(d["frame"], d["frame"].get("shape_params") or {})
     return d
+
+
+def _mirror_slide(root: dict) -> None:
+    """Раздвижная: подвижные полотна зеркально (§11.1)."""
+    s = root.get("sliding")
+    if s and isinstance(s.get("moving"), list):
+        s["moving"] = list(reversed(s["moving"]))
 
 
 def _mirror_shape(fr: dict, sp: dict) -> None:
@@ -617,10 +663,83 @@ def set_custom_lines(doc: dict, lines: list | None = None) -> dict:
     return d
 
 
+# ---------- раздвижные и гильотина (§11) ----------
+def _special_root(doc: dict, path: str, key: str, defaults: dict, fields: dict) -> tuple[dict, dict, dict]:
+    """(новый документ, рама, параметры корня key с переданными полями)."""
+    d = migrate(doc)
+    fr, inner = frame_of(d, path)
+    if inner or "assembly" in fr["root"]:
+        raise CommandError(f"{key} задаётся раме целиком: path \"\" или в сборке \"A<i>/\"")
+    cur = fr["root"].get(key)
+    s = dict(cur) if cur else dict(defaults)
+    s.update({k: v for k, v in fields.items() if v is not None})
+    return d, fr, s
+
+
+def set_sliding(doc: dict, leaves: int | None = None, rails: int | None = None, moving: list | None = None,
+                kind: str | None = None, threshold: str | None = None, overlap_mm=None, path: str = "") -> dict:
+    """Раздвижная система (§11.1): root.sliding {leaves, rails, overlap_mm, moving, kind, threshold}.
+
+    На обычном окне заменяет дерево ячеек раздвижной (kind изделия → sliding). leaves без moving — moving убирается
+    (по умолчанию: 2 — оба подвижные, 3 — крайние, 4+ — все, кроме крайних).
+    В сборке — path "A<i>/"."""
+    d, fr, s = _special_root(doc, path, "sliding", SLIDING_DEFAULTS, dict(leaves=leaves, rails=rails, moving=moving, kind=kind,
+                                                                          threshold=threshold, overlap_mm=overlap_mm))
+    if leaves is not None and moving is None:          # новое число полотен — подвижные по умолчанию
+        s.pop("moving", None)
+    probs = sliding_problems(sliding_of({"sliding": s}))
+    if probs:
+        raise CommandError("; ".join(probs))
+    was = special_kind(fr["root"])
+    fr["root"] = {"sliding": s}
+    if was != "sliding":
+        fr["shape"] = "rect"
+        fr.pop("shape_params", None)
+        if not path:
+            d["kind"] = "sliding"
+    return d
+
+
+def set_guillotine(doc: dict, modules: int | None = None, panels: int | None = None, moving: int | None = None,
+                   drive: str | None = None, glass: str | None = None, posts: str | None = None, path: str = "") -> dict:
+    """Гильотинная система для террас (§11.3): root.guillotine {modules, panels, moving, drive, glass, posts}.
+
+    На другом изделии заменяет корень (kind изделия → guillotine). Меньше полотен — moving не больше panels − 1."""
+    d, fr, s = _special_root(doc, path, "guillotine", GUILLOTINE_DEFAULTS, dict(modules=modules, panels=panels, moving=moving,
+                                                                                drive=drive, glass=glass, posts=posts))
+    if panels is not None and moving is None and isinstance(panels, int) and isinstance(s.get("moving"), int):
+        s["moving"] = max(1, min(s["moving"], panels - 1))
+    probs = guillotine_problems(guillotine_of({"guillotine": s}))
+    if probs:
+        raise CommandError("; ".join(probs))
+    was = special_kind(fr["root"])
+    fr["root"] = {"guillotine": {**GUILLOTINE_DEFAULTS, **s}}
+    if was != "guillotine":
+        fr["shape"] = "rect"
+        fr.pop("shape_params", None)
+        if not path:
+            d["kind"] = "guillotine"
+    return d
+
+
+KIT_KEEP_SPECIAL = ("system", "fittings")
+
+
+def apply_kit(doc: dict, setup: dict) -> dict:
+    """Комплектация цеха («Эконом / Стандарт / Тёплый») на позицию. Раздвижные и гильотина остаются на своей
+    системе: оконная система и фурнитура комплектации их не меняют (§11), стекло и цвет — меняют."""
+    fields = dict(setup or {})
+    if product_specials(migrate(doc)):
+        for k in KIT_KEEP_SPECIAL:
+            fields.pop(k, None)
+    return set_setup(doc, **fields) if fields else clone(doc)
+
+
 COMMANDS = {f.__name__: f for f in (set_size, split, merge, set_part_size, set_cell, set_fill, set_setup,
                                     set_option, set_extras, mirror, accept_warning, unaccept_warning, set_qty, set_meta,
                                     set_shape, set_muntins, set_joint, add_frame, remove_frame,
-                                    set_addons, set_shutter, set_grille, set_loggia, set_custom_lines)}
+                                    set_addons, set_shutter, set_grille, set_loggia, set_custom_lines,
+                                    set_sliding, set_guillotine)}
 
 
 def apply(doc: dict, commands: list[dict]) -> dict:

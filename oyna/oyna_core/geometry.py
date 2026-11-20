@@ -56,6 +56,7 @@ class CellGeo:
     sash_chain: list = field(default_factory=list)   # куски профиля створки [(мм, гнутый)]
     glass_area_m2: float = 0.0
     glass_perim_mm: float = 0.0
+    extra: dict = field(default_factory=dict)        # раздвижная / гильотина (§11): leaf / panel для ответа API
 
     @property
     def opening(self) -> bool:
@@ -90,6 +91,8 @@ class Geometry:
     perimeter_mm: float = 0.0
     bent_mm: float = 0.0               # гнутая часть: рама + створки (работа work_bend)
     frame_chain: list = field(default_factory=list)   # куски рамы [(мм, гнутый)]
+    vslides: list = field(default_factory=list)       # узлы гильотинного окна (§11.2): {path, rect}
+    special: dict | None = None                       # раздвижная / гильотина (§11): параметры для BOM, API, схемы
 
 
 def resolve_sizes(parts: list, total: float, path: str) -> list[float]:
@@ -120,10 +123,10 @@ def build(doc: dict, passport: dict) -> Geometry:
             raise GeometryError("1.8", "; ".join(probs))
         cont = shp.contour(shape, sp, W, H)
 
-    cells, mullions, shtulps, sizes = [], [], [], {}
+    cells, mullions, shtulps, sizes, vslides = [], [], [], {}, []
 
     def ded(side_type: str) -> float:
-        return {"frame": bf, "mullion": bi / 2, "shtulp": 0.0, "none": 0.0, "folding": 0.0}[side_type]
+        return {"frame": bf, "mullion": bi / 2, "shtulp": 0.0, "none": 0.0, "folding": 0.0, "vslide": 0.0}[side_type]
 
     def cut(rect: Rect, offset: float):
         return shp.clip(shp.rect_poly(rect.x0, rect.y0, rect.x1, rect.y1), cont, offset)
@@ -182,13 +185,16 @@ def build(doc: dict, passport: dict) -> Geometry:
             return
         split = node.get("split")
         parts = node.get("parts", [])
-        if split not in ("v", "h", "shtulp", "none", "folding") or not parts:
+        if split not in ("v", "h", "shtulp", "none", "folding", "vslide") or not parts:
             raise GeometryError("1.4", f"узел {path or 'корень'}: неизвестное деление «{split}»", path)
         vertical = split in ("v", "shtulp", "none", "folding")      # части идут слева направо
         total = rect.w if vertical else rect.h
         sz = resolve_sizes(parts, total, path)
         sizes[path] = sz
-        boundary = {"v": "mullion", "h": "mullion", "shtulp": "shtulp", "none": "none", "folding": "folding"}[split]
+        boundary = {"v": "mullion", "h": "mullion", "shtulp": "shtulp", "none": "none", "folding": "folding",
+                    "vslide": "vslide"}[split]           # vslide: полотна сверху вниз, встречная планка без импоста
+        if split == "vslide":
+            vslides.append({"path": path, "rect": rect})
         pos = rect.x0 if vertical else rect.y0
         for i, (part, s) in enumerate(zip(parts, sz)):
             p_path = f"{path}.{i}" if path else str(i)
@@ -233,7 +239,7 @@ def build(doc: dict, passport: dict) -> Geometry:
     root = root_of(doc)
     rec(root, "", Rect(0, 0, W, H), {"left": "frame", "right": "frame", "top": "frame", "bottom": "frame"})
     geo = Geometry(W, H, cells, mullions, shtulps, [W + 2 * weld, W + 2 * weld, H + 2 * weld, H + 2 * weld], sizes,
-                   shape=shape, shape_params=sp, area_m2=W * H / 1e6, perimeter_mm=2 * (W + H))
+                   shape=shape, shape_params=sp, area_m2=W * H / 1e6, perimeter_mm=2 * (W + H), vslides=vslides)
     if cont:
         bar = passport.get("bar_mm", 6000)
         chain = shp.chains(cont[0], cont[1], cont[2])

@@ -49,7 +49,7 @@ EXPO_PUBLIC_API_URL=http://localhost:8030 npx expo start   # локальный 
 | `/profile` | S13 настройки / профиль | — |
 | `/resume` | продолжить незаконченный замер | — |
 | `/order/[id]` | S04 заказ | `id` — заказ (может быть ещё только на телефоне) |
-| `/order/[id]/measure` | S05 мастер замера | `pos?` — позиция (новая, если нет), `step?` 1–6 |
+| `/order/[id]/measure` | S05 мастер замера (v3: 3 шага, `../docs/design_v3/X2–X4`) | `pos?` — позиция (новая, если нет), `step?` 1–3 |
 | `/order/[id]/summary` | итог замера (MSummary) | — |
 | `/order/[id]/editor` | S06 редактор | `pos` |
 | `/order/[id]/conflict` | лист: конфликт версий | `pos` |

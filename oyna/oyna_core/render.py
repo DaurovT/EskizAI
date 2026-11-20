@@ -2,7 +2,9 @@
 
 Знак открывания — как в ГОСТ: вершина треугольника смотрит на сторону петель; подвесное — вершиной вверх,
 среднеподвесное — ромб пунктиром (shapes_contract.md §3). Фигурные рамы — по контуру, раскладка — прутками,
-сборка — рамы в ряд (развёртка) с отметкой угла стыка.
+сборка — рамы в ряд (развёртка) с отметкой угла стыка. Раздвижные (§11.1) — полотна внахлёст со стрелками
+у подвижных, гильотинное окно (§11.2) — две части, стрелка вверх у подвижной, гильотина (§11.3) — модули, стойки,
+полосы-полотна со стрелкой вверх у подвижных и подписью привода.
 Подсветка: красный — block/lock, жёлтый — warn (не принятое), по пути ячейки.
 """
 from __future__ import annotations
@@ -82,9 +84,58 @@ def render_svg(doc: dict, cat: Catalog, company: Company | None = None, view: st
         a(f'<text x="{X(x):.1f}" y="{Y(y):.1f}" text-anchor="{anchor}" font-family="sans-serif" font-size="{size}" '
           f'fill="{fill}">{escape(s)}</text>')
 
+    def arrow(x0, y0, x1, y1, size=None):
+        """Стрелка от (x0, y0) к (x1, y1), мм; наконечник ~10 px."""
+        import math
+        size = size or 10 / k
+        line(x0, y0, x1, y1, INK, 1.2)
+        ang = math.atan2(y1 - y0, x1 - x0)
+        for da in (2.6, -2.6):
+            line(x1, y1, x1 + size * math.cos(ang + da), y1 + size * math.sin(ang + da), INK, 1.2)
+
+    def draw_special(sub, ox: float, pre: str):
+        """Раздвижная (полотна внахлёст, стрелки к центру у подвижных) и гильотина (модули, стойки, полотна)."""
+        geo = sub.geo
+        sp = geo.special
+        rect(ox, 0, ox + geo.w, geo.h, profile, sw=1.6)
+        if sp["type"] == "guillotine":
+            for x0, x1 in sp["posts_x"]:
+                rect(ox + x0, 0, ox + x1, geo.h, profile, sw=1.2)
+            for x0, x1 in sp["modules_x"]:
+                rect(ox + x0, 0, ox + x1, sp["rail_mm"], profile, sw=0.8)
+                rect(ox + x0, geo.h - sp["rail_mm"], ox + x1, geo.h, profile, sw=0.8)
+        cells = sorted(geo.cells, key=lambda c: -(c.extra.get("leaf") or {}).get("rail", 0))   # задняя направляющая — раньше
+        for cg in cells:
+            S, L = cg.sash, cg.light
+            hl = sev.get(pre + cg.path)
+            stroke = RED if hl in ("block", "lock") else YELLOW if hl == "warn" else INK
+            rect(ox + S.x0, S.y0, ox + S.x1, S.y1, profile, sw=1.0)
+            rect(ox + L.x0, L.y0, ox + L.x1, L.y1, GLASS, stroke=stroke, sw=2.4 if hl else 0.8)
+            mx, my = ox + (L.x0 + L.x1) / 2, (L.y0 + L.y1) / 2
+            moving = cg.cell.get("type") == "sash"
+            if not moving:
+                text(mx, my + 4 / k, "Г")
+            elif sp["type"] == "sliding":
+                to_right = (S.x0 + S.x1) / 2 < geo.w / 2        # левые полотна едут к центру вправо, правые — влево
+                d = min(L.w * 0.3, 300.0)
+                arrow(mx - d if to_right else mx + d, my, mx + d if to_right else mx - d, my)
+            else:
+                d = min(L.h * 0.3, 200.0)
+                arrow(mx, my + d, mx, my - d)
+        if sp["type"] == "guillotine":
+            label = {"electric": "электропривод", "remote": "электропривод, пульт", "manual": "ручной подъём"}[sp["drive"]]
+            text(ox + geo.w / 2, geo.h + 14 / k, label, 10, INK)
+        else:
+            th = {"low": "низкий порог", "flush": "порог в уровень пола"}.get(sp["threshold"])
+            if th:
+                text(ox + geo.w / 2, geo.h - 6 / k, th, 9, DIM)
+
     def draw_frame(sub, ox: float, pre: str):
         from .rules import muntin_layout
         geo, p = sub.geo, sub.passport
+        if geo.special:
+            draw_special(sub, ox, pre)
+            return
         sh = lambda pts: [(px + ox, py) for px, py in pts]
         if geo.contour:
             poly(sh(geo.contour), profile, sw=1.6)
@@ -150,6 +201,14 @@ def render_svg(doc: dict, cat: Catalog, company: Company | None = None, view: st
                     text(mx, gy0 + 18 / k, "наружу", 10)
                 if op in ("sliding", "psk", "hs"):
                     line(gx0 + 20, my, gx1 - 20, my); line(gx1 - 60, my - 30, gx1 - 20, my); line(gx1 - 60, my + 30, gx1 - 20, my)
+                if op == "vslide":                         # гильотинное окно: подвижное — стрелка вверх
+                    if c.get("slide", "moving") == "moving":
+                        d = min((gy1 - gy0) * 0.3, 200.0)
+                        arrow(mx, my + d, mx, my - d)
+                    else:
+                        text(mx, my + 4 / k, "Г")
+                    if c.get("tilt_clean"):                # откидывание внутрь для мытья — пунктир вершиной вниз
+                        line(gx0, gy0, mx, gy1, dash="6 4"); line(gx1, gy0, mx, gy1, dash="6 4")
                 if c.get("mosquito"):
                     a(f'<text x="{min(X(gx0), X(gx1)) + 6:.1f}" y="{Y(gy1) - 6:.1f}" font-family="sans-serif" font-size="10" fill="{DIM}">сетка</text>')
             if c.get("type") == "fixed":
@@ -196,13 +255,20 @@ def render_svg(doc: dict, cat: Catalog, company: Company | None = None, view: st
             geo = ev.geo
             hdim(0, W, H + 30 / k, f"{W:g}")
             vdim(0, H, W + 22 / k, f"{H:g}")
+            if geo.special and geo.special["type"] == "guillotine":
+                mw = geo.special["module_w"]                # модули гильотины — по осям стоек
+                for i in range(geo.special["modules"]):
+                    hdim(i * mw, (i + 1) * mw, -14 / k, f"{mw:.0f}")
+            elif geo.special:
+                lw = geo.special["leaf_w"]
+                text(W / 2, -12 / k, f"полотно {lw:.0f} × {geo.special['leaf_h']:.0f}", 10, INK)
             sz = geo.sizes.get("")
             root = ev.doc["frame"]["root"]
             if sz and root.get("split") in ("v", "shtulp", "none"):
                 x = 0
                 for s in sz:
                     hdim(x, x + s, -14 / k, f"{s:.0f}"); x += s
-            elif sz and root.get("split") == "h":
+            elif sz and root.get("split") in ("h", "vslide"):
                 y = 0
                 for s in sz:
                     vdim(y, y + s, -30 / k, f"{s:.0f}"); y += s

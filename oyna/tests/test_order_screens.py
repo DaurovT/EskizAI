@@ -98,7 +98,7 @@ def test_order_screens(client):
 
 def test_reference_data_for_screens(client):
     t = {x["id"]: x for x in client.get("/oyna/templates").json()}
-    assert t["T03"]["ready"] and not t["T12"]["ready"] and t["T09"]["category"] == "balcony"
+    assert t["T03"]["ready"] and t["T12"]["ready"] and t["T09"]["category"] == "balcony"   # §11: раздвижные считаются
     assert {"path": "0", "size": 750} in t["T09"]["fixed_parts"]
     s = {x["code"]: x for x in client.get("/oyna/systems", params={"q": "6000"}).json()}
     assert s["akfa__6000_qvt"]["chambers"] == 4 and s["akfa__6000_trio"]["chambers"] == 3

@@ -253,6 +253,7 @@ export default function Order() {
         <Card style={{ marginBottom: 8 }}>
           <Row first label="Клиент и адрес" onPress={() => { setMoreOpen(false); setClientOpen(true); }} />
           <Row label="Комплектация" value={f.kit_name ?? ''} onPress={() => { setMoreOpen(false); router.push(`/order/${id}/kit`); }} />
+          <Row label="Итог замера" onPress={() => { setMoreOpen(false); router.push(`/order/${id}/summary`); }} />
           <Row label="Расчёт" onPress={() => { setMoreOpen(false); router.push(`/order/${id}/calc`); }} />
           <Row label="КП" sub={lastQuote ? `версия ${lastQuote.version} · ${date(lastQuote.sent_at)}` : undefined} onPress={() => { setMoreOpen(false); router.push(`/order/${id}/quote`); }} />
           <Row label="Документы" onPress={() => { setMoreOpen(false); router.push(`/order/${id}/docs`); }} />
@@ -354,7 +355,7 @@ function LocalPosRow({ p, first, onPress }: { p: LocalPosition; first: boolean; 
         {[dims(p.doc.frame?.w, p.doc.frame?.h), (p.doc.qty ?? 1) > 1 ? `× ${p.doc.qty}` : null].filter(Boolean).join(' · ')}
       </Txt>
       <View style={st.pills}>
-        {p.step !== undefined ? <Pill color="gray" title={`замер: шаг ${p.step} из 6`} /> : <Txt size={13} color={C.muted}>посчитаем при сети</Txt>}
+        {p.step !== undefined ? <Pill color="gray" title={`замер: шаг ${Math.min(3, p.step)} из 3`} /> : <Txt size={13} color={C.muted}>посчитаем при сети</Txt>}
         <NotSent />
       </View>
     </RowBox>

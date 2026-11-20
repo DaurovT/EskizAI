@@ -61,6 +61,7 @@ class Company:
     supplier_glass_prices: dict = field(default_factory=dict)  # supplier_id -> {glass_code: цена за м²}
     markup_groups: dict | None = None                          # {"profile": 30, "glass": 20, …}; None — общая наценка
     price_sources: dict = field(default_factory=dict)          # ("item", item_id) | ("glass", code) -> supplier_id (после with_suppliers)
+    systems: list = field(default_factory=list)                # системы цеха (company_systems): своя раздвижная — для шаблонов §11
 
     def with_suppliers(self, cat: "Catalog", setup: dict | None) -> "Company":
         """Цены позиции по поставщикам: основной поставщик категории, setup.suppliers ({"glass": id}) переопределяет.
@@ -269,6 +270,11 @@ class Catalog:
         p = dict(raw[cls])
         p["_key"] = cls
         return p
+
+    def systems_with(self, feature: str) -> list[str]:
+        """Системы, у которых в паспорте есть feature (sliding | guillotine, shapes_contract.md §11)."""
+        return [code for code, row in self.systems.items()
+                if row.get("usable_for_calc") == "1" and self.passport(code).get(feature)]
 
     def material(self, system_code: str) -> str:
         return (self.systems.get(system_code) or {}).get("material_class", "pvc")

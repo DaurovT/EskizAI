@@ -55,8 +55,10 @@ def price_position(ev: Eval, lines: list[Line], discount_pct: float = 0.0, today
         ev.add("D.1", f"ДЕМО-цены в {len(demo)} строках: " + ", ".join(sorted({l.name for l in demo}))[:300],
                fix="КП уйдёт с меткой «ДЕМО»")
     p2 = cat.rules["P.2"]["params"]
-    if not missing and total and not (p2["min_sum_m2"] <= per_m2 <= p2["max_sum_m2"]):
-        ev.add("P.2", f"{per_m2:,.0f} сум/м² вне {p2['min_sum_m2']:,}–{p2['max_sum_m2']:,}".replace(",", " "))
+    from .model import product_specials
+    hi = p2.get("guillotine_max_sum_m2", p2["max_sum_m2"]) if "guillotine" in product_specials(ev.doc) else p2["max_sum_m2"]
+    if not missing and total and not (p2["min_sum_m2"] <= per_m2 <= hi):
+        ev.add("P.2", f"{per_m2:,.0f} сум/м² вне {p2['min_sum_m2']:,}–{hi:,}".replace(",", " "))
     today = today or date.today()
     oldest = None
     for l in lines:

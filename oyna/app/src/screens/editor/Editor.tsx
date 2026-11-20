@@ -1,5 +1,8 @@
 /**
- * S06 Редактор позиции — макеты: Editor, EditorCell, EditorBlock, EditorIssues, EditorOffline (docs/design).
+ * S06 Редактор позиции — макеты «Ядро v3» (../docs/design_v3): X5Editor, X5Cell, X5Dim, X5Err, X5Many;
+ * список нарушений и без сети — EditorIssues, EditorOffline (docs/design).
+ * Цена всегда наверху листа; размеры — нажимаемые плашки на схеме (лист DimSheet: ширина части, «Створки поровну»,
+ * «Стёкла поровну»); разделы Комплектация · Окно · Добивки; главная кнопка «В заказ». Шапка: назад, помещение, 3D, «Ещё».
  * Каждое изменение — список команд (как в ядре). Онлайн — POST …/positions/{pos}/commands {commands, base_rev}:
  * ответ — позиция с нарушениями и ценой; 409 — лист «две версии». Без сети — те же команды на телефоне
  * (src/lib/tree.ts) + offline.savePosition, цена — «посчитаем, когда появится интернет».
@@ -12,11 +15,14 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError, errorText } from '@/api/http';
-import type { Addon, Cell, Command, Doc, Frame, Grille, Loggia, Muntins, PositionOut, Shape, ShapeParams, Shutter, Violation } from '@/api/types';
+import type {
+  Addon, Cell, Command, Doc, Frame, Grille, Guillotine, Loggia, Muntins, PositionOut, Shape, ShapeParams, Shutter, Sliding, Violation,
+} from '@/api/types';
 import { profileHex } from '@/lib/decors';
 import { num } from '@/lib/format';
 import {
-  apply, asmFrames, asmJoints, frameShape, framePrefix, indexOf, isAssembly, joinPath, layout, nodeAt, partAt, splitPath,
+  apply, asmFrames, asmJoints, frameShape, framePrefix, guillotineSpec, indexOf, isAssembly, joinPath, layout, nodeAt, openCaps, partAt,
+  slidingSpec, splitPath,
 } from '@/lib/tree';
 import { offline, uuid } from '@/offline/store';
 import { C } from '@/theme';
@@ -24,7 +30,12 @@ import { Icon } from '@/ui/Icon';
 import {
   Act, Body, Button, Card, Empty, Field, IconButton, LoadError, Loading, Note, Row, Screen, Seg, Sheet, Stepper, Switch, TopBar, Txt,
 } from '@/ui/kit';
-import { hlFromViolations, Schema, schemaGeometry } from '@/ui/Schema';
+import { Schema } from '@/ui/Schema';
+import { Opt2Grid, PriceLine, Tabs, Tile2Grid, TxtLink } from '@/ui/v3';
+import type { DimTarget } from '@/lib/dims';
+import { ExtrasPanel } from '../measure/Extras';
+import { DimSheet } from './DimSheet';
+import { SchemaDims } from './SchemaDims';
 import {
   Ban, calcDoc, DragArea, Tiles, cellAt, cellSize, cellTitle, Choice, Decor, DotCanvas, fetchPosition, FittingSet, fittingLabel, fixAction, FixAction, FormSheet,
   GLASS_DECOR_TITLE, glassDecorLabel, glassLabel, GlassPreset, lamLabel, OPEN_TITLE, openConflict, parentPath, Pill, plural, posStore,
@@ -33,7 +44,6 @@ import {
 import { glassDecorCommand } from './Alternatives';
 import { Window3D } from '@/ui/Window3D';
 
-type View3 = 'inside' | 'outside' | '3d';
 type Op = { commands?: Command[]; doc?: Doc };
 
 const isErr = (v: Violation) => v.severity === 'block' || v.severity === 'lock';
@@ -78,6 +88,11 @@ export default function Editor() {
   /** лист «Форма рамы»: префикс рамы ('' — окно, «A1/» — рама сборки) */
   const [shapeFor, setShapeFor] = useState<string | null>(null);
   const [docSheet, setDocSheet] = useState<'addons' | 'shutter' | 'loggia' | 'tpl' | null>(null);
+  const [qtyOpen, setQtyOpen] = useState(false);
+  const [winTab, setWinTab] = useState<WinTab>('kit');
+  /** нажатая размерная плашка (X5Dim) и схема с новыми размерами, пока вводят */
+  const [dimTarget, setDimTarget] = useState<DimTarget | null>(null);
+  const [dimPreview, setDimPreview] = useState<{ doc: Doc; changed: number[] } | null>(null);
   const [area, setArea] = useState({ w: 0, h: 0 });
   const [presets, setPresets] = useState<GlassPreset[] | null>(null);
   const [toast, showToast] = useToast();
@@ -332,7 +347,28 @@ export default function Editor() {
   const asm = isAssembly(doc);
   const frames = asm ? asmFrames(doc) : [];
   const aSel = asm && asmSel && (asmSel.kind === 'frame' ? asmSel.index < frames.length : asmSel.index < frames.length - 1) ? asmSel : null;
-  const pickCell = (p: string) => { setAsmSel(null); setSelected(p === sel ? null : p); };
+  // раздвижная (§11.1): тап по полотну — подвижное ⇄ глухое (полотна — не ячейки дерева)
+  const leafOf = (p: string) => {
+    const { frame, sub } = splitPath(p);
+    const f = frame === null ? doc.frame : frames[frame];
+    const sp = f ? slidingSpec(f) : null;
+    return sp && /^\d+$/.test(sub) && Number(sub) < sp.n ? { sp, i: Number(sub), prefix: frame === null ? '' : framePrefix(frame) } : null;
+  };
+  const pickCell = (p: string) => {
+    const lf = leafOf(p);
+    if (lf) {
+      const moving = lf.sp.moving.map((m, i) => (i === lf.i ? !m : m));
+      commit([{ cmd: 'set_sliding', ...(lf.prefix ? { path: lf.prefix } : {}), moving }]);
+      showToast(`Полотно ${lf.i + 1}: ${moving[lf.i] ? 'подвижное' : 'глухое'}`);
+      return;
+    }
+    setAsmSel(null); setSelected(p === sel ? null : p);
+  };
+  const prod = asm ? null : doc.frame.root.sliding ? 'sliding' : doc.frame.root.guillotine ? 'guillotine' : null;
+  // кнопка 3D: раздвижные и гильотины «Открыть», створки «Повернуть»; «Откинуть» — только если есть что откидывать
+  const caps = openCaps(doc);
+  const next3d = open3d === 'closed' ? 'turn' : open3d === 'turn' && caps.tilt ? 'tilt' : 'closed';
+  const label3d = open3d === 'closed' ? (caps.turn ? 'Повернуть' : 'Открыть') : open3d === 'turn' && caps.tilt ? 'Откинуть' : 'Закрыть';
   const splitPress = () => {
     if (sel !== null) { setSplitFor(sel); return; }
     if (aSel?.kind === 'frame' && frames[aSel.index].root.cell) { setSplitFor(framePrefix(aSel.index)); return; }
@@ -340,36 +376,61 @@ export default function Editor() {
     showToast('Выберите ячейку на схеме');
   };
 
+  const online = !isOffline && !isLocal;
+  const issuesCount = vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length;
+  const shown = dimPreview?.doc ?? doc;
+  const toOrder = () => { flushTimers(); router.dismissTo(`/order/${id}`); };
+
+  // цена всегда наверху листа (X5Editor); ошибка — «—» и «цена после исправления» (X5Err); без сети — посчитаем позже
+  const priceNode = (tags: boolean) => (
+    <PriceLine
+      value={isOffline || firstErr || info?.total == null ? null : num(info.total)}
+      muted={saving}
+      unit={isOffline ? 'посчитаем, когда появится интернет' : firstErr ? 'цена после исправления' : info?.total != null ? 'сум' : saving ? 'считаем…' : 'нет цены'}
+      right={!tags ? undefined :
+        <>
+          {info?.demo && !isOffline && !firstErr ? <Tag kind="est" title="ДЕМО" /> : null}
+          {warns.length > 0 && !firstErr ? (
+            <Pressable onPress={() => setMode('issues')} hitSlop={6}><Pill kind="est" title={`${warns.length} предупр.`} /></Pressable>
+          ) : null}
+        </>
+      } />
+  );
+  const priceLine = priceNode(true);
+
+  const kitTiles = (['system', 'glass', 'profile_color', 'fittings', 'lam_out', 'lam_in'] as const)
+    .map((w) => setupChips.find((c) => c.what === w)!)
+    .filter(Boolean)
+    .map((c) => ({ key: c.what, value: c.value, label: KIT_LABEL[c.what] ?? c.label.toLowerCase(), dim: !online }));
+  const winTiles = [
+    ...(!prod ? [{ key: 'split', title: 'Разделить', sub: 'створки, импосты', onPress: splitPress }] : []),
+    ...(!asm && !prod ? [{ key: 'shape', title: 'Форма рамы', sub: SHAPE_TITLE[frameShape(doc.frame).shape], onPress: () => setShapeFor('') }] : []),
+    { key: 'addons', title: 'Доп. профили', sub: doc.addons?.length ? String(doc.addons.length) : 'нет', onPress: () => setDocSheet('addons') },
+    { key: 'shutter', title: 'Рольставни, решётка', sub: shutterText(doc), onPress: () => setDocSheet('shutter') },
+    ...(asm ? [{ key: 'loggia', title: 'Лоджия', sub: loggiaText(doc.loggia), onPress: () => setDocSheet('loggia') }] : []),
+    ...(prod !== 'guillotine' ? [{ key: 'mirror', title: 'Зеркально', sub: prod === 'sliding' ? 'полотна наоборот' : 'петли наоборот', onPress: () => commit([{ cmd: 'mirror' }]) }] : []),
+    { key: 'qty', title: `Количество: ${qty}`, sub: 'изменить', onPress: () => setQtyOpen(true) },
+  ];
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1, paddingTop: insets.top }}>
         <DotCanvas />
-        {/* .hdr */}
+        {/* .hdr: назад, помещение, 3D, «Ещё» */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4, minHeight: 56 }}>
           <IconButton name="back" label="Назад" onPress={goBack} />
           <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
             <Txt w={600} size={18} lines={1} style={{ flexShrink: 1 }}>{room}</Txt>
             {qty > 1 ? <Txt size={14} color={C.muted}>× {qty}</Txt> : null}
+            {view === 'outside' && !is3d ? <Txt size={14} color={C.muted}>· снаружи</Txt> : null}
           </View>
+          <IconButton name="cube" label="3D" onPress={() => setIs3d(!is3d)} bg={is3d ? C.accentSoft : undefined} color={is3d ? C.accentDeep : C.ink} />
+          <IconButton name="more" label="Ещё" onPress={() => setMenu(true)} />
         </View>
         {isOffline ? (
           <View style={{ marginHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.dark }}>
             <Icon name="cloud_off" size={18} color="#fff" />
             <Txt size={13} w={500} color="#fff" style={{ flex: 1 }}>Нет интернета — всё сохраняется на телефоне</Txt>
-          </View>
-        ) : null}
-        <View style={{ paddingTop: 4 }}>
-          <Seg<View3> items={[{ value: 'inside', title: 'Схема' }, { value: 'outside', title: 'Снаружи' }, { value: '3d', title: '3D' }]}
-            value={is3d ? '3d' : view} onChange={(v) => { if (v === '3d') setIs3d(true); else { setIs3d(false); setView(v); } }} style={{ width: 240 }} />
-        </View>
-        {errors.length || warns.length ? (
-          <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingTop: 10 }}>
-            {errors.length ? (
-              <Pressable onPress={() => setMode('issues')}><Pill kind="err" title={`${errors.length} ${plural(errors.length, 'ошибка', 'ошибки', 'ошибок')}`} /></Pressable>
-            ) : null}
-            {warns.length ? (
-              <Pressable onPress={() => setMode('issues')}><Pill kind="est" title={`${warns.length} ${plural(warns.length, 'предупреждение', 'предупреждения', 'предупреждений')}`} /></Pressable>
-            ) : null}
           </View>
         ) : null}
         {asm ? (
@@ -387,21 +448,21 @@ export default function Editor() {
             {/* кнопки строкой над моделью — поверх они закрывали низ окна */}
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
               <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
-              <Soft small title={open3d === 'closed' ? 'Повернуть' : open3d === 'turn' ? 'Откинуть' : 'Закрыть'} icon="window"
-                onPress={() => setOpen3d(open3d === 'closed' ? 'turn' : open3d === 'turn' ? 'tilt' : 'closed')} />
+              <Soft small title={label3d} icon="window" onPress={() => setOpen3d(next3d)} />
               <Soft small title="Вид" icon="undo" onPress={() => setReset3d((n) => n + 1)} />
             </View>
             <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
               colorIn={profileHex(doc.setup, 'inside')} depthMm={depth} side={view} open={open3d} resetKey={reset3d} style={{ marginBottom: 36 }} />
           </View>
         ) : null}
-        <Pressable style={{ flex: 1, display: is3d ? 'none' : 'flex' }} onPress={() => { setSelected(null); setAsmSel(null); }} accessible={false}
+        <Pressable style={{ flex: 1, display: is3d ? 'none' : 'flex' }} onPress={() => { if (!dimTarget) { setSelected(null); setAsmSel(null); } }} accessible={false}
           onLayout={(e) => setArea({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
           {area.w > 0 && area.h > 0 ? (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 }}>
-              <SchemaDims doc={doc} width={Math.max(120, area.w - 150)} maxHeight={Math.max(80, area.h - 110)} view={view}
-                selected={sel} violations={vs} onCellPress={pickCell}
-                onShape={(prefix) => setShapeFor(prefix)} onFrame={(i) => { setSelected(null); setAsmSel({ kind: 'frame', index: i }); }} />
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 72 }}>
+              <SchemaDims doc={shown} width={Math.max(120, area.w - 150)} maxHeight={Math.max(80, area.h - 130)} view={view}
+                selected={sel} violations={dimPreview ? [] : vs} onCellPress={dimTarget ? undefined : pickCell}
+                onShape={(prefix) => setShapeFor(prefix)} onDim={(t) => { flushTimers(); setDimTarget(t); }}
+                edit={dimTarget ? { target: dimTarget, changed: dimPreview?.changed ?? [] } : null} />
             </View>
           ) : null}
         </Pressable>
@@ -410,12 +471,13 @@ export default function Editor() {
         <View style={[st.bs, { paddingBottom: Math.max(insets.bottom, 12) + 12 }]}>
           {sel === null && aSel ? <View style={st.hdl}><View style={st.hdlBar} /></View> : null}
           {sel !== null ? (
-            <CellPanel key={sel} doc={doc} path={sel} presets={presets} onClose={() => setSelected(null)}
+            <CellPanel key={sel} doc={doc} path={sel} presets={presets} price={priceNode(false)}
                 snaps={[96, Math.round(win.height * 0.42), Math.round(win.height * 0.78)]}
-                commit={commit} commitLater={commitLater}
+                commit={commit}
                 onFill={() => (isLocal ? showToast('Стекло ячейки — когда позиция уйдёт на сервер') : goKit(sel))}
                 onOption={isOffline || isLocal ? undefined : (g) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${encodeURIComponent(`option:${g}`)}&path=${encodeURIComponent(sel)}`)}
                 onSplit={() => setSplitFor(sel)}
+                onSize={() => setDimTarget({ kind: 'part', path: sel })}
                 onMerge={() => { const pp = parentPath(sel); commit([{ cmd: 'merge', path: pp }]); setSelected(pp); }} />
           ) : aSel ? (
             <ScrollView style={{ maxHeight: win.height * 0.4 }} contentContainerStyle={{ gap: 8 }} keyboardShouldPersistTaps="handled">
@@ -429,22 +491,11 @@ export default function Editor() {
             </ScrollView>
           ) : (
             <>
-              <WindowPanel snaps={[94, Math.round(win.height * 0.42), Math.round(win.height * 0.72)]}
+              <WindowPanel key={firstErr ? 'err' : 'ok'} tab={winTab} onTab={setWinTab}
+                snaps={[94, Math.min(Math.round(win.height * 0.5), firstErr ? 250 : 330), Math.round(win.height * 0.72)]}
                 header={
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingBottom: 8 }}>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Txt size={14} color={firstErr ? C.danger : C.muted} lines={1}>
-                        {firstErr ? `Ошибка: ${firstErr.title}` : `${room} · ${num(doc.frame.w)} × ${num(doc.frame.h)}${qty > 1 ? ` · × ${qty}` : ''}`}
-                      </Txt>
-                      {isOffline ? <Txt w={500} color={C.muted}>посчитаем, когда появится интернет</Txt>
-                        : info?.total != null ? (
-                          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                            <Txt w={700} size={22} color={saving || firstErr ? C.faint : C.ink} style={{ fontVariant: ['tabular-nums'], textDecorationLine: firstErr ? 'line-through' : 'none' }}>{num(info.total)}</Txt>
-                            <Txt size={14} color={C.muted}>сум</Txt>
-                            {info.demo ? <Tag kind="est" title="ДЕМО" /> : null}
-                          </View>
-                        ) : <Txt w={500} color={C.muted}>{saving ? 'считаем…' : 'нет цены'}</Txt>}
-                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>{priceLine}</View>
                     {/* отмена/повтор — внизу, под большим пальцем, а не в верхнем углу */}
                     <View style={{ opacity: canUndo ? 1 : 0.35 }}><IconButton name="undo" label="Отменить" onPress={canUndo ? undo : undefined} bg={C.soft} /></View>
                     <View style={{ opacity: canRedo ? 1 : 0.35 }}><IconButton name="redo" label="Повторить" onPress={canRedo ? redo : undefined} bg={C.soft} /></View>
@@ -452,34 +503,44 @@ export default function Editor() {
                 }
                 err={firstErr ? (
                   <>
-                    <Ban kind="err" title={`${firstErr.code} · ${firstErr.title}`} text={[firstErr.msg, firstErr.fix].filter(Boolean).join('. ')} />
+                    {/* X5Err: одна строка — что не так и почему; решение — главной кнопкой; «Другое» — все нарушения */}
+                    <View style={[st.ban, { backgroundColor: C.errBg, alignItems: 'center' }]}>
+                      <Icon name="warn" size={20} color={C.errFg} stroke={2.3} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Txt size={16} w={600} color={C.errFg} lines={1}>{firstErr.title}</Txt>
+                        {firstErr.msg || firstErr.fix ? <Txt size={14} color={C.errFg} lines={1}>{firstErr.msg || firstErr.fix}</Txt> : null}
+                      </View>
+                    </View>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <Soft title="Все ошибки" onPress={() => setMode('issues')} />
+                      <Soft title="Другое" onPress={() => setMode('issues')} />
                       {fx ? <Button title={fx.title} icon={fx.icon} onPress={() => doFix(fx)} style={{ flex: 1 }} /> : null}
                     </View>
                   </>
                 ) : null}
-                chips={isOffline || isLocal ? [] : setupChips}
-                onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)}
-                tiles={[
-                  { key: 'split', title: 'Разделить', sub: 'створки, импосты', onPress: splitPress },
-                  ...(!asm ? [{ key: 'shape', title: 'Форма рамы', sub: SHAPE_TITLE[frameShape(doc.frame).shape], onPress: () => setShapeFor('') }] : []),
-                  { key: 'addons', title: 'Доп. профили', sub: doc.addons?.length ? String(doc.addons.length) : 'нет', onPress: () => setDocSheet('addons') },
-                  { key: 'shutter', title: 'Рольставни, решётка', sub: shutterText(doc), onPress: () => setDocSheet('shutter') },
-                  ...(asm ? [{ key: 'loggia', title: 'Лоджия', sub: loggiaText(doc.loggia), onPress: () => setDocSheet('loggia') }] : []),
-                  { key: 'mirror', title: 'Зеркально', sub: 'петли наоборот', onPress: () => commit([{ cmd: 'mirror' }]) },
-                  { key: 'qty', title: `Количество: ${qty}`, sub: 'изменить', onPress: () => setMenu(true) },
-                ]}
-                more={[
-                  { key: 'issues', title: 'Ошибки и предупреждения', sub: String(vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length || 'нет'), onPress: () => setMode('issues') },
-                  { key: 'copy', title: 'Копировать окно', onPress: () => void copyPosition() },
-                  ...(!isOffline && !isLocal ? [{ key: 'tpl', title: 'Сохранить как шаблон', onPress: () => setDocSheet('tpl') }] : []),
-                  ...(!isOffline && !isLocal ? [{ key: 'kit', title: 'Комплектация заказа', sub: 'Эконом · Стандарт · Тёплый', onPress: () => goKit() }] : []),
-                ]} />
-              <Button title="Расчёт" disabled={isOffline || isLocal} onPress={() => router.push(`/order/${id}/calc`)} />
+                kit={
+                  <>
+                    <Tile2Grid items={kitTiles}
+                      onPress={(what) => (online ? router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`) : showToast('Комплектацию поменяем, когда появится интернет'))} />
+                    {online ? <TxtLink title={`Комплектация заказа${kitName ? `: ${kitName}` : ''}`} onPress={() => goKit()} style={{ paddingHorizontal: 4 }} /> : null}
+                  </>
+                }
+                win={
+                  <>
+                    {prod === 'sliding' ? <SlidingTiles doc={doc} path="" commit={commit} /> : prod === 'guillotine' ? <GuillotineTiles doc={doc} path="" commit={commit} /> : null}
+                    {prod ? <Lbl>Ещё</Lbl> : null}
+                    <Tiles<string> value={null} onChange={(k) => winTiles.find((x) => x.key === k)?.onPress()} items={winTiles.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} />
+                  </>
+                }
+                extras={<ExtrasPanel doc={doc} run={commit} inSheet />} />
+              {!firstErr ? <Button title="В заказ" onPress={toOrder} /> : null}
             </>
           )}
         </View>
+        {dimTarget ? (
+          <DimSheet key={JSON.stringify(dimTarget)} doc={doc} target={dimTarget} onClose={() => { setDimTarget(null); setDimPreview(null); }}
+            onPreview={(d, changed) => setDimPreview(d ? { doc: d, changed } : null)}
+            onApply={(c) => { setDimTarget(null); setDimPreview(null); commit(c); }} />
+        ) : null}
         {toast}
       </View>
 
@@ -491,116 +552,38 @@ export default function Editor() {
       {docSheet === 'tpl' ? <SaveTemplateSheet doc={doc} onClose={() => setDocSheet(null)} onSaved={() => { setDocSheet(null); showToast('Шаблон сохранён — в «Шаблоны → Мои»'); }} /> : null}
       <ShapeSheet doc={doc} prefix={shapeFor} onClose={() => setShapeFor(null)}
         onApply={(c) => { setShapeFor(null); commit(c); }} />
-      <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length}
-        offline={isOffline || isLocal}
-        shape={asm ? null : SHAPE_TITLE[frameShape(doc.frame).shape]}
-        onShape={() => { setMenu(false); setShapeFor(''); }}
-        addons={doc.addons?.length ?? 0} shutterText={shutterText(doc)} loggia={asm ? loggiaText(doc.loggia) : null}
-        onDocSheet={(x) => { setMenu(false); setDocSheet(x); }}
-        onMirror={() => { setMenu(false); commit([{ cmd: 'mirror' }]); }}
-        onQty={(n) => commitLater('qty', [{ cmd: 'set_qty', qty: n }])}
+      <QtySheet visible={qtyOpen} qty={qty} onClose={() => setQtyOpen(false)} onQty={(n) => commitLater('qty', [{ cmd: 'set_qty', qty: n }])} />
+      <MoreSheet visible={menu} onClose={() => setMenu(false)} issues={issuesCount} online={online} view={view}
+        onView={() => { setMenu(false); setView(view === 'inside' ? 'outside' : 'inside'); }}
         onIssues={() => { setMenu(false); setMode('issues'); }}
         onKit={() => { setMenu(false); goKit(); }}
         onCalc={() => { setMenu(false); router.push(`/order/${id}/calc`); }}
-        onCopy={() => void copyPosition()} />
+        onCopy={() => void copyPosition()}
+        onTpl={() => { setMenu(false); setDocSheet('tpl'); }}
+        onSummary={() => { setMenu(false); flushTimers(); router.push(`/order/${id}/summary`); }}
+        onNext={() => { setMenu(false); flushTimers(); router.push(`/order/${id}/measure`); }} />
     </KeyboardAvoidingView>
   );
 }
 
-// ---------------------------------------------------------------- схема с размерными плашками (.dim)
-function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellPress, onShape, onFrame }: {
-  doc: Doc; width: number; maxHeight: number; view: 'inside' | 'outside'; selected: string | null; violations: Violation[];
-  onCellPress: (path: string) => void; onShape: (prefix: string) => void; onFrame: (i: number) => void;
-}) {
-  const G = schemaGeometry(doc, width, maxHeight, false, view);
-  // схема мелкая (открыта панель ячейки) — плашки формы (подъём, срез, высоты сторон) не помещаются: прячем
-  const roomy = G.vw >= 200;
-  const { vw, vh, k } = G;
-  const schema = <Schema doc={doc} width={vw} maxHeight={vh} dims={false} view={view} selected={selected} violations={violations} onCellPress={onCellPress} />;
-  if (isAssembly(doc)) {
-    // сборка: ширина каждой рамы под ней (тап — рама), общая высота справа
-    const H = G.frames.reduce((m, f) => Math.max(m, f.frame.h), 0);
-    return (
-      <View style={{ width: vw, height: vh }}>
-        {schema}
-        {G.frames.map((f) => (
-          <Dim key={f.index} text={`${num(f.frame.w)}${frameShape(f.frame).shape !== 'rect' ? ' ⌒' : ''}`} style={{ left: f.x + f.w / 2 - 60, top: vh + 8 }} onPress={() => onFrame(f.index)} />
-        ))}
-        <Dim text={num(H)} style={{ left: vw + 6, top: vh / 2 - 16, width: undefined, alignItems: 'flex-start' }} />
-      </View>
-    );
-  }
-  const W = doc.frame.w, H = doc.frame.h, fg = G.frames[0];
-  const mirror = view === 'outside';
-  const X = (x: number) => fg.x + (mirror ? W - x : x) * k;
-  const Y = (y: number) => fg.y + y * k;
-  const L = layout(doc);
-  const hl = hlFromViolations(violations);
-  const root = doc.frame.root;
-  const sizes = root.parts ? L.sizes[''] ?? [] : [];
-  const vertical = root.split !== 'h';
-  const bad = (i: number) => Object.entries(hl).some(([p, s]) => s === 'block' && (p === String(i) || p.startsWith(`${i}.`)));
-  const press = (i: number) => {
-    const p = String(i);
-    const c = L.cells.find((x) => x.path === p || x.path.startsWith(`${p}.`));
-    if (c) onCellPress(c.path);
-  };
-  const { shape, params } = frameShape(doc.frame);
-  const leftBusy = sizes.length > 1 && !vertical;
-  let acc = 0;
-  return (
-    <View style={{ width: vw, height: vh }}>
-      {schema}
-      {sizes.length > 1 && vertical ? sizes.map((s, i) => {
-        const cx = (X(acc) + X(acc + s)) / 2; acc += s;
-        return <Dim key={i} text={num(Math.round(s))} style={{ left: cx - 60, top: vh + 8 }} red={bad(i)} onPress={() => press(i)} />;
-      }) : null}
-      {sizes.length > 1 && !vertical ? sizes.map((s, i) => {
-        const cy = (Y(acc) + Y(acc + s)) / 2; acc += s;
-        return <Dim key={i} text={num(Math.round(s))} style={{ right: vw + 4, top: cy - 16, width: undefined, alignItems: 'flex-end' }} red={bad(i)} onPress={() => press(i)} />;
-      }) : null}
-      <Dim text={shape === 'circle' ? `Ø ${num(W)}` : num(W)} style={{ left: fg.x + fg.w / 2 - 60, top: vh + (sizes.length > 1 && vertical ? 48 : 8) }} />
-      {shape === 'trapezoid' && roomy ? (
-        <>
-          <Dim text={num(mirror ? params.h_left! : params.h_right!)} style={{ left: vw + 6, top: Y(H - (mirror ? params.h_left! : params.h_right!) / 2) - 16, width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
-          <Dim text={num(mirror ? params.h_right! : params.h_left!)} style={leftBusy
-            ? { left: vw / 2 - 60, top: -40 }
-            : { right: vw + 4, top: Y(H - (mirror ? params.h_right! : params.h_left!) / 2) - 16, width: undefined, alignItems: 'flex-end' }} onPress={() => onShape('')} />
-        </>
-      ) : shape !== 'circle' ? <Dim text={num(H)} style={{ left: vw + 6, top: fg.y + fg.h / 2 - 16, width: undefined, alignItems: 'flex-start' }} /> : null}
-      {shape === 'arch' && roomy ? (
-        <Dim text={`подъём\n${num(params.rise!)}`} style={{ left: vw + 6, top: Y(0), width: undefined, alignItems: 'flex-start' }} onPress={() => onShape('')} />
-      ) : null}
-      {shape === 'bevel' && roomy ? (
-        <Dim text={`срез ${num(params.dx!)}×${num(params.dy!)}`} style={{ left: vw / 2 - 80, top: -40, width: 160 }} onPress={() => onShape('')} />
-      ) : null}
-    </View>
-  );
-}
+/** подписи плиток «Комплектация» (X5Editor: «профиль», «стекло», «цвет», «фурнитура») */
+const KIT_LABEL: Record<string, string> = {
+  system: 'профиль', glass: 'стекло', profile_color: 'цвет', fittings: 'фурнитура', lam_out: 'ламинация снаружи', lam_in: 'ламинация внутри',
+};
 
-function Dim({ text, style, red, onPress }: { text: string; style: object; red?: boolean; onPress?: () => void }) {
-  // width: undefined у края схемы давал ширину ~0 → «2 100» переносилось в «2 10». Ширина всегда 120, выравнивание — из style
-  const { width: _w, ...rest } = style as { width?: number };
-  return (
-    <View pointerEvents="box-none" style={[{ position: 'absolute', width: 120, alignItems: 'center' }, rest, _w ? { width: _w } : null]}>
-      <Pressable disabled={!onPress} onPress={onPress} style={[st.dim, red && { borderWidth: 2, borderColor: C.dangerLine }]}>
-        <Txt size={15} w={600} color={red ? '#A1221A' : C.dim} lines={text.includes('\n') ? 2 : 1} style={{ fontVariant: ['tabular-nums'], flexShrink: 0 }}>{text}</Txt>
-      </Pressable>
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------- панель ячейки (EditorCell)
-function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, onSplit, onMerge, onOption, snaps }: {
-  doc: Doc; path: string; presets: GlassPreset[] | null; onClose: () => void;
-  commit: (c: Command[]) => void; commitLater: (k: string, c: Command[]) => void;
-  onFill: () => void; onSplit: () => void; onMerge: () => void;
+// ---------------------------------------------------------------- панель ячейки (X5Cell)
+/** Выбрана створка: окно остаётся видно над панелью; «Створка 1 · 700 × 1 300 · цена»; разделы Открывание · Стекло · Сетка;
+ * редкое — «Ещё: дверная, панель, PSK, HS» (тип, все открывания, размер части, разделить, объединить). */
+function CellPanel({ doc, path, presets, price, commit, onFill, onSplit, onMerge, onOption, onSize, snaps }: {
+  doc: Doc; path: string; presets: GlassPreset[] | null; price: ReactNode;
+  commit: (c: Command[]) => void;
+  onFill: () => void; onSplit: () => void; onMerge: () => void; onSize: () => void;
   /** вариант детали створки — лист замен (/alternatives), только онлайн */
   onOption?: (group: string) => void;
   snaps: [number, number, number];
 }) {
-  const [sheet, setSheet] = useState<'muntins' | 'decor' | null>(null);
-  const [tab, setTab] = useState<'open' | 'glass' | 'extra' | 'size'>('open');
+  const [sheet, setSheet] = useState<'muntins' | 'decor' | 'more' | null>(null);
+  const [tab, setTab] = useState<'open' | 'glass' | 'extra'>('open');
   const cell = cellAt(doc, path);
   if (!cell) return null;
   const open = cell.type === 'sash' || cell.type === 'door_sash';
@@ -611,69 +594,79 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
     ? 'панель'
     : own ? `своё · ${glassLabel(own, presets)}` : `как у изделия${doc.setup?.glass ? ` · ${glassLabel(doc.setup.glass, presets)}` : ''}`;
   const sub = splitPath(path).sub !== '';
-  // строка-итог под заголовком: видно, что выбрано, даже когда панель свёрнута
-  const summary = [
-    open ? OPEN_FULL[cell.open ?? 'turn'] ?? OPEN_TITLE[cell.open ?? 'turn'] : TYPE_TITLE[cell.type],
-    open && !NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (cell.hinge === 'right' ? 'петли справа' : 'петли слева') : null,
-    cell.mosquito ? `сетка ${MOSQ_SHORT[mosqType(cell.mosquito, cell)]}` : null,
-    cell.muntins ? 'раскладка' : null,
-  ].filter(Boolean).join(' · ');
+  // гильотинное окно (§11.2): часть узла split 'vslide'
+  let inVslide = false;
+  try { inVslide = sub && nodeAt(doc, parentPath(path)).split === 'vslide'; } catch { /* корень */ }
+  const vs = open && cell.open === 'vslide';
+  const top = inVslide && indexOf(path) === 0;
   const tabs: { value: typeof tab; title: string }[] = [
-    { value: 'open', title: open ? 'Открывание' : 'Тип' },
+    { value: 'open', title: 'Открывание' },
     ...(hasGlass ? [{ value: 'glass' as const, title: 'Стекло' }] : []),
-    { value: 'extra', title: open ? 'Сетка' : 'Ещё' },
-    { value: 'size', title: 'Размер' },
+    { value: 'extra', title: open ? 'Сетка' : 'Клапан' },
   ];
   const cur = tabs.some((t) => t.value === tab) ? tab : 'open';
+  // 4 главных открывания (X5Cell); у двери вместо откидной — PSK
+  const main = [{ value: 'fixed', title: 'Глухая' }, { value: 'turn', title: 'Поворотная' }, { value: 'tilt_turn', title: 'П-О' },
+    cell.type === 'door_sash' ? { value: 'psk', title: 'PSK' } : { value: 'tilt', title: 'Откидная' }];
+  const pickOpen = (v: string) => {
+    if (v === 'fixed') { set({ type: 'fixed' }); return; }
+    const base: Partial<Cell> = open ? {} : { type: doc.kind === 'door' ? 'door_sash' : 'sash', handle: true };
+    if (v === 'tilt') set({ ...base, open: 'tilt', hinge: 'bottom' });
+    else if (v === 'psk' || v === 'hs') set({ ...base, open: v as Cell['open'] });
+    else set({ ...base, open: v as Cell['open'], hinge: cell.hinge === 'right' ? 'right' : 'left' });
+  };
 
   const header = (
-    <View style={{ paddingHorizontal: 4, paddingBottom: 8, gap: 2 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Txt w={700} size={20} style={{ flex: 1 }} lines={1}>{cellTitle(doc, path)}</Txt>
-        <Txt size={14} color={C.muted} style={{ fontVariant: ['tabular-nums'] }}>{cellSize(doc, path)}</Txt>
-        <IconButton name="close" label="Закрыть" onPress={onClose} bg={C.soft} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingBottom: 8, gap: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', flexShrink: 1, minWidth: 0 }}>
+        <Txt w={700} size={20} lines={1} style={{ flexShrink: 1 }}>{cellTitle(doc, path)}</Txt>
+        <Txt size={14} color="#5F5C57" style={{ marginLeft: 8, fontVariant: ['tabular-nums'] }}>{cellSize(doc, path)}</Txt>
       </View>
-      <Txt size={15} color={C.muted} lines={1}>{summary}</Txt>
+      <View style={{ flex: 1 }} />
+      {price}
     </View>
   );
 
   return (
     <DragArea snaps={snaps} header={header}>
-      {/* разделы вместо длинной простыни параметров: на экране — только то, что сейчас меняют */}
-      <Seg<typeof tab> style={st0.seg} value={cur} onChange={setTab} items={tabs} />
+      <Tabs<typeof tab> items={tabs} value={cur} onChange={setTab} />
 
-      {cur === 'open' ? (
+      {cur === 'open' && vs ? (
         <>
-          <Lbl>Что это</Lbl>
-          <Tiles<Cell['type']> value={cell.type} onChange={(t) => set({ type: t })}
-            items={(['fixed', 'sash', 'door_sash', 'panel'] as const).map((t) => ({ value: t, title: TYPE_TITLE[t] }))} />
-          {open ? (
+          <Lbl>Полотно</Lbl>
+          <Tiles<string> value={cell.slide ?? 'moving'} onChange={(v) => set({ slide: v as Cell['slide'] })}
+            items={[{ value: 'moving', title: 'Подвижное', sub: top ? 'едет вниз' : 'едет вверх' }, { value: 'fixed', title: 'Неподвижное', sub: 'глухое полотно' }]} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 4 }}>
+            <View style={{ flex: 1 }}>
+              <Txt w={500}>Откидывание для мытья</Txt>
+              <Note>полотно наклоняется внутрь</Note>
+            </View>
+            <Switch value={!!cell.tilt_clean} onChange={(v) => set({ tilt_clean: v })} />
+          </View>
+          <Lbl>Как открывается</Lbl>
+          <Tiles<string> value="vslide" onChange={(o) => { if (o !== 'vslide') set({ open: o as Cell['open'], hinge: 'left' }); }}
+            items={[{ value: 'vslide', title: 'Гильотинное' }, { value: 'tilt_turn', title: 'Поворотно-откидная' }]} />
+        </>
+      ) : null}
+
+      {cur === 'open' && !vs ? (
+        <>
+          <Opt2Grid items={main.map((o) => ({ ...o, on: o.value === 'fixed' ? cell.type === 'fixed' : open && cell.open === o.value }))} onChange={pickOpen} />
+          {open && !NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (
+            <Opt2Grid value={cell.hinge === 'right' ? 'right' : 'left'} onChange={(h) => set({ hinge: h as Cell['hinge'] })}
+              items={[{ value: 'left', title: 'Петли слева' }, { value: 'right', title: 'справа' }]} />
+          ) : null}
+          {cell.type === 'door_sash' ? (
             <>
-              <Lbl>Как открывается</Lbl>
-              <Tiles<string> value={cell.open ?? 'turn'}
-                onChange={(o) => set(o === 'tilt' ? { open: 'tilt', hinge: 'bottom' } : o === 'top_hung' ? { open: 'top_hung', hinge: 'top' }
-                  : { open: o as Cell['open'], ...(cell.hinge === 'bottom' || cell.hinge === 'top' ? { hinge: 'left' } : {}) })}
-                items={[...OPENS_OF(cell), ...(cell.open && !OPENS_OF(cell).includes(cell.open) ? [cell.open] : [])]
-                  .map((o) => ({ value: o, title: OPEN_FULL[o] ?? OPEN_TITLE[o] ?? o }))} />
-              {!NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (
-                <>
-                  <Lbl>Петли</Lbl>
-                  <Tiles<string> value={cell.hinge === 'right' ? 'right' : 'left'} onChange={(h) => set({ hinge: h as Cell['hinge'] })}
-                    items={[{ value: 'left', title: 'Слева' }, { value: 'right', title: 'Справа' }]} />
-                </>
-              ) : null}
-              {cell.type === 'door_sash' ? (
-                <>
-                  <Lbl>Дверь открывается</Lbl>
-                  <Tiles<string> value={cell.open_dir ?? 'in'} onChange={(d) => set({ open_dir: d as Cell['open_dir'] })}
-                    items={[{ value: 'in', title: 'Внутрь' }, { value: 'out', title: 'Наружу' }]} />
-                  <Lbl>Порог</Lbl>
-                  <Tiles<string> cols={3} value={cell.threshold ?? 'standard'} onChange={(t) => set({ threshold: t as Cell['threshold'] })}
-                    items={[{ value: 'standard', title: 'Рамный' }, { value: 'low_alu', title: 'Низкий алюм.' }, { value: 'none', title: 'Без порога' }]} />
-                </>
-              ) : null}
+              <Lbl>Дверь открывается</Lbl>
+              <Opt2Grid value={cell.open_dir ?? 'in'} onChange={(d) => set({ open_dir: d as Cell['open_dir'] })}
+                items={[{ value: 'in', title: 'Внутрь' }, { value: 'out', title: 'Наружу' }]} />
+              <Lbl>Порог</Lbl>
+              <Tiles<string> cols={3} value={cell.threshold ?? 'standard'} onChange={(t) => set({ threshold: t as Cell['threshold'] })}
+                items={[{ value: 'standard', title: 'Рамный' }, { value: 'low_alu', title: 'Низкий алюм.' }, { value: 'none', title: 'Без порога' }]} />
             </>
           ) : null}
+          <TxtLink title="Ещё: дверная, панель, PSK, HS" onPress={() => setSheet('more')} style={{ paddingHorizontal: 6 }} />
         </>
       ) : null}
 
@@ -723,21 +716,34 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
         </>
       ) : null}
 
-      {cur === 'size' ? (
-        <>
-          {sub ? <PartSize doc={doc} path={path} commit={commit} commitLater={commitLater} /> : <Note>Размер изделия — на плашках у схемы</Note>}
-          <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
-            <Soft title="Разделить" icon="window" onPress={onSplit} style={{ flex: 1 }} />
-            {sub ? <Soft title="Объединить" onPress={onMerge} style={{ flex: 1 }} /> : null}
-          </View>
-        </>
-      ) : null}
-
       <MuntinsSheet visible={sheet === 'muntins'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
       <GlassDecorSheet visible={sheet === 'decor'} doc={doc} path={path} cell={cell} onClose={() => setSheet(null)} commit={commit} />
+      <FormSheet visible={sheet === 'more'} onClose={() => setSheet(null)} title={cellTitle(doc, path)}>
+        <Lbl>Что это</Lbl>
+        <Tiles<Cell['type']> value={cell.type} onChange={(t) => set({ type: t })}
+          items={(['fixed', 'sash', 'door_sash', 'panel'] as const).map((t) => ({ value: t, title: TYPE_TITLE[t] }))} />
+        {open ? (
+          <>
+            <Lbl>Как открывается</Lbl>
+            <Tiles<string> value={cell.open ?? 'turn'}
+              onChange={(o) => set(o === 'tilt' ? { open: 'tilt', hinge: 'bottom' } : o === 'top_hung' ? { open: 'top_hung', hinge: 'top' }
+                : { open: o as Cell['open'], ...(cell.hinge === 'bottom' || cell.hinge === 'top' ? { hinge: 'left' } : {}) })}
+              items={[...OPENS_OF(cell), ...(inVslide && cell.type === 'sash' ? ['vslide'] : []),
+                ...(cell.open && !OPENS_OF(cell).includes(cell.open) && !(inVslide && cell.open === 'vslide') ? [cell.open] : [])]
+                .map((o) => ({ value: o, title: OPEN_FULL[o] ?? OPEN_TITLE[o] ?? o }))} />
+          </>
+        ) : null}
+        <Lbl>Деление</Lbl>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {sub ? <Soft title="Размер" icon="ruler" onPress={() => { setSheet(null); onSize(); }} style={{ flex: 1 }} /> : null}
+          <Soft title="Разделить" icon="window" onPress={() => { setSheet(null); onSplit(); }} style={{ flex: 1 }} />
+          {sub ? <Soft title="Объединить" onPress={() => { setSheet(null); onMerge(); }} style={{ flex: 1 }} /> : null}
+        </View>
+      </FormSheet>
     </DragArea>
   );
 }
+
 /** подпись группы в панели */
 function Lbl({ children }: { children: string }) {
   return <Txt size={14} w={600} color={C.muted} style={{ paddingHorizontal: 4, paddingTop: 4 }}>{children}</Txt>;
@@ -745,7 +751,7 @@ function Lbl({ children }: { children: string }) {
 /** открывание полными словами (мастер говорит «поворотно-откидная», а не «П-О») */
 const OPEN_FULL: Record<string, string> = {
   turn: 'Поворотная', tilt_turn: 'Поворотно-откидная', tilt: 'Откидная', top_hung: 'Подвесная', pivot: 'Среднеподвесная',
-  psk: 'PSK, параллельно-сдвижная', hs: 'HS, подъёмно-сдвижная', sliding: 'Раздвижная', folding: 'Гармошка',
+  psk: 'PSK, параллельно-сдвижная', hs: 'HS, подъёмно-сдвижная', sliding: 'Раздвижная', folding: 'Гармошка', vslide: 'Гильотинное',
 };
 const st0 = { seg: { marginHorizontal: 0, backgroundColor: '#EDECE9' } };
 
@@ -753,7 +759,7 @@ const st0 = { seg: { marginHorizontal: 0, backgroundColor: '#EDECE9' } };
 const OPENS_OF = (c: Cell): string[] => (c.type === 'door_sash'
   ? ['turn', 'tilt_turn', 'psk', 'hs']
   : ['turn', 'tilt_turn', 'tilt', 'top_hung', 'pivot', 'psk', 'hs']);
-const NO_SIDE_HINGE = ['tilt', 'top_hung', 'pivot', 'psk', 'hs', 'sliding'];
+const NO_SIDE_HINGE = ['tilt', 'top_hung', 'pivot', 'psk', 'hs', 'sliding', 'vslide'];
 
 /** Опции створки (§9.6) — option groups; вариант выбирается листом замен. */
 const CELL_OPTIONS: { group: string; title: string }[] = [
@@ -781,100 +787,75 @@ function MosquitoSheet({ visible, cell, onClose, onPick }: { visible: boolean; c
   );
 }
 
-/** Размер части: число мм, шаг ±5, «поровну» (FR-E4). Ввод уходит через 0,5 с после последней цифры. */
-function PartSize({ doc, path, commit, commitLater }: { doc: Doc; path: string; commit: (c: Command[]) => void; commitLater: (k: string, c: Command[]) => void }) {
-  const part = partAt(doc, path);
-  const parent = parentPath(path);
-  const idx = indexOf(path);
-  const L = layout(doc);
-  const resolved = Math.round(L.sizes[parent]?.[idx] ?? 0);
-  const fixed = typeof part?.size === 'number';
-  let horizontal = false;
-  try { horizontal = nodeAt(doc, parent).split === 'h'; } catch { /* корень */ }
-  const [text, setText] = useState(String(resolved));
-  const focused = useRef(false);
-  const input = useRef<ComponentRef<typeof TextInput>>(null);
-  useEffect(() => { if (!focused.current) setText(String(resolved)); }, [resolved, path]);
-  const key = `size:${path}`;
-  const step = (d: number) => {
-    const v = Math.max(5, (Number(text) || resolved) + d);
-    setText(String(v));
-    commitLater(key, [{ cmd: 'set_part_size', path, size: v }]);
-  };
-  return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-        <Field ref={input} label={`${horizontal ? 'Высота' : 'Ширина'} части, мм`} value={text} keyboardType="number-pad" maxLength={5}
-          style={{ flex: 1, backgroundColor: C.soft }}
-          onFocus={() => { focused.current = true; }} onBlur={() => { focused.current = false; }}
-          onChangeText={(t) => {
-            const v = t.replace(/[^0-9]/g, '');
-            setText(v);
-            const n = Number(v);
-            if (n > 0) commitLater(key, [{ cmd: 'set_part_size', path, size: n }]);
-          }}
-          right={!fixed ? <Txt size={13} color={C.faint}>поровну</Txt> : undefined} />
-        <Act title="−5" onPress={() => step(-5)} />
-        <Act title="+5" onPress={() => step(5)} />
-      </View>
-      {fixed ? (
-        <View style={{ flexDirection: 'row' }}>
-          <Act title="Поровну" onPress={() => { input.current?.blur(); commit([{ cmd: 'set_part_size', path, size: 'eq' }]); }} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 // ---------------------------------------------------------------- разделить на N
-function SplitSheet({ path, onClose, onSplit }: { path: string | null; onClose: () => void; onSplit: (path: string, dir: 'v' | 'h' | 'folding', n: number) => void }) {
-  const [dir, setDir] = useState<'v' | 'h' | 'folding'>('v');
+type SplitDir = 'v' | 'h' | 'shtulp' | 'folding' | 'vslide';
+const SPLIT_DIRS: { value: SplitDir; title: string; sub: string }[] = [
+  { value: 'v', title: 'Вертикально', sub: 'импост' }, { value: 'h', title: 'Горизонтально', sub: 'импост' },
+  { value: 'shtulp', title: 'Штульп', sub: '2 створки без импоста' }, { value: 'folding', title: 'Гармошка', sub: 'складываются книжкой' },
+  { value: 'vslide', title: 'Гильотинное (вверх)', sub: 'нижнее полотно едет вверх' },
+];
+function SplitSheet({ path, onClose, onSplit }: { path: string | null; onClose: () => void; onSplit: (path: string, dir: SplitDir, n: number) => void }) {
+  const [dir, setDir] = useState<SplitDir>('v');
   const [n, setN] = useState(2);
+  const two = dir === 'shtulp' || dir === 'vslide';           // всегда две части
   return (
-    <Sheet visible={path !== null} onClose={onClose} title="Разделить ячейку">
-      <View style={{ paddingHorizontal: 12, gap: 12 }}>
-        <Seg<'v' | 'h' | 'folding'> style={{ marginHorizontal: 0 }} value={dir} onChange={setDir}
-          items={[{ value: 'v', title: 'Вертикально' }, { value: 'h', title: 'Горизонтально' }, { value: 'folding', title: 'Гармошка' }]} />
-        {dir === 'folding' ? <Note style={{ paddingHorizontal: 8 }}>Створки складываются книжкой, без импостов</Note> : null}
+    <FormSheet visible={path !== null} onClose={onClose} title="Разделить ячейку">
+      <Tiles<SplitDir> value={dir} onChange={setDir} items={SPLIT_DIRS} />
+      {two ? null : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[2, 3, 4].map((x) => (
-            <Pressable key={x} onPress={() => setN(x)} style={{ flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: n === x ? C.dark : C.card }}>
+            <Pressable key={x} onPress={() => setN(x)} style={{ flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: n === x ? C.dark : C.soft }}>
               <Txt w={600} color={n === x ? '#fff' : C.ink}>на {x}</Txt>
             </Pressable>
           ))}
         </View>
-        <Card style={{ marginHorizontal: 0 }}>
+      )}
+      {two ? null : (
+        <Card style={{ marginHorizontal: 0, backgroundColor: C.soft }}>
           <Row first label="Частей" right={<Stepper value={n} onChange={setN} min={2} max={8} />} />
         </Card>
-        <Button title={dir === 'folding' ? `Гармошка на ${n}` : `Разделить на ${n}`} icon="window" onPress={() => path !== null && onSplit(path, dir, n)} />
-      </View>
+      )}
+      <Button title={dir === 'vslide' ? 'Гильотинное окно' : dir === 'shtulp' ? 'Штульп на 2 створки' : dir === 'folding' ? `Гармошка на ${n}` : `Разделить на ${n}`}
+        icon="window" onPress={() => path !== null && onSplit(path, dir, two ? 2 : n)} />
+    </FormSheet>
+  );
+}
+
+// ---------------------------------------------------------------- «Ещё» в шапке (X5Editor)
+/** Редкое: вид снаружи, нарушения, комплектация заказа, расчёт, копия, шаблон, итог замера, следующее окно.
+ * Количество, форма, доп. профили, рольставни, лоджия, зеркально — в разделе «Окно». */
+function MoreSheet({ visible, onClose, issues, online, view, onView, onIssues, onKit, onCalc, onCopy, onTpl, onSummary, onNext }: {
+  visible: boolean; onClose: () => void; issues: number; online: boolean; view: 'inside' | 'outside';
+  onView: () => void; onIssues: () => void; onKit: () => void; onCalc: () => void; onCopy: () => void; onTpl: () => void;
+  onSummary: () => void; onNext: () => void;
+}) {
+  return (
+    <Sheet visible={visible} onClose={onClose}>
+      <Card style={{ marginBottom: 8 }}>
+        <Row first label={view === 'inside' ? 'Вид снаружи' : 'Вид изнутри'} left={<Icon name="mirror" />} onPress={onView} chevron={false} />
+        <Row label="Нарушения" left={<Icon name="warn" />} value={issues ? String(issues) : 'нет'} onPress={onIssues} />
+        {online ? <Row label="Комплектация заказа" sub="Эконом · Стандарт · Тёплый" left={<Icon name="layers" />} onPress={onKit} /> : null}
+        {online ? <Row label="Расчёт" left={<Icon name="calc" />} onPress={onCalc} /> : null}
+        <Row label="Копировать окно" left={<Icon name="copy" />} onPress={onCopy} chevron={false} />
+        {online ? <Row label="Сохранить как шаблон" left={<Icon name="folder" />} onPress={onTpl} /> : null}
+        <Row label="Итог замера" left={<Icon name="doc" />} onPress={onSummary} />
+        <Row label="Следующее окно" left={<Icon name="plus" />} onPress={onNext} />
+      </Card>
     </Sheet>
   );
 }
 
-// ---------------------------------------------------------------- «Ещё»
-function MoreSheet({ visible, onClose, qty, issues, offline: off, shape, onShape, addons, shutterText: shut, loggia, onDocSheet, onMirror, onQty, onIssues, onKit, onCalc, onCopy }: {
-  visible: boolean; onClose: () => void; qty: number; issues: number; offline: boolean; shape: string | null; onShape: () => void;
-  addons: number; shutterText: string; loggia: string | null; onDocSheet: (x: 'addons' | 'shutter' | 'loggia' | 'tpl') => void;
-  onMirror: () => void; onQty: (n: number) => void; onIssues: () => void; onKit: () => void; onCalc: () => void; onCopy: () => void;
-}) {
+function QtySheet({ visible, qty, onClose, onQty }: { visible: boolean; qty: number; onClose: () => void; onQty: (n: number) => void }) {
   const [q, setQ] = useState(qty);
   useEffect(() => { if (visible) setQ(qty); }, [visible, qty]);
   return (
-    <Sheet visible={visible} onClose={onClose}>
-      <Card>
-        <Row first label="Количество" right={<Stepper value={q} min={1} max={99} onChange={(v) => { setQ(v); onQty(v); }} />} />
-        {shape ? <Row label="Форма рамы" left={<Icon name="window" />} value={shape} onPress={onShape} /> : null}
-        <Row label="Доп. профили" left={<Icon name="ruler" />} value={addons ? String(addons) : 'нет'} onPress={() => onDocSheet('addons')} />
-        <Row label="Рольставни, решётка" left={<Icon name="layers" />} value={shut} onPress={() => onDocSheet('shutter')} />
-        {loggia !== null ? <Row label="Лоджия" left={<Icon name="home" />} value={loggia} onPress={() => onDocSheet('loggia')} /> : null}
-        <Row label="Зеркально" left={<Icon name="mirror" />} onPress={onMirror} chevron={false} />
-        <Row label="Нарушения" left={<Icon name="warn" />} value={issues ? String(issues) : 'нет'} onPress={onIssues} />
-        {!off ? <Row label="Комплектация" left={<Icon name="layers" />} onPress={onKit} /> : null}
-        {!off ? <Row label="Расчёт" left={<Icon name="calc" />} onPress={onCalc} /> : null}
-        <Row label="Копировать позицию" left={<Icon name="plus" />} onPress={onCopy} chevron={false} />
-        {!off ? <Row label="Сохранить как шаблон" left={<Icon name="folder" />} onPress={() => onDocSheet('tpl')} /> : null}
-      </Card>
+    <Sheet visible={visible} onClose={onClose} title="Количество">
+      <View style={{ paddingHorizontal: 12, gap: 10, paddingBottom: 8 }}>
+        <Card style={{ marginHorizontal: 0 }}>
+          <Row first label="Таких же окон" right={<Stepper value={q} min={1} max={99} onChange={(v) => { setQ(v); onQty(v); }} />} />
+        </Card>
+        <Button title="Готово" onPress={onClose} />
+      </View>
     </Sheet>
   );
 }
@@ -979,22 +960,19 @@ function useSetupChips(doc: Doc | null, presets: GlassPreset[] | null, sysFallba
   ];
 }
 
-/** Нижняя панель окна (ничего не выбрано): тянется пальцем; шапка — цена, отмена/повтор; разделы
- * Комплектация · Окно · Ещё вместо строки чипов, уезжающей вбок, и меню «⋯». */
-function WindowPanel({ snaps, header, chips, onPick, err, tiles, more }: {
-  snaps: [number, number, number]; header: ReactNode; chips: { what: string; label: string; value: string }[]; onPick: (what: string) => void;
-  err: ReactNode; tiles: { key: string; title: string; sub?: string; onPress: () => void }[]; more: { key: string; title: string; sub?: string; onPress: () => void }[];
+/** Нижняя панель окна (ничего не выбрано, X5Editor): тянется пальцем; шапка — цена, отмена/повтор;
+ * ошибка (X5Err) — над разделами; разделы Комплектация · Окно · Добивки. */
+type WinTab = 'kit' | 'win' | 'ext';
+function WindowPanel({ snaps, header, err, tab, onTab, kit, win, extras }: {
+  snaps: [number, number, number]; header: ReactNode; err: ReactNode; tab: WinTab; onTab: (t: WinTab) => void;
+  kit: ReactNode; win: ReactNode; extras: ReactNode;
 }) {
-  const [tab, setTab] = useState<'kit' | 'win' | 'more'>('kit');
-  const act = (list: typeof tiles) => (k: string) => list.find((x) => x.key === k)?.onPress();
   return (
-    <DragArea snaps={snaps} start={0} header={header}>
+    <DragArea snaps={snaps} start={1} header={header}>
       {err}
-      <Seg<typeof tab> style={st0.seg} value={tab} onChange={setTab}
-        items={[{ value: 'kit', title: 'Комплектация' }, { value: 'win', title: 'Окно' }, { value: 'more', title: 'Ещё' }]} />
-      {tab === 'kit' ? <Tiles<string> value={null} onChange={onPick} items={chips.map((c) => ({ value: c.what, title: c.value, sub: c.label }))} /> : null}
-      {tab === 'win' ? <Tiles<string> value={null} onChange={act(tiles)} items={tiles.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
-      {tab === 'more' ? <Tiles<string> value={null} onChange={act(more)} items={more.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
+      <Tabs<WinTab> value={tab} onChange={onTab}
+        items={[{ value: 'kit', title: 'Комплектация' }, { value: 'win', title: 'Окно' }, { value: 'ext', title: 'Добивки' }]} />
+      {tab === 'kit' ? kit : tab === 'win' ? win : extras}
     </DragArea>
   );
 }
@@ -1103,8 +1081,9 @@ function GlassDecorSheet({ visible, doc, path, cell, onClose, commit }: {
 }
 
 // ---------------------------------------------------------------- составное изделие: табы рам и стыков
-const JOINT_TITLE: Record<string, string> = { straight: 'Прямой', angle: 'Угловой', post: 'Стойка' };
-const jointText = (j: { joint: string; angle: number }) => (j.joint === 'angle' ? `Стык ${j.angle}°` : j.joint === 'post' ? 'Стойка' : 'Стык 180°');
+const JOINT_TITLE: Record<string, string> = { straight: 'Прямой', angle: 'Угловой', post: 'Стойка', corner_free: 'Без стойки' };
+const jointText = (j: { joint: string; angle: number }) => (j.joint === 'angle' ? `Стык ${j.angle}°` : j.joint === 'post' ? 'Стойка'
+  : j.joint === 'corner_free' ? `Без стойки ${j.angle}°` : 'Стык 180°');
 
 function AsmTabs({ doc, sel, onPick, onAdd }: {
   doc: Doc; sel: { kind: 'frame' | 'joint'; index: number } | null; onPick: (x: { kind: 'frame' | 'joint'; index: number }) => void; onAdd: () => void;
@@ -1157,6 +1136,7 @@ function FramePanel({ doc, index, commit, commitLater, onClose, onShape, onSplit
   if (!f) return null;
   const p = framePrefix(index);
   const sh = frameShape(f).shape;
+  const special = !!(f.root.sliding || f.root.guillotine);
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 8 }}>
@@ -1168,12 +1148,13 @@ function FramePanel({ doc, index, commit, commitLater, onClose, onShape, onSplit
         <NumField label="Ширина, мм" value={f.w} onValue={(w) => commitLater(`fw${index}`, [{ cmd: 'set_size', path: p, w }])} />
         <NumField label="Высота, мм" value={f.h} onValue={(h) => commitLater(`fh${index}`, [{ cmd: 'set_size', path: p, h }])} />
       </View>
-      <PanelLink label="Форма рамы" value={SHAPE_TITLE[sh]} onPress={onShape} />
+      {f.root.sliding ? <SlidingTiles doc={doc} path={p} commit={commit} /> : f.root.guillotine ? <GuillotineTiles doc={doc} path={p} commit={commit} />
+        : <PanelLink label="Форма рамы" value={SHAPE_TITLE[sh]} onPress={onShape} />}
       <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
         {f.root.cell ? <Soft title="Разделить" icon="window" onPress={onSplit} style={{ flex: 1 }} small /> : null}
         <Soft title="Удалить раму" onPress={onRemove} disabled={frames.length <= 2} style={{ flex: 1 }} small />
       </View>
-      {!f.root.cell ? <Note style={{ paddingHorizontal: 4 }}>Створки и деление — нажмите на ячейку рамы на схеме</Note> : null}
+      {!f.root.cell && !special ? <Note style={{ paddingHorizontal: 4 }}>Створки и деление — нажмите на ячейку рамы на схеме</Note> : null}
     </>
   );
 }
@@ -1182,29 +1163,107 @@ function JointPanel({ doc, index, commit, commitLater, onClose }: {
   doc: Doc; index: number; commit: (c: Command[]) => void; commitLater: (k: string, c: Command[]) => void; onClose: () => void;
 }) {
   const j = asmJoints(doc)[index];
-  const [angle, setAngle] = useState(j?.joint === 'angle' ? j.angle : 135);
-  useEffect(() => { if (j?.joint === 'angle') setAngle(j.angle); }, [j?.joint, j?.angle]);
+  const angled = j?.joint === 'angle' || j?.joint === 'corner_free';
+  const [angle, setAngle] = useState(angled ? j!.angle : 135);
+  useEffect(() => { if (angled) setAngle(j!.angle); }, [angled, j?.angle]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!j) return null;
-  const setA = (a: number) => { setAngle(a); commitLater(`joint${index}`, [{ cmd: 'set_joint', index, joint: 'angle', angle: a }]); };
+  const setA = (a: number) => { setAngle(a); commitLater(`joint${index}`, [{ cmd: 'set_joint', index, joint: j.joint, angle: a }]); };
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 8 }}>
         <Txt w={700} size={20} style={{ flex: 1 }} lines={1}>Стык {index + 1}–{index + 2}</Txt>
         <IconButton name="close" label="Закрыть" onPress={onClose} bg={C.soft} />
       </View>
-      <Seg<string> style={st0.seg} value={j.joint} onChange={(k) => commit([{ cmd: 'set_joint', index, joint: k, ...(k === 'angle' ? { angle } : {}) }])}
+      <Tiles<string> value={j.joint} onChange={(k) => commit([{ cmd: 'set_joint', index, joint: k, ...(k === 'angle' ? { angle } : k === 'corner_free' ? { angle: 90 } : {}) }])}
         items={Object.entries(JOINT_TITLE).map(([value, title]) => ({ value, title }))} />
-      {j.joint === 'angle' ? (
+      {j.joint === 'corner_free' ? <Note style={{ paddingHorizontal: 4 }}>Стекло к стеклу, без стойки — только алюминиевые и раздвижные системы</Note> : null}
+      {angled ? (
         <>
           <Card style={{ marginHorizontal: 0, backgroundColor: C.soft }}>
             <Row first label="Угол" right={<Stepper value={angle} min={90} max={179} step={1} format={(v) => `${v}°`} onChange={setA} />} />
           </Card>
           <Choice<string> value={String(angle)} onChange={(v) => setA(Number(v))}
             items={[90, 120, 135, 150, 154, 160].map((a) => ({ value: String(a), title: `${a}°` }))} />
-          <Note style={{ paddingHorizontal: 4 }}>90° — угловое окно, 91–179° — эркер</Note>
+          {j.joint === 'angle' ? <Note style={{ paddingHorizontal: 4 }}>90° — угловое окно, 91–179° — эркер</Note> : null}
         </>
       ) : j.joint === 'post' ? <Note style={{ paddingHorizontal: 4 }}>Несущая стойка между рамами</Note>
         : <Note style={{ paddingHorizontal: 4 }}>Соединитель 180° — рамы в одну линию</Note>}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- раздвижные и гильотина (§11): плитки параметров
+const SL_KIND_TITLE: Record<string, string> = { window: 'Окно', door: 'Дверь', panoramic: 'Панорамная' };
+const SL_THR_TITLE: Record<string, string> = { standard: 'Обычный', low: 'Низкий', flush: 'В уровень пола' };
+const GL_DRIVE_TITLE: Record<string, string> = { manual: 'Ручной', electric: 'Электро', remote: 'С пультом' };
+const GL_GLASS_TITLE: Record<string, string> = { g8t: '8 закалённое', g10t: '10 закалённое', g4t_14_4t: 'Стеклопакет' };
+const frameAt = (doc: Doc, path: string): Frame | undefined => {
+  const { frame } = splitPath(path);
+  return frame === null ? doc.frame : asmFrames(doc)[frame];
+};
+const nums = (list: number[], cur: number) => [...new Set([...list, cur])].sort((a, b) => a - b);
+
+/** Раздвижная (§11.1): полотна, направляющие, подвижные (плитка на каждое полотно), вид, порог. path — '' или «A<i>/». */
+function SlidingTiles({ doc, path, commit }: { doc: Doc; path: string; commit: (c: Command[]) => void }) {
+  const f = frameAt(doc, path);
+  const sp = f ? slidingSpec(f) : null;
+  if (!f || !sp) return null;
+  const set = (p: Partial<Sliding>) => commit([{ cmd: 'set_sliding', ...(path ? { path } : {}), ...p }]);
+  const door = sp.kind !== 'window';
+  return (
+    <>
+      <Lbl>Полотен</Lbl>
+      <Tiles<string> value={String(sp.n)} onChange={(v) => set({ leaves: Number(v) })}
+        items={nums([2, 3, 4, 6], sp.n).map((n) => ({ value: String(n), title: String(n) }))} />
+      <Lbl>Направляющих</Lbl>
+      <Tiles<string> value={String(sp.rails)} onChange={(v) => set({ rails: Number(v) })}
+        items={[{ value: '2', title: '2', sub: 'полотна парами' }, { value: '3', title: '3', sub: 'каждому своя' }]} />
+      <Lbl>Подвижные полотна</Lbl>
+      <Tiles<string> cols={sp.n % 3 === 0 ? 3 : 2} value={null} on={(v) => sp.moving[Number(v)]}
+        onChange={(v) => set({ moving: sp.moving.map((m, i) => (i === Number(v) ? !m : m)) })}
+        items={sp.moving.map((m, i) => ({ value: String(i), title: `Полотно ${i + 1}`, sub: m ? 'подвижное' : 'глухое' }))} />
+      <Lbl>Вид</Lbl>
+      <Tiles<string> cols={3} value={sp.kind} onChange={(v) => set({ kind: v as Sliding['kind'] })}
+        items={Object.entries(SL_KIND_TITLE).map(([value, title]) => ({ value, title }))} />
+      {door ? (
+        <>
+          <Lbl>Порог</Lbl>
+          <Tiles<string> cols={3} value={sp.threshold} onChange={(v) => set({ threshold: v as Sliding['threshold'] })}
+            items={Object.entries(SL_THR_TITLE).map(([value, title]) => ({ value, title }))} />
+        </>
+      ) : null}
+      <Note style={{ paddingHorizontal: 4 }}>{`Полотно ${num(Math.round(sp.lw))} мм · перехлёст ${sp.overlap} мм · тап по полотну на схеме — подвижное / глухое`}</Note>
+    </>
+  );
+}
+
+/** Гильотина (§11.3): модули, полотна, сколько поднимаются, привод, стекло, стойки. */
+function GuillotineTiles({ doc, path, commit }: { doc: Doc; path: string; commit: (c: Command[]) => void }) {
+  const f = frameAt(doc, path);
+  const g = f ? guillotineSpec(f) : null;
+  if (!f || !g) return null;
+  const set = (p: Partial<Guillotine>) => commit([{ cmd: 'set_guillotine', ...(path ? { path } : {}), ...p }]);
+  const up = Array.from({ length: g.panels - 1 }, (_, i) => i + 1);
+  return (
+    <>
+      <Lbl>Модулей</Lbl>
+      <Tiles<string> cols={3} value={String(g.modules)} onChange={(v) => set({ modules: Number(v) })}
+        items={nums([1, 2, 3, 4, 5, 6], g.modules).map((n) => ({ value: String(n), title: String(n), sub: `по ${num(Math.round(f.w / n))}` }))} />
+      <Lbl>Полотен в модуле</Lbl>
+      <Tiles<string> cols={3} value={String(g.panels)} onChange={(v) => set({ panels: Number(v) })}
+        items={nums([2, 3, 4], g.panels).map((n) => ({ value: String(n), title: String(n) }))} />
+      <Lbl>Поднимаются</Lbl>
+      <Tiles<string> cols={up.length >= 3 ? 3 : 2} value={String(g.moving)} onChange={(v) => set({ moving: Number(v) })}
+        items={up.map((n) => ({ value: String(n), title: `${n} нижн.`, sub: n === g.panels - 1 ? 'все, кроме верхнего' : undefined }))} />
+      <Lbl>Привод</Lbl>
+      <Tiles<string> cols={3} value={g.drive} onChange={(v) => set({ drive: v as Guillotine['drive'] })}
+        items={Object.entries(GL_DRIVE_TITLE).map(([value, title]) => ({ value, title }))} />
+      <Lbl>Стекло</Lbl>
+      <Tiles<string> cols={3} value={g.glass} onChange={(v) => set({ glass: v as Guillotine['glass'] })}
+        items={Object.entries(GL_GLASS_TITLE).map(([value, title]) => ({ value, title }))} />
+      <Lbl>Стойки</Lbl>
+      <Tiles<string> value={g.posts} onChange={(v) => set({ posts: v as Guillotine['posts'] })}
+        items={[{ value: 'between', title: 'Между модулями' }, { value: 'none', title: 'Без стоек' }]} />
     </>
   );
 }
@@ -1425,12 +1484,15 @@ function LoggiaSheet({ doc, onClose, onSave }: { doc: Doc; onClose: () => void; 
 const TPL_CATS: { value: string; title: string }[] = [
   { value: 'window', title: 'Окна' }, { value: 'door', title: 'Двери' }, { value: 'balcony', title: 'Балкон' }, { value: 'sliding', title: 'Раздвижные' },
   { value: 'shaped', title: 'Фигурные' }, { value: 'muntins', title: 'С раскладкой' }, { value: 'corner', title: 'Угловые и эркеры' }, { value: 'facade', title: 'Витражи' },
+  { value: 'guillotine', title: 'Терраса / гильотина' },
 ];
 function guessCategory(d: Doc): string {
+  if (d.kind === 'guillotine' || d.frame.root.guillotine || (isAssembly(d) && asmFrames(d).some((f) => f.root.guillotine))) return 'guillotine';
+  if (d.kind === 'sliding' || d.frame.root.sliding) return 'sliding';
   if (isAssembly(d)) return 'corner';
   if (frameShape(d.frame).shape !== 'rect') return 'shaped';
   if (layout(d).cells.some((c) => c.cell.muntins)) return 'muntins';
-  return d.kind === 'door' ? 'door' : d.kind === 'balcony_block' ? 'balcony' : d.kind === 'sliding' ? 'sliding' : 'window';
+  return d.kind === 'door' ? 'door' : d.kind === 'balcony_block' ? 'balcony' : 'window';
 }
 function SaveTemplateSheet({ doc, onClose, onSaved }: { doc: Doc; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(doc.room ? `${doc.room} ${doc.frame.w}×${doc.frame.h}` : '');

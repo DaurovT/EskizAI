@@ -137,18 +137,24 @@ for x in items:
 # Не из Romchi: своя серия «Eskiz ДЕМО», цвет «—», цена только в demo_price_sum (боевой цех — P.1, пока не внесёт свою).
 # variant (кремовый, матовое…) — в колонке type_ru. unit pct — наценка в % к цене белого профиля.
 DEMO_SYS='eskiz__demo_roles'
+# ДЕМО-системы (shapes_contract.md §11): колонка system в demo_roles.csv; пусто — общая серия новых ролей.
+# Новые строки дописываются ТОЛЬКО в конец файла: item_id — по порядку строк, база (seed_import) их не перезаписывает.
+DEMO_SYSTEMS={DEMO_SYS:dict(series='Новые роли (ДЕМО)',material_class='demo',color='—'),
+              'eskiz__sliding_demo':dict(series='Раздвижная алюминиевая (ДЕМО)',material_class='alu_cold',color='Белый')}
+DEMO_USABLE={'eskiz__sliding_demo'}       # считается без рамы/створки/импоста системы — раздвижные и гильотина (§11)
 import os
 if os.path.exists('demo_roles.csv'):
     for r in csv.DictReader(open('demo_roles.csv',encoding='utf-8')):
         i=len(items)+1
-        items.append(dict(item_id=f'it{i:05d}',brand='Eskiz ДЕМО',material_class='demo',system_code=DEMO_SYS,
-            series='Новые роли (ДЕМО)',price_updated='',color='—',pos=str(i),type_ru=r['variant'],article=r['article'],
+        sc=r.get('system') or DEMO_SYS; ds=DEMO_SYSTEMS[sc]
+        items.append(dict(item_id=f'it{i:05d}',brand='Eskiz ДЕМО',material_class=ds['material_class'],system_code=sc,
+            series=ds['series'],price_updated='',color=ds['color'],pos=str(i),type_ru=r['variant'],article=r['article'],
             role=r['role'],unit=r['unit'],unit_confirmed='0',pack_kg='',pack_m='',sill_depth_cm='',price_sum='',
             has_price='0',series_incomplete='0',needs_review='0',source='eskiz_demo_2026-11',
             demo_price_sum=r['demo_price_sum'],demo_price_basis=r['note']))
-        st=sys_stats.setdefault(DEMO_SYS,dict(system_code=DEMO_SYS,brand='Eskiz ДЕМО',series='Новые роли (ДЕМО)',
-            material_class='demo',colors=set(),roles=set(),items=0,no_price=0,updated='',incomplete='0'))
-        st['colors'].add('—'); st['roles'].add(r['role']); st['items']+=1; st['no_price']+=1
+        st=sys_stats.setdefault(sc,dict(system_code=sc,brand='Eskiz ДЕМО',series=ds['series'],
+            material_class=ds['material_class'],colors=set(),roles=set(),items=0,no_price=0,updated='',incomplete='0'))
+        st['colors'].add(ds['color']); st['roles'].add(r['role']); st['items']+=1; st['no_price']+=1
 
 with open('catalog_items.csv','w',newline='') as f:
     w=csv.DictWriter(f,fieldnames=list(items[0].keys())); w.writeheader(); w.writerows(items)
@@ -176,7 +182,7 @@ with open('systems.csv','w',newline='') as f:
     w=csv.writer(f); w.writerow(['system_code','brand','series','material_class','passport_class','colors','has_frame','has_sash','has_mullion','has_door_profiles','items','items_without_price','price_updated','series_incomplete','usable_for_calc','fitting_groove'])
     for st in sys_stats.values():
         r_=st['roles']; pc=pclass(st)
-        usable = pc!='' and {'frame','sash','mullion'}<=r_
+        usable = pc!='' and ({'frame','sash','mullion'}<=r_ or st['system_code'] in DEMO_USABLE)
         w.writerow([st['system_code'],st['brand'],st['series'],st['material_class'],pc,'|'.join(sorted(c for c in st['colors'] if c!='—')),
             int('frame' in r_),int('sash' in r_),int('mullion' in r_),int(bool(r_&{'door_frame','door_sash','door_mullion'})),
             st['items'],st['no_price'],st['updated'],st['incomplete'],int(usable),groove(st) if pc else ''])

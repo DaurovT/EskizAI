@@ -264,7 +264,7 @@ def apply_kit(order_id: str, body: KitApply, cx: Ctx = Depends(ctx)):
             return JSONResponse(status_code=409, content={"conflict": True, "positions": conflicts})
         out = []
         for p in rows:
-            doc = commands.set_setup(p["doc"], **kit["setup"])
+            doc = commands.apply_kit(p["doc"], kit["setup"])
             row = store.put_position(c, cid, order_id, str(p["id"]), doc, p["rev"], summary=summary(doc, cx.company), user_id=_who(cx))
             out.append(_pos_out(c, row, cx.company, cx.role, names))
         c.execute("UPDATE orders SET kit_name = %s WHERE id = %s", (body.kit_name, order_id))
@@ -306,7 +306,7 @@ def order_calc(order_id: str, kit: str | None = None, cx: Ctx = Depends(ctx)):
         docs = [p["doc"] for p in store.positions(c, order_id)]
         ex = store.extras(c, order_id)
     if kitd:
-        docs = [commands.set_setup(d, **kitd["setup"]) for d in docs]
+        docs = [commands.apply_kit(d, kitd["setup"]) for d in docs]
     groups: dict = defaultdict(lambda: {"qty": 0.0, "cost": 0.0, "lines": defaultdict(float), "status": set(), "unit": ""})
     auto, missing, rows_for_cut = set(), [], []
     for i, d in enumerate(docs):
@@ -471,7 +471,7 @@ def _variants(co, docs: list[dict], kits: list[dict], discount: float, extras: l
     for k in kits:
         rows, goods, works, demo, blocking = [], 0, 0, False, []
         for d in docs:
-            dk = commands.set_setup(d, **k["setup"]) if k["setup"] else d
+            dk = commands.apply_kit(d, k["setup"]) if k["setup"] else d
             r = calc(dk, cat, co, role="owner")
             p = r.get("price") or {}
             demo = demo or p.get("demo", False)

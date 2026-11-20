@@ -4,6 +4,9 @@
  * Координаты: метры, центр изделия в начале, y вверх, вид изнутри — со стороны +z (снаружи — −z).
  * Раскладка ячеек и отступы — как в 2D-схеме (Schema.tsx): рама 64, импост по 42 от оси, створка накладывается на 8.
  * Фигурная ячейка = её прямоугольник ∩ контур рамы; многоугольники считаем в мм раскладки (y вниз).
+ * Раздел 11: раздвижные — полотна на своих направляющих (своя глубина), подвижные уезжают вбок; гильотинное окно —
+ * нижнее полотно едет вверх, tilt_clean откидывается внутрь; гильотина — подвижные полотна поднимаются за верхнее;
+ * угол без стойки (corner_free) — стекло к стеклу, у раздвижной рамы на этой стороне нет бокового профиля.
  */
 import {
   BoxGeometry, BufferGeometry, Color, DoubleSide, EdgesGeometry, ExtrudeGeometry, Group, LineBasicMaterial, LineSegments, Mesh,
@@ -13,7 +16,7 @@ import {
 import { forgedDecor } from '@/lib/decorPattern';
 
 import type { Cell, Doc, Node } from '@/api/types';
-import { layout, type Layout } from '@/lib/tree';
+import { guillotineSpec, layout, slidingSpec, type Layout } from '@/lib/tree';
 
 const M = 0.001; // мм → м
 const FRAME = 64; // видимая ширина рамы
@@ -33,6 +36,7 @@ const TURN_H = rad(20); // поворот вокруг горизонтальн�
 const TILT = rad(12); // откидывание вокруг нижней кромки
 const TOP_HUNG = rad(15); // подвесное — наружу вокруг верхней кромки
 const PIVOT = rad(25); // среднеподвесное — вокруг горизонтальной оси посередине
+const TILT_CLEAN = rad(30); // гильотинное: откидывание полотна внутрь для мытья
 
 // ---------- поля договора, которых ещё может не быть в types.ts — читаем без опоры на типы ----------
 type Muntins = { kind?: string; v?: number; h?: number; width_mm?: number; pattern?: string; color?: string };
@@ -47,9 +51,11 @@ type Side = Layout['cells'][0]['sides']['l'];
 /** Створка для анимации: pivot стоит на оси открывания, anim крутится/едет, внутри — тело створки. */
 export type SashRig = {
   anim: Group;
-  mode: 'rotX' | 'rotY' | 'slide';
-  /** угол при t = 1 (рад) или сдвиг по x (м) для slide */
+  mode: 'rotX' | 'rotY' | 'slide' | 'slideY';
+  /** угол при t = 1 (рад) или сдвиг (м): по x для slide, по y (вверх +) для slideY */
   amount: number;
+  /** slide: уход по глубине (м) — откатная створка во внутренний полоз; у полотна на своей направляющей 0 */
+  dz?: number;
   /** поворотно-откидная: второе положение — откидывание вокруг нижней кромки */
   tiltAnim?: Group;
   tiltAmount?: number;
@@ -65,18 +71,22 @@ export type WindowModel = {
   dispose(): void;
 };
 
-/** Открывание: tTurn — поворот (и все прочие виды), tTilt — откидывание поворотно-откидных; 0 — закрыто, 1 — открыто. */
+/** Открывание: tTurn — поворот / сдвиг / подъём (все виды), tTilt — откидывание поворотно-откидных и гильотинных
+ * с tilt_clean; 0 — закрыто, 1 — открыто. */
 export function applyOpen(model: WindowModel, tTurn: number, tTilt = 0) {
   for (const s of model.sashes) {
     s.anim.rotation.set(0, 0, 0);
     s.anim.position.set(0, 0, 0);
+    // откидная без второго узла открывается и «поворотом», и «откидыванием»
+    const t = s.mode === 'rotX' && !s.tiltAnim ? Math.max(tTurn, tTilt) : tTurn;
+    if (s.mode === 'rotX') s.anim.rotation.x = s.amount * t;
+    else if (s.mode === 'rotY') s.anim.rotation.y = s.amount * t;
+    else if (s.mode === 'slideY') s.anim.position.y = s.amount * t;
+    else { s.anim.position.x = s.amount * t; s.anim.position.z = (s.dz ?? 0.03) * t; } // откатная — во внутренний полоз
     if (s.tiltAnim) {
       s.tiltAnim.rotation.set(0, 0, 0);
-      s.anim.rotation.y = s.amount * tTurn;
       s.tiltAnim.rotation.x = (s.tiltAmount ?? 0) * tTilt;
-    } else if (s.mode === 'rotX') s.anim.rotation.x = s.amount * Math.max(tTurn, tTilt);
-    else if (s.mode === 'rotY') s.anim.rotation.y = s.amount * tTurn;
-    else { s.anim.position.x = s.amount * tTurn; s.anim.position.z = 0.03 * tTurn; } // откатная — во внутренний полоз
+    }
     if (s.arm) {
       // ножницы: от точки на раме (над верхом створки) к верху наклонённой створки
       const th = s.tiltAnim ? (s.tiltAmount ?? 0) * tTilt : s.amount * Math.max(tTurn, tTilt);
@@ -291,8 +301,122 @@ function glassFactory(all: Material[]) {
 
 const STAINED = ['#D2574A', '#3F86C6', '#EFC64A', '#4FA66B']; // те же цвета, что у витража на схеме (Schema.tsx)
 
+/** Стороны рамы без бокового профиля: угол без стойки (corner_free) — стекло к стеклу. */
+type OpenSides = { l?: boolean; r?: boolean };
+
+/** Брусок по раскладке (мм, y вниз) в группе с центром рамы W×H; возвращает меш. */
+function boxer(env: Env, W: number, H: number) {
+  return (parent: Group, mat: Material, x0: number, y0: number, x1: number, y1: number, z0: number, z1: number): Mesh | null => {
+    const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0), d = Math.abs(z1 - z0);
+    if (w < 0.5 || h < 0.5 || d < 0.5) return null;
+    const m = new Mesh(env.unit, mat);
+    m.scale.set(w * M, h * M, d * M);
+    m.position.set(((x0 + x1) / 2 - W / 2) * M, (H / 2 - (y0 + y1) / 2) * M, ((z0 + z1) / 2) * M);
+    parent.add(m);
+    return m;
+  };
+}
+
+/** Полотно-рамка (раздвижное, гильотина): профиль face по периметру, стекло посередине толщины. */
+function panelBody(env: Env, bx: ReturnType<typeof boxer>, parent: Group, x0: number, y0: number, x1: number, y1: number, z0: number, z1: number, face: number) {
+  const zc = (z0 + z1) / 2;
+  const two = (a: number, b: number, c: number, d: number) => { bx(parent, env.mats.out, a, b, c, d, z0, zc); bx(parent, env.mats.in, a, b, c, d, zc, z1); };
+  two(x0, y0, x1, y0 + face); two(x0, y1 - face, x1, y1);
+  two(x0, y0 + face, x0 + face, y1 - face); two(x1 - face, y0 + face, x1, y1 - face);
+  const g = bx(parent, env.glass(undefined), x0 + face - GLASS_BITE, y0 + face - GLASS_BITE, x1 - face + GLASS_BITE, y1 - face + GLASS_BITE, zc - 1, zc + 1);
+  if (g) g.renderOrder = 2;
+}
+
+/** Раздвижная (§11.1): рама с направляющими, полотна на своей глубине; подвижные едут вбок на ширину полотна без перехлёста. */
+function buildSliding(f: FrameX, env: Env, open: OpenSides): Group {
+  const W = Math.max(f.w || 0, 200), H = Math.max(f.h || 0, 200);
+  const frame = { ...f, w: W, h: H } as Doc['frame'];
+  const sp = slidingSpec(frame)!;
+  const L = layout({ kind: 'sliding', frame });
+  const root = new Group();
+  const bx = boxer(env, W, H);
+  const { mats } = env;
+  const pano = sp.kind === 'panoramic';
+  const FR = pano ? 48 : FRAME;
+  const door = sp.kind !== 'window';
+  const BOT = door && sp.threshold === 'low' ? 30 : door && sp.threshold === 'flush' ? 12 : FR;
+  const LF = pano ? 46 : 70, LT = 30, PITCH = 38;
+  const Ds = Math.max(env.D, sp.rails * PITCH + 20);
+  const two = (x0: number, y0: number, x1: number, y1: number) => { bx(root, mats.out, x0, y0, x1, y1, -Ds / 2, 0); bx(root, mats.in, x0, y0, x1, y1, 0, Ds / 2); };
+  two(0, 0, W, FR);
+  two(0, H - BOT, W, H);
+  if (!open.l) two(0, FR, FR, H - BOT);
+  if (!open.r) two(W - FR, FR, W, H - BOT);
+  const zr = (r: number) => -Ds / 2 + 10 + PITCH / 2 + r * PITCH;     // ось направляющей r (0 — наружная)
+  for (let r = 0; r < sp.rails; r++) bx(root, mats.handle, open.l ? 0 : FR, H - BOT - 8, open.r ? W : W - FR, H - BOT, zr(r) - 3, zr(r) + 3);
+  for (const c of L.cells) {
+    const lf = c.leaf!;
+    const x0 = lf.index === 0 ? (open.l ? 0 : FR - 8) : c.box.x0;
+    const x1 = lf.index === sp.n - 1 ? (open.r ? W : W - FR + 8) : c.box.x1;
+    const y0 = FR - 8, y1 = Math.min(H, H - BOT + 8);
+    const z0 = zr(lf.rail) - LT / 2, z1 = zr(lf.rail) + LT / 2;
+    const anim = new Group();
+    root.add(anim);
+    panelBody(env, bx, anim, x0, y0, x1, y1, z0, z1, LF);
+    if (lf.moving) {
+      // ручка-скоба на стойке против хода, с внутренней стороны полотна
+      const hx = lf.dir > 0 ? x0 + LF / 2 : x1 - LF / 2, my = (y0 + y1) / 2;
+      bx(anim, mats.handle, hx - 8, my - 90, hx + 8, my + 90, z1, z1 + 14);
+      env.sashes.push({ anim, mode: 'slide', amount: lf.dir * (sp.lw - sp.overlap) * 0.92 * M, dz: 0 });
+    }
+  }
+  return root;
+}
+
+/** Гильотина (§11.3): верх и низ модулей, стойки, полотна друг над другом; подвижные поднимаются за верхнее (оно ближе к комнате). */
+function buildGuillotine(f: FrameX, env: Env, open: OpenSides): Group {
+  const W = Math.max(f.w || 0, 200), H = Math.max(f.h || 0, 200);
+  const frame = { ...f, w: W, h: H } as Doc['frame'];
+  const g = guillotineSpec(frame)!;
+  const L = layout({ kind: 'guillotine', frame });
+  const root = new Group();
+  const bx = boxer(env, W, H);
+  const { mats } = env;
+  const TR = 110, BR = 70, PW = 90, SIDE = 50, PF = 40, PT = 24, PITCH = 30;
+  const Dg = Math.max(env.D, g.panels * PITCH + 30);
+  const mw = W / g.modules, ph = (H - TR - BR) / g.panels;
+  const between = g.posts === 'between';
+  const two = (x0: number, y0: number, x1: number, y1: number, z0 = -Dg / 2, z1 = Dg / 2) => {
+    bx(root, mats.out, x0, y0, x1, y1, z0, (z0 + z1) / 2); bx(root, mats.in, x0, y0, x1, y1, (z0 + z1) / 2, z1);
+  };
+  two(0, 0, W, TR);
+  two(0, H - BR, W, H);
+  const xs = Array.from({ length: g.modules + 1 }, (_, m) => m * mw);
+  const edge = (m: number) => (m === 0 ? !open.l : m === g.modules ? !open.r : true);
+  const half = (m: number) => (!edge(m) ? 0 : m === 0 || m === g.modules ? (between ? PW : SIDE) : between ? PW / 2 : 4);
+  xs.forEach((x, m) => {
+    if (!edge(m)) return;
+    const w = m === 0 || m === g.modules ? half(m) : between ? PW : 8;
+    const a = m === 0 ? 0 : m === g.modules ? W - w : x - w / 2;
+    two(a, TR, a + w, H - BR, -Dg / 2 - (between ? 10 : 0), Dg / 2 + (between ? 10 : 0));
+  });
+  if (g.drive !== 'manual') for (let m = 0; m < g.modules; m++) {
+    const cx = (xs[m] + xs[m + 1]) / 2;
+    bx(root, env.dark, cx - 140, TR * 0.25, cx + 140, TR * 0.85, Dg / 2, Dg / 2 + 36);      // короб привода
+  }
+  const zp = (p: number) => Dg / 2 - 15 - PITCH / 2 - p * PITCH;   // верхнее (p = 0) — ближе к комнате, ниже — наружу
+  for (const c of L.cells) {
+    const { module: m, panel: p, moving } = c.gpanel!;
+    const x0 = xs[m] + half(m), x1 = xs[m + 1] - half(m + 1);
+    const y0 = TR + p * ph, y1 = TR + (p + 1) * ph;
+    if (x1 - x0 < 2 * PF + 10) continue;
+    const anim = new Group();
+    root.add(anim);
+    panelBody(env, bx, anim, x0, y0 + 2, x1, y1 - 2, zp(p) - PT / 2, zp(p) + PT / 2, PF);
+    if (moving) env.sashes.push({ anim, mode: 'slideY', amount: p * ph * M });    // встаёт на место верхнего
+  }
+  return root;
+}
+
 /** Одна рама (центр в начале координат) → Group. */
-function buildFrame(f: FrameX, env: Env): Group {
+function buildFrame(f: FrameX, env: Env, open: OpenSides = {}): Group {
+  if (f.root?.sliding) return buildSliding(f, env, open);
+  if (f.root?.guillotine) return buildGuillotine(f, env, open);
   const W = Math.max(f.w || 0, 200), H = Math.max(f.h || 0, 200);
   const frame: FrameX = { ...f, w: W, h: H, root: f.root ?? { cell: { type: 'fixed' } } };
   const { D, unit, geos, mats } = env;
@@ -437,7 +561,7 @@ function buildFrame(f: FrameX, env: Env): Group {
   // ---------- ячейки ----------
   const mi = (s: Side) => (s === 'mullion' ? MULLION_HALF : 0);
   const solidSide = (s: Side) => s === 'frame' || s === 'mullion';
-  for (const { cell, box: b, sides } of L.cells) {
+  for (const { cell, box: b, sides, vslide } of L.cells) {
     const cr: Rect = { x0: b.x0 + mi(sides.l), y0: b.y0 + mi(sides.t), x1: b.x1 - mi(sides.r), y1: b.y1 - mi(sides.b) };
     if (cr.x1 - cr.x0 < 1 || cr.y1 - cr.y0 < 1) continue;
     const light = clipRect(inner, cr);
@@ -459,8 +583,10 @@ function buildFrame(f: FrameX, env: Env): Group {
       continue;
     }
 
-    // створка: контур = свет + нахлёст на раму/импост (у штульпа — без нахлёста)
-    const S = offset(light, (i) => (solidEdge(i) ? -SASH_OVERLAP : 0));
+    // створка: контур = свет + нахлёст на раму/импост (у штульпа — без нахлёста; гильотинные заходят друг за друга на 20)
+    const op = String(cell.open ?? 'turn');
+    const vs = op === 'vslide';
+    const S = offset(light, (i) => (solidEdge(i) ? -SASH_OVERLAP : vs ? -20 : 0));
     const sb = bbox(S);
     const door = cell.type === 'door_sash';
     const face = (i: number, k: number) => {
@@ -470,9 +596,10 @@ function buildFrame(f: FrameX, env: Env): Group {
     };
     let hole = offset(S, (i) => face(i, 1));
     if (!valid(hole, S)) hole = offset(S, (i) => face(i, 0.4));
-    const zs1 = D / 2 + SASH_PROUD, zs0 = zs1 - D, zsm = (zs0 + zs1) / 2;
+    // гильотинное: верхнее полотно в наружной плоскости, нижнее — во внутренней, чтобы проходить друг мимо друга
+    const zs1 = vs && vslide === 'top' ? -D / 2 + 2 + D * 0.45 : D / 2 + SASH_PROUD;
+    const zs0 = vs ? zs1 - D * 0.45 : zs1 - D, zsm = (zs0 + zs1) / 2;
 
-    const op = String(cell.open ?? 'turn');
     const hinge = String(cell.hinge ?? (op === 'top_hung' ? 'top' : 'left'));
     let px = (sb.x0 + sb.x1) / 2, py = (sb.y0 + sb.y1) / 2, pz = zs1;
     let mode: SashRig['mode'] = 'rotY', amount = 0;
@@ -480,6 +607,11 @@ function buildFrame(f: FrameX, env: Env): Group {
     else if (op === 'top_hung') { py = sb.y0; pz = zs0; mode = 'rotX'; amount = TOP_HUNG; }
     else if (op === 'pivot') { pz = zsm; mode = 'rotX'; amount = PIVOT; }
     else if (op === 'sliding') { mode = 'slide'; amount = ((hinge === 'right' ? 1 : -1) * (sb.x1 - sb.x0) * M) / 3; }
+    else if (vs) {
+      // подвижное нижнее — вверх на половину, подвижное верхнее — вниз на треть
+      mode = 'slideY';
+      amount = cell.slide === 'fixed' ? 0 : (vslide === 'top' ? -0.3 : 0.5) * (sb.y1 - sb.y0) * M;
+    }
     else if (hinge === 'left') { px = sb.x0; amount = -TURN; }
     else if (hinge === 'right') { px = sb.x1; amount = TURN; }
     else if (hinge === 'top') { py = sb.y0; mode = 'rotX'; amount = -TURN_H; }
@@ -497,12 +629,13 @@ function buildFrame(f: FrameX, env: Env): Group {
     const body = new Group();
     body.position.set(-X(px), -Y(py), -pz * M);
     pivot.add(anim); anim.add(body);
-    if (op === 'tilt_turn' && mode === 'rotY') {
-      // откидывание: вся створка (с узлом поворота) наклоняется вокруг нижней кромки внутрь
+    if ((op === 'tilt_turn' && mode === 'rotY') || (vs && cell.tilt_clean)) {
+      // откидывание: вся створка (с узлом поворота / подъёма) наклоняется вокруг нижней кромки внутрь
       const tp = new Group(); tp.position.set(X((sb.x0 + sb.x1) / 2), Y(sb.y1), zs1 * M);
       const tAnim = new Group(); const wrap = new Group(); wrap.position.set(-tp.position.x, -tp.position.y, -tp.position.z);
       tp.add(tAnim); tAnim.add(wrap); wrap.add(pivot); root.add(tp);
-      env.sashes.push({ anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT, arm: makeArm(tp) });
+      env.sashes.push(vs ? { anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT_CLEAN }
+        : { anim, mode, amount, tiltAnim: tAnim, tiltAmount: TILT, arm: makeArm(tp) });
     } else {
       root.add(pivot);
       env.sashes.push({ anim, mode, amount, ...(op === 'tilt' ? { arm: makeArm(pivot) } : {}) });
@@ -513,8 +646,13 @@ function buildFrame(f: FrameX, env: Env): Group {
     fill(body, cell, offset(hole, () => -GLASS_BITE), zsm);
     cellMuntins(body, cell, hole, zsm);
 
+    // гильотинное: замок на встречной планке — сверху подвижного нижнего полотна
+    if (vs && vslide !== 'top' && cell.slide !== 'fixed' && cell.handle !== false) {
+      const cx = (sb.x0 + sb.x1) / 2;
+      box(body, mats.handle, cx - 45, sb.y0 + 6, cx + 45, sb.y0 + 26, zs1, zs1 + 12);
+    }
     // ручка — у стороны против петель, по середине; откидная и среднеподвесная — сверху, подвесная — снизу
-    if (cell.handle !== false) {
+    if (cell.handle !== false && !vs) {
       const hb = bbox(hole);
       const side = op === 'tilt' || op === 'pivot' ? 'top' : op === 'top_hung' ? 'bottom'
         : hinge === 'left' ? 'right' : hinge === 'right' ? 'left' : hinge === 'top' ? 'bottom' : 'top';
@@ -534,7 +672,7 @@ function buildFrame(f: FrameX, env: Env): Group {
     }
 
     // петли (накладки) — на стороне петель, по две: у поворотных сбоку сверху/снизу, у откидной — снизу, у подвесной — сверху
-    if (op !== 'pivot' && op !== 'sliding' && op !== 'psk' && op !== 'hs' && op !== 'folding') {
+    if (op !== 'pivot' && op !== 'sliding' && op !== 'psk' && op !== 'hs' && op !== 'folding' && !vs) {
       const hs = op === 'tilt' ? 'bottom' : op === 'top_hung' ? 'top' : hinge;
       const L = 90, W = 22, z0 = zs1 - 2, z1 = zs1 + 14;
       const ends: [number, number][] = hs === 'left' || hs === 'right'
@@ -598,7 +736,7 @@ function buildAssembly(items: AsmItem[], hDefault: number, env: Env): Group {
     frames.push({ f });
   }
   const turn = (j?: AsmItem) => {
-    if (!j || j.joint !== 'angle') return 0;
+    if (!j || (j.joint !== 'angle' && j.joint !== 'corner_free')) return 0;
     const a = typeof j.angle === 'number' ? Math.min(180, Math.max(90, j.angle)) : 135;
     return rad(180 - a);
   };
@@ -626,7 +764,9 @@ function buildAssembly(items: AsmItem[], hDefault: number, env: Env): Group {
     const g = new Group();
     g.position.set(px, 0, pz);
     g.rotation.y = psi;
-    const fr = buildFrame(f, env);
+    // угол без стойки: у рамы со стороны такого стыка нет бокового профиля (стекло к стеклу)
+    const open: OpenSides = { l: frames[i - 1]?.joint?.joint === 'corner_free', r: joint?.joint === 'corner_free' };
+    const fr = buildFrame(f, env, open);
     fr.position.set((w / 2) * M, (yBase + h / 2) * M, 0);
     g.add(fr);
     asm.add(g);
@@ -640,6 +780,17 @@ function buildAssembly(items: AsmItem[], hDefault: number, env: Env): Group {
       return;
     }
     const d = turn(joint);
+    if (joint.joint === 'corner_free') {
+      // стекло к стеклу: только тёмный шов герметика по биссектрисе
+      const g2 = new Group();
+      g2.position.set(px, (yBase + hj / 2) * M, pz);
+      g2.rotation.y = psi - d / 2;
+      const m = new Mesh(env.unit, env.dark);
+      m.scale.set(0.012, hj * M, D * 0.5 * M);
+      g2.add(m); asm.add(g2);
+      psi -= d;
+      return;
+    }
     // соединитель по биссектрисе стыка: перекрывает щель снаружи
     post(px, pz, psi - d / 2, D * Math.tan(d / 2) + 30, D, hj);
     psi -= d;

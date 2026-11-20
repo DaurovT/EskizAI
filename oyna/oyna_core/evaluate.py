@@ -8,7 +8,7 @@ from .data import Catalog, Company
 from .geometry import Geometry, GeometryError, build, sash_weight
 from .glass import Glass, GlassError, parse
 from .model import (assembly_frames, assembly_joints, cell_glass_spec, cell_options, decor, migrate, price_group,
-                    profile_color_id, setup_of, special_root)
+                    profile_color_id, setup_of, special_kind, special_root)
 
 SPECIAL_OPENINGS = {"top_hung": ("fit_top_hung", "Фурнитура подвесного окна (комплект)"),
                     "pivot": ("fit_pivot", "Фурнитура среднеподвесного окна (комплект)"),
@@ -135,9 +135,10 @@ def evaluate(doc: dict, cat: Catalog, company: Company | None = None) -> Eval:
     rules.check_input(ev)
     if ev.stopped:
         return ev
-    if special_root(doc):
-        ev.add("9.7", "раздвижные считаются после MVP (PRD 7.12)")
-        ev.stopped = True
+    sp = special_root(doc)
+    if sp:                                               # раздвижная / гильотина (§11): своя раскладка полотен
+        from .sliding import evaluate_special
+        evaluate_special(ev, sp)
         return ev
     try:
         ev.geo = build(doc, ev.passport)
@@ -162,7 +163,9 @@ def evaluate(doc: dict, cat: Catalog, company: Company | None = None) -> Eval:
             op = cg.cell.get("open") or "turn"
             if "folding" in cg.sides.values():               # створка гармошки — фурнитура гармошки
                 op = "folding"
-            if op in ("folding", "psk", "hs") or op in SPECIAL_OPENINGS and not (cg.cell.get("type") == "door_sash" and ev.kind == "door"):
+            if op == "vslide":                               # гильотинное окно (§11.2): балансиры, замок, откидывание
+                ev.fittings[cg.path] = _vslide_selection(cat, s["fittings"], cg)
+            elif op in ("folding", "psk", "hs") or op in SPECIAL_OPENINGS and not (cg.cell.get("type") == "door_sash" and ev.kind == "door"):
                 ev.fittings[cg.path] = _kit_selection(cat, s["fittings"], op, *SPECIAL_OPENINGS[op])
             else:
                 ev.fittings[cg.path] = fit.select(cat, s["fittings"], ev.groove, cg.cell, ev.kind, cg.ffb, cg.ffh,
@@ -175,10 +178,23 @@ def evaluate(doc: dict, cat: Catalog, company: Company | None = None) -> Eval:
     return ev
 
 
-def _kit_part(cat: Catalog, role: str, name: str) -> fit.Part:
+def _kit_part(cat: Catalog, role: str, name: str, qty: float = 1) -> fit.Part:
     it = cat.role_item(role)
-    return fit.Part(role, (it or {}).get("article") or name, 1, 0, (it or {}).get("article", ""), None, role, "",
+    return fit.Part(role, (it or {}).get("article") or name, qty, 0, (it or {}).get("article", ""), None, role, "",
                     "ДЕМО" if it and not it.get("price_sum") else "")
+
+
+def _vslide_selection(cat: Catalog, fitting_set: str, cg) -> fit.Selection:
+    """Полотно гильотинного окна: 2 балансира у подвижного, фиксаторы мытья (tilt_clean), замок — у нижнего полотна."""
+    sel = fit.Selection(fitting_set, "vslide")
+    c = cg.cell
+    if c.get("slide", "moving") == "moving":
+        sel.parts.append(_kit_part(cat, "vs_balance", "Пружинный балансир", 2))
+    if c.get("tilt_clean"):
+        sel.parts.append(_kit_part(cat, "vs_tilt", "Фиксаторы откидывания для мытья"))
+    if cg.sides.get("top") == "vslide":
+        sel.parts.append(_kit_part(cat, "vs_lock", "Замок встречной планки"))
+    return sel
 
 
 def _kit_selection(cat: Catalog, fitting_set: str, opening: str, role: str, name: str) -> fit.Selection:
@@ -190,6 +206,8 @@ def _kit_selection(cat: Catalog, fitting_set: str, opening: str, role: str, name
 
 def joint_role(j: dict) -> str | None:
     kind, ang = j.get("joint"), j.get("angle")
+    if kind == "corner_free":                            # угол без стойки, стекло к стеклу (§11.1)
+        return "conn_corner_free"
     if kind == "straight":
         return "conn_straight"
     if kind == "post":
@@ -223,7 +241,8 @@ def _evaluate_assembly(ev: Eval) -> Eval:
             continue
         pre = f"A{i}/"
         has_door = '"door_sash"' in _dumps(fr.get("root"))
-        sub = {"kind": fr.get("kind") or ("balcony_block" if has_door else "window"), "qty": 1,
+        sub = {"kind": fr.get("kind") or special_kind(fr.get("root")) or ("balcony_block" if has_door else "window"),
+               "qty": 1,
                "frame": {k: v for k, v in fr.items() if k != "kind"}, "setup": doc.get("setup") or {},
                "extras": {"install": False},
                "accepted_warnings": [dict(a, path=a.get("path", "")[len(pre):]) for a in acc
@@ -252,13 +271,18 @@ def _evaluate_assembly(ev: Eval) -> Eval:
         hb = float(b.get("h") or 0) if isinstance(b, dict) else 0.0
         role = joint_role(j)
         ang = j.get("angle")
-        if j.get("joint") == "angle" and not (isinstance(ang, (int, float)) and 90 <= ang <= 179):
+        if j.get("joint") == "corner_free":
+            ang = 90 if ang is None else ang
+            if not ev.material.startswith("alu"):
+                ev.add("9.24", f"стык {k + 1} (A{k}–A{k + 1}): система {ev.setup['system']} — не алюминий",
+                       fix="угол 90° (joint: angle) с соединителем или алюминиевая раздвижная система")
+        if j.get("joint") in ("angle", "corner_free") and not (isinstance(ang, (int, float)) and 90 <= ang <= 179):
             ev.add("9.20", f"стык {k + 1} (A{k}–A{k + 1}): угол {ang!r}° вне 90…179°",
                    fix="угол 180° — прямой соединитель (joint: straight)")
             role = None
         elif role is None:
             ev.add("9.20", f"стык {k + 1} (A{k}–A{k + 1}): неизвестный тип «{j.get('joint')}»",
-                   fix="straight | angle | post")
+                   fix="straight | angle | post | corner_free")
         p21 = cat.rules["9.21"]["params"]["max_diff_mm"]
         if abs(ha - hb) > p21:
             ev.add("9.21", f"стык {k + 1}: высоты A{k} {ha:g} и A{k + 1} {hb:g} мм различаются на {abs(ha - hb):g} мм")

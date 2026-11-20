@@ -22,7 +22,11 @@ ROLES = ["frame", "sash", "mullion", "door_frame", "door_sash", "door_mullion", 
          "sill", "sill_cap", "mosquito_profile", "corner_cleat", "machine", "other",
          # shapes_contract.md §7–8 (ДЕМО-позиции — серия eskiz__demo_roles)
          "fit_shaped", "fit_top_hung", "fit_pivot", "muntin_inner", "muntin_cross", "muntin_overlay", "muntin_decor",
-         "conn_straight", "conn_corner90", "conn_bay", "conn_post", "lamination", "profile_color", "glass_decor"]
+         "conn_straight", "conn_corner90", "conn_bay", "conn_post", "lamination", "profile_color", "glass_decor",
+         # §11: раздвижные, гильотинное окно, гильотина, угол без стойки (ДЕМО — eskiz__sliding_demo, eskiz__demo_roles)
+         "sl_frame", "sl_rail", "sl_sash", "sl_interlock", "sl_roller", "sl_lock", "sl_brush", "sl_threshold_low",
+         "vs_frame", "vs_sash", "vs_balance", "vs_lock", "vs_tilt", "vs_brush",
+         "gl_post", "gl_rail", "gl_panel", "gl_motor", "gl_remote", "gl_belt", "gl_seal", "conn_corner_free"]
 UNITS = ["bar", "m", "kg", "pcs", "m2", "pack", "pct"]
 
 
