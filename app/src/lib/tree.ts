@@ -765,7 +765,10 @@ export const cmd = {
     if (a.after < -1 || a.after >= frames.length) throw new Error(`нет рамы ${a.after}`);
     const after = a.after;
     const h = a.h || doc.frame.h || frames.reduce((m, f) => Math.max(m, f.h), 0) || 1400;
-    const fresh: Frame = { w: a.w ?? 1000, h, shape: 'rect', root: { cell: { type: 'fixed' } } };
+    // у раздвижной/гильотины новая рама — такая же, как соседняя (у сборки одна система)
+    const nb = frames[Math.max(after, 0)]?.root as (Node & { sliding?: unknown; guillotine?: unknown }) | undefined;
+    const special = nb && (nb.sliding || nb.guillotine) ? clone(nb.sliding ? { sliding: nb.sliding } : { guillotine: nb.guillotine }) as Node : null;
+    const fresh: Frame = { w: a.w ?? 1000, h, shape: 'rect', root: special ?? { cell: { type: 'fixed' } } };
     const near = joints.length ? joints[Math.min(Math.max(after, 0), joints.length - 1)] : { joint: 'straight' };
     frames.splice(after + 1, 0, fresh);
     joints.splice(Math.max(0, after), 0, clone(near));

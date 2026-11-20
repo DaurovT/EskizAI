@@ -18,6 +18,12 @@ MUNTIN_PATTERNS = ("grid", "sun", "cross", "decor")
 MUNTIN_COLORS = ("white", "decor", "gold")
 
 
+def _sys(ev) -> str:
+    """Название системы для мастера («Akfa 6000 QVT»), а не код."""
+    r = ev.cat.systems.get(ev.setup["system"], {})
+    return f"{r.get('brand', '')} {r.get('series', '')}".strip() or ev.setup["system"]
+
+
 def muntin_layout(cg: CellGeo, m: dict) -> dict:
     """Прутки раскладки ячейки по видимому стеклу."""
     pts = cg.vis_poly or shp.rect_poly(cg.light.x0, cg.light.y0, cg.light.x1, cg.light.y1)[0]
@@ -92,18 +98,18 @@ def check_input(ev) -> None:
             return
         if not ev.passport.get(sp):
             ok = ev.cat.systems_with(sp)
-            ev.add("7.22", f"у системы {ev.setup['system']} нет {'раздвижных' if sp == 'sliding' else 'гильотины'}",
+            ev.add("7.22", f"у системы {_sys(ev)} нет {'раздвижных' if sp == 'sliding' else 'гильотины'}",
                    fix="подходят: " + ", ".join(ok) if ok else "нужна раздвижная система")
             ev.stopped = True
             return
     elif ev.passport.get("sliding_only"):
-        ev.add("7.21", f"система {ev.setup['system']} — только раздвижные и гильотина",
-               fix="выберите оконную систему (Akfa, Engelberg, …)")
+        ev.add("7.21", f"система {_sys(ev)} — только раздвижные и гильотина",
+               fix="сделайте эту раму такой же, как соседние, или выберите оконную систему")
     # совместимость набора фурнитуры с системой (7.2)
     fs = ev.cat.fitting_systems.get(ev.setup["fittings"])
     if not fs or ev.groove not in fs["grooves"] or ev.material not in fs["materials"]:
         ok = ev.cat.compatible_fitting_sets(ev.setup["system"])
-        ev.add("7.2", f"набор «{ev.setup['fittings']}» не подходит к пазу «{ev.groove}» системы {ev.setup['system']}",
+        ev.add("7.2", f"набор «{ev.setup['fittings']}» не подходит к пазу «{ev.groove}» системы {_sys(ev)}",
                fix="подходят: " + ", ".join(ok) if ok else "для системы нет совместимой фурнитуры")
     # декор (7.10 / 7.5): ламинация по сторонам
     colors = ev.cat.system_colors(ev.setup["system"])
@@ -124,7 +130,7 @@ def check_input(ev) -> None:
         if not known or mat not in known.get("material", []) or pc not in ok:
             names = [ev.cat.profile_colors.get(x, {}).get("name_ru", x) for x in ok]
             ev.add("2.20", f"цвета профиля «{(known or {}).get('name_ru', ev.setup.get('profile_color'))}» нет у системы "
-                           f"{ev.setup['system']}", fix="есть: " + ", ".join(names) + "; или ламинация плёнкой")
+                           f"{_sys(ev)}", fix="есть: " + ", ".join(names) + "; или ламинация плёнкой")
     check_opening(ev, w, h)
 
 
@@ -263,7 +269,7 @@ def check_all(ev) -> None:
                 ev.add("3.23", f"подвижное полотно {cg.weight_kg:.0f} кг, балансир — до {mx} кг на пару", path,
                        fix="стекло легче, меньше полотно или верхнее глухое")
         if opening == "hs" and not p.get("hs"):
-            ev.add("7.20", f"система {ev.setup['system']} без подъёмно-сдвижного (HS)", path,
+            ev.add("7.20", f"система {_sys(ev)} без подъёмно-сдвижного (HS)", path,
                    fix="PSK или раздвижная, либо система с HS (тёплый алюминий, 70-мм ПВХ)")
         mq = mosquito_type(cell)
         if mq in ("pleated", "door") and cell.get("type") != "door_sash" \

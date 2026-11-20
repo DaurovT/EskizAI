@@ -405,7 +405,7 @@ def set_joint(doc: dict, index: int, joint: str, angle: float | None = None) -> 
 
 
 def add_frame(doc: dict, after: int, w: int = 1000, h: int | None = None) -> dict:
-    """Новая глухая рама после рамы after (−1 — в начало); стык как у соседнего, иначе прямой."""
+    """Новая рама после рамы after (−1 — в начало): глухая, а у раздвижной/гильотины — как соседняя; стык как у соседнего."""
     d = migrate(doc)
     items = _assembly(d)
     frames = [k for k, x in enumerate(items) if "frame" in x]
@@ -413,7 +413,11 @@ def add_frame(doc: dict, after: int, w: int = 1000, h: int | None = None) -> dic
         raise CommandError(f"нет рамы {after}")
     joints = [x for x in items if "joint" in x]
     j = dict(joints[min(max(after, 0), len(joints) - 1)]) if joints else {"joint": "straight"}
-    fr = {"frame": {"w": w, "h": h or d["frame"]["h"], "shape": "rect", "root": {"cell": {"type": "fixed"}}}}
+    # у раздвижной/гильотины новая рама — такая же, как соседняя (у сборки одна система; глухая ПВХ-рама получала 7.21)
+    nb = items[frames[max(after, 0)]]["frame"] if frames else {}
+    nroot = nb.get("root") or {}
+    root = clone({k: nroot[k] for k in ("sliding", "guillotine") if k in nroot}) or {"cell": {"type": "fixed"}}
+    fr = {"frame": {"w": w, "h": h or d["frame"]["h"], "shape": "rect", "root": root}}
     if after == -1:
         items[0:0] = [fr, j]
     else:

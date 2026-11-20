@@ -20,6 +20,9 @@ export type DimEdit = { target: DimTarget; changed: number[] } | null;
 type PlateState = 'on' | 'chg' | 'ro' | 'err' | undefined;
 
 const PLATE_H = 40;
+const PLATE_S = 30;                 // компактная плашка, когда частей много
+/** ширина плашки по тексту (для раскладки в два ряда) */
+const plateW = (t: string, small: boolean) => (small ? 16 : 28) + t.length * (small ? 8 : 10);
 const ROW_GAP = 8;
 /** уже этого (px на схеме) плашки частей налезают — показываем только выбранную */
 const MIN_PX_W = 70, MIN_PX_H = 46;
@@ -89,43 +92,54 @@ export function SchemaDims({ doc, width, maxHeight, view = 'inside', selected, v
     if (bad(p)) return 'err';
     return undefined;
   };
-  /** много частей — только плашка выбранной (или той, что вводят) */
-  const visible = (parent: string, sizes: number[], pxMin: number) => {
+  /** много частей: все размеры видны — плашки меньше, а если и так тесно — в шахматном порядке (два ряда / две колонки).
+   * У выбранной (X5Many) плашка «on» — её и правят. */
+  const visible = (parent: string, sizes: number[], pxMin: number, horizontal: boolean) => {
     const crowded = sizes.length > 3 || sizes.some((s) => s * k < pxMin);
     const inSel = (i: number) => { const p = joinPath(parent, i); return selected !== null && (selected === p || selected.startsWith(`${p}.`)); };
+    const extent = (i: number) => (horizontal ? plateW(num(Math.round(sizes[i])), crowded) : (crowded ? PLATE_S : PLATE_H));
+    // шахматка: если соседние плашки не помещаются над своими частями
+    const stagger = crowded && sizes.some((s, i) => i > 0 && (sizes[i - 1] * k + s * k) / 2 < (extent(i - 1) + extent(i)) / 2 + 4);
     return {
-      show: (i: number) => !crowded || inSel(i) || partEdit === joinPath(parent, i),
-      /** X5Many: у выбранной — плашка «on», её и правят */
+      show: (_i: number) => true,
+      small: crowded,
+      shift: (i: number) => (stagger && i % 2 === 1 ? 1 : 0),
+      stagger,
       state: (i: number, axis: 'w' | 'h'): PlateState => (crowded && !edit && inSel(i) ? 'on' : stateOf(parent, i, axis)),
     };
   };
 
   const plates: ReactElement[] = [];
+  let rowSmall = false, rowStagger = false;
   if (rowParent !== null && row.length > 1) {
-    const v = visible(rowParent, row, MIN_PX_W);
+    const v = visible(rowParent, row, MIN_PX_W, true);
+    rowSmall = v.small; rowStagger = v.stagger;
     let acc = 0;
     row.forEach((s, i) => {
       const cx = (X(acc) + X(acc + s)) / 2; acc += s;
       if (!v.show(i)) return;
       const p = joinPath(rowParent!, i);
-      plates.push(<Plate key={`r${i}`} text={num(Math.round(s))} left={cx} top={vh + ROW_GAP} state={v.state(i, 'w')}
+      const ph = v.small ? PLATE_S : PLATE_H;
+      plates.push(<Plate key={`r${i}`} small={v.small} text={num(Math.round(s))} left={cx} top={vh + ROW_GAP + v.shift(i) * (ph + 4)} state={v.state(i, 'w')}
         onPress={onDim ? () => onDim({ kind: 'part', path: p }) : () => selectIn(p)} />);
     });
   }
   if (colParent !== null && col.length > 1) {
-    const v = visible(colParent, col, MIN_PX_H);
+    const v = visible(colParent, col, MIN_PX_H, false);
     let acc = 0;
     col.forEach((s, i) => {
       const cy = (Y(acc) + Y(acc + s)) / 2; acc += s;
       if (!v.show(i)) return;
       const p = joinPath(colParent, i);
-      plates.push(<Plate key={`c${i}`} text={num(Math.round(s))} side="left" left={-4} top={cy - PLATE_H / 2} state={v.state(i, 'h')}
+      const ph = v.small ? PLATE_S : PLATE_H;
+      plates.push(<Plate key={`c${i}`} small={v.small} text={num(Math.round(s))} side="left" left={-4 - v.shift(i) * (plateW(num(Math.round(s)), v.small) + 4)} top={cy - ph / 2} state={v.state(i, 'h')}
         onPress={onDim ? () => onDim({ kind: 'part', path: p }) : () => selectIn(p)} />);
     });
   }
   const { shape, params } = frameShape(doc.frame);
   const rowShown = rowParent !== null && row.length > 1;
-  const totalTop = vh + ROW_GAP + (rowShown ? PLATE_H + ROW_GAP : 0);
+  const rowH = rowSmall ? PLATE_S : PLATE_H;
+  const totalTop = vh + ROW_GAP + (rowShown ? rowH + ROW_GAP + (rowStagger ? rowH + 4 : 0) : 0);
   const leftBusy = colParent !== null && col.length > 1;
   const sh = onShape ? () => onShape('') : undefined;
   if (!frameDims) return <View style={{ width: vw, height: vh }}>{schema}{plates}</View>;
@@ -162,8 +176,8 @@ function parentOfPart(p: string): string {
 
 /** .dim v3: 40 px, белая с тенью; on — голубая с ✎; chg — светло-голубая; ro — без подложки; err — красное кольцо.
  * left — центр плашки (side center), левый край (right) или правый край (left). */
-function Plate({ text, left, top, side = 'center', state, onPress }: {
-  text: string; left: number; top: number; side?: 'center' | 'left' | 'right'; state?: PlateState; onPress?: () => void;
+function Plate({ text, left, top, side = 'center', state, onPress, small }: {
+  text: string; left: number; top: number; side?: 'center' | 'left' | 'right'; state?: PlateState; onPress?: () => void; small?: boolean;
 }) {
   const box = 140;
   const pos = side === 'center' ? { left: left - box / 2, alignItems: 'center' as const }
@@ -173,13 +187,13 @@ function Plate({ text, left, top, side = 'center', state, onPress }: {
     <View pointerEvents="box-none" style={[{ position: 'absolute', top, width: box }, pos]}>
       <Pressable disabled={!onPress} onPress={onPress} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={`Размер ${text}`} hitSlop={4}
         style={({ pressed }) => [{
-          height: PLATE_H, borderRadius: 20, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+          height: small ? PLATE_S : PLATE_H, borderRadius: small ? 15 : 20, paddingHorizontal: small ? 8 : 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
           backgroundColor: on ? C.accent : chg ? C.accentSoft : ro ? 'transparent' : C.card,
           shadowColor: on ? C.accent : '#21201F', shadowOpacity: ro || chg ? 0 : on ? 0.5 : 0.12, shadowRadius: on ? 8 : 7, shadowOffset: { width: 0, height: 4 },
           elevation: ro || chg ? 0 : 3, transform: [{ scale: pressed ? 0.96 : 1 }],
         }, chg && { borderWidth: 1.5, borderColor: C.accent }, err && { borderWidth: 2, borderColor: C.dangerLine },
         !on && !chg && !ro && !err && { borderWidth: 1, borderColor: 'rgba(33,32,31,0.10)' }]}>
-        <Txt size={16} w={600} color={on ? '#fff' : chg ? C.accentDeep : ro ? C.muted : err ? '#A1221A' : C.ink} lines={1}
+        <Txt size={small ? 13 : 16} w={600} color={on ? '#fff' : chg ? C.accentDeep : ro ? C.muted : err ? '#A1221A' : C.ink} lines={1}
           style={{ fontVariant: ['tabular-nums'] }}>{text}{on ? '  ✎' : ''}</Txt>
       </Pressable>
     </View>
