@@ -8,9 +8,10 @@ from __future__ import annotations
 from . import shapes as shp
 from .geometry import CellGeo
 from .glass import Glass, GlassError, fits_beads
-from .model import decor, is_leaf, mosquito_type, profile_color_id, root_of, walk_nodes
+from .model import (decor, guillotine_of, guillotine_problems, is_leaf, mosquito_type, profile_color_id, root_of,
+                    sliding_of, sliding_problems, special_kind, walk_nodes)
 
-KIT_OPENINGS = ("folding", "psk", "hs")      # сдвижные и гармошка: фурнитура комплектом, свои пределы створки
+KIT_OPENINGS = ("folding", "psk", "hs", "vslide")   # сдвижные, гармошка, гильотинное: фурнитура комплектом, свои пределы
 
 MUNTIN_WIDTHS = {"inner": (8, 18, 26), "overlay": (18, 26, 45)}
 MUNTIN_PATTERNS = ("grid", "sun", "cross", "decor")
@@ -52,14 +53,16 @@ def check_input(ev) -> None:
         ev.stopped = True
         return
     p12 = ev.cat.rules["1.2"]["params"]
-    if not (p12["min"] <= w <= p12["max"] and p12["min"] <= h <= p12["max"]):
-        ev.add("1.2", f"{w}×{h} мм: сторона блока должна быть {p12['min']}–{p12['max']} мм",
+    sp = special_kind(root_of(ev.doc))                      # раздвижные и гильотина (§11): свои пределы блока
+    mx_w, mx_h = (p12["special"][sp]["w"], p12["special"][sp]["h"]) if sp else (p12["max"], p12["max"])
+    if not (p12["min"] <= w <= mx_w and p12["min"] <= h <= mx_h):
+        ev.add("1.2", f"{w}×{h} мм: блок должен быть {p12['min']}–{mx_w} × {p12['min']}–{mx_h} мм",
                fix="проверьте единицы и нули; большие проёмы делите на блоки")
         if w < ev.cat.rules["1.7"]["params"]["both_lt"] and h < ev.cat.rules["1.7"]["params"]["both_lt"]:
             ev.add("1.7", f"{w}×{h} — похоже, введено в сантиметрах", fix=f"имелось в виду {w * 10}×{h * 10} мм?")
         ev.stopped = True
         return
-    if w > ev.cat.rules["1.3"]["params"]["gt"] or h > ev.cat.rules["1.3"]["params"]["gt"]:
+    if not sp and (w > ev.cat.rules["1.3"]["params"]["gt"] or h > ev.cat.rules["1.3"]["params"]["gt"]):
         ev.add("1.3", f"{w}×{h} мм", fix="добавьте импост или разделите на блоки")
     k = ev.cat.rules["1.6"]["params"]["multiple_of"]
     for name, v in (("ширина", w), ("высота", h)):
@@ -80,6 +83,22 @@ def check_input(ev) -> None:
     if ev.has("1.1"):
         ev.stopped = True
         return
+    # раздвижные и гильотина (§11): параметры корня (1.9), система умеет такое изделие (7.21, 7.22)
+    if sp:
+        probs = sliding_problems(sliding_of(root)) if sp == "sliding" else guillotine_problems(guillotine_of(root))
+        if probs:
+            ev.add("1.9", "; ".join(probs))
+            ev.stopped = True
+            return
+        if not ev.passport.get(sp):
+            ok = ev.cat.systems_with(sp)
+            ev.add("7.22", f"у системы {ev.setup['system']} нет {'раздвижных' if sp == 'sliding' else 'гильотины'}",
+                   fix="подходят: " + ", ".join(ok) if ok else "нужна раздвижная система")
+            ev.stopped = True
+            return
+    elif ev.passport.get("sliding_only"):
+        ev.add("7.21", f"система {ev.setup['system']} — только раздвижные и гильотина",
+               fix="выберите оконную систему (Akfa, Engelberg, …)")
     # совместимость набора фурнитуры с системой (7.2)
     fs = ev.cat.fitting_systems.get(ev.setup["fittings"])
     if not fs or ev.groove not in fs["grooves"] or ev.material not in fs["materials"]:
@@ -127,6 +146,42 @@ def check_opening(ev, w: float, h: float) -> None:
         ev.add("9.6", f"этаж {fl}", fix="добавьте работу снаружи (альпинист/вышка)")
 
 
+def check_glass(ev, cg: CellGeo, g, floor_base, door: bool = False, max_m2: float | None = None,
+                safety: bool = True) -> None:
+    """Стекло ячейки или полотна (4.1–4.9). door — стекло в двери (4.7); max_m2 — свой предел площади
+    (панорамные полотна, §11.1); safety=False — 4.7 не проверяется (гильотина: своё правило 4.23)."""
+    cat, p, path = ev.cat, ev.passport, cg.path
+    if isinstance(g, GlassError):
+        ev.add("4.9", str(g), path, fix="пример: 4-12-4, 6t-14-4i, 4-10-4-10-4")
+        return
+    if not isinstance(g, Glass):
+        return
+    if not fits_beads(g, p):
+        rng = ", ".join(f"{a}–{b}" for a, b in p.get("beads", {}).values())
+        ev.add("4.6", f"стеклопакет {g.thickness_mm:g} мм не входит в систему (штапики: {rng} мм)", path,
+               fix="выберите стеклопакет допустимой толщины")
+    side_min = min(cg.glass_w, cg.glass_h)
+    if side_min < cat.rules["4.1"]["params"]["min"]:
+        ev.add("4.1", f"сторона стекла {side_min:.0f} мм", path)
+    area = cg.glass_area_m2
+    if area > (max_m2 or cat.rules["4.4"]["params"]["max_m2"]):
+        ev.add("4.4", f"стекло {area:.2f} м²", path, fix="разделите импостом")
+    thin = [x for x in g.panes if not x.tempered and not x.triplex]
+    if any(x.glass_mm <= 4 for x in thin) and area > cat.rules["4.2"]["params"]["max_m2"]:
+        ev.add("4.2", f"стекло 4 мм на {area:.2f} м²", path, fix="стекло 5–6 мм или деление")
+    elif any(5 <= x.glass_mm <= 6 for x in thin) and area > cat.rules["4.3"]["params"]["max_m2"]:
+        ev.add("4.3", f"стекло 5–6 мм на {area:.2f} м²", path)
+    ratio = max(cg.glass_w, cg.glass_h) / max(1.0, min(cg.glass_w, cg.glass_h))
+    if ratio > cat.rules["4.5"]["params"]["max_ratio"]:
+        ev.add("4.5", f"соотношение сторон стекла {ratio:.1f}", path)
+    low = floor_base is not None and floor_base + (ev.geo.h - cg.axis.y1) < cat.rules["4.7"]["params"]["below_floor_mm"]
+    if safety and (low or door) and not any(x.tempered or x.triplex for x in g.panes):
+        ev.add("4.7", "стекло ниже 800 мм от пола или в двери", path,
+               fix="закалённое или триплекс в этой ячейке (например, 6t-12-4)")
+    if g.single and ev.material in ("pvc", "alu_thermo"):
+        ev.add("4.8", "одинарное стекло в тёплой системе", path)
+
+
 # ---------------- после геометрии ----------------
 def check_all(ev) -> None:
     geo, cat, p = ev.geo, ev.cat, ev.passport
@@ -151,6 +206,11 @@ def check_all(ev) -> None:
                 if a and b and a.get("type") in ("sash", "door_sash") and b.get("type") in ("sash", "door_sash"):
                     ev.add("6.1", "две открывающиеся створки рядом без импоста и штульпа", path,
                            fix="поставьте импост или сделайте штульповую пару")
+        if node.get("split") == "vslide":                     # гильотинное окно (§11.2): два полотна сверху вниз
+            ok = len(leaves) == 2 and all(c and c.get("type") == "sash" and c.get("open") == "vslide" for c in leaves)
+            if not ok:
+                ev.add("6.20", "в узле vslide должно быть ровно два полотна-створки с open: vslide", path,
+                       fix="split {dir: vslide} на ячейке-листе")
         if node.get("split") == "shtulp":
             opens = [c.get("open") for c in leaves if c]
             if opens.count("tilt_turn") > 1:
@@ -165,34 +225,7 @@ def check_all(ev) -> None:
     for cg in cells:
         cell, path = cg.cell, cg.path
         g = ev.glass.get(path)
-        # ---- стекло ----
-        if isinstance(g, GlassError):
-            ev.add("4.9", str(g), path, fix="пример: 4-12-4, 6t-14-4i, 4-10-4-10-4")
-        elif isinstance(g, Glass):
-            if not fits_beads(g, p):
-                rng = ", ".join(f"{a}–{b}" for a, b in p.get("beads", {}).values())
-                ev.add("4.6", f"стеклопакет {g.thickness_mm:g} мм не входит в систему (штапики: {rng} мм)", path,
-                       fix="выберите стеклопакет допустимой толщины")
-            side_min = min(cg.glass_w, cg.glass_h)
-            if side_min < cat.rules["4.1"]["params"]["min"]:
-                ev.add("4.1", f"сторона стекла {side_min:.0f} мм", path)
-            area = cg.glass_area_m2
-            if area > cat.rules["4.4"]["params"]["max_m2"]:
-                ev.add("4.4", f"стекло {area:.2f} м²", path, fix="разделите импостом")
-            thin = [x for x in g.panes if not x.tempered and not x.triplex]
-            if any(x.glass_mm <= 4 for x in thin) and area > cat.rules["4.2"]["params"]["max_m2"]:
-                ev.add("4.2", f"стекло 4 мм на {area:.2f} м²", path, fix="стекло 5–6 мм или деление")
-            elif any(5 <= x.glass_mm <= 6 for x in thin) and area > cat.rules["4.3"]["params"]["max_m2"]:
-                ev.add("4.3", f"стекло 5–6 мм на {area:.2f} м²", path)
-            ratio = max(cg.glass_w, cg.glass_h) / max(1.0, min(cg.glass_w, cg.glass_h))
-            if ratio > cat.rules["4.5"]["params"]["max_ratio"]:
-                ev.add("4.5", f"соотношение сторон стекла {ratio:.1f}", path)
-            low = floor_base is not None and floor_base + (geo.h - cg.axis.y1) < cat.rules["4.7"]["params"]["below_floor_mm"]
-            if (low or cell.get("type") == "door_sash") and not any(x.tempered or x.triplex for x in g.panes):
-                ev.add("4.7", "стекло ниже 800 мм от пола или в двери", path,
-                       fix="закалённое или триплекс в этой ячейке (например, 6t-12-4)")
-            if g.single and ev.material in ("pvc", "alu_thermo"):
-                ev.add("4.8", "одинарное стекло в тёплой системе", path)
+        check_glass(ev, cg, g, floor_base, door=cell.get("type") == "door_sash")
         if cell.get("mosquito") and cell.get("type") not in ("sash", "door_sash"):
             ev.add("9.1", "москитная сетка на глухой части", path, fix="уберите сетку или сделайте створку")
         # ---- раскладка (5.20–5.22) ----
@@ -219,6 +252,16 @@ def check_all(ev) -> None:
         if "folding" in cg.sides.values():
             opening = "folding"
         hinge = cell.get("hinge", "left")
+        if opening == "vslide":
+            if "vslide" not in (cg.sides.get("top"), cg.sides.get("bottom")):
+                ev.add("6.20", "полотно гильотинного окна вне узла vslide", path, fix="split {dir: vslide} или другое открывание")
+            p23 = cat.rules["2.23"]["params"]["min_h"]
+            if cg.sash.h < p23:
+                ev.add("2.23", f"полотно {cg.sash.h:.0f} мм ниже {p23} мм", path, fix="выше окно или одно полотно")
+            mx = cat.rules["3.23"]["params"]["max_kg"]
+            if cell.get("slide", "moving") == "moving" and cg.weight_kg is not None and cg.weight_kg > mx:
+                ev.add("3.23", f"подвижное полотно {cg.weight_kg:.0f} кг, балансир — до {mx} кг на пару", path,
+                       fix="стекло легче, меньше полотно или верхнее глухое")
         if opening == "hs" and not p.get("hs"):
             ev.add("7.20", f"система {ev.setup['system']} без подъёмно-сдвижного (HS)", path,
                    fix="PSK или раздвижная, либо система с HS (тёплый алюминий, 70-мм ПВХ)")
@@ -316,7 +359,7 @@ def check_all(ev) -> None:
             long_ = [x for x in geo.frame_pieces if x > cat.rules["5.2"]["params"]["gt"]]
             long_ += [m.length for m in geo.mullions if m.length > cat.rules["5.2"]["params"]["gt"]]
             for cg in cells:
-                if cg.sash:
+                if cg.sash and cg.cell.get("open") != "vslide":     # полотно гильотинного — свой профиль vs_sash
                     long_ += [x for x in (cg.sash.w, cg.sash.h) if x > cat.rules["5.2"]["params"]["gt"]]
             if long_:
                 ev.add("5.2", f"элементов длиннее 700 мм: {len(long_)}")

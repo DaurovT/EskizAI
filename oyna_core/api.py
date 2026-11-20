@@ -22,6 +22,10 @@ def _assembly_summary(ev: Eval) -> dict | None:
             continue
         if g.get("contour"):
             fr["contour"] = [[px + x, py] for px, py in g["contour"]]
+        for key in ("sliding", "guillotine"):            # §11: параметры полотен рамы; x — в развёртке
+            if g.get(key):
+                fr["kind"] = key
+                fr[key] = _shift_special(g[key], x)
         out["frames"].append(fr)
         for c in g["cells"]:
             c = dict(c, path=f"A{i}/" + c["path"])
@@ -37,6 +41,14 @@ def _assembly_summary(ev: Eval) -> dict | None:
     return out
 
 
+def _shift_special(sp: dict, x: float) -> dict:
+    sp = dict(sp)
+    for k in ("modules_x", "posts_x"):
+        if k in sp:
+            sp[k] = [[a + x, b + x] for a, b in sp[k]]
+    return sp
+
+
 def _geo_summary(ev: Eval) -> dict | None:
     if ev.parts:
         return _assembly_summary(ev)
@@ -46,14 +58,22 @@ def _geo_summary(ev: Eval) -> dict | None:
         {"path": m.path, "orient": m.orient, "at": m.at, "length": round(m.length, 1)} for m in ev.geo.mullions]}
     if ev.geo.contour:
         out.update(shape=ev.geo.shape, contour=_pts(ev.geo.contour), area_m2=round(ev.geo.area_m2, 3))
+    if ev.geo.special:                                   # раздвижная / гильотина (§11): параметры, ячейки — полотна
+        from .sliding import summary
+        out[ev.geo.special["type"]] = summary(ev.geo)
+    if ev.geo.vslides:                                   # гильотинное окно (§11.2): узлы и их габарит
+        out["vslides"] = [{"path": v["path"], "rect": [v["rect"].x0, v["rect"].y0, v["rect"].x1, v["rect"].y1]}
+                          for v in ev.geo.vslides]
     for cg in ev.geo.cells:
         g = ev.glass.get(cg.path)
-        c = {"path": cg.path, "type": cg.cell.get("type"), "axis": [cg.axis.x0, cg.axis.y0, cg.axis.x1, cg.axis.y1],
+        c = {"path": cg.path, "type": cg.cell.get("type"), "axis": [round(v, 1) for v in (cg.axis.x0, cg.axis.y0, cg.axis.x1, cg.axis.y1)],
              "light": [round(cg.light.w, 1), round(cg.light.h, 1)],
              "glass": [round(cg.glass_w, 1), round(cg.glass_h, 1)] if g is not None else None,
              "glass_spec": getattr(g, "spec", None), "glass_thickness_mm": getattr(g, "thickness_mm", None)}
         if cg.shaped:
             c.update(shaped=True, poly=_pts(cg.poly), glass_area_m2=round(cg.glass_area_m2, 3))
+        if cg.extra:                                     # §11: leaf {index, rail, moving} | panel {module, index, moving}
+            c.update(cg.extra)
         if cg.sash:
             c.update(sash=[round(cg.sash.w, 1), round(cg.sash.h, 1)], ffb=round(cg.ffb, 1), ffh=round(cg.ffh, 1),
                      weight_kg=cg.weight_kg)

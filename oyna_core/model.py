@@ -2,10 +2,12 @@
 
 Изделие — JSON (PRD, раздел 6). Узел дерева — словарь:
   лист:    {"cell": {...}}                       (корень-лист или часть {"size":…, "cell":…})
-  деление: {"split": "v|h|shtulp|none", "parts": [{"size": …, "cell"|"node": …}, …]}
+  деление: {"split": "v|h|shtulp|none|folding|vslide", "parts": [{"size": …, "cell"|"node": …}, …]}
 Путь к узлу — строка индексов частей через точку: "" — корень, "1.0" — 1-я часть корня, в ней 0-я часть.
 Составное изделие (kind = assembly, docs/shapes_contract.md §4): frame.root.assembly = [рама, стык, рама, …];
 путь с префиксом рамы — "A1/0.1", "A2/" — корень третьей рамы.
+Раздвижная система — frame.root.sliding, гильотина — frame.root.guillotine (§11): у них нет дерева ячеек,
+полотна — пути раскладки "<i>" (раздвижная) и "<i>.<j>" (гильотина: модуль i, полотно j сверху); это не узлы дерева.
 """
 from __future__ import annotations
 
@@ -112,12 +114,106 @@ def walk_nodes(node: dict, path: str = ""):
             yield from walk_nodes(child(part), f"{path}.{i}" if path else str(i))
 
 
-def special_root(doc: dict) -> str | None:
-    """То, что ядро ещё не считает: раздвижные (9.7). Формы и сборки считаются (shapes_contract.md)."""
-    r = root_of(doc)
-    if "sliding" in r:
-        return "sliding"
+# ---------- раздвижные и гильотина (shapes_contract.md §11) ----------
+SLIDING_DEMO = "eskiz__sliding_demo"
+SPECIAL_ROOTS = ("sliding", "guillotine")
+SLIDE_KINDS = ("window", "door", "panoramic")
+SLIDE_THRESHOLDS = ("standard", "low", "flush")
+SLIDING_DEFAULTS = {"leaves": 2, "rails": 2, "overlap_mm": "passport", "kind": "window", "threshold": "standard"}
+GL_DRIVES = ("electric", "manual", "remote")
+GL_POSTS = ("between", "none")
+GUILLOTINE_DEFAULTS = {"modules": 3, "panels": 3, "moving": 2, "drive": "electric", "glass": "g8t", "posts": "between"}
+
+
+def special_kind(root: dict | None) -> str | None:
+    """Корень рамы — раздвижная система (root.sliding) или гильотина (root.guillotine)."""
+    for k in SPECIAL_ROOTS:
+        if k in (root or {}):
+            return k
     return None
+
+
+def special_root(doc: dict) -> str | None:
+    return special_kind(root_of(doc))
+
+
+def product_specials(doc: dict) -> set:
+    """Какие особые корни есть в изделии: у сборки — по рамам."""
+    root = root_of(doc)
+    if "assembly" in root:
+        return {special_kind(x["frame"].get("root")) for x in root["assembly"]
+                if "frame" in x and isinstance(x["frame"], dict)} - {None}
+    k = special_kind(root)
+    return {k} if k else set()
+
+
+def default_moving(n: int) -> list[bool]:
+    """Подвижные полотна по умолчанию (как в приложении): 2 — оба, 3 — два крайних, 4+ — все, кроме крайних."""
+    if n <= 2:
+        return [True] * n
+    if n == 3:
+        return [True, False, True]
+    return [False] + [True] * (n - 2) + [False]
+
+
+def sliding_of(root: dict) -> dict:
+    """root.sliding с подставленными значениями по умолчанию; нет moving — default_moving."""
+    s = {**SLIDING_DEFAULTS, **(root.get("sliding") or {})}
+    if s.get("moving") is None:
+        s["moving"] = default_moving(s["leaves"] if _int(s["leaves"]) else 0)
+    return s
+
+
+def guillotine_of(root: dict) -> dict:
+    return {**GUILLOTINE_DEFAULTS, **(root.get("guillotine") or {})}
+
+
+def _int(v) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool)
+
+
+def sliding_problems(s: dict) -> list[str]:
+    """Что не так с параметрами раздвижной (правило 1.9, команда set_sliding)."""
+    out = []
+    n = s.get("leaves")
+    if not _int(n) or not 2 <= n <= 6:
+        out.append(f"leaves {n!r}: целое 2…6")
+    if s.get("rails") not in (2, 3) or isinstance(s.get("rails"), bool):
+        out.append(f"rails {s.get('rails')!r}: 2 или 3")
+    mv = s.get("moving")
+    if not isinstance(mv, list) or not all(isinstance(x, bool) for x in mv) or _int(n) and len(mv) != n:
+        out.append("moving: список true/false по числу полотен")
+    if s.get("kind") not in SLIDE_KINDS:
+        out.append(f"kind: {' | '.join(SLIDE_KINDS)}")
+    if s.get("threshold") not in SLIDE_THRESHOLDS:
+        out.append(f"threshold: {' | '.join(SLIDE_THRESHOLDS)}")
+    ov = s.get("overlap_mm")
+    if ov not in (None, "passport") and not (isinstance(ov, (int, float)) and not isinstance(ov, bool) and 0 <= ov <= 200):
+        out.append("overlap_mm: \"passport\" или 0…200 мм")
+    return out
+
+
+def guillotine_problems(g: dict) -> list[str]:
+    out = []
+    m, p, mv = g.get("modules"), g.get("panels"), g.get("moving")
+    if not _int(m) or not 1 <= m <= 10:
+        out.append(f"modules {m!r}: целое 1…10")
+    if not _int(p) or not 2 <= p <= 4:
+        out.append(f"panels {p!r}: целое 2…4")
+    if not _int(mv) or not 1 <= mv <= (p - 1 if _int(p) else 3):
+        out.append(f"moving {mv!r}: 1…panels − 1 (верхнее полотно глухое)")
+    if g.get("drive") not in GL_DRIVES:
+        out.append(f"drive: {' | '.join(GL_DRIVES)}")
+    if g.get("posts") not in GL_POSTS:
+        out.append(f"posts: {' | '.join(GL_POSTS)}")
+    if not isinstance(g.get("glass"), str) or not g["glass"].strip():
+        out.append("glass: код стекла (g8t, g10t, g4t_14_4t) или формула")
+    return out
+
+
+def default_system(doc: dict) -> str:
+    """Система по умолчанию: раздвижные и гильотина — ДЕМО-система «Раздвижная алюминиевая», иначе Akfa 6000."""
+    return SLIDING_DEMO if product_specials(doc) else DEFAULT_SYSTEM
 
 
 # ---------- чтение старых записей ----------
@@ -228,7 +324,7 @@ def addon_ext(doc: dict) -> dict:
 def setup_of(doc: dict, cat: Catalog) -> dict:
     """setup с подставленными значениями по умолчанию (документ не меняется)."""
     s = dict(doc.get("setup") or {})
-    s.setdefault("system", DEFAULT_SYSTEM)
+    s.setdefault("system", default_system(doc))
     norm_colors(s)
     p = cat.passport(s["system"])
     s.setdefault("glass", p.get("default_glass") or ("g4_12_4" if cat.material(s["system"]) != "alu_thermo" else "g4_16_4"))

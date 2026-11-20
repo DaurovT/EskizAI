@@ -19,7 +19,7 @@ from . import store
 from .auth import Ctx, ctx, need_company, require
 
 router = APIRouter(prefix="/oyna/company/templates", tags=["цех"])
-CATEGORIES = ("window", "door", "balcony", "sliding", "shaped", "muntins", "corner", "facade")
+CATEGORIES = ("window", "door", "balcony", "sliding", "shaped", "muntins", "corner", "facade", "guillotine")
 STRIP = ("id", "room", "opening", "accepted_warnings", "qty", "template")
 
 
@@ -46,6 +46,10 @@ def _is_uuid(v: str) -> bool:
 def guess_category(doc: dict) -> str:
     kind = doc.get("kind", "window")
     root = (doc.get("frame") or {}).get("root") or {}
+    if kind == "guillotine" or "guillotine" in root:
+        return "guillotine"
+    if "sliding" in root:
+        return "sliding"
     if kind == "assembly" or "assembly" in root:
         return "corner"
     if (doc.get("frame") or {}).get("shape") not in (None, "rect"):
@@ -58,7 +62,7 @@ def row_out(r: dict) -> dict:
     from .app import template_row
     t = commands.template_from_doc(r["doc_json"])
     out = template_row({"id": str(r["id"]), "name": r["name"], "short": r.get("short") or r["name"][:22],
-                        "category": r["category"], "ready": "sliding" not in t["root"], **t})
+                        "category": r["category"], "ready": True, **t})
     out.update(own=True, doc=r["doc_json"], created_at=store.iso(r["created_at"]),
                created_by=str(r["created_by"]) if r.get("created_by") else None)
     return out

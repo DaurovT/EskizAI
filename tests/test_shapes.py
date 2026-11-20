@@ -324,7 +324,7 @@ def test_glass_decor_line_and_alternatives():
 
 
 # ---------- §6 шаблоны ----------
-CATS = {"window", "door", "balcony", "sliding", "shaped", "muntins", "corner", "facade"}
+CATS = {"window", "door", "balcony", "sliding", "shaped", "muntins", "corner", "facade", "guillotine"}
 
 
 @pytest.mark.parametrize("tid", list(CAT.templates))

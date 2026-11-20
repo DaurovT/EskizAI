@@ -217,9 +217,47 @@ def _color_lines(ev: Eval, lines: list[Line]) -> list[Line]:
     return out
 
 
+def _glass_line(ev: Eval, cg, g: Glass) -> Line:
+    """Стеклопакет ячейки или полотна: площадь (не меньше минимальной), фигурное +%, статус цены."""
+    cat, s = ev.cat, ev.setup
+    area = cg.glass_area_m2
+    calc_area = max(area, min_area(cat))
+    shaped_pct = 0.0
+    if cg.shaped:                                         # фигурное стекло: площадь по контуру + наценка
+        row = cat.glass_presets.get(g.preset or "") or cat.glass_presets.get(s["glass"]) or {}
+        shaped_pct = float(row.get("shaped_extra_pct") or 30)
+    pr, st, how = price_m2(g, cat, ev.company)
+    if pr is None and ev.company.demo_prices:
+        g2 = parse(g.formula, cat)
+        g2.preset = None
+        pr, _, how = price_m2(g2, cat, ev.company)
+        st = "demo"
+    # «оценка» (коэффициенты) — не прайс стекольщика: у боевого цеха это «нет цены», пока он не внесёт свой прайс
+    status = {"найдено": "price", "оценка": "demo" if ev.company.demo_prices else "none"}.get(st, st)
+    label = cat.glass_presets[g.preset]["formula"].split(" ")[0] + ("i" if g.preset.endswith("i") and not cat.glass_presets[g.preset]["formula"].split(" ")[0].endswith("i") else "") \
+        if g.preset else g.formula
+    ln = Line("glass", f"{'Стекло' if g.single else 'Стеклопакет'} {label}" + (" фигурный" if cg.shaped else ""), calc_area, "m2",
+              code=g.preset or g.formula, article=label, path=cg.path,
+              note=f"{cg.glass_w:.0f}×{cg.glass_h:.0f} мм, {area:.3f} м²; {how}"
+                   + (f"; фигурное +{shaped_pct:g} %" if cg.shaped else "")
+                   + ("; нужен прайс стекольщика цеха" if status == "none" else ""))
+    if pr is not None and shaped_pct:
+        pr = pr * (1 + shaped_pct / 100)
+    ln.unit_price, ln.price_unit = pr, "m2"
+    ln.price_status = "none" if pr is None else status
+    if status == "none":
+        pr = None
+    if pr is not None:
+        ln.cost = calc_area * pr
+    return ln
+
+
 def build_bom(ev: Eval) -> list[Line]:
     if ev.parts:
         return _assembly_bom(ev)
+    if ev.geo.special:                                    # раздвижная / гильотина (§11)
+        from .sliding import special_bom
+        return [l for l in special_bom(ev) if l is not None]
     cat, s, geo, p = ev.cat, ev.setup, ev.geo, ev.passport
     lines: list[Line] = []
     door_kind = ev.kind in ("door", "balcony_block")
@@ -260,7 +298,13 @@ def build_bom(ev: Eval) -> list[Line]:
     for cg in geo.cells:
         g = ev.glass.get(cg.path)
         # створка
-        if cg.sash:
+        if cg.sash and cg.cell.get("open") == "vslide":     # полотно гильотинного окна (§11.2): свой профиль
+            pcs = sash_pieces(cg, p)
+            ln = _role_line(ev, "profile", "vs_sash", sum(pcs) / M, "m", "Полотно гильотинного окна", path=cg.path,
+                            note="подвижное" if cg.cell.get("slide", "moving") == "moving" else "глухое")
+            ln.pieces = [round(x, 1) for x in pcs]
+            lines.append(ln)
+        elif cg.sash:
             role = "door_sash" if cg.cell.get("type") == "door_sash" and has("door_sash") else "sash"
             pcs = sash_pieces(cg, p)
             lines.append(_profile_line(ev, "profile", role, "Створка", pcs, path=cg.path))
@@ -268,6 +312,7 @@ def build_bom(ev: Eval) -> list[Line]:
             if rp:
                 lines.append(_reinf_line(ev, role, rp))
             sash_seal_m += sash_perimeter(cg) / M
+        if cg.sash:
             sel = ev.fittings.get(cg.path)
             for part in (sel.parts if sel else []):
                 it = cat.item_by_article(part.item_article) if part.item_article else None
@@ -297,36 +342,8 @@ def build_bom(ev: Eval) -> list[Line]:
                 ln.cost = meters / (p.get("bar_mm", 6000) / M) * price
             lines.append(ln)
         elif isinstance(g, Glass):
-            area = cg.glass_area_m2
-            calc_area = max(area, min_area(cat))
-            shaped_pct = 0.0
-            if cg.shaped:                                         # фигурное стекло: площадь по контуру + наценка
-                row = cat.glass_presets.get(g.preset or "") or cat.glass_presets.get(s["glass"]) or {}
-                shaped_pct = float(row.get("shaped_extra_pct") or 30)
-            pr, st, how = price_m2(g, cat, ev.company)
-            if pr is None and ev.company.demo_prices:
-                g2 = parse(g.formula, cat)
-                g2.preset = None
-                pr, _, how = price_m2(g2, cat, ev.company)
-                st = "demo"
-            # «оценка» (коэффициенты) — не прайс стекольщика: у боевого цеха это «нет цены», пока он не внесёт свой прайс
-            status = {"найдено": "price", "оценка": "demo" if ev.company.demo_prices else "none"}.get(st, st)
-            label = cat.glass_presets[g.preset]["formula"].split(" ")[0] + ("i" if g.preset.endswith("i") and not cat.glass_presets[g.preset]["formula"].split(" ")[0].endswith("i") else "") \
-                if g.preset else g.formula
-            ln = Line("glass", f"Стеклопакет {label}" + (" фигурный" if cg.shaped else ""), calc_area, "m2",
-                      code=g.preset or g.formula, article=label, path=cg.path,
-                      note=f"{cg.glass_w:.0f}×{cg.glass_h:.0f} мм, {area:.3f} м²; {how}"
-                           + (f"; фигурное +{shaped_pct:g} %" if cg.shaped else "")
-                           + ("; нужен прайс стекольщика цеха" if status == "none" else ""))
-            if pr is not None and shaped_pct:
-                pr = pr * (1 + shaped_pct / 100)
-            ln.unit_price, ln.price_unit = pr, "m2"
-            ln.price_status = "none" if pr is None else status
-            if status == "none":
-                pr = None
-            if pr is not None:
-                ln.cost = calc_area * pr
-            lines.append(ln)
+            lines.append(_glass_line(ev, cg, g))
+            calc_area = lines[-1].qty
             bead_role = fits_beads(g, p) or "bead_igu"
             lines.append(_profile_line(ev, "bead", bead_role, "Штапик", cg.bead_lengths, path=cg.path))
             glass_seal_m += cg.glass_perim_mm / M * 2
@@ -337,6 +354,14 @@ def build_bom(ev: Eval) -> list[Line]:
                                         f"Декор стекла: {GLASS_DECOR.get(dec, dec)}" + (f" ({tint})" if tint else ""),
                                         variant=dec, path=cg.path))
         lines += _muntin_lines(ev, cg)
+    for vs in geo.vslides:                                # узел гильотинного окна: направляющая и щётка
+        r = vs["rect"]
+        ln = _role_line(ev, "profile", "vs_frame", 2 * (r.w + r.h) / M, "m", "Направляющая гильотинного окна",
+                        path=vs["path"])
+        ln.pieces = [round(r.w, 1), round(r.w, 1), round(r.h, 1), round(r.h, 1)]
+        lines.append(ln)
+        lines.append(_role_line(ev, "seal", "vs_brush", (2 * r.h + r.w) / M, "m", "Щёточный уплотнитель", path=vs["path"],
+                                note="по бокам и на встречной планке"))
     grey = s.get("seal_color") == "grey"
     if sash_seal_m:
         lines.append(_seal_line(ev, "Уплотнитель притвора" + (" (серый)" if grey else ""), "Rezina EPDM X (3kg)", sash_seal_m))
@@ -533,7 +558,7 @@ def _assembly_bom(ev: Eval) -> list[Line]:
         if not j["role"]:
             continue
         what = {"conn_straight": "прямой", "conn_corner90": "угловой 90°", "conn_bay": f"эркерный {j['angle']}°",
-                "conn_post": "стойка"}[j["role"]]
+                "conn_post": "стойка", "conn_corner_free": f"угол без стойки {j['angle']}°"}[j["role"]]
         ln = _role_line(ev, "connector", j["role"], j["height"] / M, "m", f"Соединитель рам: {what}",
                         note=f"стык {j['index'] + 1} (A{j['index']}–A{j['index'] + 1}), {j['height']:.0f} мм")
         ln.pieces = [j["height"]]

@@ -8,7 +8,7 @@ c = TestClient(app)
 
 def test_health():
     r = c.get("/health").json()
-    assert r["ok"] and r["systems"] == 57
+    assert r["ok"] and r["systems"] == 58          # 57 серий Romchi + ДЕМО-раздвижная (§11)
 
 
 def test_measure_flow_to_position_and_calc():

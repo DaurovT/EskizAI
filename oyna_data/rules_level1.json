@@ -23,7 +23,18 @@
       "title": "Сторона оконного блока в диапазоне",
       "params": {
         "min": 300,
-        "max": 3000
+        "max": 3000,
+        "special": {
+          "sliding": {
+            "w": 8000,
+            "h": 3200
+          },
+          "guillotine": {
+            "w": 20000,
+            "h": 3600
+          },
+          "_note": "раздвижные и гильотина (§11): большие блоки — свои пределы полотна и модуля; 1.3 не срабатывает"
+        }
       },
       "severity": "block"
     },
@@ -524,7 +535,7 @@
     {
       "code": "9.7",
       "group": "kit",
-      "title": "Раздвижные — после MVP (формы и составные считаются, shapes_contract.md)",
+      "title": "Раздвижные — после MVP (снято в §11: раздвижные, гильотинное окно и гильотина считаются)",
       "params": {},
       "severity": "warn"
     },
@@ -541,7 +552,9 @@
       "title": "Цена за м² вне рыночного коридора",
       "params": {
         "min_sum_m2": 380000,
-        "max_sum_m2": 2600000
+        "max_sum_m2": 2600000,
+        "guillotine_max_sum_m2": 5000000,
+        "_guillotine_note": "гильотина для террас (§11.3) дороже окна: ДЕМО-коридор до 5 млн сум/м²"
       },
       "severity": "warn",
       "note": "нижняя граница снижена с 500 000: Akfa/Ecopen с монтажом на OLX 11.2026 — 400–440 тыс. сум/м²; обычный ПВХ дороже 1,5 млн/м² не найден, верх 2,6 млн — запас под тёплый алюминий"
@@ -732,6 +745,134 @@
       "title": "Расширитель на стороне со створкой",
       "params": {},
       "severity": "warn"
+    },
+    {
+      "code": "1.9",
+      "group": "input",
+      "title": "Параметры раздвижной системы или гильотины вне допустимого",
+      "params": {
+        "leaves": [
+          2,
+          6
+        ],
+        "rails": [
+          2,
+          3
+        ],
+        "modules": [
+          1,
+          10
+        ],
+        "panels": [
+          2,
+          4
+        ],
+        "source": "docs/shapes_contract.md §11"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.21",
+      "group": "sash",
+      "title": "Полотно раздвижной системы вне размеров паспорта",
+      "params": {
+        "source": "passports.json: sliding.leaf_mm по kind"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.22",
+      "group": "sash",
+      "title": "Модуль гильотины шире 4000 или выше 3500 мм",
+      "params": {
+        "source": "passports.json: guillotine.module_max_mm",
+        "max_w": 4000,
+        "max_h": 3500
+      },
+      "severity": "block"
+    },
+    {
+      "code": "2.23",
+      "group": "sash",
+      "title": "Полотно гильотинного окна ниже 300 мм",
+      "params": {
+        "min_h": 300
+      },
+      "severity": "block"
+    },
+    {
+      "code": "3.21",
+      "group": "weight",
+      "title": "Полотно раздвижной тяжелее допустимого на каретку",
+      "params": {
+        "source": "passports.json: sliding.carriage_kg (ДЕМО 150 кг на пару, panoramic 300)"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "3.22",
+      "group": "weight",
+      "title": "Гильотина с ручным приводом: подвижные полотна модуля тяжелее 60 кг — нужен электропривод",
+      "params": {
+        "max_kg": 60
+      },
+      "severity": "warn"
+    },
+    {
+      "code": "3.23",
+      "group": "weight",
+      "title": "Подвижное полотно гильотинного окна тяжелее предела балансира",
+      "params": {
+        "max_kg": 25,
+        "note": "ДЕМО: пара пружинных балансиров"
+      },
+      "severity": "block"
+    },
+    {
+      "code": "4.23",
+      "group": "glass",
+      "title": "Стекло гильотинной системы — только закалённое",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "6.20",
+      "group": "geometry",
+      "title": "Гильотинное окно: узел vslide — ровно две створки-полотна (open vslide) сверху вниз",
+      "params": {},
+      "severity": "block"
+    },
+    {
+      "code": "7.21",
+      "group": "compat",
+      "title": "Система только для раздвижных и гильотины",
+      "params": {
+        "source": "passports.json: sliding_only"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "7.22",
+      "group": "compat",
+      "title": "Система не поддерживает раздвижные или гильотину",
+      "params": {
+        "source": "passports.json: sliding / guillotine"
+      },
+      "severity": "lock"
+    },
+    {
+      "code": "8.20",
+      "group": "door",
+      "title": "Раздвижная дверь без низкого порога",
+      "params": {},
+      "severity": "hint"
+    },
+    {
+      "code": "9.24",
+      "group": "kit",
+      "title": "Угол без стойки — только у алюминиевых систем",
+      "params": {},
+      "severity": "block"
     }
   ],
   "sash_limits": {
@@ -861,6 +1002,17 @@
         3000
       ],
       "max_m2": 9.0
+    },
+    "vslide": {
+      "w": [
+        300,
+        1800
+      ],
+      "h": [
+        0,
+        1800
+      ],
+      "max_m2": 2.5
     }
   },
   "weights": {

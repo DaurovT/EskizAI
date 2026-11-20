@@ -1,5 +1,5 @@
 {
-  "_note": "Системные шаблоны. Размеры частей: число мм = зафиксировано, 'eq' = поровну. Размеры по осям импостов. Деление 'shtulp' = две створки без импоста (штульп на створке). category — вкладка в приложении, short — короткое имя. Форма рамы — shape + shape_params рядом с root (docs/shapes_contract.md §1); составные — kind assembly, root.assembly. ready = ядро считает (раздвижные — после MVP).",
+  "_note": "Системные шаблоны. Размеры частей: число мм = зафиксировано, 'eq' = поровну. Размеры по осям импостов. Деление 'shtulp' = две створки без импоста (штульп на створке). category — вкладка в приложении, short — короткое имя. Форма рамы — shape + shape_params рядом с root (docs/shapes_contract.md §1); составные — kind assembly, root.assembly. ready = ядро считает (все шаблоны считаются; раздвижные и гильотина — §11 контракта).",
   "templates": [
     {
       "id": "T01",
@@ -397,7 +397,7 @@
       },
       "short": "Раздвижное ×2",
       "category": "sliding",
-      "ready": false
+      "ready": true
     },
     {
       "id": "T13",
@@ -409,12 +409,17 @@
         "sliding": {
           "leaves": 3,
           "rails": 3,
-          "overlap_mm": "passport"
+          "overlap_mm": "passport",
+          "moving": [
+            true,
+            false,
+            true
+          ]
         }
       },
       "short": "Раздвижное ×3",
       "category": "sliding",
-      "ready": false
+      "ready": true
     },
     {
       "id": "T14",
@@ -426,12 +431,18 @@
         "sliding": {
           "leaves": 4,
           "rails": 2,
-          "overlap_mm": "passport"
+          "overlap_mm": "passport",
+          "moving": [
+            false,
+            true,
+            true,
+            false
+          ]
         }
       },
       "short": "Раздвижное ×4",
       "category": "sliding",
-      "ready": false
+      "ready": true
     },
     {
       "id": "T15",
@@ -2392,6 +2403,372 @@
       "short": "Лоджия прямая",
       "category": "corner",
       "ready": true
+    },
+    {
+      "id": "T58",
+      "name": "Панорамная раздвижная дверь, 2 полотна",
+      "short": "Панорама ×2",
+      "category": "sliding",
+      "kind": "sliding",
+      "default_w": 3000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "sliding": {
+          "leaves": 2,
+          "rails": 2,
+          "overlap_mm": "passport",
+          "moving": [
+            true,
+            true
+          ],
+          "kind": "panoramic",
+          "threshold": "low"
+        }
+      },
+      "setup": {
+        "glass": "g4t_14_4t"
+      }
+    },
+    {
+      "id": "T59",
+      "name": "Панорамная раздвижная дверь, 3 полотна",
+      "short": "Панорама ×3",
+      "category": "sliding",
+      "kind": "sliding",
+      "default_w": 4500,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "sliding": {
+          "leaves": 3,
+          "rails": 3,
+          "overlap_mm": "passport",
+          "moving": [
+            true,
+            true,
+            true
+          ],
+          "kind": "panoramic",
+          "threshold": "low"
+        }
+      },
+      "setup": {
+        "glass": "g4t_14_4t"
+      }
+    },
+    {
+      "id": "T60",
+      "name": "Панорамная раздвижная дверь, 4 полотна (2 подвижные)",
+      "short": "Панорама ×4",
+      "category": "sliding",
+      "kind": "sliding",
+      "default_w": 6000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "sliding": {
+          "leaves": 4,
+          "rails": 2,
+          "overlap_mm": "passport",
+          "moving": [
+            false,
+            true,
+            true,
+            false
+          ],
+          "kind": "panoramic",
+          "threshold": "low"
+        }
+      },
+      "setup": {
+        "glass": "g4t_14_4t"
+      }
+    },
+    {
+      "id": "T61",
+      "name": "Раздвижное окно на балкон, 4 полотна",
+      "short": "Балкон раздвижное ×4",
+      "category": "sliding",
+      "kind": "sliding",
+      "default_w": 3200,
+      "default_h": 1400,
+      "ready": true,
+      "root": {
+        "sliding": {
+          "leaves": 4,
+          "rails": 2,
+          "overlap_mm": "passport",
+          "moving": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "kind": "window",
+          "threshold": "standard"
+        }
+      }
+    },
+    {
+      "id": "T62",
+      "name": "Угловое панорамное остекление без стойки",
+      "short": "Угол без стойки",
+      "category": "corner",
+      "kind": "assembly",
+      "default_w": 6000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 3000,
+              "h": 2400,
+              "shape": "rect",
+              "root": {
+                "sliding": {
+                  "leaves": 2,
+                  "rails": 2,
+                  "overlap_mm": "passport",
+                  "moving": [
+                    true,
+                    true
+                  ],
+                  "kind": "panoramic",
+                  "threshold": "low"
+                }
+              }
+            }
+          },
+          {
+            "joint": "corner_free",
+            "angle": 90
+          },
+          {
+            "frame": {
+              "w": 3000,
+              "h": 2400,
+              "shape": "rect",
+              "root": {
+                "sliding": {
+                  "leaves": 2,
+                  "rails": 2,
+                  "overlap_mm": "passport",
+                  "moving": [
+                    true,
+                    true
+                  ],
+                  "kind": "panoramic",
+                  "threshold": "low"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "setup": {
+        "glass": "g4t_14_4t"
+      }
+    },
+    {
+      "id": "T63",
+      "name": "Гильотинное окно: низ поднимается",
+      "short": "Гильотинное: низ",
+      "category": "window",
+      "kind": "window",
+      "default_w": 1000,
+      "default_h": 1600,
+      "ready": true,
+      "root": {
+        "split": "vslide",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "fixed"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "moving"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "T64",
+      "name": "Гильотинное окно: оба полотна подвижные",
+      "short": "Гильотинное: оба",
+      "category": "window",
+      "kind": "window",
+      "default_w": 1000,
+      "default_h": 1600,
+      "ready": true,
+      "root": {
+        "split": "vslide",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "moving"
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "moving"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "T65",
+      "name": "Гильотинное окно с откидыванием для мытья",
+      "short": "Гильотинное + мытьё",
+      "category": "window",
+      "kind": "window",
+      "default_w": 1000,
+      "default_h": 1600,
+      "ready": true,
+      "root": {
+        "split": "vslide",
+        "parts": [
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "moving",
+              "tilt_clean": true
+            }
+          },
+          {
+            "size": "eq",
+            "cell": {
+              "type": "sash",
+              "open": "vslide",
+              "handle": true,
+              "mosquito": false,
+              "slide": "moving",
+              "tilt_clean": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "T66",
+      "name": "Гильотина для террасы, 3 модуля",
+      "short": "Гильотина ×3",
+      "category": "guillotine",
+      "kind": "guillotine",
+      "default_w": 6000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "guillotine": {
+          "modules": 3,
+          "panels": 3,
+          "moving": 2,
+          "drive": "electric",
+          "glass": "g8t",
+          "posts": "between"
+        }
+      }
+    },
+    {
+      "id": "T67",
+      "name": "Гильотина для террасы, 5 модулей",
+      "short": "Гильотина ×5",
+      "category": "guillotine",
+      "kind": "guillotine",
+      "default_w": 10000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "guillotine": {
+          "modules": 5,
+          "panels": 3,
+          "moving": 2,
+          "drive": "remote",
+          "glass": "g8t",
+          "posts": "between"
+        }
+      }
+    },
+    {
+      "id": "T68",
+      "name": "Гильотина угловая (две гильотины, угол 90°)",
+      "short": "Гильотина угловая",
+      "category": "guillotine",
+      "kind": "assembly",
+      "default_w": 7000,
+      "default_h": 2400,
+      "ready": true,
+      "root": {
+        "assembly": [
+          {
+            "frame": {
+              "w": 4000,
+              "h": 2400,
+              "shape": "rect",
+              "root": {
+                "guillotine": {
+                  "modules": 2,
+                  "panels": 3,
+                  "moving": 2,
+                  "drive": "electric",
+                  "glass": "g8t",
+                  "posts": "between"
+                }
+              }
+            }
+          },
+          {
+            "joint": "angle",
+            "angle": 90
+          },
+          {
+            "frame": {
+              "w": 3000,
+              "h": 2400,
+              "shape": "rect",
+              "root": {
+                "guillotine": {
+                  "modules": 2,
+                  "panels": 3,
+                  "moving": 2,
+                  "drive": "electric",
+                  "glass": "g8t",
+                  "posts": "between"
+                }
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

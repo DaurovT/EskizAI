@@ -17,7 +17,7 @@ from . import commands
 from .api import calc
 from .data import Catalog, Company
 from .glass import fits_beads, parse
-from .model import node_at, setup_of
+from .model import guillotine_of, node_at, root_of, setup_of, special_root
 
 
 def _try(doc, cat, company, base_total):
@@ -71,7 +71,12 @@ def alternatives(doc: dict, cat: Catalog, company: Company | None = None, what: 
             if not fits_beads(g, p):
                 locked.append({"value": code, "label": row["formula"], "blocking": [f"4.6 {g.thickness_mm:g} мм не входит в систему"]})
                 continue
-            nd = commands.set_fill(doc, path, {"kind": "glass", "glass": code}) if path is not None else commands.set_setup(doc, glass=code)
+            if path is not None:
+                nd = commands.set_fill(doc, path, {"kind": "glass", "glass": code})
+            elif special_root(doc) == "guillotine":          # у гильотины стекло в корне (§11.3), незакалённое — 4.23
+                nd = commands.set_guillotine(doc, glass=code)
+            else:
+                nd = commands.set_setup(doc, glass=code)
             offer(code, row["formula"], nd, thickness_mm=g.thickness_mm, price_status=row["price_status"])
     elif what in ("decor_out", "decor_in"):
         side = "color_out" if what == "decor_out" else "color_in"
@@ -123,7 +128,8 @@ def alternatives(doc: dict, cat: Catalog, company: Company | None = None, what: 
     else:
         raise ValueError(f"неизвестно, что заменять: {what}")
 
-    cur = {"system": s["system"], "fittings": s["fittings"], "glass": s["glass"], "decor_out": s["color_out"],
+    glass_cur = guillotine_of(root_of(doc))["glass"] if special_root(doc) == "guillotine" else s["glass"]
+    cur = {"system": s["system"], "fittings": s["fittings"], "glass": glass_cur, "decor_out": s["color_out"],
            "decor_in": s["color_in"], "profile_color": s["profile_color"], "lam_out": s["lam_out"],
            "lam_in": s["lam_in"]}.get(what)
     if what.startswith("supplier:"):

@@ -14,7 +14,7 @@ def calc_order(positions: list[dict], cat: Catalog, company: Company, discount_p
     res, total, cost, blocking, demo = [], 0, 0, [], False
     for doc in positions:
         if kit:
-            doc = commands.set_setup(doc, **{k: v for k, v in kit["setup"].items()})
+            doc = commands.apply_kit(doc, kit["setup"])
         r = calc(doc, cat, company, role="owner")
         res.append((doc, r))
         if r.get("price"):

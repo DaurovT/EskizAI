@@ -71,6 +71,8 @@ def load_company(c, company: str) -> tuple[str, Company]:
     defaults = {x["category"]: str(x["supplier_id"]) for x in c.execute(
         "SELECT category, supplier_id FROM company_suppliers_default WHERE company_id = %s", (r["id"],))}
     gp = c.execute("SELECT data FROM glass_pricing WHERE company_id = %s ORDER BY updated_at DESC LIMIT 1", (r["id"],)).fetchone()
+    systems = [x["system_code"] for x in c.execute("SELECT system_code FROM company_systems WHERE company_id = %s ORDER BY system_code",
+                                                   (r["id"],))]
     co = Company(name=r["name"], mode=r["mode"], dealer_coef=float(r["dealer_coef"] or 0), markup_kind=r["markup_kind"],
                  markup_value=float(r["markup_value"]), usd_rate=float(r["usd_rate"]) if r["usd_rate"] else None,
                  install_gap_mm=r["install_gap_mm"], rounding_sum=r["rounding_sum"], skew_warn_mm=r["skew_warn_mm"],
@@ -78,7 +80,7 @@ def load_company(c, company: str) -> tuple[str, Company]:
                  quote_price_check_days=r["quote_price_check_days"], plan=r["plan"], work_rates=works, kits=kits,
                  item_prices=items, glass_prices=glass, glass_pricing=(gp or {}).get("data") or {},
                  suppliers=suppliers, default_suppliers=defaults, supplier_prices=sup_items, supplier_glass_prices=sup_glass,
-                 markup_groups=r.get("markup_groups") or None)
+                 markup_groups=r.get("markup_groups") or None, systems=systems)
     return str(r["id"]), co
 
 
