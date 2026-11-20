@@ -531,7 +531,19 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
   if ((v.code === '4.6' || v.code === '4.9') && path !== undefined) {
     return { title: 'Выбрать стеклопакет', route: `/order/${order}/kit?pos=${pos}&path=${path}` };
   }
-  if ((v.code === '3.1' || v.code.startsWith('7.') || v.code === '8.6')) {
+  // обычная рама в раздвижной/гильотинной сборке (7.21): сделать её такой же, как соседняя
+  if (v.code === '7.21' && v.path && /^A\d+\//.test(v.path)) {
+    const m = /^A(\d+)\//.exec(v.path)!;
+    const items = (doc.frame.root as { assembly?: { frame?: { root?: { sliding?: unknown; guillotine?: unknown } } }[] }).assembly ?? [];
+    const near = items.map((x) => x.frame?.root).find((r) => r && (r.sliding || r.guillotine));
+    if (near) {
+      const kind = near.guillotine ? 'set_guillotine' : 'set_sliding';
+      const params = (near.guillotine ?? near.sliding) as Record<string, unknown>;
+      return { title: near.guillotine ? 'Сделать гильотиной, как соседние' : 'Сделать раздвижной, как соседние', icon: 'window',
+        commands: [{ cmd: kind, path: `A${m[1]}/`, ...params }] };
+    }
+  }
+  if ((v.code === '3.1' || (v.code.startsWith('7.') && v.code !== '7.21' && v.code !== '7.22') || v.code === '8.6')) {
     return { title: 'Сменить фурнитуру', route: `/order/${order}/alternatives?pos=${pos}&what=fittings` };
   }
   if ((fix.includes('раздел') || fix.includes('импост') || fix.includes('делени')) && cell && path !== undefined) {

@@ -622,7 +622,7 @@ function SplitStep({ doc, run, persist, onDone, onEditor, floorDefault, showToas
             })}
           </ScrollView>
         ) : null}
-        <View style={[st.sheet, { paddingTop: 22, paddingBottom: 12 + 48, alignItems: 'center', minHeight: 300 }]}>
+        <View style={[st.sheet, { paddingTop: 22, paddingBottom: 12 + 48 + 34, alignItems: 'center', minHeight: 300 }]}>
           <SchemaDims doc={shownDoc} width={sw} maxHeight={224} selected={special ? null : sel} onCellPress={tap}
             onDim={special ? undefined : (t) => { if (t.kind === 'part') setDim(t); }} frameDims={false}
             edit={dim ? { target: dim, changed: preview?.changed ?? [] } : null} />

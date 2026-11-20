@@ -1,6 +1,6 @@
 /**
  * Общее для экранов заказов (Orders, OrderNew, Order, Templates): мелкие детали макета, которых нет в src/ui/kit.tsx,
- * — .tag, .ban, .optc, .soft.sm, .svc, миниатюра окна, лист «Сопутствующий товар», склонения.
+ * — .tag, .ban, .optc, .soft.sm, .svc (и AddTile — ряд «Добавить» в заказе), миниатюра окна, лист «Сопутствующий товар», склонения.
  */
 import { ReactNode, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
@@ -170,6 +170,24 @@ export function Svc({ title, sub, icon, pri, onPress, disabled, flex = 1 }: {
   );
 }
 
+// ---------- .svc поменьше — ряд «Добавить» на экране заказа (4 в ряд) ----------
+export function AddTile({ title, icon, pri, onPress, disabled, loading }: {
+  title: string; icon: PIconName; pri?: boolean; onPress?: () => void; disabled?: boolean; loading?: boolean;
+}) {
+  const off = disabled || loading;
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ disabled: !!off, busy: !!loading }} disabled={off} onPress={onPress}
+      style={({ pressed }) => [st.addTile, { opacity: disabled ? 0.45 : loading ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        pri && { backgroundColor: 'transparent', borderWidth: 1.2, borderColor: 'rgba(64,92,138,0.95)' }]}>
+      {pri ? <GlassBlue /> : null}
+      <View style={[st.addIco, pri && { backgroundColor: 'rgba(255,255,255,0.55)' }]}>
+        <PIcon name={icon} size={20} color={pri ? C.ctaText : C.ink} />
+      </View>
+      <Txt size={15} w={600} lines={2} color={pri ? C.ctaText : C.ink} style={{ lineHeight: 19 }}>{title}</Txt>
+    </Pressable>
+  );
+}
+
 // ---------- миниатюры ----------
 /** Схематичное окно П-О + глухая + П (макет .tile в списке заказов). */
 export function WindowThumb({ width = 40, height = 34 }: { width?: number; height?: number }) {
@@ -287,6 +305,8 @@ export const st = StyleSheet.create({
   posTile: { borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   softSm: { height: 44, borderRadius: 999, backgroundColor: C.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 14 },
   svc: { height: 112, borderRadius: 24, backgroundColor: C.card, padding: 14, justifyContent: 'flex-end', overflow: 'hidden' },
+  addTile: { flex: 1, minWidth: 0, height: 96, borderRadius: 22, backgroundColor: C.card, padding: 12, justifyContent: 'space-between', overflow: 'hidden' },
+  addIco: { width: 36, height: 36, borderRadius: 12, backgroundColor: C.soft, alignItems: 'center', justifyContent: 'center' },
   svcIco: { position: 'absolute', right: 10, top: 10, width: 36, height: 36, borderRadius: 12, backgroundColor: C.soft, alignItems: 'center', justifyContent: 'center' },
   kbSheet: { backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '92%' },
   grab: { height: 22, alignItems: 'center', justifyContent: 'center' },
