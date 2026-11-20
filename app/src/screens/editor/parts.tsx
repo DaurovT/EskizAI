@@ -502,6 +502,9 @@ export const shortDate = (iso?: string | null) => {
 export type FixAction = { title: string; icon?: IconName; commands?: Command[]; route?: string };
 
 /** Кнопка исправления у нарушения (EditorBlock / EditorIssues): по коду правила и тексту fix с сервера. */
+/** путь части k узла parent: '' → 'k', 'A1/' → 'A1/k', '0' → '0.k' */
+const joinPart = (parent: string, k: number) => (parent === '' || parent.endsWith('/') ? `${parent}${k}` : `${parent}.${k}`);
+
 export function fixAction(v: Violation, doc: Doc, order: string, pos: string): FixAction | null {
   const path = v.path ?? (doc.frame.root.cell ? '' : undefined);
   const cell = path !== undefined ? cellAt(doc, path) : null;
@@ -541,6 +544,27 @@ export function fixAction(v: Violation, doc: Doc, order: string, pos: string): F
     if (sz && lim) {
       const [w, h, mw, mh] = [sz[1], sz[2], lim[1], lim[2]].map(Number);
       if (w > mw) { dir = 'v'; n = Math.max(2, Math.ceil(w / mw)); } else if (h > mh) { dir = 'h'; n = Math.max(2, Math.ceil(h / mh)); }
+      // створка шире предела, а рядом глухая, у которой есть запас: сузить створку до предела, глухую расширить
+      if (w > mw && box) {
+        const info = partInfo(doc, path);
+        if (info && info.axis === 'w') {
+          const over = box.x1 - box.x0 - w;                       // рама/импост вокруг створки
+          const target = Math.floor((mw + over) / 5) * 5;          // ширина части, при которой створка = предел
+          const nb = [info.index - 1, info.index + 1].find((k) => {
+            const p = info.parts[k];
+            const c2 = p?.cell;
+            return c2 && c2.type === 'fixed' && (info.sizes[k] ?? 0) + (info.sizes[info.index] - target) <= 6000;
+          });
+          if (nb !== undefined && target >= 400) {
+            const delta = info.sizes[info.index] - target;
+            const commands: Command[] = info.parts.map((p, k) => ({
+              cmd: 'set_part_size', path: joinPart(info.parent, k),
+              size: k === info.index ? target : k === nb ? Math.round(info.sizes[k] + delta) : (typeof p.size === 'number' ? p.size : Math.round(info.sizes[k])),
+            }));
+            return { title: `Створка ${target}, глухая шире`, icon: 'window', commands };
+          }
+        }
+      }
       // X5Err: створка шире предела, а части узла «поровну» — на одну (или больше) створку больше, все поровну: «Сделать 3 створки»
       if (w > mw && box) {
         const info = partInfo(doc, path);
