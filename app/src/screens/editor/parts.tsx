@@ -107,13 +107,14 @@ export function TextLink({ title, onPress, color = C.accentText }: { title: stri
 
 /** Выбор одного из вариантов — строка светлых пилюль (выбранная тёмная), листается вбок. */
 /** Варианты плиткой в N колонок — всё видно сразу, без листания вбок (на телефоне листание прятало половину вариантов). */
-export function Tiles<T extends string>({ items, value, onChange, cols = 2 }: {
-  items: { value: T; title: string; sub?: string }[]; value: T | null; onChange: (v: T) => void; cols?: 2 | 3;
+/** on — несколько выбранных сразу (например, подвижные полотна раздвижной); иначе выбран value. */
+export function Tiles<T extends string>({ items, value, onChange, cols = 2, on: isOn }: {
+  items: { value: T; title: string; sub?: string }[]; value: T | null; onChange: (v: T) => void; cols?: 2 | 3; on?: (v: T) => boolean;
 }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {items.map((it) => {
-        const on = it.value === value;
+        const on = isOn ? isOn(it.value) : it.value === value;
         return (
           <Pressable key={it.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(it.value)}
             style={({ pressed }) => ({
@@ -391,7 +392,7 @@ export const refs = {
 export const TYPE_TITLE: Record<Cell['type'], string> = { fixed: 'Глухая', sash: 'Створка', door_sash: 'Дверная', panel: 'Панель' };
 export const OPEN_TITLE: Record<string, string> = {
   turn: 'Поворотная', tilt_turn: 'П-О', tilt: 'Откидная', sliding: 'Раздвижная', top_hung: 'Подвесное', pivot: 'Среднеподвесное',
-  psk: 'PSK (параллельно-сдвижная)', hs: 'HS (подъёмно-сдвижная)', folding: 'Гармошка',
+  psk: 'PSK (параллельно-сдвижная)', hs: 'HS (подъёмно-сдвижная)', folding: 'Гармошка', vslide: 'Гильотинное',
 };
 export const SHAPE_TITLE: Record<Shape, string> = {
   rect: 'Обычная', arch: 'Арка', circle: 'Круг', trapezoid: 'Трапеция', bevel: 'Скос угла', triangle: 'Треугольник',

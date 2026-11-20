@@ -11,7 +11,9 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import type { Cell, Command, Doc, Measure as MeasureRes, Node, OrderFull, Shape } from '@/api/types';
 import { num } from '@/lib/format';
-import { apply, cells, frameShape, isAssembly, layout, loggiaDoc, scaleAssembly, simpleWindow } from '@/lib/tree';
+import {
+  apply, cells, frameShape, guillotineDoc, isAssembly, layout, loggiaDoc, scaleAssembly, simpleWindow, slidingDoc, slidingSpec,
+} from '@/lib/tree';
 import { offline, uuid } from '@/offline/store';
 import { Icon } from '@/ui/Icon';
 import { Schema } from '@/ui/Schema';
@@ -229,12 +231,16 @@ const KINDS: { kind: Doc['kind'] | 'loggia'; title: string; sub: string }[] = [
   { kind: 'balcony_block', title: 'Балконный блок', sub: 'дверь + окно' },
   { kind: 'door', title: 'Дверь', sub: 'входная, балконная' },
   { kind: 'loggia', title: 'Лоджия', sub: 'П-образная, 3 рамы' },
+  { kind: 'sliding', title: 'Раздвижная', sub: 'окно, дверь, панорама' },
+  { kind: 'guillotine', title: 'Гильотина / терраса', sub: 'полотна поднимаются' },
 ];
 const KIND_ICON: Record<string, Doc> = {
   window: simpleWindow(1300, 1200, 2),
   balcony_block: presetDoc(PRESETS.find((p) => p.id === 'T09')!, 1800, 1400),
   door: presetDoc(PRESETS.find((p) => p.id === 'T11')!, 700, 1400),
   loggia: loggiaDoc(3000, 1400, 700, 1, 2),   // иконка: боковые глухие, фронт — 2 части
+  sliding: slidingDoc(2000, 1400, 2),
+  guillotine: guillotineDoc(3000, 2200, 2),
 };
 const WALLS = [{ value: 'brick', title: 'Кирпич' }, { value: 'concrete', title: 'Бетон' }, { value: 'aerated', title: 'Газоблок' }, { value: 'wood', title: 'Дерево' }];
 const SLOPES = [100, 150, 200, 250, 300, 400];
@@ -253,6 +259,13 @@ function OpeningStep({ doc, run, persist, goto, showToast }: StepProps) {
       return;
     }
     if (k === doc.kind) return;
+    if (k === 'sliding' || k === 'guillotine') {
+      // раздвижная и гильотина (§11): своя система вместо дерева створок; параметры — в редакторе, раздел «Окно»
+      const base = k === 'sliding' ? slidingDoc(measured ? doc.frame.w : 2000, measured ? doc.frame.h : 1400, 2)
+        : guillotineDoc(measured ? doc.frame.w : 4500, measured ? doc.frame.h : 2400, measured ? Math.max(1, Math.round(doc.frame.w / 1500)) : 3);
+      persist?.({ ...base, id: doc.id, room: doc.room, opening: doc.opening, setup: doc.setup, extras: doc.extras ?? {} }, 2);
+      return;
+    }
     const p = PRESETS.find((x) => x.id === DEFAULT_PRESET[k]);
     let next = apply(doc, [{ cmd: 'set_meta', kind: k }]);
     if (p) next = { ...next, frame: { ...next.frame, w: measured ? next.frame.w : p.w, h: measured ? next.frame.h : p.h, root: clone(p.root) } };
@@ -489,6 +502,7 @@ function splitOf(root: Node): { leaves: number; transom: boolean } {
 /** Тап по ячейке: глухая → поворотно-откидная → поворотная → откидная → глухая. */
 function cycle(c: Cell): Partial<Cell> {
   if (c.type === 'panel') return { type: 'fixed' };
+  if (c.open === 'vslide') return { slide: c.slide === 'fixed' ? 'moving' : 'fixed' };   // гильотинное: подвижное ⇄ глухое
   if (c.type === 'door_sash') return { open: c.open === 'turn' ? 'tilt_turn' : 'turn' };
   if (c.type === 'fixed') return { type: 'sash', open: 'tilt_turn', hinge: 'left', handle: true };
   if (c.open === 'tilt_turn') return { open: 'turn', hinge: c.hinge === 'right' ? 'right' : 'left' };
@@ -497,7 +511,7 @@ function cycle(c: Cell): Partial<Cell> {
 }
 const OPEN_TITLE: Record<string, string> = {
   fixed: 'глухая', tilt_turn: 'поворотно-откидная', turn: 'поворотная', tilt: 'откидная', panel: 'панель', top_hung: 'подвесная', pivot: 'среднеподвесная',
-  sliding: 'раздвижная',
+  sliding: 'раздвижная', vslide: 'гильотинное',
 };
 
 /** Быстрый выбор формы рамы на шаге деления (подробно — в редакторе: Ещё → Форма рамы). */
@@ -542,15 +556,24 @@ function SplitStep({ doc, run, persist, goto, orderId, pos }: StepProps & { orde
     persist?.({ ...doc, frame: { ...doc.frame, root: clone(p.root) } }, 4);
     setSel(null);
   };
+  const sliding = slidingSpec(doc.frame);
+  const special = !!(sliding || doc.frame.root.guillotine);
   const tap = (path: string) => {
+    if (sliding) {
+      // раздвижная: тап — полотно подвижное ⇄ глухое
+      const i = Number(path);
+      run([{ cmd: 'set_sliding', moving: sliding.moving.map((m, j) => (j === i ? !m : m)) }], 4);
+      return;
+    }
     const c = L?.cells.find((x) => x.path === path)?.cell;
     if (!c) return;
     setSel(path);
     run([{ cmd: 'set_cell', path, ...cycle(c) }], 4);
   };
   const flipHinge = (path: string, to?: 'left' | 'right') => {
+    if (special) return;
     const c = L?.cells.find((x) => x.path === path)?.cell;
-    if (!c || !isOpening(c) || c.open === 'tilt') return;
+    if (!c || !isOpening(c) || c.open === 'tilt' || c.open === 'vslide') return;
     const h = to ?? (c.hinge === 'right' ? 'left' : 'right');
     if (h !== c.hinge) run([{ cmd: 'set_cell', path, hinge: h }], 4);
     setSel(path);
@@ -627,13 +650,14 @@ function SplitStep({ doc, run, persist, goto, orderId, pos }: StepProps & { orde
           <View ref={box} {...pan.panHandlers} onLayout={() => box.current?.measureInWindow((x, y) => { origin.current = { x, y }; })}>
             <Schema doc={doc} width={sw} maxHeight={300} selected={sel} onCellPress={tap} />
           </View>
-          <Txt style={st.cap}>Тап — тип по кругу · свайп — сторона петель</Txt>
+          <Txt style={st.cap}>{sliding ? 'Тап — полотно подвижное или глухое' : doc.frame.root.guillotine ? 'Модули, привод и стекло — в редакторе' : 'Тап — тип по кругу · свайп — сторона петель'}</Txt>
           {selCell ? (
             <View style={{ alignSelf: 'stretch', paddingHorizontal: 16, gap: 8, paddingTop: 4 }}>
               <Txt size={14} w={500} color={C.muted} center>
                 {selCell.type === 'door_sash' ? 'дверь' : 'створка'}: {OPEN_TITLE[selCell.type === 'sash' || selCell.type === 'door_sash' ? selCell.open ?? 'turn' : selCell.type]}
+                {selCell.open === 'vslide' ? (selCell.slide === 'fixed' ? ', неподвижное' : ', подвижное') : ''}
               </Txt>
-              {isOpening(selCell) && selCell.open !== 'tilt' ? (
+              {isOpening(selCell) && selCell.open !== 'tilt' && selCell.open !== 'vslide' ? (
                 <Seg items={[{ value: 'left', title: 'Петли слева' }, { value: 'right', title: 'Петли справа' }]} value={selCell.hinge === 'right' ? 'right' : 'left'}
                   onChange={(v) => flipHinge(sel!, v as 'left' | 'right')} style={s.segIn} />
               ) : null}

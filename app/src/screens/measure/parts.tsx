@@ -10,7 +10,7 @@ import Svg, { G, Path, Rect } from 'react-native-svg';
 import { ApiError, request } from '@/api/http';
 import type { Cell, Doc, Measure, Node } from '@/api/types';
 import { num } from '@/lib/format';
-import { isAssembly, isShaped, layout } from '@/lib/tree';
+import { cells, isAssembly, isGuillotine, isShaped, isSliding, layout } from '@/lib/tree';
 import { Schema } from '@/ui/Schema';
 import { Icon, IconName } from '@/ui/Icon';
 import { Button, IconButton, Txt } from '@/ui/kit';
@@ -115,8 +115,9 @@ export const presetDoc = (p: Preset, w = p.w, h = p.h): Doc => ({ kind: p.kind, 
 
 // ---------- мини-схема (миниатюры макета: рама, створка, стекло, ручка, знак открывания) ----------
 export function MiniSchema({ doc, width, height }: { doc: Doc; width: number; height: number }) {
-  // фигурная рама и составное изделие — общей схемой без размеров
-  if (doc.frame?.root && (isAssembly(doc) || isShaped(doc.frame))) return <Schema doc={doc} width={width} maxHeight={height} dims={false} />;
+  // фигурная рама, составное, раздвижное, гильотина и гильотинное окно (§11) — общей схемой без размеров
+  if (doc.frame?.root && (isAssembly(doc) || isShaped(doc.frame) || isSliding(doc.frame) || isGuillotine(doc.frame)
+    || cells(doc).some((c) => c.cell.open === 'vslide'))) return <Schema doc={doc} width={width} maxHeight={height} dims={false} />;
   const W = doc.frame.w || 1, H = doc.frame.h || 1;
   const k = Math.min((width - 4) / W, (height - 4) / H);
   const dw = W * k + 4, dh = H * k + 4;
@@ -293,7 +294,7 @@ export function useToast(): [ReactNode, (text: string) => void] {
 export const isOpening = (c: Cell) => c.type === 'sash' || c.type === 'door_sash';
 
 /** Слово для заголовка «Кухня · окно 1». */
-export const KIND_WORD: Record<Doc['kind'], string> = { window: 'окно', balcony_block: 'балконный блок', door: 'дверь', sliding: 'раздвижное', assembly: 'лоджия' };
+export const KIND_WORD: Record<Doc['kind'], string> = { window: 'окно', balcony_block: 'балконный блок', door: 'дверь', sliding: 'раздвижное', assembly: 'лоджия', guillotine: 'гильотина' };
 
 export const st = StyleSheet.create({
   hdr: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 4, minHeight: 56 },

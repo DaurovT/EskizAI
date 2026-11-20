@@ -5,6 +5,9 @@
  * Фигурная рама — полоса по контуру (outline), стекло и импосты обрезаны контуром; раскладка, декор стекла.
  * Составное изделие — рамы в ряд (развёртка), между ними стык с подписью угла; тап отдаёт путь «A<i>/…».
  * highlight — подсветка ячеек по нарушениям (FR-E6): красный — block/lock, жёлтый — warn.
+ * Раздел 11: раздвижные — полотна внахлёст по направляющим, стрелка сдвига у подвижных, «Г» у глухих (тап — путь полотна «0», «1», …);
+ * гильотинное окно — стрелка хода у подвижной части, знак откидывания у tilt_clean; гильотина — модули, стойки, полотна,
+ * стрелки вверх, подпись привода; угол без стойки — стык без стойки «без стойки 90°».
  */
 import { ReactNode, useRef } from 'react';
 import { Pressable, View } from 'react-native';
@@ -14,7 +17,8 @@ import type { Addon, Cell, Doc, Frame, Severity, Violation } from '@/api/types';
 import { isDark, profileHex } from '@/lib/decors';
 import { forgedDecor } from '@/lib/decorPattern';
 import {
-  asmFrames, asmJoints, boxPts, clipPoly, frameShape, insetPoly, isAssembly, isShaped, layout, lineSpan, outline, type Box, type Pt,
+  asmFrames, asmJoints, boxPts, clipPoly, frameShape, guillotineSpec, insetPoly, isAssembly, isShaped, layout, lineSpan, outline, slidingSpec,
+  type Box, type Layout, type Pt,
 } from '@/lib/tree';
 import { C, F } from '@/theme';
 
@@ -102,12 +106,16 @@ export function schemaGeometry(doc: Doc, width: number, maxHeight: number | unde
     if (pos < n - 1) {
       const ji = mirror ? i - 1 : i;
       const j = joints[ji] ?? { joint: 'straight', angle: 180 };
-      js.push({ index: ji, x: x + gap / 2, joint: j.joint, label: j.joint === 'angle' ? `${j.angle}°` : j.joint === 'post' ? 'стойка' : '180°' });
+      js.push({ index: ji, x: x + gap / 2, joint: j.joint, label: jointLabel(j) });
       x += gap;
     }
   });
   return { k, pad, top, vw: x + pad, vh: H * k + 2 * pad + top, gap, mirror, frames: out, joints: js, margins };
 }
+
+/** подпись стыка над схемой сборки */
+export const jointLabel = (j: { joint: string; angle: number }) => (j.joint === 'angle' ? `${j.angle}°` : j.joint === 'post' ? 'стойка'
+  : j.joint === 'corner_free' ? `без стойки ${j.angle}°` : '180°');
 
 const pathD = (pts: Pt[]) => (pts.length ? `M${pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('L')}Z` : '');
 
@@ -146,8 +154,13 @@ export function Schema({ doc, width, maxHeight, dims = true, view = 'inside', se
           const yTop = G0.pad + G0.top, yBot = f.y + f.h;
           return (
             <G key={`j${j.index}`}>
-              <Rect x={j.x - G0.gap / 2 + 1} y={yTop + 2} width={Math.max(1, G0.gap - 2)} height={Math.max(1, yBot - yTop - 4)}
-                fill={j.joint === 'post' ? '#55524D' : '#C9C6C0'} stroke={C.ink} strokeWidth={0.6} />
+              {j.joint === 'corner_free' ? (
+                // угол без стойки: стекло к стеклу — только шов, без профиля
+                <Rect x={j.x - 1.5} y={yTop + 2} width={3} height={Math.max(1, yBot - yTop - 4)} fill="#DCEBF5" stroke={C.ink} strokeWidth={0.6} strokeDasharray="3 2" />
+              ) : (
+                <Rect x={j.x - G0.gap / 2 + 1} y={yTop + 2} width={Math.max(1, G0.gap - 2)} height={Math.max(1, yBot - yTop - 4)}
+                  fill={j.joint === 'post' ? '#55524D' : '#C9C6C0'} stroke={C.ink} strokeWidth={0.6} />
+              )}
               {G0.top ? <SvgText x={j.x} y={G0.pad + 12} fontSize={11} fontFamily={F.semibold} fill={C.dim} textAnchor="middle">{j.label}</SvgText> : null}
             </G>
           );
@@ -182,7 +195,7 @@ function PartDims({ doc, fg, k, mirror }: { doc: Doc; fg: SchemaFrameGeo; k: num
   return (
     <>
       {(L.sizes[''] ?? []).map((s, i) => {
-        if (root.split !== 'h') {
+        if (root.split !== 'h' && root.split !== 'vslide') {
           const a = X(acc), b = X(acc + s); acc += s;
           return <SvgText key={i} x={(a + b) / 2} y={14} fontSize={11} fontFamily={F.medium} fill={C.muted} textAnchor="middle">{String(Math.round(s))}</SvgText>;
         }
@@ -209,6 +222,10 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
     return { x: Math.min(a, b), y: Y(y0), width: Math.abs(b - a), height: Math.max(0, Y(y1) - Y(y0)) };
   };
   const L = layout({ kind: 'window', frame: f });
+  const sel = selected;
+  const ctx: ArtCtx = { fg, k, X, Y, rect, prof, knob, hl, selected: sel, taps, small, L, mirror };
+  if (f.root?.sliding) return slidingArt(ctx);
+  if (f.root?.guillotine) return guillotineArt(ctx);
   const shaped = isShaped(f);
   const contour = shaped ? outline(f) : null;
   const inner = contour ? insetPoly(contour, FRAME) : null;
@@ -221,7 +238,8 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
   const body: ReactNode[] = [];
   if (inner) defs.push(<ClipPath key="in" id={`${uid}in`}><Path d={P(inner)} /></ClipPath>);
 
-  L.cells.forEach(({ path: sub, cell, box, sides }, ci) => {
+  L.cells.forEach((lc, ci) => {
+    const { path: sub, cell, box, sides } = lc;
     const path = fg.prefix + sub;
     const r = rect(box.x0, box.y0, box.x1, box.y1);
     taps.push({ path, x: r.x, y: r.y, w: r.width, h: r.height });
@@ -277,6 +295,15 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
         <Path key="s2" d={`M${X(to + dir * hd)} ${Y(my - hd * 0.6)}L${X(to)} ${Y(my)}L${X(to + dir * hd)} ${Y(my + hd * 0.6)}`} fill="none" {...line} />);
       if (op !== 'sliding' && !small) signs.push(<SvgText key="s3" x={X(mx)} y={Y(my) - 6} fontSize={10} fontFamily={F.semibold} fill={C.muted} textAnchor="middle">{op === 'psk' ? 'PSK' : 'HS'}</SvgText>);
     }
+    if (open && op === 'vslide') {
+      // гильотинное (§11.2): подвижная часть — стрелка хода (нижняя вверх, верхняя вниз); tilt_clean — знак откидывания пунктиром
+      if (cell.slide !== 'fixed') signs.push(...arrowV(X(mx), Y(gb.y0 + (gb.y1 - gb.y0) * (lc.vslide === 'top' ? 0.25 : 0.75)),
+        Y(gb.y0 + (gb.y1 - gb.y0) * (lc.vslide === 'top' ? 0.75 : 0.25)), Math.min(60, (g.x1 - g.x0) * 0.1) * k, 'v'));
+      if (cell.tilt_clean) {
+        signs.push(<Line key="c1" x1={X(g.x0)} y1={Y(topAt(g.x0))} x2={X(mx)} y2={Y(g.y1)} {...line} strokeDasharray={dash} />,
+          <Line key="c2" x1={X(g.x1)} y1={Y(topAt(g.x1))} x2={X(mx)} y2={Y(g.y1)} {...line} strokeDasharray={dash} />);
+      }
+    }
     const knobs: ReactNode[] = [];
     if (open && cell.handle !== false) {
       if ((op === 'turn' || op === 'tilt_turn' || op === 'folding' || op === 'psk' || op === 'hs') && (hinge === 'left' || hinge === 'right')) {
@@ -285,6 +312,9 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
         knobs.push(<Rect key="kn" {...rect(mx - 50, g.y1 - 14, mx + 50, g.y1)} fill={knob} />);
       } else if (op === 'pivot') {
         knobs.push(<Rect key="kn" {...rect(mx - 50, topAt(mx), mx + 50, topAt(mx) + 14)} fill={knob} />);
+      } else if (op === 'vslide' && lc.vslide === 'bottom' && cell.slide !== 'fixed') {
+        // замок на встречной планке — сверху нижнего полотна
+        knobs.push(<Rect key="kn" {...rect(mx - 50, ly0 - 4, mx + 50, ly0 + 10)} fill={knob} />);
       }
     }
     const gpx = Math.abs(X(g.x1) - X(g.x0));
@@ -300,7 +330,7 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
         </G>
         {glassPoly ? <Path d={P(glassPoly)} fill="none" stroke={stroke} strokeWidth={sw} /> : <Rect {...rect(g.x0, g.y0, g.x1, g.y1)} fill="none" stroke={stroke} strokeWidth={sw} />}
         {knobs}
-        {cell.type === 'fixed' && !cell.muntins && !(cell.fill?.kind === 'glass' && cell.fill.decor) && gpx > 18 ? (
+        {(cell.type === 'fixed' || (op === 'vslide' && cell.slide === 'fixed' && !cell.tilt_clean)) && !cell.muntins && !(cell.fill?.kind === 'glass' && cell.fill.decor) && gpx > 18 ? (
           <SvgText x={X(mx)} y={Y((gb.y0 + gb.y1) / 2) + 4} fontSize={11} fontFamily={F.medium} fill={C.faint} textAnchor="middle">Г</SvgText>
         ) : null}
         {cell.mosquito && gpx > 40 ? (
@@ -329,6 +359,147 @@ function FrameArt({ uid, fg, k, mirror, prof, knob, hl, selected, taps, small }:
       {body}
       {inner ? <G clipPath={`url(#${uid}in)`}>{mullions}</G> : mullions}
       {inner ? <Path d={P(inner)} fill="none" stroke={C.ink} strokeWidth={0.9} /> : null}
+    </G>
+  );
+}
+
+// ---------------------------------------------------------------- раздвижные и гильотина (§11)
+type ArtCtx = {
+  fg: SchemaFrameGeo; k: number; X: (x: number) => number; Y: (y: number) => number;
+  rect: (x0: number, y0: number, x1: number, y1: number) => { x: number; y: number; width: number; height: number };
+  prof: string; knob: string; hl: Record<string, Severity>; selected: string | null;
+  taps: { path: string; x: number; y: number; w: number; h: number }[]; small: boolean; L: Layout; mirror: boolean;
+};
+const GLASS = '#DCEBF5';
+const line0 = { stroke: C.ink, strokeWidth: 0.9 } as const;
+
+/** Стрелка в px: из a в b по оси (v — вертикальная, x = c; h — горизонтальная, y = c), голова hd px. */
+function arrowV(c: number, a: number, b: number, hd: number, o: 'v' | 'h'): ReactNode[] {
+  const h = Math.max(3, hd), dir = b > a ? -1 : 1;
+  const P = (u: number, v: number) => (o === 'v' ? `${v} ${u}` : `${u} ${v}`);
+  return [
+    o === 'v' ? <Line key="av1" x1={c} y1={a} x2={c} y2={b} {...line0} /> : <Line key="av1" x1={a} y1={c} x2={b} y2={c} {...line0} />,
+    <Path key="av2" d={`M${P(b + dir * h, c - h * 0.6)}L${P(b, c)}L${P(b + dir * h, c + h * 0.6)}`} fill="none" {...line0} />,
+  ];
+}
+const selStroke = (path: string, hl: Record<string, Severity>, selected: string | null) => {
+  const sev = hl[path];
+  return {
+    stroke: sev === 'block' ? C.dangerLine : sev === 'warn' ? '#F2B705' : selected === path ? C.accent : C.ink,
+    strokeWidth: sev || selected === path ? 2.6 : 0.9,
+  };
+};
+
+/** Раздвижная (§11.1): рама, полотна внахлёст — внутренние направляющие поверх наружных. */
+function slidingArt({ fg, k, X, Y, rect, prof, knob, hl, selected, taps, small, L, mirror }: ArtCtx): ReactNode {
+  const f = fg.frame, W = f.w, H = f.h;
+  const sp = slidingSpec(f)!;
+  const pano = sp.kind === 'panoramic';
+  const FR = pano ? 48 : FRAME;
+  const door = sp.kind !== 'window';
+  const BOT = door && sp.threshold === 'low' ? 30 : door && sp.threshold === 'flush' ? 12 : FR;
+  const LF = pano ? 46 : SASH;
+  // ближняя к смотрящему направляющая — поверх: изнутри — внутренняя (больший номер), снаружи — наружная
+  const leaves = [...L.cells].sort((a, b) => ((a.leaf!.rail - b.leaf!.rail) * (mirror ? -1 : 1)) || (a.leaf!.index - b.leaf!.index));
+  const ov = sp.overlap;
+  const body: ReactNode[] = [];
+  for (const c of leaves) {
+    const lf = c.leaf!;
+    const path = fg.prefix + c.path.slice(c.path.lastIndexOf('/') + 1);
+    const x0 = Math.max(c.box.x0, FR - 8), x1 = Math.min(c.box.x1, W - FR + 8);
+    const y0 = FR - 8, y1 = Math.min(H, H - BOT + 8);
+    const g: Box = { x0: x0 + LF, y0: y0 + LF, x1: x1 - LF, y1: y1 - LF };
+    // тап — по своей (не перекрытой соседом) части полотна
+    const t = rect(c.box.x0 + (lf.index ? ov / 2 : 0), 0, c.box.x1 - (lf.index < sp.n - 1 ? ov / 2 : 0), H);
+    taps.push({ path, x: t.x, y: t.y, w: t.width, h: t.height });
+    const ss = selStroke(path, hl, selected);
+    const mx = (g.x0 + g.x1) / 2, my = (g.y0 + g.y1) / 2;
+    const gpx = Math.abs(X(g.x1) - X(g.x0));
+    const signs: ReactNode[] = [];
+    if (lf.moving && g.x1 > g.x0) {
+      const a = lf.dir > 0 ? g.x0 + (g.x1 - g.x0) * 0.2 : g.x1 - (g.x1 - g.x0) * 0.2;
+      const b = lf.dir > 0 ? g.x1 - (g.x1 - g.x0) * 0.2 : g.x0 + (g.x1 - g.x0) * 0.2;
+      signs.push(...arrowV(Y(my), X(a), X(b), Math.min(60, (g.x1 - g.x0) * 0.1) * k, 'h'));
+      // ручка — на стойке против хода
+      const hx = lf.dir > 0 ? x0 + LF * 0.3 : x1 - LF * 0.3 - 14;
+      signs.push(<Rect key="kn" {...rect(hx, my - 60, hx + 14, my + 60)} fill={knob} />);
+    }
+    body.push(
+      <G key={path}>
+        <Rect {...rect(x0, y0, x1, y1)} fill={prof} stroke={C.ink} strokeWidth={1.1} />
+        {g.x1 > g.x0 && g.y1 > g.y0 ? <Rect {...rect(g.x0, g.y0, g.x1, g.y1)} fill={GLASS} {...ss} /> : null}
+        {signs}
+        {!lf.moving && gpx > 18 ? <SvgText x={X(mx)} y={Y(my) + 4} fontSize={11} fontFamily={F.medium} fill={C.faint} textAnchor="middle">Г</SvgText> : null}
+      </G>,
+    );
+  }
+  return (
+    <G>
+      <Rect {...rect(0, 0, W, H)} fill={prof} stroke={C.ink} strokeWidth={1.6} />
+      <Rect {...rect(FR, FR, W - FR, H - BOT)} fill="#C9D7E0" stroke={C.ink} strokeWidth={0.6} />
+      {body}
+      {door && sp.threshold !== 'standard' ? (
+        <Rect {...rect(0, H - BOT, W, H)} fill="#A9ACAE" stroke={C.ink} strokeWidth={0.6} />
+      ) : null}
+      {door && sp.threshold === 'flush' ? (
+        <Line x1={X(-60)} y1={Y(H) + 1} x2={X(W + 60)} y2={Y(H) + 1} stroke={C.muted} strokeWidth={1} strokeDasharray="4 3" />
+      ) : null}
+      {!small && pano ? (
+        <SvgText x={X(W / 2)} y={Y(FR / 2) + 3.5} fontSize={Math.min(10, Math.max(7, FR * k * 0.8))} fontFamily={F.medium} fill={C.dim} textAnchor="middle">
+          {FR * k >= 7 ? 'панорамная' : ''}
+        </SvgText>
+      ) : null}
+    </G>
+  );
+}
+
+const DRIVE_TITLE: Record<string, string> = { manual: 'привод ручной', electric: 'электропривод', remote: 'электропривод + пульт' };
+/** Гильотина (§11.3): модули в ряд, стойки, в модуле полотна сверху вниз; подвижные — стрелка вверх. */
+function guillotineArt({ fg, k, X, Y, rect, prof, hl, selected, small, L }: ArtCtx): ReactNode {
+  const f = fg.frame, W = f.w, H = f.h;
+  const g = guillotineSpec(f)!;
+  const TR = 110, BR = 70, PW = 90, SIDE = 50, PF = 40;
+  const mw = W / g.modules;
+  const ph = (H - TR - BR) / g.panels;
+  const between = g.posts === 'between';
+  const xs = Array.from({ length: g.modules + 1 }, (_, m) => m * mw);
+  const half = (m: number) => (m === 0 || m === g.modules ? (between ? PW : SIDE) : between ? PW / 2 : 4);
+  const body: ReactNode[] = [];
+  for (const c of L.cells) {
+    const { module: m, panel: p, moving } = c.gpanel!;
+    const path = fg.prefix + c.path.slice(c.path.lastIndexOf('/') + 1);
+    const x0 = xs[m] + half(m), x1 = xs[m + 1] - half(m + 1);
+    const y0 = TR + p * ph, y1 = TR + (p + 1) * ph;
+    if (x1 - x0 < 2 * PF) continue;
+    const gl: Box = { x0: x0 + PF, y0: y0 + PF, x1: x1 - PF, y1: y1 - PF };
+    const ss = selStroke(path, hl, selected);
+    const mx = (gl.x0 + gl.x1) / 2;
+    body.push(
+      <G key={path}>
+        <Rect {...rect(x0, y0, x1, y1)} fill={prof} stroke={C.ink} strokeWidth={0.9} />
+        {gl.y1 > gl.y0 ? <Rect {...rect(gl.x0, gl.y0, gl.x1, gl.y1)} fill={GLASS} {...ss} /> : null}
+        {moving && gl.y1 > gl.y0 ? arrowV(X(mx), Y(gl.y0 + (gl.y1 - gl.y0) * 0.8), Y(gl.y0 + (gl.y1 - gl.y0) * 0.2), Math.min(60, (gl.y1 - gl.y0) * 0.15) * k, 'v') : null}
+        {!moving && Math.abs(X(gl.x1) - X(gl.x0)) > 18 ? (
+          <SvgText x={X(mx)} y={Y((gl.y0 + gl.y1) / 2) + 4} fontSize={11} fontFamily={F.medium} fill={C.faint} textAnchor="middle">Г</SvgText>
+        ) : null}
+      </G>,
+    );
+  }
+  const fs = Math.min(10, TR * k * 0.7);
+  return (
+    <G>
+      <Rect {...rect(0, 0, W, TR)} fill={prof} stroke={C.ink} strokeWidth={1.4} />
+      <Rect {...rect(0, H - BR, W, H)} fill={prof} stroke={C.ink} strokeWidth={1.4} />
+      {xs.map((x, m) => {
+        const w = m === 0 || m === g.modules ? half(m) : between ? PW : 0;
+        if (!w) return <Line key={`d${m}`} x1={X(x)} y1={Y(TR)} x2={X(x)} y2={Y(H - BR)} stroke={C.ink} strokeWidth={0.8} />;
+        const a = m === 0 ? 0 : m === g.modules ? W - w : x - w / 2;
+        return <Rect key={`p${m}`} {...rect(a, TR, a + w, H - BR)} fill={between ? '#8E8B85' : prof} stroke={C.ink} strokeWidth={1} />;
+      })}
+      {body}
+      {!small && fs >= 7 ? (
+        <SvgText x={X(W / 2)} y={Y(TR / 2) + fs * 0.35} fontSize={fs} fontFamily={F.medium} fill={C.dim} textAnchor="middle">{DRIVE_TITLE[g.drive]}</SvgText>
+      ) : null}
     </G>
   );
 }

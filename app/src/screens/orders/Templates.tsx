@@ -20,12 +20,14 @@ import { Body, Button, Empty, ErrorText, Field, IconButton, LoadError, Loading, 
 import { Schema } from '@/ui/Schema';
 import { Ban, CompanyOut, KbSheet, Tag, WindowThumb } from './parts';
 
-/** Категории шаблонов (shapes_contract §6); «Мои» — свои шаблоны цеха (§9.7), первыми. */
-type Tab = 'mine' | 'all' | 'window' | 'door' | 'balcony' | 'sliding' | 'shaped' | 'muntins' | 'corner' | 'facade';
+/** Категории шаблонов (shapes_contract §6, §11.3 — гильотина); «Мои» — свои шаблоны цеха (§9.7), первыми.
+ * «скоро» — только у шаблонов с ready: false (раздвижные T12–T14 получают ready: true вместе с ядром §11). */
+type Tab = 'mine' | 'all' | 'window' | 'door' | 'balcony' | 'sliding' | 'shaped' | 'muntins' | 'corner' | 'facade' | 'guillotine';
 const TABS: { value: Tab; title: string }[] = [
   { value: 'mine', title: 'Мои' }, { value: 'all', title: 'Все' }, { value: 'window', title: 'Окна' }, { value: 'door', title: 'Двери' },
   { value: 'balcony', title: 'Балкон' }, { value: 'sliding', title: 'Раздвижные' }, { value: 'shaped', title: 'Фигурные' },
   { value: 'muntins', title: 'С раскладкой' }, { value: 'corner', title: 'Угловые и эркеры' }, { value: 'facade', title: 'Витражи' },
+  { value: 'guillotine', title: 'Терраса / гильотина' },
 ];
 /** старые категории API: assembly → угловые и эркеры */
 const catOf = (t: Template): Tab => (t.category === 'assembly' ? 'corner' : (t.category as Tab));
@@ -174,8 +176,8 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
   const [err, setErr] = useState<string | null>(null);
   const wn = parseInt(w, 10) || 0, hn = parseInt(h, 10) || 0;
   const key = `${wn}x${hn}`;
-  // сборка (угловое, эркер, лоджия) — ширина развёртки, до 20 м; одно окно — до MAX
-  const maxW = t.kind === 'assembly' ? 20000 : MAX;
+  // сборка (угловое, эркер, лоджия) и гильотина из модулей — ширина до 20 м; одно окно — до MAX
+  const maxW = t.kind === 'assembly' || t.kind === 'guillotine' ? 20000 : MAX;
   const valid = wn >= MIN && wn <= maxW && hn >= MIN && hn <= MAX;
 
   // проверка на сервере — с задержкой после ввода
@@ -213,7 +215,7 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
   const blocks = vs.filter((v) => (v.severity === 'block' || v.severity === 'lock') && !v.accepted && v.code !== '1.4');
   const warns = vs.filter((v) => v.severity === 'warn' && !v.accepted && v.scope !== 'price');
 
-  const vertical = doc?.frame.root.split !== 'h';
+  const vertical = doc?.frame.root.split !== 'h' && doc?.frame.root.split !== 'vslide';
   const fixedSum = t.fixed_parts.filter((p) => !p.path.includes('.')).reduce((s, p) => s + p.size, 0);
   const sizes = geo?.sizes[''] ?? [];
   const partsLine = sizes.length > 1
@@ -267,8 +269,8 @@ function SizeSheet({ t, base, setup, kit, orderId, onClose, onAdded }: {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Field label="Ширина, мм" value={w} onChangeText={(x) => setW(x.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" autoFocus
-            error={(!!fitErr && vertical) || (w !== '' && !(wn >= MIN && wn <= MAX))} style={{ flex: 1 }} inputStyle={{ fontVariant: ['tabular-nums'] }} />
+          <Field label="Ширина, мм" value={w} onChangeText={(x) => setW(x.replace(/\D/g, '').slice(0, maxW > MAX ? 5 : 4))} keyboardType="number-pad" autoFocus
+            error={(!!fitErr && vertical) || (w !== '' && !(wn >= MIN && wn <= maxW))} style={{ flex: 1 }} inputStyle={{ fontVariant: ['tabular-nums'] }} />
           <Field label="Высота, мм" value={h} onChangeText={(x) => setH(x.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad"
             error={(!!fitErr && !vertical) || (h !== '' && !(hn >= MIN && hn <= MAX))} style={{ flex: 1 }} inputStyle={{ fontVariant: ['tabular-nums'] }} />
         </View>

@@ -16,7 +16,9 @@ export type CellType = 'fixed' | 'sash' | 'door_sash' | 'panel';
 /** top_hung — подвесное (петли сверху, наружу), pivot — среднеподвесное (ось посередине) — shapes_contract §3 */
 export type Opening = 'turn' | 'tilt_turn' | 'tilt' | 'sliding' | 'top_hung' | 'pivot'
   /** §9.1: гармошка (лист узла split: 'folding'), параллельно-сдвижная, подъёмно-сдвижная */
-  | 'folding' | 'psk' | 'hs';
+  | 'folding' | 'psk' | 'hs'
+  /** §11.2: гильотинное окно (лист узла split: 'vslide') — полотно ездит вверх-вниз */
+  | 'vslide';
 export type Hinge = 'left' | 'right' | 'top' | 'bottom';
 /** Декор стекла (shapes_contract §8): матовое, тонированное (+ tint), зеркальное, узорчатое, витраж. */
 export type GlassDecor = 'matte' | 'tinted' | 'mirror' | 'pattern' | 'stained';
@@ -36,22 +38,41 @@ export type Cell = {
   open_dir?: 'in' | 'out'; threshold?: 'standard' | 'low_alu' | 'none';
   /** §9.4: приточный клапан */
   vent?: { type: 'supply_valve' } | null;
+  /** §11.2 гильотинное окно: полотно подвижное или глухое; tilt_clean — откидывается внутрь для мытья */
+  slide?: 'moving' | 'fixed'; tilt_clean?: boolean;
 };
 export type Part = { size: number | 'eq'; cell?: Cell; node?: Node };
 export type Node = {
-  cell?: Cell; split?: 'v' | 'h' | 'shtulp' | 'none' | 'folding'; parts?: Part[];
+  cell?: Cell; split?: 'v' | 'h' | 'shtulp' | 'none' | 'folding' | 'vslide'; parts?: Part[];
   /** составное изделие (kind: 'assembly'): рама, стык, рама, … (shapes_contract §4) */
   assembly?: AssemblyItem[];
   /** старая запись арки (шаблон T16): читается как frame.shape = 'arch', shape_params.rise = rise_mm */
   shape?: string; rise_mm?: number;
-  sliding?: Record<string, unknown>;
+  /** §11.1 раздвижная система: корень frame.root.sliding (kind: 'sliding') */
+  sliding?: Sliding;
+  /** §11.3 гильотинная система для террас: корень frame.root.guillotine (kind: 'guillotine') */
+  guillotine?: Guillotine;
+};
+/** Раздвижные окна и двери, панорамные (shapes_contract §11.1). overlap_mm — число или 'passport' (ДЕМО 50 мм). */
+export type SlidingKind = 'window' | 'door' | 'panoramic';
+export type SlidingThreshold = 'standard' | 'low' | 'flush';
+export type Sliding = {
+  leaves: number; rails?: number; overlap_mm?: number | 'passport'; moving?: boolean[];
+  kind?: SlidingKind; threshold?: SlidingThreshold;
+};
+/** Гильотинная система (§11.3): modules модулей по ширине, panels полотен в модуле, moving нижних поднимаются. */
+export type GuillotineDrive = 'manual' | 'electric' | 'remote';
+export type GuillotineGlass = 'g8t' | 'g10t' | 'g4t_14_4t';
+export type Guillotine = {
+  modules: number; panels: number; moving: number; drive?: GuillotineDrive; glass?: GuillotineGlass; posts?: 'between' | 'none';
 };
 export type Shape = 'rect' | 'arch' | 'circle' | 'trapezoid' | 'bevel' | 'triangle';
 export type ShapeParams = {
   rise?: number; h_left?: number; h_right?: number; corner?: 'tl' | 'tr' | 'both'; dx?: number; dy?: number; apex?: number;
 };
 export type Frame = { w: number; h: number; shape?: Shape | string; shape_params?: ShapeParams; root: Node };
-export type JointKind = 'straight' | 'angle' | 'post';
+/** corner_free — угол без стойки, стекло к стеклу (§11.1, только алюминий / раздвижные) */
+export type JointKind = 'straight' | 'angle' | 'post' | 'corner_free';
 export type Joint = { joint: JointKind | string; angle?: number };
 /** рама сборки: полноценный frame или (старые шаблоны) id шаблона + w */
 export type AssemblyFrame = { frame: Frame | string; w?: number; h?: number };
@@ -84,7 +105,7 @@ export type Extras = {
   outside?: boolean; install?: boolean; floor?: number;
 };
 export type Doc = {
-  id?: string; room?: string; qty?: number; kind: 'window' | 'balcony_block' | 'door' | 'sliding' | 'assembly';
+  id?: string; room?: string; qty?: number; kind: 'window' | 'balcony_block' | 'door' | 'sliding' | 'assembly' | 'guillotine';
   opening?: { width?: number | number[]; height?: number | number[]; floor_offset?: number; floor?: number; wall?: string;
     quarter_mm?: number; slope_depth_mm?: number; nearby?: string[] };
   setup?: Setup; frame: Frame; extras?: Extras;
@@ -107,14 +128,35 @@ export type CellGeo = {
   shaped?: boolean; poly?: [number, number][]; glass_area_m2?: number;
   sash?: [number, number]; ffb?: number; ffh?: number; weight_kg?: number;
   fittings?: { code: string; name: string; qty: number; cams: number }[];
+  /** §11.1 полотно раздвижной (path "0", "1", …): rail — направляющая (index % rails) */
+  leaf?: { index: number; rail: number; moving: boolean };
+  /** §11.3 полотно гильотины (path "<модуль>.<полотно>"), index 0 — верхнее */
+  panel?: { module: number; index: number; moving: boolean };
+};
+/** §11: параметры раскладки полотен от ядра (geometry.sliding / geometry.guillotine) */
+export type SlidingGeo = {
+  leaves: number; rails: number; overlap_mm: number; leaf_w: number; leaf_h: number; kind: SlidingKind;
+  threshold: SlidingThreshold; moving: boolean[]; frame_face_mm: number; leaf_face_mm: number;
+};
+export type GuillotineGeo = {
+  modules: number; panels: number; moving: number; drive: GuillotineDrive; posts: 'between' | 'none'; glass: string;
+  module_w: number; panel_h: number; post_mm: number; rail_mm: number;
+  /** x0, x1 модулей в свету между стойками и самих стоек, мм (у сборки — в развёртке) */
+  modules_x: [number, number][]; posts_x: [number, number][];
 };
 export type Geometry = {
   w: number; h: number; cells: CellGeo[]; mullions: { path: string; orient: 'v' | 'h'; at: number; length: number }[];
   /** фигурная рама: форма, наружный контур, площадь по контуру (shapes_contract §1) */
   shape?: string; contour?: [number, number][]; area_m2?: number;
   /** сборка: рамы в развёртке и стыки; пути ячеек — A<i>/… (shapes_contract §4) */
-  frames?: { index: number; x: number; w: number; h: number; shape: string; contour?: [number, number][] }[];
+  frames?: { index: number; x: number; w: number; h: number; shape: string; contour?: [number, number][];
+    /** §11: рама сборки — раздвижная или гильотина */
+    kind?: 'sliding' | 'guillotine'; sliding?: SlidingGeo; guillotine?: GuillotineGeo }[];
   joints?: { index: number; joint: string; angle?: number | null; x: number; length: number; role: string | null }[];
+  /** §11.1 / §11.3: изделие — раздвижная или гильотина; cells — полотна */
+  sliding?: SlidingGeo; guillotine?: GuillotineGeo;
+  /** §11.2: узлы гильотинного окна (split vslide) и их габарит [x0, y0, x1, y1] */
+  vslides?: { path: string; rect: [number, number, number, number] }[];
 };
 export type BomLine = {
   kind: string; name: string; qty: number; unit: string; code?: string; article?: string; item_id?: string; path?: string;
@@ -163,7 +205,7 @@ export type Conflict = { conflict: true; server: { doc: Doc; rev: number; delete
 export type SyncResult = { orders: { id: string; status: 'ok' }[]; positions: { position_id: string; status: 'ok' | 'conflict' | 'error'; rev?: number; server?: Conflict['server']; error?: string }[] };
 
 // ---------- справочники ----------
-/** category: window | door | balcony | sliding | shaped | muntins | corner | facade (shapes_contract §6) */
+/** category: window | door | balcony | sliding | shaped | muntins | corner | facade (shapes_contract §6) | guillotine (§11.3) */
 export type Template = {
   id: string; name: string; short?: string; kind: Doc['kind']; default_w: number; default_h: number; category: string; ready: boolean;
   fixed_parts: { path: string; size: number }[];

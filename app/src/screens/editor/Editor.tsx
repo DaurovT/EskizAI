@@ -12,11 +12,14 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api, ApiError, errorText } from '@/api/http';
-import type { Addon, Cell, Command, Doc, Frame, Grille, Loggia, Muntins, PositionOut, Shape, ShapeParams, Shutter, Violation } from '@/api/types';
+import type {
+  Addon, Cell, Command, Doc, Frame, Grille, Guillotine, Loggia, Muntins, PositionOut, Shape, ShapeParams, Shutter, Sliding, Violation,
+} from '@/api/types';
 import { profileHex } from '@/lib/decors';
 import { num } from '@/lib/format';
 import {
-  apply, asmFrames, asmJoints, frameShape, framePrefix, indexOf, isAssembly, joinPath, layout, nodeAt, partAt, splitPath,
+  apply, asmFrames, asmJoints, frameShape, framePrefix, guillotineSpec, indexOf, isAssembly, joinPath, layout, nodeAt, openCaps, partAt,
+  slidingSpec, splitPath,
 } from '@/lib/tree';
 import { offline, uuid } from '@/offline/store';
 import { C } from '@/theme';
@@ -332,7 +335,28 @@ export default function Editor() {
   const asm = isAssembly(doc);
   const frames = asm ? asmFrames(doc) : [];
   const aSel = asm && asmSel && (asmSel.kind === 'frame' ? asmSel.index < frames.length : asmSel.index < frames.length - 1) ? asmSel : null;
-  const pickCell = (p: string) => { setAsmSel(null); setSelected(p === sel ? null : p); };
+  // раздвижная (§11.1): тап по полотну — подвижное ⇄ глухое (полотна — не ячейки дерева)
+  const leafOf = (p: string) => {
+    const { frame, sub } = splitPath(p);
+    const f = frame === null ? doc.frame : frames[frame];
+    const sp = f ? slidingSpec(f) : null;
+    return sp && /^\d+$/.test(sub) && Number(sub) < sp.n ? { sp, i: Number(sub), prefix: frame === null ? '' : framePrefix(frame) } : null;
+  };
+  const pickCell = (p: string) => {
+    const lf = leafOf(p);
+    if (lf) {
+      const moving = lf.sp.moving.map((m, i) => (i === lf.i ? !m : m));
+      commit([{ cmd: 'set_sliding', ...(lf.prefix ? { path: lf.prefix } : {}), moving }]);
+      showToast(`Полотно ${lf.i + 1}: ${moving[lf.i] ? 'подвижное' : 'глухое'}`);
+      return;
+    }
+    setAsmSel(null); setSelected(p === sel ? null : p);
+  };
+  const prod = asm ? null : doc.frame.root.sliding ? 'sliding' : doc.frame.root.guillotine ? 'guillotine' : null;
+  // кнопка 3D: раздвижные и гильотины «Открыть», створки «Повернуть»; «Откинуть» — только если есть что откидывать
+  const caps = openCaps(doc);
+  const next3d = open3d === 'closed' ? 'turn' : open3d === 'turn' && caps.tilt ? 'tilt' : 'closed';
+  const label3d = open3d === 'closed' ? (caps.turn ? 'Повернуть' : 'Открыть') : open3d === 'turn' && caps.tilt ? 'Откинуть' : 'Закрыть';
   const splitPress = () => {
     if (sel !== null) { setSplitFor(sel); return; }
     if (aSel?.kind === 'frame' && frames[aSel.index].root.cell) { setSplitFor(framePrefix(aSel.index)); return; }
@@ -387,8 +411,7 @@ export default function Editor() {
             {/* кнопки строкой над моделью — поверх они закрывали низ окна */}
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 10 }}>
               <Soft small title={view === 'inside' ? 'Снаружи' : 'Изнутри'} icon="layers" onPress={() => setView(view === 'inside' ? 'outside' : 'inside')} />
-              <Soft small title={open3d === 'closed' ? 'Повернуть' : open3d === 'turn' ? 'Откинуть' : 'Закрыть'} icon="window"
-                onPress={() => setOpen3d(open3d === 'closed' ? 'turn' : open3d === 'turn' ? 'tilt' : 'closed')} />
+              <Soft small title={label3d} icon="window" onPress={() => setOpen3d(next3d)} />
               <Soft small title="Вид" icon="undo" onPress={() => setReset3d((n) => n + 1)} />
             </View>
             <Window3D doc={doc} colorOut={profileHex(doc.setup, 'outside')}
@@ -461,13 +484,15 @@ export default function Editor() {
                 ) : null}
                 chips={isOffline || isLocal ? [] : setupChips}
                 onPick={(what) => router.push(`/order/${id}/alternatives?pos=${posId}&what=${what}`)}
+                product={prod === 'sliding' ? <SlidingTiles doc={doc} path="" commit={commit} />
+                  : prod === 'guillotine' ? <GuillotineTiles doc={doc} path="" commit={commit} /> : null}
                 tiles={[
-                  { key: 'split', title: 'Разделить', sub: 'створки, импосты', onPress: splitPress },
-                  ...(!asm ? [{ key: 'shape', title: 'Форма рамы', sub: SHAPE_TITLE[frameShape(doc.frame).shape], onPress: () => setShapeFor('') }] : []),
+                  ...(!prod ? [{ key: 'split', title: 'Разделить', sub: 'створки, импосты', onPress: splitPress }] : []),
+                  ...(!asm && !prod ? [{ key: 'shape', title: 'Форма рамы', sub: SHAPE_TITLE[frameShape(doc.frame).shape], onPress: () => setShapeFor('') }] : []),
                   { key: 'addons', title: 'Доп. профили', sub: doc.addons?.length ? String(doc.addons.length) : 'нет', onPress: () => setDocSheet('addons') },
                   { key: 'shutter', title: 'Рольставни, решётка', sub: shutterText(doc), onPress: () => setDocSheet('shutter') },
                   ...(asm ? [{ key: 'loggia', title: 'Лоджия', sub: loggiaText(doc.loggia), onPress: () => setDocSheet('loggia') }] : []),
-                  { key: 'mirror', title: 'Зеркально', sub: 'петли наоборот', onPress: () => commit([{ cmd: 'mirror' }]) },
+                  ...(prod !== 'guillotine' ? [{ key: 'mirror', title: 'Зеркально', sub: prod === 'sliding' ? 'полотна наоборот' : 'петли наоборот', onPress: () => commit([{ cmd: 'mirror' }]) }] : []),
                   { key: 'qty', title: `Количество: ${qty}`, sub: 'изменить', onPress: () => setMenu(true) },
                 ]}
                 more={[
@@ -493,7 +518,7 @@ export default function Editor() {
         onApply={(c) => { setShapeFor(null); commit(c); }} />
       <MoreSheet visible={menu} onClose={() => setMenu(false)} qty={qty} issues={vs.filter((v) => !v.accepted && v.severity !== 'hint' && v.severity !== 'auto_add' && v.scope !== 'price').length}
         offline={isOffline || isLocal}
-        shape={asm ? null : SHAPE_TITLE[frameShape(doc.frame).shape]}
+        shape={asm || prod ? null : SHAPE_TITLE[frameShape(doc.frame).shape]}
         onShape={() => { setMenu(false); setShapeFor(''); }}
         addons={doc.addons?.length ?? 0} shutterText={shutterText(doc)} loggia={asm ? loggiaText(doc.loggia) : null}
         onDocSheet={(x) => { setMenu(false); setDocSheet(x); }}
@@ -538,7 +563,7 @@ function SchemaDims({ doc, width, maxHeight, view, selected, violations, onCellP
   const hl = hlFromViolations(violations);
   const root = doc.frame.root;
   const sizes = root.parts ? L.sizes[''] ?? [] : [];
-  const vertical = root.split !== 'h';
+  const vertical = root.split !== 'h' && root.split !== 'vslide';
   const bad = (i: number) => Object.entries(hl).some(([p, s]) => s === 'block' && (p === String(i) || p.startsWith(`${i}.`)));
   const press = (i: number) => {
     const p = String(i);
@@ -611,9 +636,16 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
     ? 'панель'
     : own ? `своё · ${glassLabel(own, presets)}` : `как у изделия${doc.setup?.glass ? ` · ${glassLabel(doc.setup.glass, presets)}` : ''}`;
   const sub = splitPath(path).sub !== '';
+  // гильотинное окно (§11.2): часть узла split 'vslide'
+  let inVslide = false;
+  try { inVslide = sub && nodeAt(doc, parentPath(path)).split === 'vslide'; } catch { /* корень */ }
+  const vs = open && cell.open === 'vslide';
+  const top = inVslide && indexOf(path) === 0;
   // строка-итог под заголовком: видно, что выбрано, даже когда панель свёрнута
   const summary = [
     open ? OPEN_FULL[cell.open ?? 'turn'] ?? OPEN_TITLE[cell.open ?? 'turn'] : TYPE_TITLE[cell.type],
+    vs ? (cell.slide === 'fixed' ? 'неподвижное' : 'подвижное') : null,
+    vs && cell.tilt_clean ? 'откидывается для мытья' : null,
     open && !NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (cell.hinge === 'right' ? 'петли справа' : 'петли слева') : null,
     cell.mosquito ? `сетка ${MOSQ_SHORT[mosqType(cell.mosquito, cell)]}` : null,
     cell.muntins ? 'раскладка' : null,
@@ -642,7 +674,25 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
       {/* разделы вместо длинной простыни параметров: на экране — только то, что сейчас меняют */}
       <Seg<typeof tab> style={st0.seg} value={cur} onChange={setTab} items={tabs} />
 
-      {cur === 'open' ? (
+      {cur === 'open' && vs ? (
+        <>
+          <Lbl>Полотно</Lbl>
+          <Tiles<string> value={cell.slide ?? 'moving'} onChange={(v) => set({ slide: v as Cell['slide'] })}
+            items={[{ value: 'moving', title: 'Подвижное', sub: top ? 'едет вниз' : 'едет вверх' }, { value: 'fixed', title: 'Неподвижное', sub: 'глухое полотно' }]} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: 4 }}>
+            <View style={{ flex: 1 }}>
+              <Txt w={500}>Откидывание для мытья</Txt>
+              <Note>полотно наклоняется внутрь</Note>
+            </View>
+            <Switch value={!!cell.tilt_clean} onChange={(v) => set({ tilt_clean: v })} />
+          </View>
+          <Lbl>Как открывается</Lbl>
+          <Tiles<string> value="vslide" onChange={(o) => { if (o !== 'vslide') set({ open: o as Cell['open'], hinge: 'left' }); }}
+            items={[{ value: 'vslide', title: 'Гильотинное' }, { value: 'tilt_turn', title: 'Поворотно-откидная' }]} />
+        </>
+      ) : null}
+
+      {cur === 'open' && !vs ? (
         <>
           <Lbl>Что это</Lbl>
           <Tiles<Cell['type']> value={cell.type} onChange={(t) => set({ type: t })}
@@ -653,7 +703,8 @@ function CellPanel({ doc, path, presets, onClose, commit, commitLater, onFill, o
               <Tiles<string> value={cell.open ?? 'turn'}
                 onChange={(o) => set(o === 'tilt' ? { open: 'tilt', hinge: 'bottom' } : o === 'top_hung' ? { open: 'top_hung', hinge: 'top' }
                   : { open: o as Cell['open'], ...(cell.hinge === 'bottom' || cell.hinge === 'top' ? { hinge: 'left' } : {}) })}
-                items={[...OPENS_OF(cell), ...(cell.open && !OPENS_OF(cell).includes(cell.open) ? [cell.open] : [])]
+                items={[...OPENS_OF(cell), ...(inVslide && cell.type === 'sash' ? ['vslide'] : []),
+                  ...(cell.open && !OPENS_OF(cell).includes(cell.open) && !(inVslide && cell.open === 'vslide') ? [cell.open] : [])]
                   .map((o) => ({ value: o, title: OPEN_FULL[o] ?? OPEN_TITLE[o] ?? o }))} />
               {!NO_SIDE_HINGE.includes(cell.open ?? 'turn') ? (
                 <>
@@ -745,7 +796,7 @@ function Lbl({ children }: { children: string }) {
 /** открывание полными словами (мастер говорит «поворотно-откидная», а не «П-О») */
 const OPEN_FULL: Record<string, string> = {
   turn: 'Поворотная', tilt_turn: 'Поворотно-откидная', tilt: 'Откидная', top_hung: 'Подвесная', pivot: 'Среднеподвесная',
-  psk: 'PSK, параллельно-сдвижная', hs: 'HS, подъёмно-сдвижная', sliding: 'Раздвижная', folding: 'Гармошка',
+  psk: 'PSK, параллельно-сдвижная', hs: 'HS, подъёмно-сдвижная', sliding: 'Раздвижная', folding: 'Гармошка', vslide: 'Гильотинное',
 };
 const st0 = { seg: { marginHorizontal: 0, backgroundColor: '#EDECE9' } };
 
@@ -753,7 +804,7 @@ const st0 = { seg: { marginHorizontal: 0, backgroundColor: '#EDECE9' } };
 const OPENS_OF = (c: Cell): string[] => (c.type === 'door_sash'
   ? ['turn', 'tilt_turn', 'psk', 'hs']
   : ['turn', 'tilt_turn', 'tilt', 'top_hung', 'pivot', 'psk', 'hs']);
-const NO_SIDE_HINGE = ['tilt', 'top_hung', 'pivot', 'psk', 'hs', 'sliding'];
+const NO_SIDE_HINGE = ['tilt', 'top_hung', 'pivot', 'psk', 'hs', 'sliding', 'vslide'];
 
 /** Опции створки (§9.6) — option groups; вариант выбирается листом замен. */
 const CELL_OPTIONS: { group: string; title: string }[] = [
@@ -790,7 +841,7 @@ function PartSize({ doc, path, commit, commitLater }: { doc: Doc; path: string; 
   const resolved = Math.round(L.sizes[parent]?.[idx] ?? 0);
   const fixed = typeof part?.size === 'number';
   let horizontal = false;
-  try { horizontal = nodeAt(doc, parent).split === 'h'; } catch { /* корень */ }
+  try { const sp = nodeAt(doc, parent).split; horizontal = sp === 'h' || sp === 'vslide'; } catch { /* корень */ }
   const [text, setText] = useState(String(resolved));
   const focused = useRef(false);
   const input = useRef<ComponentRef<typeof TextInput>>(null);
@@ -827,28 +878,36 @@ function PartSize({ doc, path, commit, commitLater }: { doc: Doc; path: string; 
 }
 
 // ---------------------------------------------------------------- разделить на N
-function SplitSheet({ path, onClose, onSplit }: { path: string | null; onClose: () => void; onSplit: (path: string, dir: 'v' | 'h' | 'folding', n: number) => void }) {
-  const [dir, setDir] = useState<'v' | 'h' | 'folding'>('v');
+type SplitDir = 'v' | 'h' | 'shtulp' | 'folding' | 'vslide';
+const SPLIT_DIRS: { value: SplitDir; title: string; sub: string }[] = [
+  { value: 'v', title: 'Вертикально', sub: 'импост' }, { value: 'h', title: 'Горизонтально', sub: 'импост' },
+  { value: 'shtulp', title: 'Штульп', sub: '2 створки без импоста' }, { value: 'folding', title: 'Гармошка', sub: 'складываются книжкой' },
+  { value: 'vslide', title: 'Гильотинное (вверх)', sub: 'нижнее полотно едет вверх' },
+];
+function SplitSheet({ path, onClose, onSplit }: { path: string | null; onClose: () => void; onSplit: (path: string, dir: SplitDir, n: number) => void }) {
+  const [dir, setDir] = useState<SplitDir>('v');
   const [n, setN] = useState(2);
+  const two = dir === 'shtulp' || dir === 'vslide';           // всегда две части
   return (
-    <Sheet visible={path !== null} onClose={onClose} title="Разделить ячейку">
-      <View style={{ paddingHorizontal: 12, gap: 12 }}>
-        <Seg<'v' | 'h' | 'folding'> style={{ marginHorizontal: 0 }} value={dir} onChange={setDir}
-          items={[{ value: 'v', title: 'Вертикально' }, { value: 'h', title: 'Горизонтально' }, { value: 'folding', title: 'Гармошка' }]} />
-        {dir === 'folding' ? <Note style={{ paddingHorizontal: 8 }}>Створки складываются книжкой, без импостов</Note> : null}
+    <FormSheet visible={path !== null} onClose={onClose} title="Разделить ячейку">
+      <Tiles<SplitDir> value={dir} onChange={setDir} items={SPLIT_DIRS} />
+      {two ? null : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[2, 3, 4].map((x) => (
-            <Pressable key={x} onPress={() => setN(x)} style={{ flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: n === x ? C.dark : C.card }}>
+            <Pressable key={x} onPress={() => setN(x)} style={{ flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: n === x ? C.dark : C.soft }}>
               <Txt w={600} color={n === x ? '#fff' : C.ink}>на {x}</Txt>
             </Pressable>
           ))}
         </View>
-        <Card style={{ marginHorizontal: 0 }}>
+      )}
+      {two ? null : (
+        <Card style={{ marginHorizontal: 0, backgroundColor: C.soft }}>
           <Row first label="Частей" right={<Stepper value={n} onChange={setN} min={2} max={8} />} />
         </Card>
-        <Button title={dir === 'folding' ? `Гармошка на ${n}` : `Разделить на ${n}`} icon="window" onPress={() => path !== null && onSplit(path, dir, n)} />
-      </View>
-    </Sheet>
+      )}
+      <Button title={dir === 'vslide' ? 'Гильотинное окно' : dir === 'shtulp' ? 'Штульп на 2 створки' : dir === 'folding' ? `Гармошка на ${n}` : `Разделить на ${n}`}
+        icon="window" onPress={() => path !== null && onSplit(path, dir, two ? 2 : n)} />
+    </FormSheet>
   );
 }
 
@@ -981,9 +1040,11 @@ function useSetupChips(doc: Doc | null, presets: GlassPreset[] | null, sysFallba
 
 /** Нижняя панель окна (ничего не выбрано): тянется пальцем; шапка — цена, отмена/повтор; разделы
  * Комплектация · Окно · Ещё вместо строки чипов, уезжающей вбок, и меню «⋯». */
-function WindowPanel({ snaps, header, chips, onPick, err, tiles, more }: {
+function WindowPanel({ snaps, header, chips, onPick, err, tiles, more, product }: {
   snaps: [number, number, number]; header: ReactNode; chips: { what: string; label: string; value: string }[]; onPick: (what: string) => void;
   err: ReactNode; tiles: { key: string; title: string; sub?: string; onPress: () => void }[]; more: { key: string; title: string; sub?: string; onPress: () => void }[];
+  /** раздвижная / гильотина (§11): плитки параметров системы — в разделе «Окно» над общими */
+  product?: ReactNode;
 }) {
   const [tab, setTab] = useState<'kit' | 'win' | 'more'>('kit');
   const act = (list: typeof tiles) => (k: string) => list.find((x) => x.key === k)?.onPress();
@@ -993,6 +1054,8 @@ function WindowPanel({ snaps, header, chips, onPick, err, tiles, more }: {
       <Seg<typeof tab> style={st0.seg} value={tab} onChange={setTab}
         items={[{ value: 'kit', title: 'Комплектация' }, { value: 'win', title: 'Окно' }, { value: 'more', title: 'Ещё' }]} />
       {tab === 'kit' ? <Tiles<string> value={null} onChange={onPick} items={chips.map((c) => ({ value: c.what, title: c.value, sub: c.label }))} /> : null}
+      {tab === 'win' && product ? product : null}
+      {tab === 'win' && product ? <Lbl>Ещё</Lbl> : null}
       {tab === 'win' ? <Tiles<string> value={null} onChange={act(tiles)} items={tiles.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
       {tab === 'more' ? <Tiles<string> value={null} onChange={act(more)} items={more.map((t) => ({ value: t.key, title: t.title, sub: t.sub }))} /> : null}
     </DragArea>
@@ -1103,8 +1166,9 @@ function GlassDecorSheet({ visible, doc, path, cell, onClose, commit }: {
 }
 
 // ---------------------------------------------------------------- составное изделие: табы рам и стыков
-const JOINT_TITLE: Record<string, string> = { straight: 'Прямой', angle: 'Угловой', post: 'Стойка' };
-const jointText = (j: { joint: string; angle: number }) => (j.joint === 'angle' ? `Стык ${j.angle}°` : j.joint === 'post' ? 'Стойка' : 'Стык 180°');
+const JOINT_TITLE: Record<string, string> = { straight: 'Прямой', angle: 'Угловой', post: 'Стойка', corner_free: 'Без стойки' };
+const jointText = (j: { joint: string; angle: number }) => (j.joint === 'angle' ? `Стык ${j.angle}°` : j.joint === 'post' ? 'Стойка'
+  : j.joint === 'corner_free' ? `Без стойки ${j.angle}°` : 'Стык 180°');
 
 function AsmTabs({ doc, sel, onPick, onAdd }: {
   doc: Doc; sel: { kind: 'frame' | 'joint'; index: number } | null; onPick: (x: { kind: 'frame' | 'joint'; index: number }) => void; onAdd: () => void;
@@ -1157,6 +1221,7 @@ function FramePanel({ doc, index, commit, commitLater, onClose, onShape, onSplit
   if (!f) return null;
   const p = framePrefix(index);
   const sh = frameShape(f).shape;
+  const special = !!(f.root.sliding || f.root.guillotine);
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 8 }}>
@@ -1168,12 +1233,13 @@ function FramePanel({ doc, index, commit, commitLater, onClose, onShape, onSplit
         <NumField label="Ширина, мм" value={f.w} onValue={(w) => commitLater(`fw${index}`, [{ cmd: 'set_size', path: p, w }])} />
         <NumField label="Высота, мм" value={f.h} onValue={(h) => commitLater(`fh${index}`, [{ cmd: 'set_size', path: p, h }])} />
       </View>
-      <PanelLink label="Форма рамы" value={SHAPE_TITLE[sh]} onPress={onShape} />
+      {f.root.sliding ? <SlidingTiles doc={doc} path={p} commit={commit} /> : f.root.guillotine ? <GuillotineTiles doc={doc} path={p} commit={commit} />
+        : <PanelLink label="Форма рамы" value={SHAPE_TITLE[sh]} onPress={onShape} />}
       <View style={{ flexDirection: 'row', gap: 8, paddingTop: 4 }}>
         {f.root.cell ? <Soft title="Разделить" icon="window" onPress={onSplit} style={{ flex: 1 }} small /> : null}
         <Soft title="Удалить раму" onPress={onRemove} disabled={frames.length <= 2} style={{ flex: 1 }} small />
       </View>
-      {!f.root.cell ? <Note style={{ paddingHorizontal: 4 }}>Створки и деление — нажмите на ячейку рамы на схеме</Note> : null}
+      {!f.root.cell && !special ? <Note style={{ paddingHorizontal: 4 }}>Створки и деление — нажмите на ячейку рамы на схеме</Note> : null}
     </>
   );
 }
@@ -1182,29 +1248,107 @@ function JointPanel({ doc, index, commit, commitLater, onClose }: {
   doc: Doc; index: number; commit: (c: Command[]) => void; commitLater: (k: string, c: Command[]) => void; onClose: () => void;
 }) {
   const j = asmJoints(doc)[index];
-  const [angle, setAngle] = useState(j?.joint === 'angle' ? j.angle : 135);
-  useEffect(() => { if (j?.joint === 'angle') setAngle(j.angle); }, [j?.joint, j?.angle]);
+  const angled = j?.joint === 'angle' || j?.joint === 'corner_free';
+  const [angle, setAngle] = useState(angled ? j!.angle : 135);
+  useEffect(() => { if (angled) setAngle(j!.angle); }, [angled, j?.angle]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!j) return null;
-  const setA = (a: number) => { setAngle(a); commitLater(`joint${index}`, [{ cmd: 'set_joint', index, joint: 'angle', angle: a }]); };
+  const setA = (a: number) => { setAngle(a); commitLater(`joint${index}`, [{ cmd: 'set_joint', index, joint: j.joint, angle: a }]); };
   return (
     <>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingBottom: 8 }}>
         <Txt w={700} size={20} style={{ flex: 1 }} lines={1}>Стык {index + 1}–{index + 2}</Txt>
         <IconButton name="close" label="Закрыть" onPress={onClose} bg={C.soft} />
       </View>
-      <Seg<string> style={st0.seg} value={j.joint} onChange={(k) => commit([{ cmd: 'set_joint', index, joint: k, ...(k === 'angle' ? { angle } : {}) }])}
+      <Tiles<string> value={j.joint} onChange={(k) => commit([{ cmd: 'set_joint', index, joint: k, ...(k === 'angle' ? { angle } : k === 'corner_free' ? { angle: 90 } : {}) }])}
         items={Object.entries(JOINT_TITLE).map(([value, title]) => ({ value, title }))} />
-      {j.joint === 'angle' ? (
+      {j.joint === 'corner_free' ? <Note style={{ paddingHorizontal: 4 }}>Стекло к стеклу, без стойки — только алюминиевые и раздвижные системы</Note> : null}
+      {angled ? (
         <>
           <Card style={{ marginHorizontal: 0, backgroundColor: C.soft }}>
             <Row first label="Угол" right={<Stepper value={angle} min={90} max={179} step={1} format={(v) => `${v}°`} onChange={setA} />} />
           </Card>
           <Choice<string> value={String(angle)} onChange={(v) => setA(Number(v))}
             items={[90, 120, 135, 150, 154, 160].map((a) => ({ value: String(a), title: `${a}°` }))} />
-          <Note style={{ paddingHorizontal: 4 }}>90° — угловое окно, 91–179° — эркер</Note>
+          {j.joint === 'angle' ? <Note style={{ paddingHorizontal: 4 }}>90° — угловое окно, 91–179° — эркер</Note> : null}
         </>
       ) : j.joint === 'post' ? <Note style={{ paddingHorizontal: 4 }}>Несущая стойка между рамами</Note>
         : <Note style={{ paddingHorizontal: 4 }}>Соединитель 180° — рамы в одну линию</Note>}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- раздвижные и гильотина (§11): плитки параметров
+const SL_KIND_TITLE: Record<string, string> = { window: 'Окно', door: 'Дверь', panoramic: 'Панорамная' };
+const SL_THR_TITLE: Record<string, string> = { standard: 'Обычный', low: 'Низкий', flush: 'В уровень пола' };
+const GL_DRIVE_TITLE: Record<string, string> = { manual: 'Ручной', electric: 'Электро', remote: 'С пультом' };
+const GL_GLASS_TITLE: Record<string, string> = { g8t: '8 закалённое', g10t: '10 закалённое', g4t_14_4t: 'Стеклопакет' };
+const frameAt = (doc: Doc, path: string): Frame | undefined => {
+  const { frame } = splitPath(path);
+  return frame === null ? doc.frame : asmFrames(doc)[frame];
+};
+const nums = (list: number[], cur: number) => [...new Set([...list, cur])].sort((a, b) => a - b);
+
+/** Раздвижная (§11.1): полотна, направляющие, подвижные (плитка на каждое полотно), вид, порог. path — '' или «A<i>/». */
+function SlidingTiles({ doc, path, commit }: { doc: Doc; path: string; commit: (c: Command[]) => void }) {
+  const f = frameAt(doc, path);
+  const sp = f ? slidingSpec(f) : null;
+  if (!f || !sp) return null;
+  const set = (p: Partial<Sliding>) => commit([{ cmd: 'set_sliding', ...(path ? { path } : {}), ...p }]);
+  const door = sp.kind !== 'window';
+  return (
+    <>
+      <Lbl>Полотен</Lbl>
+      <Tiles<string> value={String(sp.n)} onChange={(v) => set({ leaves: Number(v) })}
+        items={nums([2, 3, 4, 6], sp.n).map((n) => ({ value: String(n), title: String(n) }))} />
+      <Lbl>Направляющих</Lbl>
+      <Tiles<string> value={String(sp.rails)} onChange={(v) => set({ rails: Number(v) })}
+        items={[{ value: '2', title: '2', sub: 'полотна парами' }, { value: '3', title: '3', sub: 'каждому своя' }]} />
+      <Lbl>Подвижные полотна</Lbl>
+      <Tiles<string> cols={sp.n % 3 === 0 ? 3 : 2} value={null} on={(v) => sp.moving[Number(v)]}
+        onChange={(v) => set({ moving: sp.moving.map((m, i) => (i === Number(v) ? !m : m)) })}
+        items={sp.moving.map((m, i) => ({ value: String(i), title: `Полотно ${i + 1}`, sub: m ? 'подвижное' : 'глухое' }))} />
+      <Lbl>Вид</Lbl>
+      <Tiles<string> cols={3} value={sp.kind} onChange={(v) => set({ kind: v as Sliding['kind'] })}
+        items={Object.entries(SL_KIND_TITLE).map(([value, title]) => ({ value, title }))} />
+      {door ? (
+        <>
+          <Lbl>Порог</Lbl>
+          <Tiles<string> cols={3} value={sp.threshold} onChange={(v) => set({ threshold: v as Sliding['threshold'] })}
+            items={Object.entries(SL_THR_TITLE).map(([value, title]) => ({ value, title }))} />
+        </>
+      ) : null}
+      <Note style={{ paddingHorizontal: 4 }}>{`Полотно ${num(Math.round(sp.lw))} мм · перехлёст ${sp.overlap} мм · тап по полотну на схеме — подвижное / глухое`}</Note>
+    </>
+  );
+}
+
+/** Гильотина (§11.3): модули, полотна, сколько поднимаются, привод, стекло, стойки. */
+function GuillotineTiles({ doc, path, commit }: { doc: Doc; path: string; commit: (c: Command[]) => void }) {
+  const f = frameAt(doc, path);
+  const g = f ? guillotineSpec(f) : null;
+  if (!f || !g) return null;
+  const set = (p: Partial<Guillotine>) => commit([{ cmd: 'set_guillotine', ...(path ? { path } : {}), ...p }]);
+  const up = Array.from({ length: g.panels - 1 }, (_, i) => i + 1);
+  return (
+    <>
+      <Lbl>Модулей</Lbl>
+      <Tiles<string> cols={3} value={String(g.modules)} onChange={(v) => set({ modules: Number(v) })}
+        items={nums([1, 2, 3, 4, 5, 6], g.modules).map((n) => ({ value: String(n), title: String(n), sub: `по ${num(Math.round(f.w / n))}` }))} />
+      <Lbl>Полотен в модуле</Lbl>
+      <Tiles<string> cols={3} value={String(g.panels)} onChange={(v) => set({ panels: Number(v) })}
+        items={nums([2, 3, 4], g.panels).map((n) => ({ value: String(n), title: String(n) }))} />
+      <Lbl>Поднимаются</Lbl>
+      <Tiles<string> cols={up.length >= 3 ? 3 : 2} value={String(g.moving)} onChange={(v) => set({ moving: Number(v) })}
+        items={up.map((n) => ({ value: String(n), title: `${n} нижн.`, sub: n === g.panels - 1 ? 'все, кроме верхнего' : undefined }))} />
+      <Lbl>Привод</Lbl>
+      <Tiles<string> cols={3} value={g.drive} onChange={(v) => set({ drive: v as Guillotine['drive'] })}
+        items={Object.entries(GL_DRIVE_TITLE).map(([value, title]) => ({ value, title }))} />
+      <Lbl>Стекло</Lbl>
+      <Tiles<string> cols={3} value={g.glass} onChange={(v) => set({ glass: v as Guillotine['glass'] })}
+        items={Object.entries(GL_GLASS_TITLE).map(([value, title]) => ({ value, title }))} />
+      <Lbl>Стойки</Lbl>
+      <Tiles<string> value={g.posts} onChange={(v) => set({ posts: v as Guillotine['posts'] })}
+        items={[{ value: 'between', title: 'Между модулями' }, { value: 'none', title: 'Без стоек' }]} />
     </>
   );
 }
@@ -1425,12 +1569,15 @@ function LoggiaSheet({ doc, onClose, onSave }: { doc: Doc; onClose: () => void; 
 const TPL_CATS: { value: string; title: string }[] = [
   { value: 'window', title: 'Окна' }, { value: 'door', title: 'Двери' }, { value: 'balcony', title: 'Балкон' }, { value: 'sliding', title: 'Раздвижные' },
   { value: 'shaped', title: 'Фигурные' }, { value: 'muntins', title: 'С раскладкой' }, { value: 'corner', title: 'Угловые и эркеры' }, { value: 'facade', title: 'Витражи' },
+  { value: 'guillotine', title: 'Терраса / гильотина' },
 ];
 function guessCategory(d: Doc): string {
+  if (d.kind === 'guillotine' || d.frame.root.guillotine || (isAssembly(d) && asmFrames(d).some((f) => f.root.guillotine))) return 'guillotine';
+  if (d.kind === 'sliding' || d.frame.root.sliding) return 'sliding';
   if (isAssembly(d)) return 'corner';
   if (frameShape(d.frame).shape !== 'rect') return 'shaped';
   if (layout(d).cells.some((c) => c.cell.muntins)) return 'muntins';
-  return d.kind === 'door' ? 'door' : d.kind === 'balcony_block' ? 'balcony' : d.kind === 'sliding' ? 'sliding' : 'window';
+  return d.kind === 'door' ? 'door' : d.kind === 'balcony_block' ? 'balcony' : 'window';
 }
 function SaveTemplateSheet({ doc, onClose, onSaved }: { doc: Doc; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(doc.room ? `${doc.room} ${doc.frame.w}×${doc.frame.h}` : '');
