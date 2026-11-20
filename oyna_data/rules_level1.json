@@ -118,7 +118,7 @@
       "params": {
         "ratio": 0.9
       },
-      "severity": "warn"
+      "severity": "hint"
     },
     {
       "code": "3.1",
@@ -256,7 +256,7 @@
       "params": {
         "gt": 2000
       },
-      "severity": "warn"
+      "severity": "hint"
     },
     {
       "code": "5.5",
@@ -654,7 +654,7 @@
       "params": {
         "role": "fit_shaped"
       },
-      "severity": "warn"
+      "severity": "hint"
     },
     {
       "code": "4.22",

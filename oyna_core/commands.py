@@ -82,6 +82,53 @@ def create_from_template(cat: Catalog, template_id: str, w: int | None = None, h
     kinds = product_specials(doc)
     if kinds and not (doc.get("setup") or {}).get("system"):
         doc.setdefault("setup", {})["system"] = special_system(cat, kinds, company_systems)
+    return safe_glass(doc, cat)
+
+
+def safe_glass(doc: dict, cat: Catalog) -> dict:
+    """Двери и низкое остекление (4.7): сразу закалённое — шаблон не должен открываться с предупреждением.
+    Пробуем 6t-12-4 (заодно толще для больших стёкол), если не помещается в паз — 4t-12-4 / 4t-16-4."""
+    from .evaluate import evaluate
+    try:
+        ev = evaluate(doc, cat)
+    except Exception:
+        return doc
+    paths = sorted({v.path for v in ev.violations if v.code == "4.7" and v.path is not None})
+    if not paths:
+        return doc
+    import re
+    sg = (doc.get("setup") or {}).get("glass")
+    base_setup = (cat.glass_presets.get(sg) or {}).get("formula", "").split(" ")[0] if sg else ""
+
+    def tempered(f: str) -> str:
+        """6-16-6 → 6t-16-6t (стёкла на чётных местах формулы); уже закалённые/триплекс не трогаем."""
+        parts = f.split("-")
+        return "-".join(p + "t" if i % 2 == 0 and re.fullmatch(r"\d+", p) else p for i, p in enumerate(parts))
+
+    def own(p: str) -> str:
+        try:
+            cell = node_at(doc, p).get("cell") or {}
+        except Exception:
+            return ""
+        f = (cell.get("fill") or {}).get("glass") if (cell.get("fill") or {}).get("kind") == "glass" else ""
+        return f if f and "-" in f else ""
+
+    # 1) та же формула, только закалённая (своё стекло ячейки или стекло комплектации); 2) запасные варианты
+    first = {p: tempered(own(p) or base_setup) for p in paths if own(p) or base_setup}
+    for cand in (None, "6t-12-4", "4t-12-4", "4t-16-4", "4t-14-4t"):
+        d = doc
+        try:
+            for p in paths:
+                g = first.get(p) if cand is None else cand
+                if not g:
+                    raise ValueError("нет формулы")
+                d = set_fill(d, p, {"kind": "glass", "glass": g})
+            ev2 = evaluate(d, cat)
+        except Exception:
+            continue
+        bad = {v.code for v in ev2.violations if v.severity in ("block", "lock")} - {v.code for v in ev.violations if v.severity in ("block", "lock")}
+        if not bad and not any(v.code == "4.7" for v in ev2.violations):
+            return d
     return doc
 
 

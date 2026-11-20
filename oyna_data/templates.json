@@ -448,7 +448,7 @@
       "id": "T15",
       "name": "Лоджия П-образная (3 рамы, углы 90°)",
       "kind": "assembly",
-      "default_w": 6000,
+      "default_w": 6100,
       "default_h": 1400,
       "root": {
         "assembly": [
@@ -462,7 +462,7 @@
           },
           {
             "frame": "T03",
-            "w": 1200
+            "w": 1300
           },
           {
             "joint": "angle",
@@ -942,7 +942,11 @@
           {
             "size": "eq",
             "cell": {
-              "type": "fixed"
+              "type": "fixed",
+              "fill": {
+                "kind": "glass",
+                "glass": "6-16-6"
+              }
             }
           }
         ]
@@ -1041,7 +1045,7 @@
         "split": "h",
         "parts": [
           {
-            "size": 300,
+            "size": 360,
             "cell": {
               "type": "fixed"
             }
@@ -1376,7 +1380,7 @@
           "type": "fixed",
           "muntins": {
             "kind": "inner",
-            "v": 4,
+            "v": 3,
             "h": 1,
             "width_mm": 18,
             "pattern": "sun",
@@ -2276,7 +2280,7 @@
                     }
                   },
                   {
-                    "size": "eq",
+                    "size": 650,
                     "cell": {
                       "type": "sash",
                       "open": "tilt_turn",

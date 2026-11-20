@@ -288,7 +288,9 @@ def _evaluate_assembly(ev: Eval) -> Eval:
             ev.add("9.21", f"стык {k + 1}: высоты A{k} {ha:g} и A{k + 1} {hb:g} мм различаются на {abs(ha - hb):g} мм")
         ev.joints.append({"index": k, "joint": j.get("joint"), "angle": ang, "height": max(ha, hb), "role": role,
                           "x": ev.offsets[k + 1] if k + 1 < len(ev.offsets) else x})
-    if ev.parts and all(c.cell.get("type") in ("fixed", "panel") for p in ev.parts if p.geo for c in p.geo.cells):
+    from .rules import LIVING_ROOMS
+    living = str(doc.get("room") or "").strip().lower() in LIVING_ROOMS
+    if living and ev.parts and all(c.cell.get("type") in ("fixed", "panel") for p in ev.parts if p.geo for c in p.geo.cells):
         ev.add("6.10", "все части сборки глухие", fix="добавьте открывающуюся створку для проветривания")
     rules.check_opening(ev, float(doc["frame"].get("w") or 0), float(doc["frame"].get("h") or 0))
     return ev

@@ -134,7 +134,7 @@ def test_shaped_sash_rules():
     r = calc(arch("tilt_turn"), CAT, DEMO)
     assert "4.20" in codes(r, "block")
     r = calc(arch("turn"), CAT, DEMO)
-    assert "4.20" not in codes(r) and "4.21" in codes(r, "warn") and bom(r, "fit_shaped")
+    assert "4.20" not in codes(r) and "4.21" in codes(r) and bom(r, "fit_shaped")   # 4.21 — к сведению (hint)
     semi = commands.set_cell(commands.set_shape(t("T01", 1200, 600), "arch", {"rise": 600}), "", open="turn")
     assert "4.20" in codes(validate(semi, CAT))                          # у полукруга — только откидное
     assert "4.20" not in codes(validate(commands.set_cell(semi, "", open="tilt"), CAT))
@@ -187,7 +187,7 @@ def test_muntin_rules_520_521_522():
 
 def test_muntins_sun_on_semicircle():
     r = calc(t("T43"), CAT, DEMO)
-    assert r["can_quote"] and bom(r, "muntin_inner")[0]["qty"] > 1 and bom(r, "muntin_cross")[0]["qty"] == 4
+    assert r["can_quote"] and bom(r, "muntin_inner")[0]["qty"] > 1 and bom(r, "muntin_cross")[0]["qty"] == 3   # T43: 3 луча × 1 кольцо
 
 
 # ---------- §3 открывания ----------
