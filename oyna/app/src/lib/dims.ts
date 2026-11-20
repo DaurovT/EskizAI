@@ -188,7 +188,8 @@ export function equalGlassCommands(doc: Doc, path: string): DimResult & { glass?
   const allow = info.parts.map((_, k) => glassAllowance(L, info.parent, k, info.axis));
   const glass = (info.total - allow.reduce((a, b) => a + b, 0)) / n;
   if (!(glass > 0)) return { commands: [], doc: null, changed: [], note: '', error: 'стёкла не помещаются' };
-  const sizes = allow.map((c) => Math.round(glass + c));
+  // кратно 5 мм, как все размеры в цеху (742/658 мастер переписывал руками); последняя часть — остаток («eq»)
+  const sizes = allow.map((c) => Math.round((glass + c) / 5) * 5);
   const commands: Command[] = sizes.map((s, k) => ({ cmd: 'set_part_size', path: partPath(info.parent, k), size: k === n - 1 ? 'eq' : s }));
   return { ...finish(doc, info, commands), glass: Math.round(glass) };
 }
